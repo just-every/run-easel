@@ -1,0 +1,129 @@
+{
+  "id": "easel",
+  "name": "Easel",
+  "version": "0.1.0",
+  "maturity": "phase-1-local",
+  "category": "finance",
+  "spine": {
+    "id": "scenario",
+    "record": "Scenario revision with its inputs, calculated cells and approvals"
+  },
+  "description": "Owned financial planning for one company: reconciled actuals, driver-based budgets and forecasts, department submissions, frozen approvals, scenarios, proposals and monthly review packs.",
+  "capabilities": [
+    {
+      "id": "setup",
+      "clauses": [
+        "EASEL-001"
+      ]
+    },
+    {
+      "id": "actuals-move-in",
+      "clauses": [
+        "EASEL-002",
+        "EASEL-003",
+        "EASEL-004"
+      ]
+    },
+    {
+      "id": "planning-engine",
+      "clauses": [
+        "EASEL-005",
+        "EASEL-006",
+        "EASEL-007",
+        "EASEL-008"
+      ]
+    },
+    {
+      "id": "budget-cycle",
+      "clauses": [
+        "EASEL-009",
+        "EASEL-010"
+      ]
+    },
+    {
+      "id": "scenarios-and-proposals",
+      "clauses": [
+        "EASEL-011",
+        "EASEL-012"
+      ]
+    },
+    {
+      "id": "monthly-review",
+      "clauses": [
+        "EASEL-013",
+        "EASEL-014"
+      ]
+    },
+    {
+      "id": "workbook-move-in",
+      "clauses": [
+        "EASEL-015"
+      ]
+    },
+    {
+      "id": "portability-and-operations",
+      "clauses": [
+        "EASEL-016",
+        "EASEL-017"
+      ]
+    }
+  ],
+  "nonGoals": [
+    "Multi-entity consolidation or currency conversion",
+    "Posting journals or correcting the ledger",
+    "Payroll, tax or statutory statement calculation",
+    "Evaluating spreadsheet formulas or macros",
+    "Model-supplied arithmetic"
+  ],
+  "externals": [
+    {
+      "id": "cloudflare",
+      "required": true,
+      "why": "Worker hosting",
+      "data": [
+        "HTTP requests"
+      ],
+      "adapters": []
+    }
+  ],
+  "env": [],
+  "deploy": {
+    "healthPath": "/health",
+    "publicPaths": [
+      "/",
+      "/health",
+      "/signin"
+    ],
+    "notes": "Native owner sessions guard /app; unknown paths return real 404s; the development outbox is local-only."
+  },
+  "extensionPoints": {
+    "contributions": [],
+    "policies": [],
+    "events": [],
+    "slots": [],
+    "adapters": []
+  },
+  "limits": {
+    "status": "unmeasured"
+  },
+  "accessibility": {
+    "level": "WCAG 2.2 AA",
+    "status": "target; unaudited"
+  },
+  "operatingCost": {
+    "status": "unmeasured"
+  },
+  "composition": {
+    "base": "base",
+    "family": "planning",
+    "edition": "easel",
+    "modules": [
+      "job-queue",
+      "release",
+      "deploy-kit",
+      "mail",
+      "operator-auth",
+      "portability"
+    ]
+  }
+}

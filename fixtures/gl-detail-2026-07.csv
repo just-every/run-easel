@@ -1,0 +1,17 @@
+Date,Account Code,Account Name,Tracking - Department,Description,Reference,Debit,Credit
+30/06/2026,090,Business Bank Account,,Opening balance,OB-2026,850000.00,
+05/07/2026,200,Subscription Revenue,Sales,July subscriptions,INV-1001,,96000.00
+12/07/2026,210,Services Revenue,Sales,Implementation project,INV-1002,,12000.00
+31/07/2026,310,Cloud Hosting,Engineering,AWS July,AWS-0726,16210.00,
+31/07/2026,477,Wages and Salaries,Engineering,July payroll engineering,PAY-0726,54000.00,
+31/07/2026,477,Wages and Salaries,Sales,July payroll sales,PAY-0726,26000.00,
+31/07/2026,478,Superannuation,Engineering,July super engineering,PAY-0726,6210.00,
+31/07/2026,478,Superannuation,Sales,July super sales,PAY-0726,2990.00,
+01/07/2026,469,Rent,Operations,Office rent July,RENT-07,9000.00,
+15/07/2026,461,Software Subscriptions,Engineering,GitHub and tooling,SW-0715,2400.00,
+15/07/2026,400,Advertising,Marketing,LinkedIn campaign,ADS-0715,7500.00,
+20/07/2026,493,Travel,Sales,Client visit Melbourne,TR-0720,1840.50,
+20/07/2026,493,Travel,Sales,Client visit Melbourne,TR-0720,1840.50,
+2026-07-31,461,Software Subscriptions,Engineering,Monitoring add-on,SW-0731,100.00,
+31/07/2026,610,Accounts Receivable,,Invoice INV-1001,INV-1001,96000.00,
+31/07/2026,090,Business Bank Account,,Customer receipts July,REC-0731,84000.00,

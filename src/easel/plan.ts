@@ -1,0 +1,179 @@
+// Scenario inputs, branching and agent-ready proposals. A proposal is a
+// branch bound to the exact revision of the scenario it would change; finance
+// promotes the exact proposal revision it reviewed, or nothing changes.
+import { requireDepartment, requireFinance, requireMember } from './access'
+import type { Context } from './context'
+import { INPUT_KINDS, inputDepartment, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
+import { cents } from './units'
+import { cashBalance } from './actuals'
+import { all, choice, find, get, integer, optionalText, put, remove, requireThat, text, uid, type Data, type State } from './types'
+
+export function bump(c: Context, scenario: Data, action: string, record: string, detail: Data = {}) {
+ const before = scenario.revision, after = before + 1
+ put(c.s, 'scenario', scenario.id, { ...scenario, revision: after })
+ c.activity.push({ action, record, scenario: scenario.id, before, after, detail })
+ return after
+}
+
+/** Copies every input of one scenario into another, keeping each input's origin so changes can be compared. */
+export function copyInputs(s: State, from: string, to: string) {
+ for (const kind of INPUT_KINDS) for (const input of scenarioInputs(s, from, kind)) put(s, kind, uid(), { ...input, scenario: to })
+}
+
+export function clearInputs(s: State, scenario: string) {
+ for (const kind of INPUT_KINDS) for (const input of scenarioInputs(s, scenario, kind)) remove(s, kind, input.id)
+}
+
+export async function plan(c: Context, op: string, b: Data): Promise<Data | undefined> {
+ const { s, x } = c
+ if ((INPUT_KINDS as readonly string[]).includes(op)) {
+  requireMember(x)
+  const kind = op as InputKind
+  const scenario = get(s, 'scenario', b.scenario)
+  const prior = b.id ? get(s, kind, b.id) : undefined
+  requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
+  if (prior) requireEditable(s, x, scenario, inputDepartment(kind, prior))
+  const originId = prior?.originId ?? uid()
+  const value: Data = { ...validateInput(s, kind, { ...b, originId }, scenario.id), scenario: scenario.id, originId }
+  requireEditable(s, x, scenario, inputDepartment(kind, value))
+  const id = prior?.id ?? uid()
+  put(s, kind, id, value)
+  bump(c, scenario, prior ? `${kind}-changed` : `${kind}-added`, id, { name: value.name ?? value.title, department: value.department ?? value.sourceDepartment })
+  return { ...value, id }
+ }
+ if (op === 'input-delete') {
+  requireMember(x)
+  const kind = choice(b.kind, INPUT_KINDS, 'an input kind')
+  const input = get(s, kind, b.id)
+  const scenario = get(s, 'scenario', input.scenario)
+  requireEditable(s, x, scenario, inputDepartment(kind, input))
+  remove(s, kind, input.id)
+  bump(c, scenario, `${kind}-removed`, input.id, { name: input.name ?? input.title })
+  return { removed: input.id }
+ }
+ if (op === 'scenario-cash') {
+  requireFinance(x)
+  const scenario = get(s, 'scenario', b.scenario)
+  requireEditable(s, x, scenario, null)
+  const basis = choice(b.basis, ['estimate', 'imported'] as const, 'whether opening cash is an estimate or imported')
+  const imported = basis === 'imported' ? await cashBalance(c.db, s, workspace(s).planStart) : undefined
+  requireThat(!imported || imported.rows > 0, 'No accepted actuals rows are mapped to the cash balance before the first plan month', 409)
+  const cash = {
+   openingCents: imported ? imported.cents : cents(b.opening, 'Opening cash', { negative: true }),
+   basis, note: optionalText(b.note, 'Note', 500),
+   receivablesCents: cents(b.receivables ?? '0', 'Opening receivables'), payablesCents: cents(b.payables ?? '0', 'Opening payables'),
+   collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3), paymentLag: integer(b.paymentLag ?? 0, 'Payment timing (months)', 0, 3),
+   ...(imported ? { importedFrom: { rows: imported.rows, batches: imported.batches, before: workspace(s).planStart } } : {}),
+  }
+  put(s, 'scenario', scenario.id, { ...scenario, cash })
+  bump(c, get(s, 'scenario', scenario.id), 'cash-changed', scenario.id, { basis })
+  return get(s, 'scenario', scenario.id)
+ }
+ if (op === 'branch' || op === 'proposal-create') {
+  requireMember(x)
+  const from = get(s, 'scenario', b.from, 'scenario to branch')
+  requireThat(from.kind !== 'proposal', 'Branch from a plan, not from a proposal')
+  if (op === 'branch') requireFinance(x)
+  else {
+   requireThat(x.role === 'finance' || x.role === 'contributor', 'Viewers cannot propose changes', 403)
+   requireThat(from.status === 'working', 'Proposals change a working scenario; this one is frozen', 409)
+  }
+  const id = uid()
+  const kind = op === 'branch' ? 'scenario' : 'proposal'
+  put(s, 'scenario', id, {
+   name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
+   parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash,
+   ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
+  })
+  copyInputs(s, from.id, id)
+  c.activity.push({ action: op, record: id, scenario: id, after: 1, detail: { from: from.id, fromRevision: from.revision } })
+  return get(s, 'scenario', id)
+ }
+ if (op === 'proposal-submit') {
+  requireMember(x)
+  requireThat(x.role === 'finance' || x.role === 'contributor', 'Only finance and contributors submit proposals', 403)
+  const p = proposal(s, b.id)
+  requireThat(p.createdBy === x.actor.email || x.role === 'finance', 'Only the proposer submits a proposal', 403)
+  requireProposalScope(s, x, p)
+  requireThat(p.proposalStatus === 'draft', 'This proposal was already submitted', 409)
+  put(s, 'scenario', p.id, { ...p, proposalStatus: 'submitted', submittedRevision: p.revision, submittedAt: c.now, summary: optionalText(b.summary, 'Summary', 4000) })
+  c.activity.push({ action: op, record: p.id, scenario: p.id, before: p.revision, after: p.revision, detail: {} })
+  return get(s, 'scenario', p.id)
+ }
+ if (op === 'proposal-promote') {
+  requireFinance(x)
+  const p = proposal(s, b.id)
+  requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
+  const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
+  requireThat(reviewed === p.revision, 'The proposal changed after you reviewed it; review its current revision', 409)
+  const target = get(s, 'scenario', p.branchedFrom.scenario)
+  requireThat(target.status === 'working', 'The target scenario is frozen', 409)
+  requireThat(target.revision === p.branchedFrom.revision, `${target.name} changed since this proposal was made (revision ${p.branchedFrom.revision} → ${target.revision}); make a fresh proposal from its current revision`, 409)
+  clearInputs(s, target.id)
+  copyInputs(s, p.id, target.id)
+  put(s, 'scenario', target.id, { ...target, cash: p.cash })
+  const after = bump(c, get(s, 'scenario', target.id), 'proposal-promoted', p.id, { proposal: p.id, proposalRevision: p.revision, request: p.request })
+  put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'promoted', promotedBy: x.actor.email, promotedAt: c.now, promotedInto: { scenario: target.id, revision: after } })
+  return { target: get(s, 'scenario', target.id), proposal: get(s, 'scenario', p.id) }
+ }
+ if (op === 'proposal-decline') {
+  requireFinance(x)
+  const p = proposal(s, b.id)
+  requireThat(p.proposalStatus === 'submitted' || p.proposalStatus === 'draft', 'This proposal is already closed', 409)
+  put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'declined', declinedBy: x.actor.email, reason: text(b.reason, 'Reason', 2000) })
+  c.activity.push({ action: op, record: p.id, scenario: p.id, detail: { reason: b.reason } })
+  return get(s, 'scenario', p.id)
+ }
+ if (op === 'scenario-adopt') {
+  // Finance replaces a working plan's inputs with another scenario's, for
+  // example a budget moved in from a workbook, at the revision it reviewed.
+  requireFinance(x)
+  const from = get(s, 'scenario', b.from, 'scenario to adopt')
+  const into = get(s, 'scenario', b.into, 'scenario to replace')
+  requireThat(from.id !== into.id && from.kind !== 'proposal', 'Choose a different scenario to adopt')
+  requireEditable(s, x, into, null)
+  requireThat(Number(b.revision) === into.revision, `${into.name} changed since you reviewed it; review its current revision`, 409)
+  clearInputs(s, into.id)
+  copyInputs(s, from.id, into.id)
+  bump(c, get(s, 'scenario', into.id), op, into.id, { from: from.id, fromRevision: from.revision, name: from.name })
+  return get(s, 'scenario', into.id)
+ }
+ if (op === 'scenario-delete') {
+  requireFinance(x)
+  const sc = get(s, 'scenario', b.id)
+  requireThat(sc.kind === 'scenario' || (sc.kind === 'proposal' && sc.status === 'closed'), 'Only branched scenarios and closed proposals can be deleted', 409)
+  requireThat(!all(s, 'scenario').some(o => o.parent === sc.id && o.status === 'working'), 'Close or delete the proposals made from this scenario first', 409)
+  clearInputs(s, sc.id)
+  remove(s, 'scenario', sc.id)
+  c.activity.push({ action: op, record: sc.id, detail: { name: sc.name } })
+  return { removed: sc.id }
+ }
+ return undefined
+}
+
+function proposal(s: State, id: unknown) {
+ const p = get(s, 'scenario', id, 'proposal')
+ requireThat(p.kind === 'proposal', 'Not a proposal')
+ return p
+}
+
+export const findScenario = (s: State, id: string) => find(s, 'scenario', id)
+
+/** Recheck every changed department against today's grant, including deletions.
+ * The proposal carries a copy of other departments, not authority to submit them. */
+function requireProposalScope(s: State, x: import('./types').Access, p: Data) {
+ if (x.role === 'finance') return
+ const parent = get(s, 'scenario', p.branchedFrom.scenario)
+ requireThat(JSON.stringify(p.cash) === JSON.stringify(parent.cash), 'Only finance can propose cash changes', 403)
+ const value = (row: Data) => { const { id: _id, scenario: _sc, ...rest } = row; return JSON.stringify(rest) }
+ for (const kind of INPUT_KINDS) {
+  const before = new Map(scenarioInputs(s, parent.id, kind).map(i => [i.originId, i]))
+  const after = new Map(scenarioInputs(s, p.id, kind).map(i => [i.originId, i]))
+  for (const origin of new Set([...before.keys(), ...after.keys()])) {
+   const a = before.get(origin), b = after.get(origin)
+   if (a && b && value(a) === value(b)) continue
+   requireThat(kind !== 'allocation', 'Only finance can propose allocation changes', 403)
+   for (const row of [a, b]) if (row) requireDepartment(x, inputDepartment(kind, row)!)
+  }
+ }
+}

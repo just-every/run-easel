@@ -1,0 +1,12 @@
+Date,Account Code,Account Name,Tracking - Department,Description,Reference,Debit,Credit
+05/08/2026,200,Subscription Revenue,Sales,August subscriptions,INV-1040,,99500.00
+31/08/2026,310,Cloud Hosting,Engineering,AWS August,AWS-0826,13950.00,
+31/08/2026,477,Wages and Salaries,Engineering,August payroll engineering,PAY-0826,54000.00,
+31/08/2026,477,Wages and Salaries,Sales,August payroll sales,PAY-0826,26000.00,
+31/08/2026,478,Superannuation,Engineering,August super engineering,PAY-0826,6210.00,
+31/08/2026,478,Superannuation,Sales,August super sales,PAY-0826,2990.00,
+01/08/2026,469,Rent,Operations,Office rent August,RENT-08,9000.00,
+15/08/2026,461,Software Subscriptions,Engineering,GitHub and tooling,SW-0815,2400.00,
+18/08/2026,400,Advertising,Marketing,Conference sponsorship deposit,ADS-0818,15000.00,
+22/08/2026,493,Travel,Sales,Client visit Sydney,TR-0822,900.00,
+31/08/2026,090,Business Bank Account,,Customer receipts August,REC-0831,97000.00,
