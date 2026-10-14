@@ -1,5 +1,6 @@
 import { scrollStyle } from './scroll-style'
 import { reviewStyle } from './review-style'
+import { activityStyle } from './activity-style'
 import { chartStyle } from './chart'
 import { tokens } from './tokens'
 
@@ -177,4 +178,4 @@ const phone = `
 }
 `
 
-export const appStyle = tokens + base + shell + cards + controls + tables + overview + chartStyle + phone + scrollStyle + reviewStyle
+export const appStyle = tokens + base + shell + cards + controls + tables + overview + chartStyle + phone + scrollStyle + reviewStyle + activityStyle

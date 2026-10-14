@@ -36,7 +36,7 @@ Pins: Node 22.20.0, pnpm 10.12.4. `RUN-LOCALLY.md` and `SEED-COMMAND-CONTRACT.md
 
 ## What Easel is
 
-Easel (working name) is owned financial planning for one company: an agreed next twelve months of revenue, expenses, hiring and cash, a locked budget, a downside scenario and a traceable monthly actual-versus-plan review. Posted accounting stays in your accounting system; Easel keeps the assumptions, alternatives, approvals and the decision record. It is MIT source you run yourself.
+Easel is owned financial planning for one company: an agreed next twelve months of revenue, expenses, hiring and cash, a locked budget, a downside scenario and a traceable monthly actual-versus-plan review. Posted accounting stays in your accounting system; Easel keeps the assumptions, alternatives, approvals and the decision record. It is MIT source you run yourself.
 
 What a person can do in phase 1:
 

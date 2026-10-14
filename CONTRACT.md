@@ -1,6 +1,6 @@
 # Easel phase 1 contract
 
-Easel (working name) helps one company's finance lead answer "Can we afford this plan, what changed, and which assumption must change?" with a reconciled operating forecast and a decision record. Phase 1 is the complete monthly planning loop for one entity in one reporting currency (AUD by default), with uploaded files and local storage only. It needs no provider account. Posted accounting truth stays in the accounting system; Easel holds assumptions, estimates, alternatives, approvals and the review record. It does not post journals, calculate payroll or tax, consolidate entities, convert currencies, evaluate spreadsheet formulas or run a model for arithmetic.
+Easel helps one company's finance lead answer "Can we afford this plan, what changed, and which assumption must change?" with a reconciled operating forecast and a decision record. Phase 1 is the complete monthly planning loop for one entity in one reporting currency (AUD by default), with uploaded files and local storage only. It needs no provider account. Posted accounting truth stays in the accounting system; Easel holds assumptions, estimates, alternatives, approvals and the review record. It does not post journals, calculate payroll or tax, consolidate entities, convert currencies, evaluate spreadsheet formulas or run a model for arithmetic.
 
 | ID | User-visible guarantee |
 |---|---|
