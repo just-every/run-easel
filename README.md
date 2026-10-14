@@ -1,7 +1,7 @@
 # Easel
 
 Easel is MIT financial planning for one company: a twelve-month plan, a locked budget, a downside scenario and a monthly actual-versus-plan review.
-Source: [just-every/run-easel](https://github.com/just-every/run-easel).
+Source: [just-every/run-easel](https://github.com/just-every/run-easel). The site is at https://run-easel.com.
 
 ## Run it locally
 
