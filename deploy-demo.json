@@ -2,7 +2,7 @@
   "version": 1,
   "domain": "run-easel.com",
   "name": "Easel",
-  "instanceType": "basic",
+  "instanceType": "standard-1",
   "settings": {
     "MAIL_PROVIDER": "development",
     "MAIL_FROM": "Easel demo <demo@demo.invalid>"

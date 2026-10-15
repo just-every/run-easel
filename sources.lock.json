@@ -116,7 +116,7 @@
       "executable": false
     },
     "deploy-demo.json": {
-      "sha256": "f068a9ec61961251cef84746d15e277b243ca4efc2b06d6c919c45fabce8206e",
+      "sha256": "fd09aa29d94845a0cd2c395c0f615f870d8f66438f0574a914504232b57d18ea",
       "executable": false
     },
     "deploy-site.json": {
