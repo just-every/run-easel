@@ -2178,7 +2178,7 @@
       "executable": false
     },
     "tests/browser.mjs": {
-      "sha256": "0c77eb4de3497e194b86db30e610609cf8743390f335a6d5f782e856c1866794",
+      "sha256": "beb7af63bc52bb504b390004cfa8dacc4b5af28bdf66f938904f769a496ace22",
       "executable": false
     },
     "tests/easel-worker.ts": {
