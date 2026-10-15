@@ -41,7 +41,7 @@ rer setup --owner-email you@example.com
 rer dev
 ```
 
-Sign-in links go to a local outbox on this computer; no email is sent.
+Local dev opens signed in with one click; mail is silently suppressed.
 
 ## Try it as other people
 
@@ -51,7 +51,7 @@ Easel has local test people for each role. Start as one of them with `--as`:
 rer dev --as sales
 ```
 
-`finance` plans everything. `sales` and `engineering` are contributors and `board` is a viewer once finance adds them under **Settings → People** (see [People and access](/docs/people-and-access)). To sign in through the local outbox instead, start `rer dev --login`, then run `rer outbox` and open the `RER_OPEN` link it prints; follow the newest sign-in message there.
+`finance` plans everything. `sales` and `engineering` are contributors and `board` is a viewer once finance adds them under **Settings → People** (see [People and access](/docs/people-and-access)).
 
 ## Stop it
 

@@ -19,7 +19,7 @@ published package using bare `rer` verbs. They are not byte-equal Base copies.
 Dependency linking is not enabled. Signed owner claims use the existing module when trusted claim bindings are provisioned.
 
 The CLI and onboarding implementation come from the published `@runeditrun/rer`
-package, pinned exactly to `0.2.19` in `package.json` and `pnpm-lock.yaml`. The Base
+package, pinned exactly to `0.2.20` in `package.json` and `pnpm-lock.yaml`. The Base
 `--to-package` converter removed the vendored CLI and onboarding implementation
 and rewrote their callers to package exports. `rer check` verifies the command
 contract and operator-auth copy. `scripts/installer` contains only Easel adapters,
@@ -43,4 +43,4 @@ confirmation record. `rer build --site` builds the run site (run-easel.com) from
 `src/base/run-site.ts`, and the docs rendered from `docs/site.json` and
 `docs/*.md`. Base and Easel are MIT; see `LICENSE`.
 
-Demo mode adopts `modules/demo` (only its CSP import path is adapted) and the standalone `src/demo-csp.mjs` helper from Base tag `rer-v0.2.19` (`e17843562355e1b6e5068289c8e037951fbc8d3d`). `edition.json`, `sources.lock.json` and the retained comparison snapshot track this adoption; the supported `scripts/edition-authoring/cli.mjs lock` refreshes the lock after intentional changes. Other adopted runtime sources retain their recorded origins.
+Demo mode adopts `modules/demo`, `modules/operator-auth`, `modules/mail`, and the auth closure (`dependencies`, `owner-claim`) from Base tag `rer-v0.2.20` (`38aa7efdb3cceec585d2344ed54dd559295b9059`). The demo module is copied without path adaptations; its label helper uses operator-auth’s CSP helper. `base-copies.json` records the refreshed auth and mail modules. `edition.json`, `sources.lock.json` and retained comparison snapshots track the demo adoption. Other adopted runtime sources retain their recorded origins.

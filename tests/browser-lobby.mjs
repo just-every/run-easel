@@ -24,10 +24,7 @@ export async function lobbyJourney(browser, { origin, openUrl }, evidence) {
     await action.waitFor(); assert.equal(await action.getAttribute('href'), '/setup')
     await noOverflow(anonymous, `Unclaimed Lobby at ${width}`)
     await anonymous.screenshot({ path: join(evidence, `${width}-lobby-unclaimed.png`), fullPage: true })
-    await anonymous.goto(origin + '/signin')
-    await anonymous.getByRole('textbox').first().waitFor()
-    await noOverflow(anonymous, `Sign in at ${width}`)
-    await anonymous.screenshot({ path: join(evidence, `${width}-sign-in.png`), fullPage: true })
+
    } finally { await context.close() }
    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
    if (width === 1440) await page.goto(openUrl).catch(() => { throw new Error('The printed owner sign-in URL did not open') })
@@ -53,5 +50,5 @@ export async function lobbyJourney(browser, { origin, openUrl }, evidence) {
    await page.screenshot({ path: join(evidence, `${width}-lobby-claimed.png`), fullPage: true })
   } finally { await context.close() }
  }
- return { widths: [1440, 390], steps: ['unclaimed-lobby', 'sign-in', 'printed-owner-link', 'setup', 'claimed-lobby'] }
+ return { widths: [1440, 390], steps: ['unclaimed-lobby', 'printed-owner-link', 'setup', 'claimed-lobby'] }
 }

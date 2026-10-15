@@ -19,7 +19,7 @@ rer setup --owner-email you@example.com
 rer dev
 ```
 
-`dev` prints `RER_OPEN URL`: open it on this computer and Easel opens signed in as the owner (finance). `dev --as sales`, `--as engineering`, `--as board` or `--as finance` start as a dev persona instead. For local outbox sign-in, start `rer dev --login`, then run `rer outbox` and open its `RER_OPEN` link to `/__dev/key`; follow the newest ordinary sign-in message. The pinned rer 0.2.0 prints a broken entry link from `dev --login`; use the link from `rer outbox` until a rer release fixes it. Stop with `rer dev --stop` or Ctrl-C. No email leaves the computer and no provider account is needed.
+`dev` prints `RER_OPEN URL`: open it on this computer and Easel opens signed in as the owner (finance). `dev --as sales`, `--as engineering`, `--as board` or `--as finance` start as a dev persona instead. Local dev and demo use one-click sign-in and silently suppress mail. Stop with `rer dev --stop` or Ctrl-C. No email leaves the computer and no provider account is needed.
 
 ```sh
 rer verify                       # build, typecheck, flow tests, emitted Worker checks

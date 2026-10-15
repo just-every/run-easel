@@ -52,8 +52,10 @@ jobs:
           source = source.replace('async fetch(request, env, execution) {', `async fetch(request, env, execution) {
             if (new URL(request.url).pathname === '/__demo/egress-probe') {
               if (!await operatorAuth(runtimeBindings(env)).getSession(request)) return new Response(null, { status: 401 });
-              try { await fetch('https://example.com/'); return Response.json({ blocked: false }); }
-              catch (error) { return Response.json({ blocked: true, error: error.name }); }
+              const response = await fetch('https://example.com/');
+              const text = await response.text();
+              const send = await fetch('https://send.mock-proof.invalid/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to: 'visitor@example.test', subject: 'Easel demo proof' }) });
+              return Response.json({ read: { status: response.status, exampleDomain: text.includes('Example Domain') }, send: { status: send.status, result: await send.json() } });
             }`);
           fs.writeFileSync(path, source);
           JS

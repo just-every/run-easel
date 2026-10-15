@@ -5,7 +5,7 @@ import { HydrationUnit } from '../base/hydration/unit'
 import { appStyle } from '../ui/style'
 
 export const Route = createRootRoute({
-  head: () => ({ meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }], title: 'Easel' }),
+  head: () => ({ meta: [{ charSet: 'utf-8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }, { title: 'Easel' }] }),
   notFoundComponent: () => <HydrationUnit><main className="shell"><h1>Not found</h1></main></HydrationUnit>,
   component: () => <html lang="en"><head>
     <script dangerouslySetInnerHTML={{ __html: introGuardScript }} />

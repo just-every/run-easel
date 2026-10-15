@@ -1,11 +1,22 @@
 # Easel demo
 
-Run `rer setup --owner-email you@example.com` once, then `rer demo`. Open its private `RER_OPEN` link to enter a signed-in Harbour Analytics workspace. `rer demo --stop` deletes that demo’s state; the next start begins fresh. Normal `.wrangler/state` remains separate.
+`rer demo` opens signed in with Harbour Analytics’ existing plan, accepted
+actuals, approved budget, forecast and published review pack. Stop it with
+`rer demo --stop`; its throwaway `.rer/demo/` data is deleted while the saved
+owner's `.wrangler/state` stays untouched. `rer dev` uses the saved local state.
 
-The example follows Easel’s browser journey and GL fixtures, with dates relative to the current month: four departments, eight planning lines, four colleagues, revenue drivers, six positions, seven expenses, allocation, department submissions and comments, an approved budget, a working forecast, a downside scenario and a submitted proposal. A clean GL import goes through the normal preview/commit journal, the first month closes, and a review pack records a confirmed variance and an assigned action. Opening cash is explicitly an estimate. All planning records use the existing domain commands and session-fenced store; no successful external effects are invented.
+The product name and title read Easel Demo or Easel Dev. Local sign-in is one
+click and mail is silently suppressed. There is no injected bar or outbox.
 
-The published `@runeditrun/rer` package is pinned to 0.2.19. The matching Base demo runtime (only its CSP import path is adapted to `src/demo-csp.mjs`) and its unchanged CSP dependency are recorded in `base-copies.json` and the edition source lock. `withDemo` is the first server import. The additive migration `0011_owner_claim.sql` installs the existing claim ledger. The production app accepts Base’s existing signed owner claim only with trusted issuer, installation and public-key bindings. The demo front provisions those bindings independently for every visitor; no new authentication mechanism is added.
+Base's demo guard runs public internet reads and checks for real and returns
+mocked success for third-party writes. POST-based public reads use
+`fetchDemoRead`; non-HTTP or provider-specific sends use `demoEffect` from
+`src/modules/demo/index.mjs`. Easel wraps invitation mail with `demoEffect` so
+hosted auth sees its accepted success envelope without sending. Production
+uses the configured provider, and Base refuses production RER_DEMO builds.
 
-`.github/workflows/run-demo.yml` reads the `run-demo` GitHub environment and deploys only by manual dispatch. `test_only` selects `demo.test.run-easel.com` and Cloudflare’s published passing Turnstile keys. Production uses the environment’s real keys at `https://demo.run-easel.com/`. `remove_test` requires `test_only` and removes only the recorded test host, then confirms absence. No repository deployment variable is set. The disposable test build alone instruments an authenticated app fetch to example.com for the required egress proof; production source and production builds have no probe route.
-
-On rer 0.2.19, Base’s shared guard refuses non-loopback fetches and the container disables internet. The existing demo bar and captured mail belong to Base. Easel adds no effect blocking, capture or bar code. Easel’s outbound product surface is native sign-in/invitation mail; local development captures it, while hosted mail remains unavailable because the mail adapter requires local authentication for its development provider. Hosted sign-in uses the signed owner claim. There are no app webhooks, payment, AI, OAuth sync or externally published pages; review-pack downloads stay in the visitor’s private instance. Base’s future effect-policy release will be adopted at its published version.
+The package and demo/auth/mail source modules adopt Base `rer-v0.2.20`.
+`.github/workflows/run-demo.yml` deploys via the run-demo environment on
+RunEditRun. Test-only instrumentation checks real example.com reads and mocked
+message writes from a signed-in visitor. The existing standard-2 instance type
+and homepage demo CTA are retained.
