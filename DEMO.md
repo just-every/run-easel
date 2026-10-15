@@ -15,8 +15,8 @@ mocked success for third-party writes. POST-based public reads use
 without sending; no seed-side mail wrapper is needed. Production
 uses the configured provider, and Base refuses production RER_DEMO builds.
 
-The package and demo/auth/mail source modules adopt Base `rer-v0.2.22`.
+The package and demo/auth/mail source modules adopt Base `rer-v0.2.24`.
 `.github/workflows/run-demo.yml` deploys via the run-demo environment on
 RunEditRun. Test-only instrumentation checks real example.com reads and mocked
-message writes from a signed-in visitor. The existing standard-2 instance type
-and homepage demo CTA are retained.
+message writes from a signed-in visitor. The demo uses basic containers and Jordan Ellis’s Harbour Analytics owner
+address. The homepage demo CTA is retained.

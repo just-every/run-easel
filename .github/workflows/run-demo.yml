@@ -9,7 +9,7 @@ on:
       test_instance_type:
         description: 'Instance type for the disposable test host'
         type: choice
-        options: [configured, basic]
+        options: [configured, basic, standard-1]
         default: configured
       remove_test:
         description: 'Remove the separate test demo and read back resource absence (requires test_only)'
@@ -43,7 +43,7 @@ jobs:
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
       - name: Scope test deployment
         if: inputs.test_only
-        run: node --input-type=module -e "import fs from 'node:fs'; const p='deploy-demo.json'; const d=JSON.parse(fs.readFileSync(p)); d.domain='test.run-easel.com'; if(process.env.TEST_INSTANCE_TYPE==='basic') d.instanceType='basic'; fs.writeFileSync(p,JSON.stringify(d));"
+        run: node --input-type=module -e "import fs from 'node:fs'; const p='deploy-demo.json'; const d=JSON.parse(fs.readFileSync(p)); d.domain='test.run-easel.com'; if(['basic','standard-1'].includes(process.env.TEST_INSTANCE_TYPE)) d.instanceType=process.env.TEST_INSTANCE_TYPE; fs.writeFileSync(p,JSON.stringify(d));"
         env:
           TEST_INSTANCE_TYPE: ${{ inputs.test_instance_type }}
       # Evidence instrumentation exists only in the disposable test build. It
@@ -96,3 +96,14 @@ jobs:
           status=$(curl --fail --silent --show-error --retry 12 --retry-all-errors --retry-delay 5 --retry-max-time 120 --max-time 10 -D "$RUNNER_TEMP/demo-start.headers" -o /dev/null -w '%{http_code}' "https://$domain/")
           test "$status" = 200
           ! grep -qi '^set-cookie:' "$RUNNER_TEMP/demo-start.headers"
+      - name: Observe test-host admissions for one idle window
+        if: inputs.test_only && !inputs.remove_test
+        env:
+          CLOUDFLARE_ACCOUNT_ID: b20c0ca9cab0c2b70e13d7cf724b89bd
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/demo-tail.mjs planning-easel-demo-test--demo "$RUNNER_TEMP/admissions.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: inputs.test_only && !inputs.remove_test && always()
+        with:
+          name: test-host-admissions
+          path: ${{ runner.temp }}/admissions.jsonl

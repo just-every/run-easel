@@ -2,9 +2,10 @@
   "version": 1,
   "domain": "run-easel.com",
   "name": "Easel",
-  "instanceType": "standard-2",
+  "instanceType": "basic",
   "settings": {
     "MAIL_PROVIDER": "development",
-    "MAIL_FROM": "Easel demo <demo@demo.invalid>"
-  }
+    "MAIL_FROM": "Easel <jordan@harbour.example>"
+  },
+  "ownerEmail": "jordan@harbour.example"
 }
