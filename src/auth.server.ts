@@ -1,3 +1,4 @@
+import { createOwnerClaimHandler } from './modules/owner-claim/index.mjs'
 import { firstRunResponse } from './base/setup'
 import { fontDocumentResponse } from './base/font-response'
 import { createOperatorAuth, createAuthHandler, createSignInHandler, devGate, devNotFound, type AuthConfig } from './modules/operator-auth/index.mjs'
@@ -17,6 +18,9 @@ export interface Bindings {
  /** Local runtimes only: the checkout's key gate and dev identity switch. Deploy refuses both. */
  RER_DEV_KEY?: string
  RER_DEV_IDENTITY?: string
+ RER_OWNER_CLAIM_ISSUER?: string
+ RER_OWNER_CLAIM_INSTALLATION_ID?: string
+ RER_OWNER_CLAIM_PUBLIC_KEYS?: string
  RER_INSTALLATION_ID?: string
  RER_MANAGEMENT_ORIGIN?: string
  RER_DEPLOY_SOURCE?: string
@@ -39,6 +43,15 @@ export function operatorAuth(env: Bindings) {
 
 export async function authResponse(request: Request, original: Bindings): Promise<Response | null> {
  const env = runtimeBindings(original), url = new URL(request.url)
+ if (url.pathname === '/auth/owner-claim' && env.RER_OWNER_CLAIM_PUBLIC_KEYS) {
+  const response = await createOwnerClaimHandler({
+   db: env.DB, authConfig: authConfig(env), appOrigin: env.AUTH_ORIGIN,
+   issuer: env.RER_OWNER_CLAIM_ISSUER ?? '', installationId: env.RER_OWNER_CLAIM_INSTALLATION_ID ?? '',
+   expectedEmail: env.OWNER_EMAIL, publicKeys: JSON.parse(env.RER_OWNER_CLAIM_PUBLIC_KEYS),
+   clientIp: request => request.headers.get('CF-Connecting-IP') ?? '',
+  })(request)
+  if (response) return fontDocumentResponse(response)
+ }
  // The outbox and key exchange answer only a local runtime holding RER_DEV_KEY;
  // the outbox also needs the key gate's cookie (or the rer harness's header).
  if (url.pathname === '/__dev/outbox' || url.pathname === '/__dev/key') {

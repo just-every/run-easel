@@ -11,3 +11,6 @@ dist/
 
 .rer/local/
 exports/
+
+.rer/demo/
+.rer/demo-host/

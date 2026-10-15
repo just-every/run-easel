@@ -1,3 +1,5 @@
+import { withDemo } from './modules/demo/index.mjs'
+import { seedDemo } from './demo'
 import start from '@tanstack/react-start/server-entry'
 import { dispatch } from './base/dispatch'
 import { authResponse, runtimeBindings, type Bindings } from './auth.server'
@@ -7,7 +9,7 @@ import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
 
-export default {
+export default withDemo({
   async fetch(request, env, execution) {
     const asset = await staticAssetResponse(request, env)
     if (asset) return asset
@@ -24,4 +26,4 @@ export default {
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
     })
   },
-} satisfies ExportedHandler<Bindings>
+} satisfies ExportedHandler<Bindings>, { seed: seedDemo })

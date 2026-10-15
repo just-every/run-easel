@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "domain": "run-easel.com",
+  "name": "Easel",
+  "instanceType": "basic",
+  "settings": {
+    "MAIL_PROVIDER": "development",
+    "MAIL_FROM": "Easel demo <demo@demo.invalid>"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "just-every/run-easel",
+  "toolchain": {
+    "id": "runeditrun/edition-authoring",
+    "version": "1.1.0"
+  },
+  "parent": null,
+  "components": [
+    {
+      "id": "runeditrun/demo",
+      "role": "module",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "src/modules/demo",
+          "src/demo-csp.mjs"
+        ],
+        "origin": {
+          "repository": "https://github.com/runeditrun/base.git",
+          "revision": "e17843562355e1b6e5068289c8e037951fbc8d3d",
+          "paths": [
+            "modules/demo",
+            "modules/operator-auth/csp.mjs"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "src/modules/demo",
+            "originPath": "modules/demo"
+          },
+          {
+            "path": "src/demo-csp.mjs",
+            "originPath": "modules/operator-auth/csp.mjs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "just-every/run-easel",
+      "role": "edition",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "src/demo.ts",
+          "src/demo-plan.ts",
+          "src/server.ts",
+          "src/auth.server.ts",
+          "vite.config.ts",
+          "deploy-demo.json",
+          "deploy.json",
+          ".github/workflows/run-demo.yml",
+          "package.json",
+          "pnpm-lock.yaml"
+        ]
+      }
+    }
+  ]
+}
