@@ -1,19 +1,9 @@
-import { demoEffect } from './modules/demo/index.mjs'
 import { createMailSender } from './modules/mail/index.mjs'
-import { isLoopbackHost } from './modules/operator-auth/loopback.mjs'
-
-function localDevelopment(env) {
- if (env.AUTH_LOCAL !== 'true') return false
- try { return isLoopbackHost(new URL(env.AUTH_ORIGIN).hostname) } catch { return false }
-}
 
 export function operatorMail(env) {
- if (env.RER_DEMO === '1') return { send: message => demoEffect(() => productionMail(env)?.send(message), () => ({ status: 'accepted', provider: 'resend', providerMessageId: crypto.randomUUID() })) }
- if (localDevelopment(env)) return createMailSender({ provider: 'development', mode: 'development' })
- return productionMail(env)
-}
-
-function productionMail(env) {
+ if (env.RER_DEMO === '1' || env.AUTH_LOCAL === 'true') {
+  return createMailSender({ provider: 'development', mode: 'development' })
+ }
  if (!env.MAIL_PROVIDER || env.MAIL_PROVIDER === 'development') return undefined
  return {
   async send(message) {

@@ -6,6 +6,11 @@ on:
         description: 'Deploy a separate demo-test environment with Turnstile test keys'
         type: boolean
         default: false
+      test_instance_type:
+        description: 'Instance type for the disposable test host'
+        type: choice
+        options: [configured, basic]
+        default: configured
       remove_test:
         description: 'Remove the separate test demo and read back resource absence (requires test_only)'
         type: boolean
@@ -38,7 +43,9 @@ jobs:
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
       - name: Scope test deployment
         if: inputs.test_only
-        run: node --input-type=module -e "import fs from 'node:fs'; const p='deploy-demo.json'; const d=JSON.parse(fs.readFileSync(p)); d.domain='test.run-easel.com'; fs.writeFileSync(p,JSON.stringify(d));"
+        run: node --input-type=module -e "import fs from 'node:fs'; const p='deploy-demo.json'; const d=JSON.parse(fs.readFileSync(p)); d.domain='test.run-easel.com'; if(process.env.TEST_INSTANCE_TYPE==='basic') d.instanceType='basic'; fs.writeFileSync(p,JSON.stringify(d));"
+        env:
+          TEST_INSTANCE_TYPE: ${{ inputs.test_instance_type }}
       # Evidence instrumentation exists only in the disposable test build. It
       # uses the real app session and real global fetch, with no transport fake.
       - name: Instrument the test build for the required app egress proof

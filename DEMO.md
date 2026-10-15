@@ -11,11 +11,11 @@ click and mail is silently suppressed. There is no injected bar or outbox.
 Base's demo guard runs public internet reads and checks for real and returns
 mocked success for third-party writes. POST-based public reads use
 `fetchDemoRead`; non-HTTP or provider-specific sends use `demoEffect` from
-`src/modules/demo/index.mjs`. Easel wraps invitation mail with `demoEffect` so
-hosted auth sees its accepted success envelope without sending. Production
+`src/modules/demo/index.mjs`. Base mail and operator-auth provide the accepted demo success envelope
+without sending; no seed-side mail wrapper is needed. Production
 uses the configured provider, and Base refuses production RER_DEMO builds.
 
-The package and demo/auth/mail source modules adopt Base `rer-v0.2.20`.
+The package and demo/auth/mail source modules adopt Base `rer-v0.2.22`.
 `.github/workflows/run-demo.yml` deploys via the run-demo environment on
 RunEditRun. Test-only instrumentation checks real example.com reads and mocked
 message writes from a signed-in visitor. The existing standard-2 instance type

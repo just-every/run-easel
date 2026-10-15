@@ -1,0 +1,30 @@
+name: Installation journeys
+on:
+  schedule:
+    - cron: '23 17 * * *'
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  journeys:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - run: corepack enable && pnpm install --frozen-lockfile
+      - name: Free runner disk for the local servers
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: node tests/browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: easel-journeys-and-archives
+          path: ${{ runner.temp }}/easel-proof
