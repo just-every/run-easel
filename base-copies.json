@@ -978,6 +978,17 @@
         "src/modules/demo/vite.d.mts": "100644",
         "src/modules/demo/vite.mjs": "100644"
       }
+    },
+    {
+      "path": "migrations/core/0011_owner_claim.sql",
+      "originPath": "modules/owner-claim/schema/owner-claim.sql",
+      "revision": "10e569948863b7050e6645b7219b56007953b232",
+      "files": {
+        "migrations/core/0011_owner_claim.sql": "c3ffe653727bb4867b064dc2489df5013613f08f4b5998d2fe2b6a8485cdb815"
+      },
+      "modes": {
+        "migrations/core/0011_owner_claim.sql": "100644"
+      }
     }
   ]
 }

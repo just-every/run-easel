@@ -100,7 +100,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "941db495405b0fe959d943013d41fcbeaf8450a4db1380dd0f980ab3aa1614a7",
+      "sha256": "f35426ca8bd728c98c5b4704d5a9a04e14e8673888de2c36fc92395e32a1f622",
       "executable": false
     },
     "CLAUDE.md": {
@@ -112,7 +112,7 @@
       "executable": false
     },
     "DEMO.md": {
-      "sha256": "bf9d1fb4ac5a15370cf0970fb9227a3aae1ddec1d48c75e2b369d295feab1eca",
+      "sha256": "b1dfb42aa7572e70d00d8dac23bf0872674875bd2ee238dd32f4d71e1d253a0b",
       "executable": false
     },
     "deploy-demo.json": {
@@ -241,6 +241,10 @@
     },
     "migrations/core/0010_mail_events.sql": {
       "sha256": "88d7745026094c8f14e4bd26b50ec1c9ee7b209b7303c4eb272d218b228fe9bd",
+      "executable": false
+    },
+    "migrations/core/0011_owner_claim.sql": {
+      "sha256": "c3ffe653727bb4867b064dc2489df5013613f08f4b5998d2fe2b6a8485cdb815",
       "executable": false
     },
     "ONBOARDING.md": {
