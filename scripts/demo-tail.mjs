@@ -30,6 +30,8 @@ try {
  if (interrupted) throw Error('Tail interrupted; a fresh observation is required')
 } finally {
  socket.close()
- const removed = await fetch(`${endpoint}/${tail.id}`, { method: 'DELETE', headers })
+ const removed = await fetch(`${endpoint}/${tail.id}`, { method: 'DELETE', headers, signal: AbortSignal.timeout(15_000) })
  if (!removed.ok) throw Error(`Tail removal failed (${removed.status})`)
 }
+// Cloudflare can leave the closed trace socket referenced after removal.
+process.exit(0)
