@@ -6,10 +6,9 @@ import { RerError, refuse } from '@runeditrun/rer/errors';
 import { readArchive, PortabilityError } from '@runeditrun/rer/modules/portability';
 import { fileRecords } from '@runeditrun/rer/modules/portability/files';
 import { readLegacyArchive } from '@runeditrun/rer/modules/portability/format';
-import { easelPolicy } from './easel-policy.mjs';
 
 const transient = ['local runtime caches and logs'];
-const base = localPortability({ database: 'easel', policy: easelPolicy, transient });
+const base = localPortability({ database: 'easel', policyModule: 'scripts/installer/easel-policy.mjs', transient });
 /** Import the policy inside our signal-owned worker: JSON transport cannot
  * carry its validator, and Base's file helpers do not accept an AbortSignal. */
 export const easelPortability = {

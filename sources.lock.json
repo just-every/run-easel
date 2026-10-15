@@ -368,7 +368,7 @@
       "executable": false
     },
     "scripts/installer/easel-policy.mjs": {
-      "sha256": "ebe201ce2cdb2f09fb9878a50f2caf4e9120756242ef941c7f1f19fc4bcf7e8d",
+      "sha256": "6aa5eed2b5e039230cdfb2ce97072defdfdab6046960a8c237e0001ebb8289d3",
       "executable": false
     },
     "scripts/installer/local.mjs": {
@@ -376,7 +376,7 @@
       "executable": false
     },
     "scripts/installer/portability.mjs": {
-      "sha256": "922d896d2c62cd045138cb791faa84fb31eca4c43e19414a9ccd261097007013",
+      "sha256": "b402965c2b69e4074661fe503b7e403f7c4f6754afe52808568645d56945f900",
       "executable": false
     },
     "scripts/installer/restore-context.mjs": {
@@ -412,7 +412,7 @@
       "executable": false
     },
     "SOURCE.md": {
-      "sha256": "a070885dc91de4b357b1e252ad6b2a6995dab30e107ffc4b13f4ab8fdb24fe99",
+      "sha256": "a418489956813b7489c5a276484a0aec63e1f0ae10570e35a66ae1a422ce7ef1",
       "executable": false
     },
     "src/auth.server.ts": {

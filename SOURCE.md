@@ -25,7 +25,7 @@ and rewrote their callers to package exports. `rer check` verifies the command
 contract and operator-auth copy. `scripts/installer` contains only Easel adapters,
 branding and executable restore validation; its product validator is retained
 across the package boundary.
-The import adapter invokes the published portability file helpers in a native
+The export adapter uses the published `policyModule` interface to retain its executable policy. The import adapter invokes the published portability file helpers in a native
 worker owned by the CLI's cancellation signal. The worker imports
 `validateEaselStaged` as executable code and supplies Base's replay of the applied
 migration ledger for older archives. Backup-only v1 recovery uses the package's
