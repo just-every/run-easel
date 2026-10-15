@@ -14,5 +14,5 @@ export function Hero() {
 }
 
 export function Actions() {
- return <div className="actions"><a className="btn" href="/run">Run Easel</a><a className="link" href="/docs">Read the docs</a></div>
+ return <div className="actions"><a className="btn" href="/run">Run Easel</a><a className="btn" href="https://demo.run-easel.com/">Try the demo</a><a className="link" href="/docs">Read the docs</a></div>
 }
