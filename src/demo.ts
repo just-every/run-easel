@@ -17,6 +17,11 @@ export async function seedDemo(env: Bindings, { ownerEmail, now }: { ownerEmail:
   WHERE o.email=? AND o.role='owner' AND o.status='active' AND se.revoked_at IS NULL AND se.expires_at>?
   ORDER BY se.created_at DESC LIMIT 1`).bind(ownerEmail, now.getTime()).first<Actor>()
  if (!owner) throw new Error('Demo seeding requires the native owner session')
+ // The owner claim names the owner "Owner"; the sample workspace is Jordan Ellis's.
+ if (owner.name === 'Owner') {
+  await db.prepare(`UPDATE oa_operators SET display_name='Jordan Ellis' WHERE id=? AND display_name='Owner'`).bind(owner.id).run()
+  owner.name = 'Jordan Ellis'
+ }
  const open = async () => {
   const { state, revision } = await load(db)
   const c: Context = { s: state, x: access(state, owner), db, activity: [], snapshots: [], now: now.toISOString(), actuals: () => actualCells(db, state) }
