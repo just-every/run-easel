@@ -4,7 +4,7 @@
       "title": "Start here",
       "pages": [
         { "slug": "overview", "title": "What Easel is", "file": "overview.md", "summary": "One company's next twelve months of revenue, costs, hiring and cash, with the arithmetic behind every number." },
-        { "slug": "getting-started", "title": "Run Easel", "file": "getting-started.md", "summary": "Install rer, get Easel and start it on your own computer, signed in as the owner." },
+        { "slug": "getting-started", "title": "Run Easel", "file": "getting-started.md", "summary": "Get Easel and start it on your own computer with one line, signed in as the owner." },
         { "slug": "first-plan", "title": "Set up your plan", "file": "first-plan.md", "summary": "Name the company, choose the fiscal year, then add departments, planning lines and people." }
       ]
     },

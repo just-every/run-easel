@@ -1,29 +1,14 @@
-Easel runs on your own computer with the `rer` command. Two steps get it open in your browser, signed in as you, the owner.
-
-## Install rer
-
-Once per computer:
-
-```sh
-curl -fsSL https://runeditrun.com/install.sh | sh
-```
-
-Or, with npm already installed:
-
-```sh
-npm install -g @runeditrun/rer
-```
+Easel runs on your own computer with the `rer` command. One line gets it open in your browser, signed in as you, the owner.
 
 Easel needs Node 22 or later and pnpm 10.12.4, on macOS, Linux or Windows with WSL2. `rer` selects the exact Node version Easel declares and fetches a checksum-verified copy when your computer does not have it.
 
 ## Get Easel and start it
 
 ```sh
-git clone https://github.com/just-every/run-easel.git easel
-cd easel && rer dev
+npx -y @runeditrun/rer dev just-every/run-easel
 ```
 
-`rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
+That one line installs `rer`, clones Easel and starts it; to start it again later, run `cd run-easel && rer dev`. `rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
 
 - `RER_READY` with the local address, and
 - `RER_OPEN`, a link that opens Easel signed in as the owner.

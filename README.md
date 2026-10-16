@@ -5,13 +5,13 @@ Source: [just-every/run-easel](https://github.com/just-every/run-easel). The sit
 
 ## Run it locally
 
-Install the Run Edit Run command once per computer:
+One line installs the Run Edit Run command, clones Easel and starts it:
 
 ```sh
-npx -y @runeditrun/rer cli install
+npx -y @runeditrun/rer dev just-every/run-easel
 ```
 
-Then, from this checkout:
+To start it again later, run `cd run-easel && rer dev`. To choose the owner mailbox yourself, from the checkout:
 
 ```sh
 rer install

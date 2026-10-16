@@ -175,7 +175,7 @@
       "executable": false
     },
     "docs/getting-started.md": {
-      "sha256": "d04966ecdb04b5922c2fda5a27c9dde4c31737b29650112f83267c5045b826fc",
+      "sha256": "38928cf4b2d93f9331077e2de4d3df3ff9f6f19886d8acdb31ebdd86fce79f9f",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -203,7 +203,7 @@
       "executable": false
     },
     "docs/site.json": {
-      "sha256": "a0b5dae43c4ad09220541312fddc81d9dc6c2d3f210281920d12c80500a19740",
+      "sha256": "79b3b827efce344f8ce14cf5fb9fded46a8e2f0c91a76bf41117afdae7db088e",
       "executable": false
     },
     "edition.json": {
@@ -347,7 +347,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "7312b5cf2922ef421476d541d8b032249b1ef5e07d0fb708002e292d90ce3d77",
+      "sha256": "0502ec857b138cfe26de8551007f27317e0c5e7dad7aff8347a6170b1be4ad7b",
       "executable": false
     },
     "RELEASE.json": {
@@ -2179,7 +2179,7 @@
       "executable": false
     },
     "src/site/run.ts": {
-      "sha256": "a92494bcc7b630f9428abab6ac200fbc80ec97a5905b75f9de8052d91b1d0dfc",
+      "sha256": "95f8e3675af022bf988b82bd86447db7577ac663287f2b50ab53dcf8c4a4b131",
       "executable": false
     },
     "src/site/shell/site.css": {
