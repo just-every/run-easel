@@ -19,11 +19,14 @@ export function parseHeaders(value) {
       if (!previous) fail('invalid_inbound_headers');
       map.set(previous, `${map.get(previous)} ${headerText(line.trim())}`); continue;
     }
-    const match = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+):[ \t]*(.*)$/.exec(line);
+    // Match the name separately so whitespace cannot be repartitioned with the value.
+    const match = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+):/.exec(line);
     if (!match) fail('invalid_inbound_headers');
+    const value = line.slice(match[0].length);
+    if (!/^.*$/.test(value)) fail('invalid_inbound_headers');
     previous = match[1].toLowerCase();
     if (map.has(previous) && singleton.has(previous)) fail('duplicate_inbound_header');
-    const text = headerText(match[2].trim());
+    const text = headerText(value.trim());
     map.set(previous, map.has(previous) ? `${map.get(previous)}, ${text}` : text);
   }
   return map;

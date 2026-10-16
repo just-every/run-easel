@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/run-easel",
-  "manifest": "68c29695fc696e971ad3cf3ae42168b7295b3bea34d13f5d6f9d0321658c370e",
+  "manifest": "bde5151bb8951e3c934ce76e4e920de52ccca9034dafa1c19d4176720a926797",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -34,6 +34,39 @@
         "key": "3671e9720e9818a39dfec272e27abb7fa4da93d446acf2ad1abf1ec872878c40",
         "digest": "9a754611d4e4c0aba45ee49a27d8d264606420a168630cedc90f65b1d230c41c",
         "sha256": "576d3e90c3ab0068320115e0a9ad545eb1e214702ba98b0a254fb4eca381d317"
+      }
+    },
+    {
+      "id": "just-every/easel-mail",
+      "source": {
+        "kind": "local",
+        "paths": [
+          "src/modules/mail/src/core/validation.mjs",
+          "src/modules/mail/src/inbound/headers.mjs"
+        ],
+        "origin": {
+          "repository": "https://github.com/just-every/run-easel.git",
+          "revision": "f5424d84d04f50bb90cfc909efb7636adc94bc8a",
+          "paths": [
+            "src/modules/mail/src/core/validation.mjs",
+            "src/modules/mail/src/inbound/headers.mjs"
+          ]
+        },
+        "mappings": [
+          {
+            "path": "src/modules/mail/src/core/validation.mjs",
+            "originPath": "src/modules/mail/src/core/validation.mjs"
+          },
+          {
+            "path": "src/modules/mail/src/inbound/headers.mjs",
+            "originPath": "src/modules/mail/src/inbound/headers.mjs"
+          }
+        ]
+      },
+      "baseline": {
+        "key": "0df324eaa68138159cf84b6888aef8a0a7e8f4c22bd248dca3f24e8fe876a0d4",
+        "digest": "e9572f5dfeea68f0a4c3cebbdbce52aef2acb9764bfdf6b2e92068ab1ad500da",
+        "sha256": "43f1fa39667c3e8ecbd8172a922f697b87fc129cf0a0966baee38e163f82d4e1"
       }
     },
     {
@@ -98,7 +131,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "5a96d8572de7a265d4c54775c7b1917a5a428f5ab2df7135f1181dd5a07e0f90",
+      "sha256": "c54889229e0e05d60eb0b14f90cd233b5315a7d82c7f09295525436e974c5de7",
       "executable": false
     },
     "CLAUDE.md": {
@@ -174,7 +207,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "68c29695fc696e971ad3cf3ae42168b7295b3bea34d13f5d6f9d0321658c370e",
+      "sha256": "bde5151bb8951e3c934ce76e4e920de52ccca9034dafa1c19d4176720a926797",
       "executable": false
     },
     "fixtures/build-workbook.mjs": {
@@ -418,7 +451,7 @@
       "executable": false
     },
     "SOURCE.md": {
-      "sha256": "e69d29515174a8db1f5d24d1bd863b94fe0721ec4c4caa1bd0174c1f79455fc4",
+      "sha256": "b751cf5f8fb35db22b03bb7b8c7331e55389a9c5a5ae0f328b5475559cf6af76",
       "executable": false
     },
     "src/auth.server.ts": {
@@ -1526,7 +1559,7 @@
       "executable": false
     },
     "src/modules/mail/src/core/validation.mjs": {
-      "sha256": "fa1f79579a96fc7b12964d9515e98135993c18ea1af23922779139abc4221571",
+      "sha256": "d665aa2143fa392eb0ba19f1fd9895327abcdce13c2dbf1c82f9d50985d4603d",
       "executable": false
     },
     "src/modules/mail/src/development/index.d.mts": {
@@ -1606,7 +1639,7 @@
       "executable": false
     },
     "src/modules/mail/src/inbound/headers.mjs": {
-      "sha256": "79673d562647f4e15e7fe10ca3b13241acd5b2cc25a651a32918cee45e02235c",
+      "sha256": "74286d65726475f6b21ca7a45fcc3066605fc6c482b26d788d0ba4012a7d70b8",
       "executable": false
     },
     "src/modules/mail/src/inbound/index.mjs": {
