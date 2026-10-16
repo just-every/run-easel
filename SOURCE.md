@@ -44,3 +44,9 @@ confirmation record. `rer build --site` builds the run site (run-easel.com) from
 `docs/*.md`. Base and Easel are MIT; see `LICENSE`.
 
 The vendored modules (`demo`, `operator-auth`, `mail`, `dependencies`, `owner-claim`, `import-kit`, and `d1-transport`) adopt together from Base tag `rer-v0.2.24` (`1ee378e41142c673a9098f60af21664c6d8477d1`). The demo module is copied without path adaptations; its label helper uses operator-auth’s CSP helper. `base-copies.json` records the refreshed auth and mail modules. `edition.json`, `sources.lock.json` and retained comparison snapshots track the demo adoption. Other adopted runtime sources retain their recorded origins.
+
+Mail regex hardening adapts `src/modules/mail/src/core/validation.mjs` and
+`src/modules/mail/src/inbound/headers.mjs` locally. They retain the mailbox and
+header contracts while avoiding overlapping regex scans. These two files are
+outside the byte-equal Base inventory; `edition.json` records their public Easel
+baseline and mappings. The remaining mail files retain their recorded Base pin.
