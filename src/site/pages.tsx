@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { contractPageHtml } from '../base/contract-page'
 import { runPageHtml, siteNotFoundHtml, type SiteBuild, type SiteContext } from '../base/run-site'
 import { identity } from '../identity'
 import { chartStyle } from '../ui/chart'
@@ -18,7 +19,7 @@ const description = 'Free, open-source financial planning: a twelve-month plan b
  * /run; the docs at /docs and /docs/<slug>, rendered from docs/site.json and docs/*.md; and the not-found page. Every page
  * is static, needs no script and links to no instance-only route.
  */
-export function sitePages({ styles }: SiteContext): SiteBuild {
+export function sitePages({ styles, contract }: SiteContext): SiteBuild {
  const document = (title: string, summary: string, body: ReactElement) => '<!doctype html>' + renderToStaticMarkup(
   <html lang="en">
    <head>
@@ -39,10 +40,11 @@ export function sitePages({ styles }: SiteContext): SiteBuild {
  return {
   pages: [
    { path: '/', html: document('Easel · Know what you can afford', description, <Landing />) },
-   { path: '/run', html: runPageHtml(identity, run) },
+   { path: '/run', html: runPageHtml(identity, run, contract) },
+   ...(contract ? [{ path: '/contract', html: contractPageHtml(identity, run, contract) }] : []),
    { path: '/docs', html: document('Docs · Easel', docsLead, <DocsIndex />) },
    ...docsPages.map(page => ({ path: `/docs/${page.slug}`, html: document(`${page.title} · Easel docs`, page.summary, <DocsArticle slug={page.slug} />) })),
-   { path: '/404', html: siteNotFoundHtml(identity, run) },
+   { path: '/404', html: siteNotFoundHtml(identity, run, contract) },
   ],
   assets: ['rer-theme.css', 'fonts', 'brand'],
  }
