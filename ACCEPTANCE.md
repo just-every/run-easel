@@ -43,8 +43,8 @@ That is evidence, not a permanent test.
   local cookies require people to sign in again; native session rows remain.
 - **Old backups:** A pre-upgrade export restores only with the release that made it.
   Keep a private export and that release before upgrading. To recover, restore into
-  an empty installation of that release, upgrade that installation in place with
-  `rer install` and `rer setup`, then export again with the upgraded release. Do not
+  an empty installation of that release, upgrade that installation in place by running
+  `rer install` and `rer setup` inside that existing checkout, then export again with the upgraded release. Do not
   import a pre-upgrade export directly into a newer release. The starting version
   writes v1 archives; the upgraded release requires v2. The in-place upgrade proof
   above does not establish direct cross-release archive restore.
