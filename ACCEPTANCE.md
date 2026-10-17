@@ -9,19 +9,21 @@ take a contributor's proposal through exact-revision approval, close months
 with actuals while keeping each prior forecast, explain variances from the
 rows behind them, publish a review pack with decisions, and export the whole
 installation and restore it elsewhere. All of it runs locally with uploaded
-files and no provider account.
+files and no provider account. That loop is the published contract
+(`EASEL-001` to `EASEL-017`); the connected product beyond it is listed under
+[Target and push-further acceptance](#target-and-push-further-acceptance).
 
 This file separates implemented source from executed proof. Owner inputs that
 fixtures cannot stand in for are listed at the end.
 
 ## Proof
 
-| Clauses | Proof | What it runs |
-|---|---|---|
-| EASEL-001 to EASEL-015 | `pnpm test:easel` (`tests/easel.test.mjs`): one flow test per clause | The deployed request path (auth then the Hono API) on real workerd and D1 with every migration, a real owner claim and real email-link sign-in for each contributor and viewer. No application fake. |
-| EASEL-001 to EASEL-015 (as a person) | `node tests/browser.mjs`: planning journey at 1440 px, review journey at 390 px | Real `rer dev` with dev identity (owner, finance, sales, engineering, board), clicking only what a person can: setup, July CSV move-in with mapping and rejected rows, budget, submissions, approval, month close, cell traces, August move-in, variance explanations, pack publish and download, downside branch and comparison, a contributor proposal promoted by finance, the workbook move-in. Every tab at both widths is checked for horizontal overflow and screenshotted. |
-| EASEL-016 | `node tests/browser.mjs` | `rer export`, refused import into a non-empty installation (exit 4), a second fresh clone set up with a different owner, refused corrupt archive, restore, then the restored owner sees the same state, every scenario's calculation, every snapshot and the reconciliation, the pack downloads, and the re-export has identical rows. |
-| EASEL-017 | `node tests/browser.mjs`, `rer verify`, GitHub Verify | install, setup, check, describe, dev, setup rerun, build, preview (health 200, signed-out API 401), deploy --dry-run, export, import, reset, from a fresh clone of committed HEAD; `verify` runs build, typecheck, the flow tests, the emitted Worker's HTTP checks and the outbox email-link sign-in. |
+| Clauses | Status | Proof | What it runs |
+|---|---|---|---|
+| EASEL-001 to EASEL-015 | done | `pnpm test:easel` (`tests/easel.test.mjs`): one flow test per clause | The deployed request path (auth then the Hono API) on real workerd and D1 with every migration, a real owner claim and real email-link sign-in for each contributor and viewer. No application fake. |
+| EASEL-001 to EASEL-015 (as a person) | done | `node tests/browser.mjs`: planning journey at 1440 px, review journey at 390 px | Real `rer dev` with dev identity (owner, finance, sales, engineering, board), clicking only what a person can: setup, July CSV move-in with mapping and rejected rows, budget, submissions, approval, month close, cell traces, August move-in, variance explanations, pack publish and download, downside branch and comparison, a contributor proposal promoted by finance, the workbook move-in. Every tab at both widths is checked for horizontal overflow and screenshotted. |
+| EASEL-016 | done | `node tests/browser.mjs` | `rer export`, refused import into a non-empty installation (exit 4), a second fresh clone set up with a different owner, refused corrupt archive, restore, then the restored owner sees the same state, every scenario's calculation, every snapshot and the reconciliation, the pack downloads, and the re-export has identical rows. |
+| EASEL-017 | done | `node tests/browser.mjs`, `rer verify`, GitHub Verify | install, setup, check, describe, dev, setup rerun, build, preview (health 200, signed-out API 401), deploy --dry-run, export, import, reset, from a fresh clone of committed HEAD; `verify` runs build, typecheck, the flow tests, the emitted Worker's HTTP checks and the outbox email-link sign-in. |
 
 GitHub **Verify** runs `rer install`, `rer verify` and `tests/browser.mjs` on
 every push and keeps the journey screenshots, the downloaded pack and the
@@ -31,6 +33,178 @@ A source edit to the ramp rule (`src/easel/ramp.ts`) was demonstrated on a
 running installation: the working forecast's January subscription revenue
 changed while the approved budget snapshot kept the same SHA-256 and cells.
 That is evidence, not a permanent test.
+
+## Target and push-further acceptance
+
+[CONTRACT.md](CONTRACT.md) defines the product Easel is being built towards:
+82 target and push-further clauses beyond the published loop, each with the
+acceptance evidence below. Status is judged from the code and tests at commit
+`bcd262900b00fe8aaa4b33070700ce0753a7d4f0` (17 October 2026) and matches
+CONTRACT.md's Status table: 42 partial, 40 missing, none yet accepted.
+A build round that starts a clause registers it in `seed.json → capabilities`,
+adds the flow test or journey named here through a public door (the HTTP API,
+the browser at 1440 and 390, a `rer` command, an add-in host, a native build
+or an import or export file), and only then marks it done. Fakes are allowed
+only at a paid or network edge (provider, model, mail, chat, push). A
+provider fake proves Easel's semantics, so every connector clause also needs
+one recorded run against the provider's sandbox before acceptance.
+
+### Connected actuals
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `CONNECT-001` — QuickBooks Online actuals connector | missing | Through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge), connect, pull two months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox. |
+| `CONNECT-002` — Xero actuals connector | missing | The `CONNECT-001` journey against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company. |
+| `CONNECT-003` — NetSuite actuals connector | missing | The `CONNECT-001` journey against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account. |
+| `CONNECT-004` — Pantry actuals connector | missing | Two local installations (Pantry and Easel) where Easel pulls a month from Pantry, a Pantry correction shows as a changed row on the next pull, and trial balances agree. |
+| `CONNECT-005` — Scheduled refresh with visible freshness | missing | A Workers journey with the scheduled handler and a provider fake: refresh on schedule, fail and show the error with data unchanged, go stale, and post a change to a closed month that produces a restatement notice instead of a changed pack. |
+| `CONNECT-006` — Mapping rules that survive refresh | partial | The API journey maps by range, pulls a month containing a new in-range account (mapped and listed) and a new out-of-range account, and sees the dependent month's reconciliation blocked until finance maps it. |
+| `CONNECT-007` — Balance-sheet actuals and the trial balance | partial | The API journey accepts a ledger month with balance-sheet accounts, reads a zero-sum trial balance, closes the month and sees the forecast balance sheet open from those balances. |
+| `CONNECT-008` — Drill-through to the ledger transaction | partial | In the browser at 1440 and 390, open a variance cell, see its rows, and follow a row's link to the provider-fake transaction URL; a viewer sees amounts without another department's rows. |
+| `CONNECT-009` — Bank balances for current cash | missing | A Plaid sandbox fake supplies two accounts; the 13-week view and a cash alert use the bank balance and label it as such; no payment route exists. |
+| `CONNECT-010` — Connection custody and status | missing | Connect and disconnect a provider fake through the API; the archive from `rer export` and the stored rows contain no planted token; a contributor's connect attempt is refused with 403; the audit trail shows both actions. |
+
+### Flexible model
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `MODEL-001` — Configurable horizon and multi-year plans | partial | The API journey sets a 36-month horizon starting in a fiscal year that begins in October, and reads monthly, quarterly and annual totals that agree to the cent. |
+| `MODEL-002` — A rolling forecast that extends itself | partial | With an 18-month window, close two months in the API journey and see the forecast end move by two months, the new months calculated from drivers, and both kept forecasts unchanged. |
+| `MODEL-003` — Custom dimensions and hierarchies | partial | The API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals. |
+| `MODEL-004` — User-defined formulas and driver lines | partial | The API journey defines a support-cost driver as tickets per customer × cost per ticket with a lookup by region, reads exact cells with traces, and is refused a circular formula with the cycle named. |
+| `MODEL-005` — Versioned model structure | partial | Change a formula in the API journey, read the structure diff and moved cells, and confirm the approved budget snapshot keeps its SHA-256 and cells. |
+| `MODEL-006` — Starter models for US small businesses | missing | In the browser at 1440, create a company from the SaaS starter and see a three-statement forecast, a dashboard and a cash view without entering a formula. |
+| `MODEL-007` — Recalculation at small-business scale | partial | A load fixture at the stated size through the API, timing 50 edits at p95, and a larger bulk import showing calculation state in the browser. |
+
+### Three statements and cash
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `FIN-001` — Linked P&L, balance sheet and cash flow | partial | The API journey reads three statements for 24 months and asserts assets equal liabilities plus equity in every month and that cash-flow closing cash equals balance-sheet cash. |
+| `FIN-002` — Working-capital timing | partial | The API journey sets 45-day DSO, a 30-day term on one vendor line and an annual-upfront plan, and reads receivables, payables, deferred revenue and cash that agree with the traces. |
+| `FIN-003` — Debt and financing | missing | The API journey adds a line of credit with a minimum-cash covenant, draws on it in a downside, and reads interest, balances and a covenant breach month. |
+| `FIN-004` — Capex and depreciation | missing | The API journey adds $120,000 of equipment over 5 years and reads $2,000 of monthly depreciation, net book value and the cash outflow. |
+| `FIN-005` — Runway, burn and an agreed cash floor | partial | The API and browser journeys set a $500,000 floor, branch a downside that crosses it, and see the crossing month and runway on the scenario, the comparison and the dashboard. |
+| `FIN-006` — US tax estimates in the forecast | partial | The API journey plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, and an income-tax line on a profitable month. |
+| `FIN-007` — 13-week cash forecast | missing | With ledger and bank fakes holding open invoices and bills, the API journey reads 13 weeks whose month-end weeks agree with the monthly cash forecast, and an override keeps its note. |
+
+### Headcount and compensation
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `PEOPLE-001` — Roster and payroll actuals from Gusto | missing | A recorded Gusto demo-company fake; the API journey connects, sees reconciliation buckets, accepts matches, and confirms a viewer receives headcount totals without names or salaries; one recorded run against Gusto's demo environment. |
+| `PEOPLE-002` — Roster from Rippling, Willow, BambooHR and ADP | missing | The `PEOPLE-001` journey against a fake for each provider, with an unmapped custom field listed rather than dropped. |
+| `PEOPLE-003` — Open roles from the ATS | missing | An ATS fake opens a requisition, then marks an offer accepted with a later start; the API journey sees a proposal with the changed start and cost and promotes it. |
+| `PEOPLE-004` — US compensation assumptions | partial | The API journey plans a salaried W-2 engineer with a merit increase, a commissioned salesperson tied to pipeline bookings, and a 1099 contractor with no employer tax, and reads traced monthly costs. |
+| `PEOPLE-005` — Compensation access separate from finance | partial | Through the API and the Excel add-in fake, an analyst without pay access, a department head and a viewer each read the same plan, and none receives a salary they are not granted; a planted salary never appears in their exports. |
+| `PEOPLE-006` — Headcount plan against actual | partial | After a roster pull with one late hire and one departure, the API and browser journeys show plan against actual headcount and cost by department, with the slippage in days. |
+
+### Revenue and pipeline
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `REV-001` — Pipeline drivers from Orbit, HubSpot and Salesforce | missing | A HubSpot fake with deals at three stages; the API journey sets probabilities and slippage, reads weighted bookings and revenue traced to deal IDs, moves a deal's close date in the fake, refreshes, and sees the revenue move; one recorded run against a HubSpot developer test account. |
+| `REV-002` — Subscription metrics from Stripe Billing and Nectar | missing | A Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months; the API journey reads an ARR bridge and a cohort table that agree with hand-computed values, and a reconciliation to ledger revenue; one recorded run against Stripe test mode. |
+| `REV-003` — A revenue driver library | partial | The API journey plans one line per driver form and reads exact traced cells. |
+| `REV-004` — Bookings, billings, revenue and cash | missing | A $120,000 annual-upfront booking in the API journey produces a $120,000 billing, $10,000 a month of revenue, a declining deferred-revenue balance and collection by the DSO. |
+
+### Spend
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `SPEND-001` — Committed and card spend | missing | A Ramp fake and a Purse fake add a card transaction and a purchase order; the API journey reads budget, committed, actual and remaining for the affected department. |
+
+### Spreadsheets
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `SHEET-001` — Excel add-in with live formulas | partial | An Office.js test host loads the add-in against a running Easel: functions return role-filtered values, a contributor's edit returns as a proposal bound to the revision, and an edit to a locked budget is refused; one recorded run in Excel on the web. |
+| `SHEET-002` — Google Sheets add-on with live formulas | missing | An Apps Script test harness against a running Easel replays the `SHEET-001` journey; one recorded run in a Google Workspace test domain. |
+| `SHEET-003` — Model import that keeps formulas | partial | Import a fixture workbook model with cross-sheet formulas and one unsupported function; the import report lists the unsupported cell, Easel totals equal the workbook totals, a driver change recalculates the translated formulas, and undo removes the import. |
+| `SHEET-004` — Excel exports with formulas | partial | Download a report as .xlsx through the browser, open it with a spreadsheet library in the test, and assert that subtotal cells hold formulas that evaluate to Easel's totals. |
+| `SHEET-005` — Scheduled spreadsheet pulls | missing | A Google Sheets fake changes two cells and then deletes a column between scheduled pulls; the API journey sees a proposal with two changed cells, then a shape error with no write. |
+
+### Planning cycles and collaboration
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `CYCLE-001` — Budget calendar, tasks and reminders | partial | With a fake clock and mail and chat fakes, the API journey requests submissions due Friday; a reminder goes out Thursday morning Eastern, the reminder for a submitted department is cancelled, and an overdue department escalates to finance on Monday. |
+| `CYCLE-002` — Metric-triggered tasks | missing | The API journey sets a 10% overspend rule, accepts a month that breaks it, sees one task for the department contributor with the cited variance, and refreshes again without a duplicate. |
+| `CYCLE-003` — Notifications from discussions and events | missing | With mail and Slack fakes, a mention in a variance explanation produces one email and one Slack message linking to that variance, and a digest-only person receives it in the next digest instead. |
+| `CYCLE-004` — Private and shared scenarios | partial | The API journey creates a private scenario for a contributor, confirms another contributor and a viewer get 404 for it, shares it read-only with the viewer, and confirms the viewer can compare but not edit. |
+| `CYCLE-005` — Quarterly reforecasts and version comparison | partial | The API journey freezes a Q2 reforecast, closes a month, and reads actual against budget, against the Q2 reforecast and against the current forecast for the same line. |
+| `CYCLE-006` — Long-range plan linked to the operating plan | missing | The API journey sets a five-year plan with a 40% growth target and reads year one equal to the budget and the gap to the target. |
+
+### Reporting
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `REPORT-001` — Report builder | partial | In the browser at 1440, build a department-by-quarter report of actual against budget, save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail. |
+| `REPORT-002` — Dashboards | partial | In the browser at 1440 and 390, build a dashboard with runway, ARR and headcount tiles, share it with the board persona, and see the same numbers in the API without horizontal overflow. |
+| `REPORT-003` — Board pack | partial | Generate a quarter pack in the browser, refresh it after a late adjustment with commentary kept, publish, download PDF, .pptx and .xlsx, and confirm through the API that the published numbers do not change after a later refresh. |
+| `REPORT-004` — Linked PowerPoint and Word reporting | missing | An Office.js test host inserts a table and a number into a .pptx, refreshes after an Easel change, and sees the new values. |
+| `REPORT-005` — Department budget-owner reporting | partial | Close a month in the API journey with mail fakes; the engineering contributor receives a statement for Engineering only, and a link opens their variances. |
+| `REPORT-006` — Scheduled cash alerts | missing | With a fake clock and mail and Slack fakes, a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month, a second refresh with no change sends none, and acknowledgement is recorded. |
+| `REPORT-007` — BI and warehouse feeds | missing | A warehouse fake supplies a monthly metric that drives a revenue line; a BI client fake reads the dataset endpoint with a scoped token and receives no pay detail. |
+
+### Access, audit and governance
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `ACCESS-001` — Groups and per-dimension permissions | partial | The API journey makes a group with edit on two departments and no pay access, adds a person, and confirms reads, writes and exports respect it; the access report lists it. |
+| `ACCESS-002` — SSO and SCIM | missing | With an IdP fake, sign in by SAML, provision a person and group by SCIM, deprovision them, and see their session refused on the next request while their past submissions still show their name. |
+| `AUDIT-001` — Model audit trail | partial | Through the API, make changes as three people, filter the trail by one person and one scenario, export it as CSV, and confirm the database refuses to update or delete a trail row. |
+| `ERASE-001` — Person erasure | missing | Through the API, erase a contributor who submitted and commented; their name is absent from live views, pack downloads and `rer export`, their submissions show the pseudonym, the snapshot digest is unchanged, and the receipt and audit row exist. |
+| `API-001` — Public API with scoped tokens | partial | Issue a read-only token, read a scenario, be refused a write, revoke the token and be refused a read. |
+| `API-002` — Webhooks and automation apps | missing | Register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID. |
+| `API-003` — MCP endpoint for outside agents | missing | An MCP client signed in as a contributor lists tools, reads a variance, creates a proposal, and is refused the approve and promote tools. |
+
+### Entities, currency and US defaults
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `ENTITY-001` — Multiple entities and management consolidation | missing | Two entities with an intercompany management fee; the API journey reads entity and consolidated statements in which the fee and the intercompany balance are eliminated and consolidated totals equal the sum less eliminations. |
+| `ENTITY-002` — Multi-currency planning | missing | A CAD entity with budget and actual rates; the API journey reads USD statements, a translation adjustment, and a constant-currency variance. |
+| `US-001` — US defaults | partial | Set up a new company in the browser without changing defaults and see USD formatting, US dates and an Eastern-time reminder schedule; import a CSV with MM/DD/YYYY dates and $-formatted amounts. |
+
+### Move in and out
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `MOVE-001` — Move in from Adaptive Planning | missing | A fixture export in Adaptive's documented export shapes; the import report lists created levels, accounts and versions and the unmapped items; budget totals equal the export's totals; undo removes the import. |
+| `MOVE-002` — Move in from Planful | missing | The `MOVE-001` journey with a fixture in Planful's documented export shapes. |
+| `MOVE-003` — Move in from Anaplan, Runway and Pigment | missing | The `MOVE-001` journey with one fixture per product in its documented export shape. |
+| `MOVE-004` — A parallel month against the old tool | missing | With a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off. |
+| `PORT-001` — An export a buyer can open without Easel | partial | Download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's. |
+
+### Anywhere
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `MOBILE-001` — Review and approve at phone width | partial | The browser journeys at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page. |
+| `MOBILE-002` — Native iOS and Android apps | missing | A native test build on an iOS simulator and an Android emulator signs in against a running Easel, receives a push for a cash alert through a push fake, and approves a pending proposal. |
+| `HOST-001` — Hosted operation on the buyer's Cloudflare account | partial | A deploy to a test Cloudflare account, a health check, a scheduled refresh run, a delivered invite email and a restore from backup. |
+
+### Push further: agents that keep the plan feasible
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `AGENT-001` — Constraint watch | partial | With provider fakes, a refresh that slips a large deal by two quarters breaks the cash floor; one decision item names the crossing month and cites the deal ID and stage change; the plan's revision is unchanged. |
+| `AGENT-002` — Feasible responses for the owner to choose | partial | For the `AGENT-001` item, the agent returns at least three proposals that each satisfy the floor in a recalculation; a lever not marked adjustable is unchanged in all of them; promotion of one goes through `EASEL-012`. |
+| `AGENT-003` — Asking owners for uncertain assumptions | missing | With a Slack fake, the agent asks the deal owner, the answer "new date 15 January" becomes an assumption with its source, and the forecast moves; an unanswered question escalates without changing the assumption. |
+| `AGENT-004` — Learning from the company's own forecast errors | partial | A fixture history in which deals close on average 34 days late; the agent proposes a slippage assumption of about 34 days with a backtest showing lower error on past kept forecasts; nothing changes until finance promotes it. |
+| `AGENT-005` — Source-change guard | partial | A refresh with a new account named like an existing software line and a missing payroll run; the agent proposes the mapping with its reason, lists the affected reports, and the cash alert for that month is held as blocked rather than computed. |
+| `AGENT-006` — Following decisions through to results | partial | A decision to delay two hires to July is published; the agent chases the hiring manager before the due date, and after July closes it reports the realised payroll saving against the approved assumption. |
+
+### Push further: agents that explain and model
+
+| Clause | Status | Acceptance evidence |
+|---|---|---|
+| `AGENT-007` — Variance commentary grounded in sources | partial | With a model fake at the API edge, the agent drafts an explanation that cites row IDs that exist; a citation to a row that does not exist is refused by the server; an unconfirmed draft is absent from the published pack. |
+| `AGENT-008` — Modeler agent | partial | With a model fake, the request produces a proposal whose diff adds the named positions and drivers; promotion by a person without model-structure permission is refused. |
+| `AGENT-009` — Analyst with cited answers | missing | With a model fake, a viewer asks about payroll by department and receives totals only; a planted salary is absent from the request sent to the model fake and from the answer. |
+| `AGENT-010` — Recurring missions | missing | With a fake clock, mail and model fakes, a weekly cash brief runs Monday, is delivered to two people, and reports stale sources when a connector is stale. |
+| `AGENT-011` — Agent governance | partial | With a model fake, an agent run is recorded with its person, model and cost; at the budget, further runs are refused; the stop switch ends a running agent; an agent call to approve or promote is refused by the server. |
 
 ## Not applicable or not yet proven
 
@@ -54,8 +228,10 @@ That is evidence, not a permanent test.
   accounting or planning product's export.
 - **Hosted operation:** `deploy --dry-run` only. No Cloudflare account,
   deployment, hosted health or real mail delivery is claimed.
-- **Connectors and hosted AI:** none in phase 1. Agents work through `API.md`
-  as a signed-in person; no model is called by Easel.
+- **Connectors and hosted AI:** none shipped yet. Agents work through `API.md`
+  as a signed-in person; no model is called by Easel. The connector and agent
+  clauses above (`CONNECT-*`, `PEOPLE-*`, `REV-*`, `SHEET-*`, `AGENT-*`) are
+  the target and are not claimed.
 - **Economics:** no current-process baseline was supplied, so no saving in
   cost or attention is claimed.
 
