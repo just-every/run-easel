@@ -10,16 +10,16 @@ This contract describes the product Easel is being built towards, not only what 
 | --- | --- |
 | Category | FP&A (financial planning and analysis) software |
 | Incumbents a buyer switches from | Workday Adaptive Planning, Planful, Anaplan, Runway, Pigment, Aleph |
-| First buyer | A US finance lead or fractional CFO at a business with 25 to 250 employees, closing its books in QuickBooks Online, Xero or NetSuite, paying people through Gusto or Rippling, selling through HubSpot or Salesforce, and planning in USD |
+| First buyer | A US finance lead or fractional CFO at a business with 25 to 250 employees, closing its books in QuickBooks Online, Xero, NetSuite or Sage Intacct, paying people through Gusto, Rippling or a PEO such as Justworks or TriNet, budgeting with department heads who enter their own numbers each autumn, selling through HubSpot or Salesforce, and planning in USD |
 
-For that buyer, switching means that their ledger, payroll roster, pipeline and subscription data arrive through live connectors; their Excel or Google Sheets model arrives with its formulas; every planning job they ran in the incumbent (budget, rolling forecast, headcount, scenarios, department submissions, board pack, cash alerts) has an Easel equivalent; and their old tool's versions are imported with a list of what did not map.
+For that buyer, switching means that their ledger (with its history), payroll roster, pipeline and subscription data arrive through live connectors or mapped files; their budget owners enter numbers in a planning grid as they did in the incumbent's sheets; their Excel or Google Sheets model arrives with its formulas; every planning job they ran in the incumbent (budget, rolling forecast, headcount, scenarios, department submissions, board pack, cash alerts) has an Easel equivalent; and their old tool's versions are imported with a list of what did not map.
 
 A buyer replacing an incumbent needs the whole job, so the target is the whole job:
 
-- **Connected actuals.** QuickBooks Online, Xero, NetSuite and [Pantry](https://github.com/just-every/run-pantry) actuals refresh on a schedule, with reusable account, department and class mapping, balance-sheet balances, freshness and drill-through to the ledger transaction (`CONNECT-*`, `EASEL-002` to `EASEL-004`).
-- **A flexible model.** User-defined formulas, dimensions and hierarchies, a configurable rolling horizon, multi-year plans and starter models for subscription, services and project businesses (`MODEL-*`, `EASEL-006`, `EASEL-008`).
+- **Connected actuals.** QuickBooks Online, Xero, NetSuite, Sage Intacct and [Pantry](https://github.com/just-every/run-pantry) actuals backfill up to 36 months of history on first connection and refresh on a schedule, with reusable account, department and class mapping, balance-sheet balances, freshness and drill-through to the ledger transaction (`CONNECT-*`, `EASEL-002` to `EASEL-004`).
+- **A flexible model.** A planning grid with paste, spreading, copy forward, split sub-rows and cell notes; plans built from prior-year actuals; user-defined formulas, dimensions and hierarchies, a configurable rolling horizon, multi-year plans and starter models for subscription, services and project businesses (`MODEL-*`, `EASEL-006`, `EASEL-008`).
 - **Three statements and cash.** A linked P&L, balance sheet and cash-flow forecast with receivables and payables timing, deferred revenue, debt, capex and depreciation, runway, a 13-week cash view and US tax estimates (`FIN-*`, `EASEL-005`).
-- **Headcount and compensation.** A roster from Gusto, Rippling or [Willow](https://github.com/just-every/run-willow), open roles from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse, and US compensation assumptions (W-2 and 1099, employer payroll taxes with wage bases, benefits, bonus, commission), with salary visible only to those allowed (`PEOPLE-*`, `EASEL-007`).
+- **Headcount and compensation.** A roster from Gusto, Rippling or [Willow](https://github.com/just-every/run-willow), or a mapped roster and payroll-register file from any PEO or payroll provider, open roles from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse, and US compensation assumptions (W-2 and 1099, employer payroll taxes with wage bases, benefits, bonus, commission), with salary visible only to those allowed (`PEOPLE-*`, `EASEL-007`).
 - **Revenue and pipeline.** Pipeline from [Orbit](https://github.com/just-every/run-orbit), HubSpot and Salesforce with explicit probability and timing assumptions, and subscription metrics (ARR, churn, cohorts) from Stripe Billing or [Nectar](https://github.com/just-every/run-nectar) (`REV-*`).
 - **Spreadsheets kept live.** Two-way Excel and Google Sheets add-ins whose formulas stay live, model import that keeps formulas, and Excel exports with formulas (`SHEET-*`, `EASEL-015`).
 - **Planning cycles.** Budget calendars, tasks, reminders and escalations, metric-triggered tasks, quarterly reforecasts, long-range plans, private and shared scenarios, groups and per-dimension permissions (`CYCLE-*`, `EASEL-009` to `EASEL-012`).
@@ -34,12 +34,12 @@ Easel is one product. Where the market sells a neighbouring product separately, 
 
 | Job | Owned by | How Easel meets it |
 | --- | --- | --- |
-| General ledger, bookkeeping and the close | [Pantry](https://github.com/just-every/run-pantry) (or QuickBooks Online, Xero, NetSuite) | Read-only actuals connectors and drill-through (`CONNECT-001` to `CONNECT-004`, `CONNECT-008`); Easel never posts a journal |
+| General ledger, bookkeeping and the close | [Pantry](https://github.com/just-every/run-pantry) (or QuickBooks Online, Xero, NetSuite, Sage Intacct) | Read-only actuals connectors and drill-through (`CONNECT-001` to `CONNECT-004`, `CONNECT-011`, `CONNECT-008`); Easel never posts a journal |
 | Sales CRM and pipeline | [Orbit](https://github.com/just-every/run-orbit) (or HubSpot, Salesforce) | Pipeline drivers with finance-owned probabilities (`REV-001`) |
 | Subscription billing | [Nectar](https://github.com/just-every/run-nectar) (or Stripe Billing, Chargebee) | Subscription metrics and cohorts as actuals and drivers (`REV-002`) |
 | Core HR and the employee record | [Willow](https://github.com/just-every/run-willow) (or Rippling, BambooHR) | Roster and compensation sync (`PEOPLE-002`) |
 | Recruiting | [Lodge](https://github.com/just-every/run-lodge) (or Greenhouse) | Open roles become planned positions (`PEOPLE-003`) |
-| Payroll runs and tax filing | No sibling (Gusto, Rippling, ADP RUN) | Roster and payroll-cost actuals (`PEOPLE-001`); Easel estimates employer cost and never pays anyone |
+| Payroll runs and tax filing | No sibling (Gusto, Rippling, ADP RUN, and PEOs such as Justworks, TriNet and Insperity) | Roster and payroll-cost actuals by connector or file (`PEOPLE-001`, `PEOPLE-007`); Easel estimates employer cost and never pays anyone |
 | Expenses, cards and purchasing | [Coaster](https://github.com/just-every/run-coaster) and [Purse](https://github.com/just-every/run-purse) (or Ramp, Brex, Bill.com) | Committed and card spend in the forecast (`SPEND-001`) |
 | Professional-services delivery | [Gauge](https://github.com/just-every/run-gauge) (or Harvest, Kantata) | Utilization and project revenue drivers (`REV-003`) |
 | Team chat | [Nook](https://github.com/just-every/run-nook) (or Slack, Microsoft Teams) | Notifications, reminders and agent questions (`CYCLE-003`, `AGENT-003`) |
@@ -96,30 +96,37 @@ These clauses complete the category job alongside the published clauses. Each st
 ### Connected actuals
 
 #### CONNECT-001 — QuickBooks Online actuals connector.
-Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not.
+Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. The first connection backfills history: finance chooses 12 to 36 closed months (24 by default), and each backfilled month lands as its own reviewed batch with its own trial-balance reconciliation, so prior-year actuals are there to plan from (`MODEL-009`) and to report against (`REPORT-001`). Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not.
 
-*Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge), connect, pull two months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox.
+*Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox.
 
 *Status:* missing.
 
 #### CONNECT-002 — Xero actuals connector.
-Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`.
+Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`.
 
-*Acceptance:* the `CONNECT-001` journey against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company.
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company.
 
 *Status:* missing.
 
 #### CONNECT-003 — NetSuite actuals connector.
-Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`.
+Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`.
 
-*Acceptance:* the `CONNECT-001` journey against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account.
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account.
 
 *Status:* missing.
 
 #### CONNECT-004 — Pantry actuals connector.
-A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`.
+A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`.
 
-*Acceptance:* two local installations (Pantry and Easel) where Easel pulls a month from Pantry, a Pantry correction shows as a changed row on the next pull, and trial balances agree.
+*Acceptance:* two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree.
+
+*Status:* missing.
+
+#### CONNECT-011 — Sage Intacct actuals connector.
+Finance connects Sage Intacct with a Web Services sender ID and a read-only web-services user, or through the Sage Intacct REST API with OAuth 2.0. Easel pulls the chart of accounts, entities (a multi-entity shared company maps its entities under `ENTITY-001`), the standard dimensions (location, department, class, project, customer and vendor), any user-defined dimensions, and general-ledger detail by period. Location and department map to Easel dimension members under `CONNECT-006` and `MODEL-003`. It has the same history backfill, preview, idempotent re-pull by the provider's record number, change detection and trial-balance reconciliation as `CONNECT-001`, and drill-through links to the Intacct entry (`CONNECT-008`).
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; one recorded run against a Sage Intacct sandbox company.
 
 *Status:* missing.
 
@@ -170,7 +177,7 @@ Every connector credential (OAuth tokens, API keys, certificates) is stored encr
 #### MODEL-001 — Configurable horizon and multi-year plans.
 Finance sets any fiscal-year start month and a plan horizon from 12 to 60 months, with monthly detail and quarter and fiscal-year roll-ups. Budgets can span one fiscal year or several. A 4-4-5 or 5-4-4 retail calendar is available as an alternative to calendar months.
 
-*Acceptance:* the API journey sets a 36-month horizon starting in a fiscal year that begins in October, and reads monthly, quarterly and annual totals that agree to the cent.
+*Acceptance:* the API journey sets a 36-month horizon starting in a fiscal year that begins in October, and reads monthly, quarterly and annual totals that agree to the cent; a second plan on a 4-4-5 calendar reads periods of 4, 4 and 5 weeks in each quarter, with each quarter's total equal to the sum of its three periods and the year equal to its four quarters, to the cent.
 
 *Status:* partial.
 
@@ -184,12 +191,12 @@ Finance sets a rolling window (for example always 18 months ahead). Closing a mo
 #### MODEL-003 — Custom dimensions and hierarchies.
 Beyond lines and departments, finance defines dimensions (for example entity, region, product, customer segment, project, class or location), each with a hierarchy of members and roll-ups. Inputs, actuals and reports can be cut by any dimension, and source dimensions map onto them (`CONNECT-006`). Lines get a chart-of-accounts hierarchy with subtotals.
 
-*Acceptance:* the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals.
+*Acceptance:* the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals; it then builds a chart-of-accounts hierarchy (for example Operating expense, then Sales and marketing, then Advertising and Events) and reads subtotals equal to the sum of their lines in every month.
 
 *Status:* partial.
 
 #### MODEL-004 — User-defined formulas and driver lines.
-Finance writes driver lines and formulas over named drivers, lines, dimensions and time: arithmetic, prior-period and offset references, growth, lookups by dimension member, IF, MIN, MAX, ROUND and SUM over a dimension. Evaluation keeps the published arithmetic rules: integer cents, counts in hundredths, one rounding half away from zero per division, and a trace per cell. Circular references are refused with the cycle named. Every formula change is a revision that a proposal can carry (`EASEL-012`).
+Finance writes driver lines and formulas over named drivers, lines, dimensions and time: arithmetic, prior-period and offset references (including references to the Actuals version and other versions at an offset, `MODEL-009`), growth, lookups by dimension member, IF, MIN, MAX, ROUND and SUM over a dimension. Evaluation keeps the published arithmetic rules: integer cents, counts in hundredths, one rounding half away from zero per division, and a trace per cell. Circular references are refused with the cycle named. Every formula change is a revision that a proposal can carry (`EASEL-012`).
 
 *Acceptance:* the API journey defines a support-cost driver as tickets per customer × cost per ticket with a lookup by region, reads exact cells with traces, and is refused a circular formula with the cycle named.
 
@@ -205,7 +212,7 @@ Changes to model structure (dimensions, formulas, driver forms, mapping rules) a
 #### MODEL-006 — Starter models for US small businesses.
 Setup offers starter models that a buyer edits rather than builds from nothing: SaaS (ARR, churn, CAC, seats), professional services (billable headcount, utilization, rate), project or backlog businesses, and wholesale or ecommerce (units, price, COGS, inventory days). Each comes with its drivers, lines, dimensions, dashboards and cash timing, in USD.
 
-*Acceptance:* in the browser at 1440, create a company from the SaaS starter and see a three-statement forecast, a dashboard and a cash view without entering a formula.
+*Acceptance:* in the browser at 1440, create a company from each starter (SaaS, professional services, project or backlog, and wholesale or ecommerce) and, for each, see a three-statement forecast, a dashboard and a cash view without entering a formula; the services starter's revenue traces to billable headcount × utilization × rate, the project starter's to milestones and backlog, and the wholesale starter's cash to inventory days.
 
 *Status:* missing.
 
@@ -213,6 +220,20 @@ Setup offers starter models that a buyer edits rather than builds from nothing: 
 A model with 2,000 input rows, 5 dimensions and a 36-month horizon recalculates after an input change in under 2 seconds p95. Larger changes run as a visible background calculation, and the affected cells show as recalculating rather than stale-but-final.
 
 *Acceptance:* a load fixture at the stated size through the API, timing 50 edits at p95, and a larger bulk import showing calculation state in the browser.
+
+*Status:* partial.
+
+#### MODEL-008 — Planning grid entry.
+Finance and contributors enter budgets in a browser grid of lines (with their dimension members) by months for a scenario, limited to the cells they may edit (`EASEL-007`, `EASEL-009`, `ACCESS-001`). In the grid a person types into a cell or pastes a rectangular block copied from Excel or Google Sheets; the pasted cells are previewed, and any non-numeric or out-of-scope cell is refused with its address. They spread an amount across selected cells evenly, in proportion to the cells' current values, or in the shape of the same months' prior-year actuals (`MODEL-009`), with the cent remainder placed so the total is exact; or they change selected cells by a percent or an amount. They copy a value forward to later months. They split a cell into named sub-rows (for example one per vendor) that roll up to it, so the cell becomes their sum; sub-row detail follows the department's visibility, so finance and that department's contributors see it, and viewers and other departments see only the cell total. They add a note to a cell, kept with the cell's revision and shown in its trace. Cells that come from drivers or formulas show their trace and cannot be typed over. Each grid save is one revision fenced like every other save (a conflict returns 409), and undo restores the previous values of the cells it changed. At 390 pixels the grid scrolls inside its own frame with the line column pinned, and the page has no horizontal overflow.
+
+*Acceptance:* in the browser at 1440 and 390, a contributor opens their department's budget during a requested submission, pastes a 3 × 12 block copied from a spreadsheet, spreads $120,000 across twelve months evenly ($10,000 a month) and then by prior-year actual shape (each cell in the prior-year proportion, summing to exactly $120,000), copies a value forward, splits one cell into two vendor sub-rows that total the cell, adds a note, and reads the cells and note back through the API. Another department's contributor and a viewer read the same cell through the API and receive its total without the sub-rows or vendor names, and the page has no horizontal overflow at 390.
+
+*Status:* partial.
+
+#### MODEL-009 — Plans built from actuals history.
+Accepted actuals (from connectors or files) form an Actuals version that every plan can read. A plan line or driver can be defined from it at a time offset, for example the same month last year × 1.05 or the trailing three-month average, under the `MODEL-004` arithmetic and trace rules; each cell's trace names the actual cells it read. Finance can seed a new budget scenario from prior-year actuals by line and department in one step, with a growth percent per line, and the seeded inputs stay editable in the grid (`MODEL-008`). Plan views and the grid can overlay actuals for closed and prior-year months beside the plan. A month with no accepted actuals is reported as missing, never read as zero.
+
+*Acceptance:* with 24 closed months accepted, the API journey defines a line as prior-year same-month actual × 1.05 and reads each cell equal to that actual × 1.05 rounded once, with a trace citing the actual cell; seeds a budget scenario from prior-year actuals with 5% growth on one line and reads its inputs; and, for a month with no accepted actuals, is told which month is missing rather than given zero.
 
 *Status:* partial.
 
@@ -228,14 +249,14 @@ Every scenario produces a monthly forecast profit and loss, balance sheet and in
 #### FIN-002 — Working-capital timing.
 Receivables follow days-sales-outstanding or a collection curve by revenue line, and payables follow days-payables-outstanding or payment terms by expense line. Annual-upfront billing creates deferred revenue that is recognised ratably, prepaid expenses amortise, and accrued payroll and bonuses settle on their pay dates. Opening balances come from actuals (`CONNECT-007`) or labelled estimates (`EASEL-005`).
 
-*Acceptance:* the API journey sets 45-day DSO, a 30-day term on one vendor line and an annual-upfront plan, and reads receivables, payables, deferred revenue and cash that agree with the traces.
+*Acceptance:* the API journey sets 45-day DSO, a 30-day term on one vendor line and an annual-upfront plan, and reads receivables, payables, deferred revenue and cash that agree with the traces; a $24,000 annual insurance prepayment amortises at $2,000 a month with the prepaid balance declining to zero; payroll earned but unpaid at a month end is accrued and settles on the next pay date; and a quarterly bonus accrues monthly and settles in its pay month, with accrued liabilities and cash agreeing with the traces.
 
 *Status:* partial.
 
 #### FIN-003 — Debt and financing.
 Term loans, lines of credit and venture debt carry principal, rate (fixed, or variable over a stated base rate), draws, repayments and amortisation schedules, with interest flowing to the P&L. Covenant tests (minimum cash, liquidity, debt-to-EBITDA) are computed every month. Equity raises are planned events.
 
-*Acceptance:* the API journey adds a line of credit with a minimum-cash covenant, draws on it in a downside, and reads interest, balances and a covenant breach month.
+*Acceptance:* the API journey adds a line of credit with a minimum-cash covenant, draws on it in a downside, and reads interest, balances and a covenant breach month; it then plans a $5,000,000 equity raise in a month and reads the cash inflow and the equity increase on the balance sheet with no profit-and-loss effect.
 
 *Status:* missing.
 
@@ -256,7 +277,7 @@ Every scenario shows gross and net burn, months of runway, the lowest cash month
 #### FIN-006 — US tax estimates in the forecast.
 Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labelled as such, and never filings.
 
-*Acceptance:* the API journey plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, and an income-tax line on a profitable month.
+*Acceptance:* the API journey plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, SUTA at an entered 2.7% state rate stopping at an entered state wage base, and an income-tax line on a profitable month; a loss in an early month is carried forward and reduces income tax in a later profitable month; and sales tax collected on an invoice flows into cash and out through a sales-tax payable without changing revenue.
 
 *Status:* partial.
 
@@ -293,7 +314,7 @@ Open requisitions from [Lodge](https://github.com/just-every/run-lodge) or Green
 #### PEOPLE-004 — US compensation assumptions.
 Each position or person carries salary or hourly rate with expected hours, W-2 or 1099 type, merit increases on a date, bonus (percent of salary, paid in a month), sales commission (rate on bookings from `REV-001`), benefits per head per month, 401(k) match, and employer taxes from `FIN-006`. On-cost defaults are set per department and overridden per position. Each cost traces to its components.
 
-*Acceptance:* the API journey plans a salaried W-2 engineer with a merit increase, a commissioned salesperson tied to pipeline bookings, and a 1099 contractor with no employer tax, and reads traced monthly costs.
+*Acceptance:* the API journey plans a salaried W-2 engineer with a merit increase, a commissioned salesperson tied to pipeline bookings, a 1099 contractor with no employer tax, an hourly W-2 position at $40 × 120 hours a month, and a salaried position carrying a 10% bonus paid in March, $1,200 a month of benefits, a 4% 401(k) match and a department on-cost default overridden on that position; each monthly cost reads as traced components (salary or hours × rate, merit, bonus, commission, benefits, 401(k) match and each employer tax) that sum to the cell.
 
 *Status:* partial.
 
@@ -310,6 +331,13 @@ Monthly headcount, hires, departures and payroll cost are compared between plan 
 *Acceptance:* after a roster pull with one late hire and one departure, the API and browser journeys show plan against actual headcount and cost by department, with the slippage in days.
 
 *Status:* partial.
+
+#### PEOPLE-007 — Roster and payroll-register file import.
+A buyer whose PEO or payroll provider has no connector (for example Justworks, TriNet, Insperity, ADP TotalSource, Paychex, Paylocity or Paycom) imports a roster file and a payroll-register file as CSV or .xlsx. Finance maps columns once: employee ID, name, department, title, W-2 or 1099, salary or hourly rate, and start and termination dates; and, per pay run, gross wages, employer taxes, benefits and fees. The mapping is saved per provider. The import previews without writing, lands through the import journal with the original bytes, undoes exactly, and reconciles to planned positions in the same four buckets as `PEOPLE-001`: matched, unplanned hire, planned but not hired, and changed salary. Payroll-register totals reconcile to the ledger's payroll lines. Pay detail follows `EASEL-007` and `PEOPLE-005`.
+
+*Acceptance:* through the API, import a Justworks-shaped roster CSV and an .xlsx payroll register: the preview writes nothing; the accepted import shows the four reconciliation buckets and a register total reconciled to the ledger's payroll lines; a viewer receives headcount and cost totals without names or salaries; a second file in the same shape needs no column choices; and undo removes exactly what the import wrote.
+
+*Status:* missing.
 
 ### Revenue and pipeline
 
@@ -353,14 +381,14 @@ Purchase orders and committed contracts from [Purse](https://github.com/just-eve
 ### Spreadsheets
 
 #### SHEET-001 — Excel add-in with live formulas.
-A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand or when the workbook opens, with server-side role filtering. Cells a person may edit can be sent back as a proposal (`EASEL-012`), never written directly to an approved or locked plan. The workbook's own formulas around Easel cells stay live.
+A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand or when the workbook opens, with server-side role filtering. Write-back follows the same rules as the browser. While a contributor's department submission is requested or returned (`EASEL-009`), their write to that department's budget inputs lands directly as their own entry at the next plan revision, as an entry in the grid (`MODEL-008`) would, and their later submission includes it. Once the department is submitted, a write to its working plan becomes a proposal bound to the current revision (`EASEL-012`). A write to an approved budget, a kept forecast or another department's cells is refused with the reason. The workbook's own formulas around Easel cells stay live.
 
-*Acceptance:* an Office.js test host loads the add-in against a running Easel: functions return role-filtered values, a contributor's edit returns as a proposal bound to the revision, and an edit to a locked budget is refused; one recorded run in Excel on the web.
+*Acceptance:* an Office.js test host loads the add-in against a running Easel: functions return role-filtered values; during a requested submission a contributor's write to their own department lands directly at the next revision and reads back in the browser and the API; after they submit, the same write returns as a proposal bound to the revision; a write to the approved budget and a write to another department are refused; one recorded run in Excel on the web.
 
 *Status:* partial.
 
 #### SHEET-002 — Google Sheets add-on with live formulas.
-The same functions, refresh, role filtering and proposal write-back as `SHEET-001`, as a Google Workspace add-on with custom functions. Scheduled refresh runs through an installable trigger.
+The same functions, refresh, role filtering and write-back rules as `SHEET-001` (direct entry during an open submission, a proposal once submitted, refusal on approved budgets, kept forecasts and other departments), as a Google Workspace add-on with custom functions. Scheduled refresh runs through an installable trigger.
 
 *Acceptance:* an Apps Script test harness against a running Easel replays the `SHEET-001` journey; one recorded run in a Google Workspace test domain.
 
@@ -406,7 +434,7 @@ Finance writes rules such as "a department's actual spend exceeds budget by 10% 
 #### CYCLE-003 — Notifications from discussions and events.
 Mentioning a person in a comment or explanation, a returned submission, a pending approval, a restatement notice and a triggered task each notify the person by email and, if connected, in Slack, Microsoft Teams or Nook. The notification links to the exact cell or record. Each person sets their channels, and a daily digest is the default.
 
-*Acceptance:* with mail and Slack fakes, a mention in a variance explanation produces one email and one Slack message linking to that variance, and a digest-only person receives it in the next digest instead.
+*Acceptance:* with mail, Slack, Microsoft Teams and Nook fakes and a fake clock, the API journey produces one notification per event type, each linking to its record: a mention in a variance explanation (email and Slack), a returned submission to its contributor (email and Teams), a pending approval to finance, a restatement notice to finance, and a triggered task to its owner (Nook). A person who chose Teams only receives no email, and a digest-only person receives all their events in the next daily digest instead.
 
 *Status:* missing.
 
@@ -434,9 +462,9 @@ A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headco
 ### Reporting
 
 #### REPORT-001 — Report builder.
-Finance and permitted members build reports. Rows are lines, dimensions or hierarchies. Columns are months, quarters, years, year-to-date or trailing twelve months, across versions, with variance in dollars and percent. Filters and conditional highlighting are available. Reports are saved, shared and scheduled, and always role-filtered on the server.
+Finance and permitted members build reports. Rows are lines, dimensions or hierarchies. Columns are months, quarters, years, year-to-date or trailing twelve months, across versions (actual, prior-year actual, budget, each reforecast and the forecast), with variance and year-over-year change in dollars and percent. Filters by any dimension member and conditional highlighting (for example a variance over 10% in red) are available. Reports are saved, shared, and scheduled for email delivery to named people daily, weekly or monthly in the company's time zone. They are always role-filtered on the server, and each recipient of a scheduled report gets the copy they would see if they opened it.
 
-*Acceptance:* in the browser at 1440, build a department-by-quarter report of actual against budget, save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail.
+*Acceptance:* in the browser at 1440, build a department-by-quarter report of actual against budget with year-to-date, trailing-twelve-month, prior-year actual and year-over-year % columns, a department filter and a highlight rule; save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail. Year-to-date and trailing-twelve-month cells equal the sum of their months, and year-over-year % equals (actual − prior-year actual) ÷ prior-year actual, to the cent. With a mail fake and a fake clock, schedule the report weekly for Monday 8:00 Eastern to finance and a viewer: on Monday each receives one email, and the viewer's copy omits restricted detail.
 
 *Status:* partial.
 
@@ -450,7 +478,7 @@ Dashboards hold KPI tiles, charts and tables from saved reports and metrics, suc
 #### REPORT-003 — Board pack.
 A board pack template contains statements, KPIs, charts, variance commentary, decisions and appendix tables. It is generated for a closed month or quarter, refreshed until published, and published as an immutable snapshot (as in `EASEL-014`). It exports as PDF, PowerPoint (.pptx) and Excel, and can be saved to [Chest](https://github.com/just-every/run-chest), Google Drive or SharePoint. Refreshing keeps the commentary that people wrote.
 
-*Acceptance:* generate a quarter pack in the browser, refresh it after a late adjustment with commentary kept, publish, download PDF, .pptx and .xlsx, and confirm through the API that the published numbers do not change after a later refresh.
+*Acceptance:* generate a quarter pack in the browser, refresh it after a late adjustment with commentary kept, publish, download PDF, .pptx and .xlsx, and confirm through the API that the published numbers do not change after a later refresh; save the published pack to a Chest folder, a Google Drive folder and a SharePoint library through fakes, each holding a PDF with the same digest.
 
 *Status:* partial.
 
@@ -471,14 +499,14 @@ Each department owner gets a monthly actual-against-budget statement for their d
 #### REPORT-006 — Scheduled cash alerts.
 Finance sets cash alerts: forecast lowest cash below the floor (`FIN-005`), actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged.
 
-*Acceptance:* with a fake clock and mail and Slack fakes, a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month, a second refresh with no change sends none, and acknowledgement is recorded.
+*Acceptance:* with a fake clock, a bank fake and mail and Slack fakes: a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month; bank cash $60,000 below plan under a $50,000 rule sends one alert, and a 10% rule fires the same way; runway falling to 11 months under a 12-month rule sends one alert; a second refresh with no change sends none; a refresh that worsens the breach re-alerts once; an unchanged breach re-alerts after the set interval (for example seven days) on the fake clock; and acknowledgement is recorded.
 
 *Status:* missing.
 
 #### REPORT-007 — BI and warehouse feeds.
 Operational metrics flow in from Snowflake, BigQuery or Databricks as driver actuals (for example active users or shipments), by a read-only query that finance reviews. Easel's actuals, plans and versions flow out to Power BI, Looker and Tableau through a read-only, role-scoped dataset endpoint and scheduled CSV or Parquet drops.
 
-*Acceptance:* a warehouse fake supplies a monthly metric that drives a revenue line; a BI client fake reads the dataset endpoint with a scoped token and receives no pay detail.
+*Acceptance:* a warehouse fake supplies a monthly metric that drives a revenue line; a BI client fake reads the dataset endpoint with a scoped token and receives no pay detail; a scheduled nightly drop writes CSV and Parquet files to a storage fake whose rows equal the dataset endpoint's, with no pay detail.
 
 *Status:* missing.
 
@@ -494,7 +522,7 @@ Finance creates groups (for example FP&A team, department heads, board) and gran
 #### ACCESS-002 — SSO and SCIM.
 Easel is a SAML 2.0 and OIDC relying party for Okta, Microsoft Entra ID, Google Workspace and [Auth](https://github.com/just-every/run-auth), and a SCIM 2.0 server that provisions and deprovisions people and group membership. Deprovisioning ends the person's sessions at once and keeps their historical attribution.
 
-*Acceptance:* with an IdP fake, sign in by SAML, provision a person and group by SCIM, deprovision them, and see their session refused on the next request while their past submissions still show their name.
+*Acceptance:* with an IdP fake, sign in one person by SAML and another by OIDC; provision a person and a group by SCIM, add the person to the group by a SCIM group update and see the group's grants (`ACCESS-001`) apply, remove them and see the grants end; deprovision the person and see their session refused on the next request while their past submissions still show their name.
 
 *Status:* missing.
 
@@ -522,7 +550,7 @@ The HTTP API (`API.md`) is available to integrations through personal and servic
 #### API-002 — Webhooks and automation apps.
 Signed webhooks fire on approval, close, publish, refresh failure, alert and task events. Published apps for [Crank](https://github.com/just-every/run-crank), Zapier and Make expose those triggers and the proposal and comment actions.
 
-*Acceptance:* register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID.
+*Acceptance:* register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID. The Crank, Zapier and Make apps each run against a running Easel in that platform's developer test tooling (a local Crank installation, the Zapier Platform CLI, and a Make custom app in a test organisation): a trigger receives an approval event, and a create-proposal action creates a proposal bound to the revision.
 
 *Status:* missing.
 
@@ -561,7 +589,7 @@ A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYY
 #### MOVE-001 — Move in from Adaptive Planning.
 Easel imports a Workday Adaptive Planning export (levels, accounts, dimensions and attributes, versions with their data, and sheet exports), together with the buyer's mapping. It previews what will be created, lists everything that did not map (formulas it cannot translate, custom sheets, access rules), and lands through the journal with undo.
 
-*Acceptance:* a fixture export in Adaptive's documented export shapes; the import report lists created levels, accounts and versions and the unmapped items; budget totals equal the export's totals; undo removes the import.
+*Acceptance:* a fixture export in the shapes of Adaptive's documented API calls (`exportLevels`, `exportAccounts`, `exportDimensions`, `exportAttributes`, `exportVersions` and `exportData`) and a sheet export; the import report lists created levels, accounts and versions and the unmapped items; budget totals equal the export's totals; undo removes the import.
 
 *Status:* missing.
 
@@ -749,8 +777,8 @@ Agents keep the plan feasible and honest, not just modelled. Each clause names w
 
 Easel is a US-first FP&A product. These are the jobs it deliberately does not do, and how a buyer gets each one done.
 
-- **The ledger and the close.** Easel is not the accounting system of record and never posts journals. Bookkeeping, the close, reconciliations and audited GAAP statements stay in [Pantry](https://github.com/just-every/run-pantry), QuickBooks Online, Xero or NetSuite, which Easel reads (`CONNECT-*`). Close-management tools such as FloQast and BlackLine stay separate.
-- **Payroll and tax filing.** Easel estimates employer cost and taxes for planning (`FIN-006`, `PEOPLE-004`). It never runs payroll or files Form 941, Form 940, W-2 or 1099. That stays with Gusto, Rippling or ADP RUN; no Run Edit Run product owns payroll today. Income-tax figures are planning estimates; filings and tax advice come from the buyer's CPA (whose practice may run on [Blotter](https://github.com/just-every/run-blotter)).
+- **The ledger and the close.** Easel is not the accounting system of record and never posts journals. Bookkeeping, the close, reconciliations and audited GAAP statements stay in [Pantry](https://github.com/just-every/run-pantry), QuickBooks Online, Xero, NetSuite or Sage Intacct, which Easel reads (`CONNECT-*`). Close-management tools such as FloQast and BlackLine stay separate.
+- **Payroll and tax filing.** Easel estimates employer cost and taxes for planning (`FIN-006`, `PEOPLE-004`). It never runs payroll or files Form 941, Form 940, W-2 or 1099. That stays with Gusto, Rippling, ADP RUN or the buyer's PEO; no Run Edit Run product owns payroll today. Income-tax figures are planning estimates; filings and tax advice come from the buyer's CPA (whose practice may run on [Blotter](https://github.com/just-every/run-blotter)).
 - **Treasury and payments.** Easel recommends; it does not move money. Payments, transfers, credit-line draws and collections run in the bank, Bill.com or the ledger. Bank access through Plaid is read-only (`CONNECT-009`).
 - **CRM, HRIS, ATS, billing, expenses and procurement.** These belong to [Orbit](https://github.com/just-every/run-orbit), [Willow](https://github.com/just-every/run-willow), [Lodge](https://github.com/just-every/run-lodge), [Nectar](https://github.com/just-every/run-nectar), [Coaster](https://github.com/just-every/run-coaster) and [Purse](https://github.com/just-every/run-purse), or their US incumbents. Easel reads them and never writes deals, employees, offers, invoices or purchase orders.
 - **A full spreadsheet engine.** Easel does not re-implement every Excel function or VBA. Excel and Google Sheets stay the buyer's spreadsheets, connected live (`SHEET-001`, `SHEET-002`). Formulas Easel cannot translate are listed and kept as values with provenance (`SHEET-003`).
@@ -766,23 +794,23 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 | Scope item | Clauses |
 | --- | --- |
-| Live actuals connectors for QuickBooks Online, Xero and NetSuite with account/department mapping and automatic monthly refresh | `CONNECT-001`, `CONNECT-002`, `CONNECT-003`, `CONNECT-005`, `CONNECT-006` |
-| A flexible model: user-defined formulas, dimensions, configurable rolling horizon and multi-year plans | `MODEL-001`, `MODEL-002`, `MODEL-003`, `MODEL-004`, `CYCLE-006` |
+| Live actuals connectors for QuickBooks Online, Xero and NetSuite with account/department mapping and automatic monthly refresh | `CONNECT-001`, `CONNECT-002`, `CONNECT-003`, `CONNECT-005`, `CONNECT-006`, `CONNECT-011` |
+| A flexible model: user-defined formulas, dimensions, configurable rolling horizon and multi-year plans | `MODEL-001`, `MODEL-002`, `MODEL-003`, `MODEL-004`, `MODEL-008`, `MODEL-009`, `CYCLE-006` |
 | Linked P&L, balance sheet and cash-flow forecast covering AR/AP timing, debt, capex and runway | `FIN-001`, `FIN-002`, `FIN-003`, `FIN-004`, `FIN-005`, `FIN-007` |
-| Headcount and compensation planning fed from Gusto/Rippling with restricted salary visibility | `PEOPLE-001`, `PEOPLE-002`, `PEOPLE-004`, `PEOPLE-005`, `EASEL-007` |
+| Headcount and compensation planning fed from Gusto/Rippling with restricted salary visibility | `PEOPLE-001`, `PEOPLE-002`, `PEOPLE-004`, `PEOPLE-005`, `PEOPLE-007`, `EASEL-007` |
 | Revenue and pipeline drivers from HubSpot/Salesforce (and Orbit) plus subscription metrics (ARR, churn, cohorts) from Stripe or Nectar | `REV-001`, `REV-002`, `REV-003`, `REV-004` |
 | Two-way Excel and Google Sheets sync that keeps formulas live, plus board-pack dashboards and scheduled cash alerts | `SHEET-001`, `SHEET-002`, `SHEET-003`, `REPORT-002`, `REPORT-003`, `REPORT-006` |
 | Push further: a planning agent that watches actuals, pipeline and hiring, flags broken cash or runway constraints, computes feasible responses and learns from past forecast errors | `AGENT-001`, `AGENT-002`, `AGENT-003`, `AGENT-004` |
 
 ## Status
 
-Judged from the code and tests at commit `bcd262900b00fe8aaa4b33070700ce0753a7d4f0` (17 October 2026).
+Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa0780` (17 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 0 | 42 | 40 | 82 |
-| All | 17 | 42 | 40 | 99 |
+| Target and push further | 0 | 44 | 42 | 86 |
+| All | 17 | 44 | 42 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -803,23 +831,26 @@ Judged from the code and tests at commit `bcd262900b00fe8aaa4b33070700ce0753a7d4
 | `EASEL-015` | Excel workbook move-in with provenance | published | done | `tests/easel.test.mjs` `tests/workbook-undo.test.mjs` |  |
 | `EASEL-016` | Complete export and clean restore | published | done | `tests/browser.mjs` `tests/review-fixes.test.mjs` |  |
 | `EASEL-017` | Owned runtime on Base | published | done | `tests/browser.mjs` `.github/workflows/verify.yml` |  |
-| `CONNECT-001` | QuickBooks Online actuals connector | target | missing |  | No QuickBooks Online OAuth, pull, idempotent re-pull or trial-balance reconciliation; actuals arrive only as uploaded CSV files |
+| `CONNECT-001` | QuickBooks Online actuals connector | target | missing |  | No QuickBooks Online OAuth, history backfill, pull, idempotent re-pull or trial-balance reconciliation; actuals arrive only as uploaded CSV files |
 | `CONNECT-002` | Xero actuals connector | target | missing |  | No Xero connector or tracking-category mapping |
 | `CONNECT-003` | NetSuite actuals connector | target | missing |  | No NetSuite SuiteQL connector or subsidiary mapping |
 | `CONNECT-004` | Pantry actuals connector | target | missing |  | No Pantry API connector |
+| `CONNECT-011` | Sage Intacct actuals connector | target | missing |  | No Sage Intacct connector, dimension mapping or entity mapping |
 | `CONNECT-005` | Scheduled refresh with visible freshness | target | missing |  | No scheduled handler, freshness display, refresh failure state or restatement notice |
 | `CONNECT-006` | Mapping rules that survive refresh | target | partial | `src/easel/actuals.ts` `tests/easel.test.mjs` | One-to-one account and department mappings are reused and unmapped accounts block acceptance; range, prefix and account-type rules and per-conclusion blocking are missing |
 | `CONNECT-007` | Balance-sheet actuals and the trial balance | target | partial | `src/easel/actuals.ts` | Only the cash balance account maps to the balance sheet; other balance-sheet balances, a zero-sum trial balance and a forecast balance sheet opened from actuals are missing |
 | `CONNECT-008` | Drill-through to the ledger transaction | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Variance cells drill to accepted file rows with role filtering; links to the provider transaction need connectors |
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |
 | `CONNECT-010` | Connection custody and status | target | missing |  | No connector credential storage, Connections page or token revocation |
-| `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 calendars are missing |
+| `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 or 5-4-4 calendars are missing |
 | `MODEL-002` | A rolling forecast that extends itself | target | partial | `src/easel/cycle.ts` `tests/easel.test.mjs` | Closing a month keeps the forecast snapshot and substitutes actuals; the forecast does not extend beyond the fixed horizon |
 | `MODEL-003` | Custom dimensions and hierarchies | target | partial | `src/easel/setup.ts` `tests/easel.test.mjs` | Lines and departments are the only dimensions; user-defined dimensions, hierarchies and account roll-ups are missing |
 | `MODEL-004` | User-defined formulas and driver lines | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Fixed driver forms (revenue, positions, expenses, schedules, allocations) calculate exactly with traces; a user formula language with lookups and cycle refusal is missing |
 | `MODEL-005` | Versioned model structure | target | partial | `src/easel/approved.ts` `tests/review-fixes.test.mjs` | Approved snapshots keep saved arithmetic when engine code changes; user-editable structure, structure diffs and moved-cell lists for structure changes are missing |
 | `MODEL-006` | Starter models for US small businesses | target | missing |  | No starter models; setup starts from an empty plan |
 | `MODEL-007` | Recalculation at small-business scale | target | partial | `src/easel/engine.ts` | Deterministic synchronous recalculation exists; no measured scale target, background calculation or calculating state |
+| `MODEL-008` | Planning grid entry | target | partial | `src/easel/model.ts` `tests/easel.test.mjs` | Schedule inputs hold entered monthly values per line and department through the API; a grid, paste, spreading, copy forward, split sub-rows and cell notes are missing |
+| `MODEL-009` | Plans built from actuals history | target | partial | `src/easel/actuals.ts` `tests/easel.test.mjs` | Accepted actuals are kept by month for any period, including months before the plan year; plan lines that read actuals at an offset, seeding a budget from prior-year actuals and an actuals overlay are missing |
 | `FIN-001` | Linked P&L, balance sheet and cash flow | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Profit and cash are linked monthly; a forecast balance sheet, an indirect cash-flow statement and a balance check are missing |
 | `FIN-002` | Working-capital timing | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Collection and payment lags with opening receivables and payables ship; DSO and DPO curves, deferred revenue, prepaids and accruals are missing |
 | `FIN-003` | Debt and financing | target | missing |  | No loans, credit lines, interest, covenants or equity events |
@@ -833,12 +864,13 @@ Judged from the code and tests at commit `bcd262900b00fe8aaa4b33070700ce0753a7d4
 | `PEOPLE-004` | US compensation assumptions | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Salary × (1 + on-costs) by start and end month ships; hourly, W-2 or 1099 type, merit increases, bonus, commission, benefits per head and 401(k) match are missing |
 | `PEOPLE-005` | Compensation access separate from finance | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | Server-side filtering limits pay detail to finance and the department's contributors; a separate compensation permission and filtering for add-ins and agents are missing |
 | `PEOPLE-006` | Headcount plan against actual | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Payroll-line cost variance ships; headcount against a roster, hiring slippage and attrition are missing |
+| `PEOPLE-007` | Roster and payroll-register file import | target | missing |  | No roster or payroll-register file import or roster reconciliation |
 | `REV-001` | Pipeline drivers from Orbit, HubSpot and Salesforce | target | missing |  | No CRM connectors or pipeline drivers |
 | `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | missing |  | No billing connectors, ARR bridge or cohorts |
 | `REV-003` | A revenue driver library | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Volume × rate and customers × revenue per customer ship; seat, usage, utilization, milestone and formula drivers are missing |
 | `REV-004` | Bookings, billings, revenue and cash | target | missing |  | No bookings, billing schedules or deferred revenue |
 | `SPEND-001` | Committed and card spend | target | missing |  | No purchasing, expense or card connectors and no committed-spend view |
-| `SHEET-001` | Excel add-in with live formulas | target | partial | `src/easel/workbook.ts` `tests/easel.test.mjs` | One-way .xlsx import with cell and formula provenance ships; an Excel add-in with live functions and proposal write-back is missing |
+| `SHEET-001` | Excel add-in with live formulas | target | partial | `src/easel/workbook.ts` `tests/easel.test.mjs` | One-way .xlsx import with cell and formula provenance ships; an Excel add-in with live functions, direct entry during an open submission and proposal write-back is missing |
 | `SHEET-002` | Google Sheets add-on with live formulas | target | missing |  | No Google Sheets add-on |
 | `SHEET-003` | Model import that keeps formulas | target | partial | `src/easel/xlsx.ts` `tests/easel.test.mjs` | Cached values import with formula text kept as provenance; formula translation, an untranslated-cell report and total reconciliation are missing |
 | `SHEET-004` | Excel exports with formulas | target | partial | `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Packs download as HTML and CSV; .xlsx exports with live formulas are missing |
@@ -849,12 +881,12 @@ Judged from the code and tests at commit `bcd262900b00fe8aaa4b33070700ce0753a7d4
 | `CYCLE-004` | Private and shared scenarios | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | Contributor proposals are visible to their author and finance; private sandboxes for any planner, sharing grants and official-scenario marking are missing |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | partial | `src/easel/cycle.ts` `tests/easel.test.mjs` | The approved budget and kept forecasts are frozen; named reforecast versions and multi-version comparison are missing |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | missing |  | No multi-year strategic plan or target reconciliation |
-| `REPORT-001` | Report builder | target | partial | `src/ui/overview.tsx` `src/easel/views.ts` | Fixed overview, scenario and variance views ship; user-built, saved and scheduled reports are missing |
+| `REPORT-001` | Report builder | target | partial | `src/ui/overview.tsx` `src/easel/views.ts` | Fixed overview, scenario and variance views ship; user-built and saved reports, year-to-date, trailing-twelve-month, prior-year and year-over-year columns, filters, highlighting and scheduled email delivery are missing |
 | `REPORT-002` | Dashboards | target | partial | `src/ui/overview.tsx` `src/ui/chart.tsx` | One fixed overview with a chart ships; configurable KPI dashboards, saved layouts and audience sharing are missing |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |
 | `REPORT-004` | Linked PowerPoint and Word reporting | target | missing |  | No PowerPoint or Word add-ins |
 | `REPORT-005` | Department budget-owner reporting | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Per-department variances with role filtering ship in the app; the scheduled statement by email after close is missing |
-| `REPORT-006` | Scheduled cash alerts | target | missing |  | No alert rules, schedules or deliveries |
+| `REPORT-006` | Scheduled cash alerts | target | missing |  | No alert rules, schedules, re-alert rules or deliveries |
 | `REPORT-007` | BI and warehouse feeds | target | missing |  | No warehouse inputs or BI dataset endpoint |
 | `ACCESS-001` | Groups and per-dimension permissions | target | partial | `src/easel/access.ts` `tests/easel.test.mjs` | Finance, department-scoped contributor and viewer roles ship; groups, per-dimension and per-capability grants and an access report are missing |
 | `ACCESS-002` | SSO and SCIM | target | missing |  | No SAML, OIDC or SCIM |
