@@ -2343,7 +2343,7 @@
       "executable": false
     },
     "tests/harness.mjs": {
-      "sha256": "e30d07d81a13b788feef1509caf0205b48c7acd56a8736edafa93e5b0604eb1e",
+      "sha256": "974aa70aa1b7ffad509a8f2247382f8551cac24089e6827542186ca41ef6d77b",
       "executable": false
     },
     "tests/restore-flow.mjs": {

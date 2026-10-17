@@ -32,7 +32,7 @@ export async function harness() {
    host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],
    d1Databases: { DB: 'easel' },
    serviceBindings: { TEST_MAIL: async request => { messages.push(await request.json()); return Response.json({ id: crypto.randomUUID() }) } },
-   bindings: { AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'local-test-bootstrap-token-0123456789', MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>' },
+   bindings: { AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'synthetic-local-test-bootstrap-token-0123456789', MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>' },
   }),
   resourcePersistencePath: dir,
  })
@@ -46,7 +46,7 @@ export async function harness() {
    let value; try { value = JSON.parse(text) } catch { value = text }
    return { status: r.status, value, text, cookie: r.headers.get('set-cookie')?.split(';')[0], headers: r.headers }
   }
-  const boot = await send('/auth/bootstrap', { token: 'local-test-bootstrap-token-0123456789', displayName: 'Fran Finance' })
+  const boot = await send('/auth/bootstrap', { token: 'synthetic-local-test-bootstrap-token-0123456789', displayName: 'Fran Finance' })
   assert.equal(boot.status, 303, JSON.stringify(boot.value))
   const owner = boot.cookie
 
