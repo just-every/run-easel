@@ -159,7 +159,7 @@
       "executable": false
     },
     "docs/backup-and-restore.md": {
-      "sha256": "26abdd910bf20459d78772621d9c355853cd7c0ea0dae606c15c1d71bd36af25",
+      "sha256": "21b36d7f6b0d46f94c418fb85ce886353aba0a6d081b64f7eb0698121cfe4d33",
       "executable": false
     },
     "docs/budget-cycle.md": {
@@ -175,7 +175,7 @@
       "executable": false
     },
     "docs/getting-started.md": {
-      "sha256": "38928cf4b2d93f9331077e2de4d3df3ff9f6f19886d8acdb31ebdd86fce79f9f",
+      "sha256": "1d2590e0e1e618afaf85aaf6f85863dcdcc916044c6a9d13dc166ab569af4507",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -291,7 +291,7 @@
       "executable": false
     },
     "OPERATIONS.md": {
-      "sha256": "aea4804e4e110ab6b4a9cfb700d92ebda91d0f61637e64c0ea36e1ead33e3630",
+      "sha256": "eca4d73eb0fb2ce8c4875eb73fc48ba112ce91c09600eb26203b570b9f26cd67",
       "executable": false
     },
     "package.json": {
@@ -347,7 +347,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "0502ec857b138cfe26de8551007f27317e0c5e7dad7aff8347a6170b1be4ad7b",
+      "sha256": "4f224d5dc1c838087b18fd2de9ec51d13e1f77d860c5c97df121d6c0d8a4e87e",
       "executable": false
     },
     "RELEASE.json": {
@@ -359,7 +359,7 @@
       "executable": false
     },
     "RUN-LOCALLY.md": {
-      "sha256": "76da56eb1a8b215b80cc6577757a3a555709e8111c28592e5cd50a464427a080",
+      "sha256": "03ff9eae90042b612d216c6ab7111a91a3db3546af98af22c98580e16c444faf",
       "executable": false
     },
     "scripts/edition-authoring/base-copies.mjs": {
