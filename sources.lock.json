@@ -354,6 +354,10 @@
       "sha256": "f3068cff4930c7567860d9ed611c85a4aa745363505216eb69f62ef205be77e3",
       "executable": false
     },
+    "rer-project.json": {
+      "sha256": "d6b75dfbe08f338e373eb38e7407cb7e34b1920414d88fb41547350807ca89a8",
+      "executable": false
+    },
     "rer-setup.json": {
       "sha256": "a881b06d2799b7e488e5541abfee4367d30e90be8dddfaf7e3dc309aa3485b3b",
       "executable": false

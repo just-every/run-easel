@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "projectId": "just-every/run-easel",
+  "name": "Easel",
+  "sourceRepository": "https://github.com/just-every/run-easel",
+  "license": "MIT"
+}
