@@ -79,7 +79,7 @@ These are the guarantees of the shipped monthly planning loop for one company. I
 ### Portability and runtime
 
 - **EASEL-016 — Complete export and clean restore.** `rer export` writes the complete installation (model, actuals, journal and originals, approvals, kept forecasts, packs and activity); `rer import` refuses a non-empty destination or a corrupt archive and restores into a clean installation of the release that made it, which then shows the same model, approvals, outputs and packs and re-exports identical rows. *Acceptance:* the export and restore steps of `tests/browser.mjs` and `tests/review-fixes.test.mjs`.
-- **EASEL-017 — Owned runtime on Base.** MIT source runs through `rer` install, setup, dev, build, preview, verify, reset, export, import, deploy --dry-run, describe and check, on TanStack Start, Hono and Cloudflare D1, with self-hosted IBM Plex Sans, Easel's theme on Base's installer and sign-in pages, and dev identity with finance, sales, engineering and board personas. Builds refuse the local dev layer. *Acceptance:* `tests/browser.mjs`, `rer verify` and the GitHub Verify workflow.
+- **EASEL-017 — Owned runtime on Base.** MIT source starts with one line, `npx -y @runeditrun/rer dev just-every/run-easel`, and the checkout runs through `rer` install, setup, dev, build, preview, verify, reset, export, import, deploy --dry-run, describe and check, on TanStack Start, Hono and Cloudflare D1, with self-hosted IBM Plex Sans, Easel's theme on Base's installer and sign-in pages, and dev identity with finance, sales, engineering and board personas. Builds refuse the local dev layer. *Acceptance:* `tests/browser.mjs`, `rer verify` and the GitHub Verify workflow.
 
 ### Upgrade and restore rules for the published loop
 
@@ -87,7 +87,7 @@ The package-mode upgrade starts from the installed data and migrations of the ea
 
 Restore preserves planning memberships and historical attribution, but excludes native identities, sessions and credentials. The destination keeps its own owner; membership alone cannot sign anyone in. Live `actorNames` projections resolve only names available in the destination's native directory, while names stored inside immutable snapshots remain unchanged (subject to `ERASE-001`).
 
-A pre-upgrade export restores only with the release that made it. Keep a private export and that release before upgrading. To recover, restore into an empty installation of that release, upgrade that installation in place with `rer install` and `rer setup`, then export again with the upgraded release. Do not import a pre-upgrade export directly into a newer release.
+A pre-upgrade export restores only with the release that made it. Keep a private export and that release before upgrading. To recover, restore into an empty installation of that release, upgrade that installation in place by running `rer install` and `rer setup` inside that existing checkout, then export again with the upgraded release. Do not import a pre-upgrade export directly into a newer release.
 
 ## Target clauses
 
