@@ -115,7 +115,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "81461506baae3b91f711839e68a44a3f99bc27fc6aee8b5d9704ae21c813bab5",
+      "sha256": "03f259c364e204b09df0abdabe80da9f14eba8adf3e170e3c080bc1cab41cc4b",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -139,7 +139,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "bb9d32e5dd9357fe253bde1098bb88ed544a00eb620bc101ce1ff4378bf1510b",
+      "sha256": "0a2bffa5ad5367101995a6a402c438224b4cb95da080dff995c671be9755da80",
       "executable": false
     },
     "DEMO.md": {
@@ -352,6 +352,10 @@
     },
     "RELEASE.json": {
       "sha256": "f3068cff4930c7567860d9ed611c85a4aa745363505216eb69f62ef205be77e3",
+      "executable": false
+    },
+    "rer-project.json": {
+      "sha256": "d6b75dfbe08f338e373eb38e7407cb7e34b1920414d88fb41547350807ca89a8",
       "executable": false
     },
     "rer-setup.json": {

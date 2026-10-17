@@ -20,7 +20,7 @@ Easel helps one company's finance lead answer "Can we afford this plan, what cha
 | EASEL-014 | Finance creates a review pack for a closed month, records decisions and actions, and publishes it as an immutable snapshot binding the numbers, the approved budget and forecast revisions, the accepted source files with their digests, the explanations and the decisions. Every member, viewers included, can download it as HTML or CSV; it carries no individual pay detail. Action progress is recorded without changing the pack. |
 | EASEL-015 | The Excel planning workbook kit reads an .xlsx sheet with Line, Department and month columns, uses each cell's cached value, keeps sheet, row, cell address and formula text as provenance, rounds to cents visibly, skips total rows, and requires every line and department to match or be mapped. It stages the workbook as a new scenario through the import journal; undo removes what it wrote and keeps any row a person has since edited (and what that row needs). |
 | EASEL-016 | `rer export` writes the complete installation (model, actuals, journal and originals, approvals, kept forecasts, packs and activity); `rer import` refuses a non-empty destination or a corrupt archive and restores into a clean installation of the release that made it, which then shows the same model, approvals, outputs and packs and re-exports identical rows. |
-| EASEL-017 | MIT source runs through `rer` install, setup, dev, build, preview, verify, reset, export, import, deploy --dry-run, describe and check, on TanStack Start, Hono and Cloudflare D1, with self-hosted IBM Plex Sans, Easel's theme on Base's installer and sign-in pages, and dev identity with finance, sales, engineering and board personas. Builds refuse the local dev layer. |
+| EASEL-017 | MIT source starts with one line, `npx -y @runeditrun/rer dev just-every/run-easel`, and the checkout runs through `rer` install, setup, dev, build, preview, verify, reset, export, import, deploy --dry-run, describe and check, on TanStack Start, Hono and Cloudflare D1, with self-hosted IBM Plex Sans, Easel's theme on Base's installer and sign-in pages, and dev identity with finance, sales, engineering and board personas. Builds refuse the local dev layer. |
 
 The package-mode upgrade starts from the installed data and migrations of the
 earlier Easel application, before package mode. Migrations `0001` through `0007`
@@ -38,8 +38,8 @@ stored inside immutable snapshots remain unchanged.
 
 A pre-upgrade export restores only with the release that made it. Keep a private
 export and that release before upgrading. To recover, restore into an empty
-installation of that release, upgrade that installation in place with `rer install`
-and `rer setup`, then export again with the upgraded release. Do not import a
+installation of that release, upgrade that installation in place by running `rer install`
+and `rer setup` inside that existing checkout, then export again with the upgraded release. Do not import a
 pre-upgrade export directly into a newer release.
 
 Owner-specific acceptance (a real company's export and parallel month), hosted
