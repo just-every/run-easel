@@ -16,9 +16,8 @@ The archive holds every planning record, approved snapshot, published pack, acti
 Restore into a fresh installation that has no plan yet:
 
 ```sh
-git clone https://github.com/just-every/run-easel.git easel
+npx -y @runeditrun/rer install just-every/run-easel --dir easel
 cd easel
-rer install
 rer setup --owner-email you@example.com
 rer import --input exports/installation.rer --yes
 rer dev

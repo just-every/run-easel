@@ -1,11 +1,13 @@
 # Run it locally
 
-Use Node 22.20.0 and pnpm 10.12.4 for maintained first-party checkouts. From a
-runnable edition's root, install locked dependencies, prepare its local owner,
-then start development:
+Start Easel from nothing with one line, `npx -y @runeditrun/rer dev just-every/run-easel`
+(set up only: `npx -y @runeditrun/rer setup just-every/run-easel`; without Node:
+`curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel`).
+Project commands select Node 22.20.0 and pnpm 10.12.4 themselves. To use your own
+owner mailbox, run `npx -y @runeditrun/rer install just-every/run-easel`, then from
+the checkout's root prepare its local owner and start development:
 
 ```sh
-rer install
 rer setup --owner-email you@example.com
 rer dev
 ```

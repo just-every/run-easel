@@ -11,10 +11,9 @@ One line installs the Run Edit Run command, clones Easel and starts it:
 npx -y @runeditrun/rer dev just-every/run-easel
 ```
 
-To start it again later, run `cd run-easel && rer dev`. To choose the owner mailbox yourself, from the checkout:
+Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel` does the same. To start it again later, run `cd run-easel && rer dev`. To choose the owner mailbox yourself, run `npx -y @runeditrun/rer install just-every/run-easel`, then from the checkout:
 
 ```sh
-rer install
 rer setup --owner-email you@example.com
 rer dev
 ```

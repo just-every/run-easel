@@ -1,6 +1,6 @@
 Easel runs on your own computer with the `rer` command. One line gets it open in your browser, signed in as you, the owner.
 
-Easel needs Node 22 or later and pnpm 10.12.4, on macOS, Linux or Windows with WSL2. `rer` selects the exact Node version Easel declares and fetches a checksum-verified copy when your computer does not have it.
+Easel runs on macOS, Linux or Windows with WSL2. `rer` selects the exact Node version Easel declares and fetches a checksum-verified copy when your computer does not have it.
 
 ## Get Easel and start it
 
@@ -8,7 +8,7 @@ Easel needs Node 22 or later and pnpm 10.12.4, on macOS, Linux or Windows with W
 npx -y @runeditrun/rer dev just-every/run-easel
 ```
 
-That one line installs `rer`, clones Easel and starts it; to start it again later, run `cd run-easel && rer dev`. `rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
+That one line installs `rer`, clones Easel and starts it. Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel` does the same. To start it again later, run `cd run-easel && rer dev`. `rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
 
 - `RER_READY` with the local address, and
 - `RER_OPEN`, a link that opens Easel signed in as the owner.
@@ -19,7 +19,7 @@ The first time, Easel asks you to **Finish setup**: check the owner's name and e
 
 ## Use your own email
 
-To make a specific mailbox the owner, run setup yourself before the first `rer dev`:
+To make a specific mailbox the owner, run `npx -y @runeditrun/rer install just-every/run-easel`, then setup from the checkout before the first `rer dev`:
 
 ```sh
 rer setup --owner-email you@example.com
