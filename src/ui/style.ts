@@ -100,7 +100,15 @@ input[type=checkbox]{min-height:0;width:18px;height:18px;accent-color:var(--ink)
 input.file-input{position:absolute;width:1px;height:1px;min-height:0;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .file-controls:has(input:focus-visible) button{outline:2px solid var(--focus);outline-offset:2px}
 .file-name{font-size:14px;font-weight:400;overflow-wrap:anywhere;min-width:0}
-select{appearance:none;padding-right:36px;background:linear-gradient(45deg,transparent 50%,var(--ink) 50%) calc(100% - 18px) 50% / 6px 6px no-repeat,linear-gradient(-45deg,transparent 50%,var(--ink) 50%) calc(100% - 13px) 50% / 6px 6px no-repeat,var(--surface)}
+/* Single-choice chevron (Base #247); lists retain their native appearance. */
+select:not([multiple],[size]:not([size="1"])){
+ --rer-select-ink:var(--ink);
+ -webkit-appearance:none;appearance:none;padding-inline-end:36px;text-overflow:ellipsis;
+ background-image:linear-gradient(to top right,transparent calc(50% - 1.1px),var(--rer-select-ink) calc(50% - .55px),var(--rer-select-ink) calc(50% + .55px),transparent calc(50% + 1.1px)),linear-gradient(to top left,transparent calc(50% - 1.1px),var(--rer-select-ink) calc(50% - .55px),var(--rer-select-ink) calc(50% + .55px),transparent calc(50% + 1.1px));
+ background-repeat:no-repeat;background-position:right 20px center,right 14px center;background-size:6px 6px;
+}
+select:not([multiple],[size]:not([size="1"])):focus-visible{--rer-select-ink:var(--ink)}
+select:not([multiple],[size]:not([size="1"])):disabled{--rer-select-ink:color-mix(in srgb,var(--ink) 55%,transparent)}
 select[multiple]{min-height:5.5rem;padding-right:12px;background:var(--surface)}
 textarea{min-height:80px}
 .picker{font-size:15px;font-weight:400}

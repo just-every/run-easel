@@ -2359,7 +2359,7 @@
       "executable": false
     },
     "src/ui/style.ts": {
-      "sha256": "bdd29088db46dd1d3f6bcfcf6622a95d11986312076847b2cf42ff87eae482a9",
+      "sha256": "ce9472b3936b139ebbb6e0e76cf2175d6f149778699fdf428db1bec5df398ce3",
       "executable": false
     },
     "src/ui/tokens.ts": {
