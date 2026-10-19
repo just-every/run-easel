@@ -9,6 +9,8 @@ import { access, requireFinance, requireMember } from './access'
 import { actualCells, actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
+import { longRange, longRangeList, longRangeView } from './long-range'
+import { longRangeWorkbook } from './long-range-workbook'
 import { handleMcp } from './mcp'
 import { packCsv, packHtml } from './pack-documents'
 import { plan } from './plan'
@@ -97,6 +99,14 @@ api.post('/api/easel/tokens/:op', async c => {
 
 api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
 
+api.get('/api/easel/long-range', c => read(c, longRangeList))
+api.get('/api/easel/long-range/:id', c => read(c, ctx => longRangeView(ctx, c.req.param('id'))))
+api.get('/api/easel/long-range/:id/document.xlsx', async c => {
+ const ctx = await open(c), view = await longRangeView(ctx, c.req.param('id'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(longRangeWorkbook(view), 'easel-long-range')
+})
+
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
@@ -164,7 +174,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, plan, cycle, review, reforecasts]
+const commands = [setup, plan, cycle, review, reforecasts, longRange]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

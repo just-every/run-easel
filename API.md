@@ -92,3 +92,26 @@ Scenario reads include `calculation.assets`: each asset/month's pre-depreciation
 Finance calls `POST /api/easel/command/reforecast-save` with `{from, revision, name}` for a working forecast or scenario. The reviewed revision must still match (409 otherwise); the source stays working and unchanged. The result is a new frozen `reforecast` scenario with `reforecast.snapshot`, source lineage and saved revision. Names are trimmed and case-insensitively unique among reforecasts. It is readable through the existing scenario, comparison, snapshot and spreadsheet routes; branch it to make changes. Captured structure, inputs and arithmetic are read from the immutable snapshot, including after the source is deleted and after restore.
 
 `GET /api/easel/variance/:month` adds `versions: [{id,name,kind,revision,currency,snapshot?}]` and row `comparisons: [{id,amount,variance}]`. Values use integer minor units; variance is actual minus version. A month outside a captured horizon returns null amount and variance; a currency mismatch returns null variance. The current forecast uses accepted actuals for closed months. The Excel variance workbook includes a Version comparison sheet. New published packs capture the same version columns and values for immutable HTML, CSV and Excel downloads.
+
+
+### CYCLE-006 annual strategy
+
+`GET /api/easel/long-range` lists named annual plans for members. `GET /api/easel/long-range/:id` returns its definition, linked operating-budget revision (and approval digest when frozen), five or fewer annual rows, traces and target gaps. `GET /api/easel/long-range/:id/document.xlsx` downloads the same aggregates with live formulas. No position-level inputs are included.
+
+Finance saves through `POST /api/easel/command/long-range-save`:
+
+```json
+{
+  "name": "Five-year strategy", "budget": "<budget-id>", "budgetRevision": 8,
+  "years": 5, "priorYearRevenue": "1000000",
+  "targets": {"growthPercent": "40", "marginPercent": "25", "headcount": 8, "cash": "1500000"},
+  "drivers": [
+    {"growthPercent": "20", "marginPercent": "30", "headcountChange": 2, "cashChange": "200000"},
+    {"growthPercent": "10", "marginPercent": "35", "headcountChange": 1, "cashChange": "-50000"},
+    {"growthPercent": "0", "marginPercent": "20", "headcountChange": -1, "cashChange": "30000"},
+    {"growthPercent": "-10", "marginPercent": "-5", "headcountChange": 0, "cashChange": "-100000"}
+  ]
+}
+```
+
+For updates include `id` and the reviewed annual `revision`; also send the current `budgetRevision`. A stale revision returns 409 and changes nothing. `years` is 3–5; `drivers` has one entry per later year. Monetary command values are decimal currency units; returned amounts are integer minor units, rates basis points and headcount whole people. Growth is at least −100%, margin at most 100%, and projected headcount nonnegative. Year one sums the first twelve operating-budget months; headcount and cash are the year-end values. Later revenue compounds prior projected revenue, profit applies that year’s margin, headcount adds the entered change, and cash adds the entered net cash change independently of accounting profit. Each division rounds half away from zero once. Revenue targets compound prior-year revenue at the target growth rate; profit applies the target margin; headcount and cash targets stay fixed across years. Each gap is projection minus target. Working-budget edits flow through; approvals use captured arithmetic. A currency change requires finance to review and save assumptions in the new currency.

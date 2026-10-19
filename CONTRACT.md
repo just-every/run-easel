@@ -453,11 +453,11 @@ Besides the approved budget and the rolling forecast, finance saves named refore
 *Status:* done.
 
 #### CYCLE-006 — Long-range plan linked to the operating plan.
-A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headcount, cash). Year one comes from the operating budget, and later years come from annual drivers. A reconciliation shows where the bottom-up budget misses the long-range target.
+A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headcount, cash). Year one comes from the operating budget, and later years come from annual drivers. A reconciliation shows where the bottom-up budget misses the long-range target. Finance saves named plans linked to the operating budget at the reviewed budget and annual-plan revisions. Year one is the first twelve budget months: revenue, operating costs and profit sum those months, while headcount and cash use the final month. Working-budget edits flow through; an approved budget uses its saved arithmetic and snapshot digest. Annual periods start in the budget’s first fiscal month. Later years apply entered revenue growth, operating margin, whole-person headcount change and an explicit net cash change independent of profit. Money is integer minor units; divisions round half away from zero once. Revenue growth cannot be below −100%, margin cannot exceed 100%, and projected headcount cannot be negative. Revenue targets compound the entered prior-year revenue by the target growth rate (including year one); profit targets apply the target operating margin to target revenue. Headcount and cash targets are fixed year-end targets for each year. Gaps are budget or projection minus target. Members read aggregate plans and Excel exports; existing finance authority governs edits, and no position-level pay data is included.
 
-*Acceptance:* the API journey sets a five-year plan with a 40% growth target and reads year one equal to the budget and the gap to the target.
+*Acceptance:* `tests/long-range.test.mjs` (`CYCLE-006`) sets a five-year plan with a 40% growth target and asserts year one equals the twelve-month operating budget, every later annual driver, all four target gaps, three-year editing, exact rounding, stale-save refusal, existing role filtering and approved-budget immutability. Its Excel formulas independently evaluate to the API’s amounts and gaps. `tests/long-range-browser.mjs` (`CYCLE-006`) creates plans and reads the reconciliation and Excel download as finance and board at 1440 and 390 without page overflow.
 
-*Status:* missing.
+*Status:* done.
 
 ### Reporting
 
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 10 | 36 | 40 | 86 |
-| All | 27 | 36 | 40 | 103 |
+| Target and push further | 11 | 36 | 39 | 86 |
+| All | 28 | 36 | 39 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -880,7 +880,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CYCLE-003` | Notifications from discussions and events | target | missing |  | No mention, approval or event notifications by email or chat |
 | `CYCLE-004` | Private and shared scenarios | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | Contributor proposals are visible to their author and finance; private sandboxes for any planner, sharing grants and official-scenario marking are missing |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
-| `CYCLE-006` | Long-range plan linked to the operating plan | target | missing |  | No multi-year strategic plan or target reconciliation |
+| `CYCLE-006` | Long-range plan linked to the operating plan | target | done | `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs` | Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths |
 | `REPORT-001` | Report builder | target | partial | `src/ui/overview.tsx` `src/easel/views.ts` | Fixed overview, scenario and variance views ship; user-built and saved reports, year-to-date, trailing-twelve-month, prior-year and year-over-year columns, filters, highlighting and scheduled email delivery are missing |
 | `REPORT-002` | Dashboards | target | partial | `src/ui/overview.tsx` `src/ui/chart.tsx` | One fixed overview with a chart ships; configurable KPI dashboards, saved layouts and audience sharing are missing |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |

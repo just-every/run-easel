@@ -126,6 +126,12 @@
       "clauses": [
         "CYCLE-005"
       ]
+    },
+    {
+      "id": "long-range-planning",
+      "clauses": [
+        "CYCLE-006"
+      ]
     }
   ],
   "nonGoals": [

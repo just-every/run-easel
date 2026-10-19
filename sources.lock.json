@@ -91,7 +91,7 @@
   ],
   "files": {
     ".github/workflows/journeys.yml": {
-      "sha256": "e746d0278746d105f8639b2b5aeb4e2e768b171c8870f3ba4fd1805eb6ff7f08",
+      "sha256": "a5a0583485a4fd6be436311ed909f5f7c4f367ca6874bda7bb4f88d18dd60c49",
       "executable": false
     },
     ".github/workflows/run-demo.yml": {
@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "6507352b25cc65b41353953abcef38656772e79ae81b60f21441a1ad79227f48",
+      "sha256": "6739f50852661252732f743aa2372fa9ae37d7c9bc3944c899e989279630f70b",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "7e199c217f41f0e3b0965261e3b7278a3ccdacde4cb43c48a087161521e02c17",
+      "sha256": "95a89be1bc54ed3c12c1ba95e0dc691d12dac88e68bc94626cf47c70c8db24cf",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3902589a0e3c43ba828fb5b957235918c980705aaabfe7ecf84d5afdba6b7127",
+      "sha256": "cf125a41a3954cbda52e24a0dc5edd2be6b0fb179643b2a60e7426d648cd6340",
       "executable": false
     },
     "DEMO.md": {
@@ -463,7 +463,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "e8f305f2abc7106e76e18de62c7b38e3f42e7942b8259015ebfd7e490fa05649",
+      "sha256": "8523a057f480fcef97eef64b8a62dff41b5de3f0462e27f30f98d19cc78027bd",
       "executable": false
     },
     "SOURCE.md": {
@@ -603,7 +603,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "161c7c847f3097e8597ab6736d5a545528eda7aaecc61a530175e86c49afbfe7",
+      "sha256": "55f00c122006913d957aaf30c73c41de46d327939745a61f02cb900847ead0f4",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -652,6 +652,14 @@
     },
     "src/easel/kit.ts": {
       "sha256": "0a1e6e9d0fec181b524b885c9a2a8836cdd3248f4ce64f49c1e228b657b304f4",
+      "executable": false
+    },
+    "src/easel/long-range-workbook.ts": {
+      "sha256": "83ebfd58200846bb7d47c6fdef849f04dcb04eca7b0e3cea6b50a5696420d4a5",
+      "executable": false
+    },
+    "src/easel/long-range.ts": {
+      "sha256": "07e9557411294794bf73b87369b44e2fd6c82e6fdb26e3a33f3b1af9ff93de47",
       "executable": false
     },
     "src/easel/mcp.ts": {
@@ -2482,6 +2490,10 @@
       "sha256": "0816fedf644987f9cc898a4477844fa64288cc803bda9ae9dd703f9f883594d7",
       "executable": false
     },
+    "src/ui/long-range.tsx": {
+      "sha256": "e05f03aab4801fa1196c5ff76463aaaa274435ca6c526f8b21512923047f8f9a",
+      "executable": false
+    },
     "src/ui/overview.tsx": {
       "sha256": "0864052f4a511479c38c51a2b76707185447dc5fa65f15134f4cd2d5de9bbdc5",
       "executable": false
@@ -2507,7 +2519,7 @@
       "executable": false
     },
     "src/ui/scenarios.tsx": {
-      "sha256": "2a43c3a25d8d24d900faa3c6e27cd0650190cbb44e53cbd185b5c0d884a68029",
+      "sha256": "d424a79dd51d61d4aa168f754e81fd21acc870d4812111a8c526b8d304291083",
       "executable": false
     },
     "src/ui/scroll-style.ts": {
@@ -2602,6 +2614,18 @@
       "sha256": "164ff178ef43f01a840e38aea0b391beaa18be6fed79b7e55257d7c177df4bc5",
       "executable": false
     },
+    "tests/long-range-browser-journey.mjs": {
+      "sha256": "24712389496bdff55876dbd4912d4be7460800aa7be449c39ee3394a69dcde7d",
+      "executable": false
+    },
+    "tests/long-range-browser.mjs": {
+      "sha256": "70d7423ef4947e11146174131bd2b720834f958a8a3c030584af5ae96c2f363c",
+      "executable": false
+    },
+    "tests/long-range.test.mjs": {
+      "sha256": "ebfda2a67889632c8dabff50ddfb9a18a4019aed347444edc534a36f874fbd9b",
+      "executable": false
+    },
     "tests/mcp.test.mjs": {
       "sha256": "04c9b7d0114ef07c4532b1059e525df438736ff526dd2cdf1e0eb0e49bd18024",
       "executable": false
@@ -2651,7 +2675,7 @@
       "executable": false
     },
     "tests/spreadsheet-proof.mjs": {
-      "sha256": "370197003887aab3f33fcc6cf11a28fdc9d4f1f27b21b35d936b42ad1dba2f1c",
+      "sha256": "1925b705a83604bb169814b723cc22bfe60973d115ec61c9f99d964556a85952",
       "executable": false
     },
     "tests/totals.test.mjs": {

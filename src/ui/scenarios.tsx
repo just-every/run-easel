@@ -1,3 +1,4 @@
+import { LongRange } from './long-range'
 import { CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
 import { assumptionText } from './assumptions'
@@ -55,6 +56,8 @@ export function Scenarios({ state, refresh }: Shared) {
     <Table caption="Changed cells" heads={['Month', 'Line', 'Department', 'Before', 'After', 'Difference']}>{cmp.changedCells.slice(0, 200).map((c: D) => <tr key={`${c.line}|${c.department}|${c.month}`}><td>{monthLabel(c.month)}</td><td>{comparedName('lines', c.line, 'Deleted planning line')}</td><td>{comparedName('departments', c.department, 'No department')}</td><td className="num">{money(c.before, leftCurrency)}</td><td className="num">{money(c.after, rightCurrency)}</td><td className="num">{money(c.difference, leftCurrency)}</td></tr>)}</Table>
    </>}
   </section>
+
+  <LongRange state={state} refresh={refresh} />
 
   <section className="card">
    <h2>Proposals</h2>
