@@ -55,7 +55,7 @@ test('approved budget and comparison retain saved arithmetic and metadata under 
    const cmp = await h.get(`/api/easel/compare?a=${left.scenario.id}&b=${right.scenario.id}`)
    assert.equal(cmp.currencyComparable, currencyComparable)
    for (const [side, view] of [[cmp.left, left], [cmp.right, right]]) {
-    assert.deepEqual(side, { scenario: view.scenario, workspace: view.workspace, lines: view.lines, departments: view.departments, profit: view.calculation.profit, cash: view.calculation.cash })
+    assert.deepEqual(side, { scenario: view.scenario, workspace: view.workspace, lines: view.lines, departments: view.departments, profit: view.calculation.profit, cash: view.calculation.cash, cashHealth: view.cashHealth })
    }
    assert.ok(cmp.changedCells.length > 0)
    for (const cell of cmp.changedCells) {
