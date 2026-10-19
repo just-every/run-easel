@@ -37,6 +37,12 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  assert.equal(connected.suffix, 'aaaa'); assert.equal(connected.schedule, 'Manual'); assert.equal(connected.lastRefresh, null)
  const stored = await h.db.prepare('SELECT * FROM e_connection_secrets').all()
  assert.equal(stored.results.length, 1); assert.ok(!JSON.stringify(stored).includes(key)); assert.ok(stored.results[0].sealed.includes('.'))
+ await h.stepUp()
+ const issued = await post('tokens/issue', { label: 'Finance integration', kind: 'service', scope: 'write', expiresInSeconds: 3600 })
+ for (const [path, body] of [['connections/gauge', undefined], ['connections/gauge/connect', { key }], ['connections/gauge/disconnect', {}], ['gauge/preview', await args()]]) {
+  const r = await h.mf.dispatchFetch(h.origin + '/api/easel/' + path, { method: body === undefined ? 'GET' : 'POST', headers: { authorization: `Bearer ${issued.token}`, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
+  assert.equal(r.status, 403, 'REV-003 CONNECT-010 provider custody/status/import require a native finance session, even for a finance write token')
+ }
  const before = await view(), a = await args(), preview = await post('gauge/preview', a)
  assert.deepEqual(await view(), before, 'preview writes no model data')
  assert.equal(preview.amountCents, 1500004, '360001 seconds × 15000 cents / 3600 rounded once')
