@@ -5,7 +5,7 @@ import { Hono, type Context as HonoContext } from 'hono'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { deploymentHealth } from '../base/deployment-health'
 import { activityCsv, activityView as filteredActivity } from './audit'
-import { access, requireFinance } from './access'
+import { access, requireFinance, requireMember } from './access'
 import { actualCells, actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
@@ -15,15 +15,32 @@ import { plan } from './plan'
 import { review, variance } from './review'
 import { setup } from './setup'
 import { actor, load, readFence, save, snapshot } from './store'
-import { Fault, get, requireThat, type Data } from './types'
-import { activityView, actualsView, compareView, scenarioView, snapshotView, stateView } from './views'
+import { tokenAdmin } from './token-admin'
+import { tokenRate, tokenUse } from './token-auth'
+import { Fault, get, requireThat, type Actor, type Data } from './types'
+import { actualsView, compareView, scenarioView, snapshotView, stateView } from './views'
 import { workbookCommand } from './workbook'
 
-type Env = { Bindings: Bindings }
+type Env = { Bindings: Bindings; Variables: { apiActor: Actor } }
 export const api = new Hono<Env>()
 
 api.get('/health', c => c.json({ status: 'ok', ...deploymentHealth(c.env) }))
 api.use('/api/easel/*', async (c, next) => { await next(); c.header('cache-control', 'no-store'); c.header('x-content-type-options', 'nosniff') })
+api.use('/api/easel/*', async (c, next) => {
+ if (!c.req.raw.headers.has('authorization')) return next()
+ const person = await actor(c.req.raw, c.env)
+ c.set('apiActor', person)
+ let status = 500
+ try {
+  const limit = await tokenRate(c.env.DB, person)
+  if (!limit.allowed) { c.header('Retry-After', String(limit.retryAfter)); throw new Fault(429, 'API request limit reached; try again after Retry-After seconds') }
+  requireThat(!/^\/api\/easel\/(tokens(?:\/|$)|invite$|mcp$)/.test(c.req.path), 'Use a signed-in session for credential administration, invitations and MCP', 403)
+  requireThat(['GET', 'HEAD'].includes(c.req.method) || person.token?.scope === 'write', 'This API token has read scope only', 403)
+  await next()
+  status = c.res.status
+ } catch (e) { status = e instanceof Fault ? e.status : 500; throw e }
+ finally { await tokenUse(c.env.DB, person, c.req.raw, status) }
+})
 api.onError((e, c) => {
  if (e instanceof Fault) return c.json({ error: e.message }, e.status as 400)
  const message = String((e as Error).message ?? e)
@@ -33,8 +50,9 @@ api.onError((e, c) => {
 })
 
 async function open(c: HonoContext<Env>): Promise<Context & { revision: number; before: Map<string, any> }> {
- const a = await actor(c.req.raw, c.env)
+ const a = c.get('apiActor') ?? await actor(c.req.raw, c.env)
  const { state, revision } = await load(c.env.DB)
+ if (a.token) requireMember(access(state, a))
  let cached: ReturnType<typeof actualCells> | undefined
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString(), actuals: () => (cached ??= actualCells(c.env.DB, state)) }
 }
@@ -58,6 +76,13 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(result as any)
 }
+
+api.get('/api/easel/tokens', async c => c.json(await tokenAdmin(await open(c), c.req.raw, c.env, 'list', {})))
+api.post('/api/easel/tokens/:op', async c => {
+ const op = c.req.param('op')
+ requireThat(op === 'issue' || op === 'revoke', 'Unknown token action', 404)
+ return c.json(await tokenAdmin(await open(c), c.req.raw, c.env, op, await body(c)))
+})
 
 api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
 

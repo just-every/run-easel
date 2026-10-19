@@ -545,7 +545,7 @@ The HTTP API (`API.md`) is available to integrations through personal and servic
 
 *Acceptance:* issue a read-only token, read a scenario, be refused a write, revoke the token and be refused a read.
 
-*Status:* partial.
+*Status:* done.
 
 #### API-002 — Webhooks and automation apps.
 Signed webhooks fire on approval, close, publish, refresh failure, alert and task events. Published apps for [Crank](https://github.com/just-every/run-crank), Zapier and Make expose those triggers and the proposal and comment actions.
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 3 | 42 | 41 | 86 |
-| All | 20 | 42 | 41 | 103 |
+| Target and push further | 4 | 41 | 41 | 86 |
+| All | 21 | 41 | 41 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -892,7 +892,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `ACCESS-002` | SSO and SCIM | target | missing |  | No SAML, OIDC or SCIM |
 | `AUDIT-001` | Model audit trail | target | done | `src/easel/audit.ts` `src/easel/audit-write.ts` `tests/audit.test.mjs` `tests/restore-flow.mjs` | Atomic before/after values for native and imported records, person or agent attribution, finance filters and complete CSV export; append-only database guards and real CLI restore preserve the trail |
 | `ERASE-001` | Person erasure | target | missing |  | No erasure command, pseudonymised snapshot reads or receipt |
-| `API-001` | Public API with scoped tokens | target | partial | `src/easel/api.ts` `API.md` | The documented HTTP API works with a signed-in person's session; scoped personal and service tokens, expiry and rate limits are missing |
+| `API-001` | Public API with scoped tokens | target | done | `src/easel/token-admin.ts` `src/easel/token-auth.ts` `tests/api-tokens.test.mjs` `API.md` | Personal and named service bearers use Base credentials, read/write scopes, expiry, revocation, issuer role and department ceilings, durable rate limits, atomic write fences and token-use audit events; credentials stay out of exports |
 | `API-002` | Webhooks and automation apps | target | missing |  | No webhooks or published automation apps |
 | `API-003` | MCP endpoint for outside agents | target | done | `tests/mcp.test.mjs` (API-003) |  |
 | `ENTITY-001` | Multiple entities and management consolidation | target | missing |  | One entity per installation; no consolidation or eliminations |

@@ -1,6 +1,7 @@
 import { fiscalMonths, monthLabel, type D } from './shared'
 
 const events: Record<string, string> = {
+ 'token-issued': 'Issued an API token', 'token-revoked': 'Revoked an API token', 'api-token-used': 'Used an API token',
  workspace: 'Updated plan settings', department: 'Saved a department', 'department-delete': 'Deleted a department', line: 'Saved a planning line', 'line-delete': 'Deleted a planning line', member: 'Updated a person’s access', 'account-map': 'Mapped an account', 'department-map': 'Mapped a department', 'scenario-created': 'Created a budget', 'cash-changed': 'Changed opening cash and timing', branch: 'Branched a scenario', 'proposal-create': 'Created a proposal', 'proposal-submit': 'Submitted a proposal', 'proposal-promoted': 'Promoted a proposal', 'proposal-decline': 'Declined a proposal', 'scenario-adopt': 'Adopted scenario assumptions', 'scenario-delete': 'Deleted a scenario', 'request-submissions': 'Requested department submissions', submit: 'Submitted a department budget', 'return-submission': 'Returned a department budget', 'approve-budget': 'Approved the budget', 'forecast-opened': 'Opened the forecast', comment: 'Added a comment', 'close-month': 'Closed the month', explanation: 'Saved an explanation', 'explanation-confirm': 'Confirmed an explanation', 'pack-create': 'Started a review pack', 'pack-decision': 'Recorded a decision', 'pack-publish': 'Published a review pack', 'action-status': 'Updated an action',
 }
 for (const kind of ['revenue', 'position', 'expense', 'schedule', 'allocation']) for (const [suffix, verb] of [['added', 'Added'], ['changed', 'Changed'], ['removed', 'Removed']]) events[`${kind}-${suffix}`] = `${verb} ${kind === 'revenue' ? 'a revenue driver' : kind === 'allocation' ? 'a shared-cost allocation' : kind === 'schedule' ? 'a monthly schedule' : `a ${kind}`}`
@@ -24,6 +25,7 @@ export const eventLabel = (action: string) => events[action] ?? 'Other activity'
 export function activityRecord(state: D, row: D) {
  const d = row.detail ?? {}
  const action = row.action as string
+ if (['token-issued', 'token-revoked', 'api-token-used'].includes(action)) return safeText(d.label ?? d.token?.label) || 'API credential'
  if (action === 'record-changed') return safeText(d.after?.name ?? d.after?.title ?? d.before?.name ?? d.before?.title) || `${d.kind} values`
  if (action === 'workspace') return state.workspace.name
  if (action === 'department' || action === 'department-delete') return safeText(d.name) || named(state, 'departments', row.record, 'Removed department')
@@ -44,6 +46,8 @@ export function activityRecord(state: D, row: D) {
 /** Typed event fields only: fingerprints and internal identities are never display text. */
 export function activityDetail(state: D, row: D) {
  const d = row.detail ?? {}, parts: string[] = []
+ if (row.action === 'api-token-used') return `${d.method} ${d.path} · HTTP ${d.status} · ${d.token?.scope} scope`
+ if (row.action === 'token-issued' || row.action === 'token-revoked') return `${d.kind} · ${d.scope} scope · expires ${new Date(d.expiresAt).toISOString()}`
  const text = (key: string, label: string) => { const value = safeText(d[key]); if (value) parts.push(`${label}: ${value}`) }
  for (const [key, label] of [['name', 'Name'], ['file', 'File'], ['reason', 'Reason'], ['request', 'Request'], ['due', 'Due'], ['currency', 'Currency'], ['status', 'Status'], ['state', 'Import status']]) text(key, label)
  if (d.kind) parts.push(`Kind: ${d.kind === 'operating-expense' ? 'Operating expenses' : d.kind === 'cost-of-sales' ? 'Cost of sales' : safeText(d.kind)}`)

@@ -3,11 +3,18 @@
 // for contributors, the departments they plan for.
 import { find, requireThat, type Access, type Actor, type Data, type State } from './types'
 
-export function access(s: State, a: Actor): Access {
+function currentAccess(s: State, a: Actor): Access {
  if (a.baseRole === 'owner' || a.baseRole === 'admin') return { actor: a, role: 'finance', departments: [] }
  const m = find(s, 'member', a.email)
  if (!m || !m.active || m.role === 'finance') return { actor: a, role: null, departments: [] }
  return { actor: a, role: m.role, departments: m.role === 'contributor' ? m.departments ?? [] : [] }
+}
+
+export function access(s: State, a: Actor): Access {
+ const current = currentAccess(s, a)
+ if (!a.token) return current
+ if (current.role !== a.token.role) return { ...current, role: null, departments: [] }
+ return { ...current, departments: current.departments.filter(id => a.token!.departments.includes(id)) }
 }
 
 export function requireMember(x: Access) {

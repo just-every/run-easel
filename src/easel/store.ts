@@ -1,13 +1,16 @@
 // Loading and saving the editable model. Every save is one D1 batch fenced by
 // the model revision read at load and by the actor's current native session,
 // so a concurrent change or a revoked session writes nothing.
-import { changeEvent, eventStatement } from './audit-write'
+import { actorAuthority, changeEvent, eventStatement } from './audit-write'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
+import { tokenActor, tokenAuthority } from './token-auth'
 import { Fault, key, requireThat, type Actor, type Data, type State } from './types'
 
 export async function actor(request: Request, original: Bindings): Promise<Actor> {
  const env = runtimeBindings(original)
- requireThat(new URL(request.url).origin === env.AUTH_ORIGIN, 'Invalid host', 403)
+ const url = new URL(request.url), host = request.headers.get('host')
+ requireThat(url.origin === env.AUTH_ORIGIN && (!host || host.toLowerCase() === url.host.toLowerCase()), 'Invalid host', 403)
+ if (request.headers.has('authorization')) return tokenActor(request, env)
  if (!['GET', 'HEAD'].includes(request.method)) requireThat(request.headers.get('origin') === env.AUTH_ORIGIN && request.headers.get('sec-fetch-site') !== 'cross-site', 'Invalid origin', 403)
  const session = await operatorAuth(env).getSession(request)
  requireThat(session, 'Sign in required', 401)
@@ -16,6 +19,7 @@ export async function actor(request: Request, original: Bindings): Promise<Actor
 
 /** SQL that is true only while the actor's session and operator are still current. */
 export function authority(a: Actor, finance = false) {
+ if (a.token) return tokenAuthority(a, finance)
  return {
   sql: `EXISTS(SELECT 1 FROM oa_sessions se JOIN oa_operators o ON o.id=se.operator_id WHERE se.id=? AND o.id=? AND o.version=se.operator_version AND o.version=? AND o.role=? AND o.status='active' AND se.revoked_at IS NULL AND se.expires_at>unixepoch()*1000${finance ? " AND o.role IN ('owner','admin')" : ''})`,
   params: [a.session, a.id, a.version, a.baseRole],
@@ -55,7 +59,7 @@ export async function save(db: D1Database, a: Actor, before: State, after: State
   const body = JSON.stringify(s.body)
   q.push(db.prepare('INSERT INTO e_snapshots(id,kind,scenario,label,actor,at,sha256,body) VALUES(?,?,?,?,?,?,?,?)').bind(s.id, s.kind, s.scenario, s.label, a.email, at, await sha256(body), body))
  }
- for (const e of activity) q.push(db.prepare('INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail) VALUES(?,?,?,?,?,?,?,?)').bind(at, a.email, e.action, e.record, e.scenario ?? null, e.before ?? null, e.after ?? null, JSON.stringify({ ...e.detail, authority: { type: a.agent ? 'agent' : 'person', name: a.agent?.name ?? a.name, via: a.agent?.via ?? 'session' } })))
+ for (const e of activity) q.push(db.prepare('INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail) VALUES(?,?,?,?,?,?,?,?)').bind(at, a.email, e.action, e.record, e.scenario ?? null, e.before ?? null, e.after ?? null, JSON.stringify({ ...e.detail, authority: actorAuthority(a) })))
  q.push(guard().bind(...auth.params), db.prepare('DELETE FROM e_guard'))
  try { await db.batch(q) } catch (e) {
   if (String(e).includes('CHECK constraint')) throw new Fault(409, 'The plan or your access changed while you were working; reload and try again')

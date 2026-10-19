@@ -84,6 +84,12 @@
       "clauses": [
         "AUDIT-001"
       ]
+    },
+    {
+      "id": "scoped-api-tokens",
+      "clauses": [
+        "API-001"
+      ]
     }
   ],
   "nonGoals": [

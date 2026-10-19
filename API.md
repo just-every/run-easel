@@ -1,9 +1,9 @@
 # Easel HTTP API
 
-The same routes serve the app and any agent acting for a signed-in person.
-Every request needs that person's native session cookie; writes also need a
-same-origin `Origin` header. Responses are JSON; refusals are
-`{ "error": "..." }` with 400, 401, 403, 404, 409 or 413. A 409 means the plan
+The same routes serve the app and integrations acting under a person's authority.
+Use a native session cookie (and a same-origin `Origin` header for writes), or
+a scoped personal/service bearer token as documented below. Responses are JSON; refusals are
+`{ "error": "..." }` with 400, 401, 403, 404, 409, 413 or 429. A 409 means the plan
 or the person's access changed (reload and decide again) or a reviewed
 revision or fingerprint no longer matches.
 
@@ -17,7 +17,7 @@ revision or fingerprint no longer matches.
 | `GET /api/easel/snapshot/:id` | An approved budget, kept forecast or published pack exactly as stored, with its SHA-256 (filtered by role) |
 | `GET /api/easel/variance/:month` | For a closed month: actual, budget, kept forecast, variance, accepted rows, budget sources, hypotheses, draft and saved explanation per line and department |
 | `GET /api/easel/actuals` | Finance: month-by-month reconciliation and unmapped accounts |
-| `GET /api/easel/activity` | Finance: the latest 300 activity events with revisions before and after |
+| `GET /api/easel/activity` | Finance: filtered activity events, up to 300 per page, with before/after values and attribution |
 | `GET /api/easel/pack/:id/document.html` · `.csv` | A published pack, rendered from its snapshot |
 
 `state` and `variance` include `actorNames`, a contextual email-to-name map from
@@ -55,3 +55,19 @@ Agents can use the native-session [MCP endpoint](docs/mcp.md) at `POST /api/ease
 Finance reads `GET /api/easel/activity` with optional exact `actor` (email), `record` (ID), `scenario` (ID), and inclusive `from` / `to` dates (`YYYY-MM-DD`). Results are newest first, up to 300 rows; pass the last row's `seq` as `before` to read older rows. `GET /api/easel/activity.csv` accepts the same filters and exports all matching rows.
 
 `record-changed` rows hold the record kind, complete before and after values (null for creation/deletion), and native record revisions in `detail.beforeRecordRevision` / `detail.afterRecordRevision`. Semantic events retain scenario revisions in `beforeRevision` / `afterRevision`. `detail.authority` identifies a person or MCP agent and its transport; `actor` always identifies the person whose authority was used. Import and undo changes enter the same append-only trail inside the authorized journal batch. The complete trail survives `rer export` and restore.
+
+## Integration tokens (API-001)
+
+A signed-in member manages their own tokens through these session-only routes:
+
+- `GET /api/easel/tokens`: safe metadata, expiry and revocation state; no bearer values or hashes.
+- `POST /api/easel/tokens/issue`: `{ "label": "Finance reporting", "kind": "personal", "scope": "read", "expiresInSeconds": 86400 }`. Kind is `personal` or `service`; scope is `read` or `write` (includes reads). Lifetime defaults to one day and must be between one second and 365 days. The response contains the bearer `token` once.
+- `POST /api/easel/tokens/revoke`: `{ "id": "the-issued-id" }`. Only the issuing person can list or revoke their credentials.
+
+Issuance uses Base's fresh identity proof. If it returns `step_up_required`, request `POST /auth/step-up` with `{ "action": "credentials:mint", "returnTo": "/app" }`, follow and confirm the emailed link in the same browser session, then issue again. Key-gated local developer sessions already satisfy this proof.
+
+Integrations send `Authorization: Bearer <token>` to the existing Easel read and command/import routes. They do not send session cookies or an `Origin` header. Read tokens cannot make POST requests. A supplied invalid bearer is refused even if the request also carries a valid session. Token administration, invitations and MCP require the native signed-in session; MCP's proposal-only tools remain documented separately in `docs/mcp.md`.
+
+Tokens retain the issuer's role at issuance, intersect their original departments with today's grants, and resolve current membership on every request. A role change, deactivation, native operator-version change, expiry or revocation removes access; later department additions never expand an existing token. Named service tokens are labelled as agent work under their issuer's authority. Writes and import journal batches recheck the live credential and revision fence atomically, so stale revisions still return 409.
+
+Each credential has a durable limit of 120 requests per minute. Excess requests return 429 and `Retry-After` in seconds. Successful requests, refused actions and rate-limit refusals record the credential ID, safe label, method, path and outcome in the append-only activity trail; raw bearer values never enter that trail. Base credentials, token metadata and rate counters are excluded from `rer export`, so restored installations require new tokens.

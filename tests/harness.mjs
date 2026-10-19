@@ -65,7 +65,16 @@ export async function harness() {
    assert.equal(confirmed.status, 303, JSON.stringify(confirmed.value))
    return confirmed.cookie
   }
-  return { db, mf, origin, owner, send, command, kit, get, person, async close() { await mf.dispose(); await rm(dir, { recursive: true, force: true }) } }
+  const stepUp = async (cookie = owner) => {
+   const prior = messages.length
+   await expect(await send('/auth/step-up', { action: 'credentials:mint', returnTo: '/app' }, cookie), 202, 'step-up request')
+   const message = messages.slice(prior).at(-1)
+   assert.ok(message, 'Step-up confirmation was delivered to the mail boundary')
+   const token = new URL(message.text.match(/http:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
+   const confirmed = await send('/auth/confirm', { token }, cookie)
+   assert.equal(confirmed.status, 303, 'Step-up confirmation completes in its original session')
+  }
+  return { db, mf, origin, owner, send, command, kit, get, person, stepUp, async close() { await mf.dispose(); await rm(dir, { recursive: true, force: true }) } }
  } catch (error) {
   await mf.dispose(); await rm(dir, { recursive: true, force: true })
   throw error

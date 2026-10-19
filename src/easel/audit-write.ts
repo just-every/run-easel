@@ -3,6 +3,10 @@ import type { D1Sql, TargetRow } from '../modules/import-kit/src/d1/index'
 import type { Activity } from './store'
 import type { Actor, Row } from './types'
 
+export function actorAuthority(actor: Actor) {
+ return { type: actor.agent ? 'agent' : 'person', name: actor.agent?.name ?? actor.name, via: actor.token ? 'api-token' : actor.agent?.via ?? 'session', ...(actor.token ? { tokenId: actor.token.id } : {}) }
+}
+
 export function changeEvent(before?: Row, after?: Row): Activity {
  const row = after ?? before!
  return { action: 'record-changed', record: row.id, scenario: (after?.value ?? before?.value)?.scenario ?? (row.kind === 'scenario' ? row.id : undefined), detail: {
@@ -15,7 +19,7 @@ export function eventStatement(db: D1Database, actor: Actor, event: Activity) {
  const d = event.detail!
  return db.prepare('INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail) VALUES(?,?,?,?,?,?,?,?)').bind(
   new Date().toISOString(), actor.email, event.action, event.record, event.scenario ?? null, null, null,
-  JSON.stringify({ ...d, authority: { type: actor.agent ? 'agent' : 'person', name: actor.agent?.name ?? actor.name, via: actor.agent?.via ?? 'session' } }),
+  JSON.stringify({ ...d, authority: actorAuthority(actor) }),
  )
 }
 
@@ -31,6 +35,6 @@ export function importAudit(actor: Actor, destination: string, kind: string, id:
  return [{ sql: `INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail)
   SELECT ?,?,'record-changed',?,COALESCE(?,json_extract(${query('value')},'$.scenario')),NULL,NULL,
   json_object('kind',?,'destination',?,'before',json(${query('value')}),'after',json(?),'beforeRecordRevision',${query('revision')},'afterRecordRevision',?,'authority',json(?))`,
-  params: [new Date().toISOString(), actor.email, id, scenario, ...params, kind, destination, ...params, value, ...params, after?.revision ?? null, JSON.stringify({ type: actor.agent ? 'agent' : 'person', name: actor.agent?.name ?? actor.name, via: actor.agent?.via ?? 'session' })],
+  params: [new Date().toISOString(), actor.email, id, scenario, ...params, kind, destination, ...params, value, ...params, after?.revision ?? null, JSON.stringify(actorAuthority(actor))],
  }]
 }

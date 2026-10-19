@@ -9,6 +9,7 @@ export type Actor = {
  id: string
  email: string
  name: string
+ token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; write: boolean }
  agent?: { name: string; via: string }
  session: string
  version: number
