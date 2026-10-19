@@ -1,3 +1,4 @@
+import { commercialCosts, type InventoryMonth } from './commercial-costs'
 import { historySchedule } from './history-schedules'
 import { calculateFinancing, evaluateCovenants, type FinancingCalculation } from './financing'
 import { libraryRevenue } from './revenue-drivers'
@@ -47,6 +48,7 @@ export type Calculation = {
  balanceSheet?: BalanceMonth[]
  cashFlow?: CashFlowMonth[]
  assets?: AssetMonth[]
+ inventory?: InventoryMonth[]
  financing?: FinancingCalculation
 }
 
@@ -139,10 +141,17 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   }
  }
 
- for (const e of inputs.expense) {
+ for (const e of inputs.expense.filter(e => !['acquisition', 'inventory'].includes(e.kind))) {
   if (e.kind === 'one-off') add(e.line, e.department, e.start, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace: `${e.name}: one-off ${money(e.amountCents)} in ${monthLabel(e.start)}` })
   else for (const m of months) if (active(e, m)) add(e.line, e.department, m, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace: `${e.name}: recurring ${money(e.amountCents)} a month from ${monthLabel(e.start)}${e.end ? ` to ${monthLabel(e.end)}` : ''}` })
  }
+
+ const commercial = commercialCosts(model, months, actuals)
+ for (const row of commercial.costs) {
+  add(row.line, row.department, row.month, row.source, undefined, row.inventory)
+  if (row.inventory) cash.push({ month: addMonths(row.month, paymentLag), amount: row.purchases, collection: false, label: row.source.label })
+ }
+ const inventoryLines = new Set(inputs.expense.filter(e => e.kind === 'inventory').map(e => `${e.line}|${e.department}`))
 
  for (const s of inputs.schedule) {
   if (s.history) {
@@ -177,7 +186,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   c.amount += a.amount
   c.sources.push({ kind: 'actual', label: 'Accepted actuals', amount: a.amount, trace: `${monthLabel(a.month)}: ${money(a.amount)} from ${a.rows} accepted row${a.rows === 1 ? '' : 's'} in ${a.batches.length} import${a.batches.length === 1 ? '' : 's'}` })
   const type = lineById.get(a.line)?.type
-  if (lineById.get(a.line)?.nonCash) continue
+  if (lineById.get(a.line)?.nonCash || inventoryLines.has(`${a.line}|${a.department}`)) continue
   cash.push({ month: addMonths(a.month, type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll || interestLines.has(a.line) ? 0 : paymentLag), amount: a.amount, collection: type === 'revenue', label: 'Actuals' })
  }
  for (const m of months) if (closed(m) && ![...cells.values()].some(c => c.month === m)) warnings.push(`${monthLabel(m)} is closed but has no accepted actuals`)
@@ -228,7 +237,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   payments += funding.repayments
   const closing = opening + collections - payments
   const basis = i === 0 ? ` (opening cash ${scenario.cash?.basis === 'imported' ? 'imported from actuals' : 'is an estimate'})` : ''
-  const row = { month: m, opening, collections, payments, closing, trace: `${money(opening)}${basis} + collections ${money(collections)} − payments ${money(payments)} = ${money(closing)}; financing inflows ${money(funding.draws + funding.equityRaised)}, principal repayments ${money(funding.repayments)}; revenue collected ${monthCount(collectionLag)} after it is earned, non-payroll costs paid ${monthCount(paymentLag)} after, payroll in the month${extra.length ? '; ' + extra.join('; ') : ''}` }
+  const row = { month: m, opening, collections, payments, closing, trace: `${money(opening)}${basis} + collections ${money(collections)} − payments ${money(payments)} = ${money(closing)}; financing inflows ${money(funding.draws + funding.equityRaised)}, principal repayments ${money(funding.repayments)}; revenue collected ${monthCount(collectionLag)} after it is earned, non-payroll costs paid ${monthCount(paymentLag)} after, payroll in the month; inventory purchases fund the stock buffer and follow supplier payment timing${extra.length ? '; ' + extra.join('; ') : ''}` }
   opening = closing
   return row
  })
@@ -244,6 +253,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
  financing.covenants = evaluateCovenants(financing, inputs.debt ?? [], profit, cashMonths, nonCashByMonth)
  const result: Calculation = {
   engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
+  ...(inventoryLines.size ? { inventory: commercial.inventory } : {}),
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
   lineTotals, profit, cash: cashMonths, headcount, warnings, assets, financing,
  }

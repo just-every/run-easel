@@ -10,7 +10,8 @@ import { Scenarios } from './scenarios'
 import { Settings } from './settings'
 import { useScrollEdges, revealHorizontally } from './scroll'
 import { ClosingCashChart } from './chart'
-import { addMonths, api, command, Field, Form, type D } from './shared'
+import { addMonths, api, type D } from './shared'
+import { SetupPlan } from './starter-models'
 
 const TABS = [
  { id: 'overview', label: 'Overview', roles: ['finance', 'contributor', 'viewer'] },
@@ -59,20 +60,6 @@ export function App() {
   {tab === 'settings' && <Settings {...shared} />}
   {tab === 'activity' && <Activity state={state} />}
  </main>
-}
-
-function SetupPlan({ refresh }: { refresh: () => Promise<void> }) {
- const now = new Date(), year = now.getUTCMonth() >= 6 ? now.getUTCFullYear() : now.getUTCFullYear() - 1
- return <section className="card solo setup-plan">
-  <h2 className="lead">Set up your plan</h2>
-  <p className="muted">Easel plans one company in one reporting currency. Choose the fiscal year to plan; departments, planning lines and people come next under Settings.</p>
-  <Form className="form form-rows" submit="Create the plan" onSubmit={async v => { await command('workspace', { name: v.name, currency: v.currency, fiscalYearStart: Number(v.fiscalYearStart), planStart: v.planStart }); await refresh() }}>
-   <Field label="Company name" name="name" />
-   <Field label="Reporting currency" name="currency" defaultValue="AUD" hint="One currency; Easel does no currency conversion." />
-   <Field label="Fiscal year starts in month" name="fiscalYearStart" defaultValue="7" options={['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, i) => ({ value: String(i + 1), label: m }))} />
-   <Field label="First plan month" name="planStart" type="month" defaultValue={`${year}-07`} hint="The first month of the fiscal year you are budgeting." />
-  </Form>
- </section>
 }
 
 /** The empty graph-paper year behind a waiting state: decoration only. */

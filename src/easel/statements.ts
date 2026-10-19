@@ -6,14 +6,14 @@ import { addMonths } from './months'
 import { formatMoney } from './units'
 
 export type BalanceMonth = {
- month: string; cash: number; receivables: number; capitalPrepayments: number; fixedAssets: number; assets: number
+ month: string; cash: number; receivables: number; inventory: number; capitalPrepayments: number; fixedAssets: number; assets: number
  payables: number; capitalPayables: number; nonCashReserve: number; debt: number; liabilities: number
  openingEquity: number; retainedEarnings: number; contributedEquity: number; equity: number; balanceDifference: number; cashDifference: number
  trace: string; causes: string[]
 }
 export type CashFlowMonth = {
  month: string; opening: number; netIncome: number; nonCashExpense: number; receivablesChange: number; payablesChange: number
- operating: number; capex: number; disposalProceeds: number; investing: number; financing: number; change: number; closing: number; difference: number; trace: string
+ inventoryChange: number; operating: number; capex: number; disposalProceeds: number; investing: number; financing: number; change: number; closing: number; difference: number; trace: string
 }
 
 export function statements(model: Model, calc: Calculation): { balanceSheet: BalanceMonth[]; cashFlow: CashFlowMonth[] } {
@@ -50,16 +50,18 @@ export function statements(model: Model, calc: Calculation): { balanceSheet: Bal
    return closed && scheduled.length ? 0 : total - sum(scheduled.map(a => a.expense))
   }))
   nonCashReserve += reserveExpense
+  const inventory = calc.inventory?.[i]?.closing ?? 0, priorInventory = calc.inventory?.[i]?.opening ?? 0
+  const inventoryChange = priorInventory - inventory
   const priorReceivables = receivables, priorPayables = payables
   receivables += profit.revenue - (cash.collections - disposalProceeds - (funding?.draws ?? 0) - (funding?.equityRaised ?? 0))
-  payables += profit.costOfSales + profit.operatingExpenses - nonCashExpense - (cash.payments - capex - (funding?.repayments ?? 0))
+  payables += profit.costOfSales + profit.operatingExpenses - nonCashExpense + inventory - priorInventory - (cash.payments - capex - (funding?.repayments ?? 0))
   retainedEarnings += profit.profit
   const cap = capital(month), fixedAssets = sum(assetRows.map(a => a.closingBookValue))
-  const totalAssets = cash.closing + receivables + cap.prepayments + fixedAssets
+  const totalAssets = cash.closing + receivables + inventory + cap.prepayments + fixedAssets
   const liabilities = payables + cap.payables + nonCashReserve + debt, equity = openingEquity + retainedEarnings + contributedEquity
   const balanceDifference = totalAssets - liabilities - equity
   const receivablesChange = priorReceivables - receivables, payablesChange = payables - priorPayables
-  const operating = profit.profit + nonCashExpense + receivablesChange + payablesChange
+  const operating = profit.profit + nonCashExpense + receivablesChange + payablesChange + inventoryChange
   const investing = -capex + disposalProceeds, financing = funding?.financingCash ?? 0
   const change = operating + investing + financing, closing = cash.opening + change
   const difference = closing - cash.closing
@@ -76,10 +78,10 @@ export function statements(model: Model, calc: Calculation): { balanceSheet: Bal
    for (const row of assetRows) causes.push(`Asset schedule: opening ${money(row.openingBookValue)}, depreciation ${money(row.depreciation)}, disposal book value ${money(row.disposalBookValue)}, closing ${money(row.closingBookValue)}.`)
   }
   if (difference !== 0) causes.push(`Indirect closing cash differs from the direct cash schedule by ${money(difference)}.`)
-  const trace = `Cash ${money(cash.closing)} + receivables ${money(receivables)} + capital prepayments ${money(cap.prepayments)} + fixed assets ${money(fixedAssets)} = assets ${money(totalAssets)}; payables ${money(payables)} + capital payables ${money(cap.payables)} + other noncash reserve ${money(nonCashReserve)} + debt ${money(debt)} = liabilities ${money(liabilities)}; opening equity estimate ${money(openingEquity)} + cumulative net income ${money(retainedEarnings)} + contributed equity ${money(contributedEquity)} = equity ${money(equity)}. Opening equity is opening cash + receivables + net fixed assets + capital prepayments − payables − capital payables − opening debt, not an imported equity balance.`
-  balanceSheet.push({ debt, contributedEquity, month, cash: cash.closing, receivables, capitalPrepayments: cap.prepayments, fixedAssets, assets: totalAssets, payables, capitalPayables: cap.payables, nonCashReserve, liabilities, openingEquity, retainedEarnings, equity, balanceDifference, cashDifference: difference, trace, causes })
-  cashFlow.push({ month, opening: cash.opening, netIncome: profit.profit, nonCashExpense, receivablesChange, payablesChange, operating, capex: -capex, disposalProceeds, investing, financing, change, closing, difference,
-   trace: `Net income ${money(profit.profit)} + noncash expenses ${money(nonCashExpense)} − increase in receivables ${money(-receivablesChange)} + increase in operating payables ${money(payablesChange)} = operating cash ${money(operating)}; capex ${money(-capex)} + disposal proceeds ${money(disposalProceeds)} = investing cash ${money(investing)}; financing ${money(financing)} from planned draws − principal repayments + equity raises; opening ${money(cash.opening)} + net change ${money(change)} = closing ${money(closing)}. Capital prepayments and capital payables reconcile purchase/payment timing on the balance sheet.` })
+  const trace = `Cash ${money(cash.closing)} + receivables ${money(receivables)} + inventory estimate ${money(inventory)} + capital prepayments ${money(cap.prepayments)} + fixed assets ${money(fixedAssets)} = assets ${money(totalAssets)}; payables ${money(payables)} + capital payables ${money(cap.payables)} + other noncash reserve ${money(nonCashReserve)} + debt ${money(debt)} = liabilities ${money(liabilities)}; opening equity estimate ${money(openingEquity)} + cumulative net income ${money(retainedEarnings)} + contributed equity ${money(contributedEquity)} = equity ${money(equity)}. Opening equity is opening cash + receivables + net fixed assets + capital prepayments − payables − capital payables − opening debt, not an imported equity balance.`
+  balanceSheet.push({ debt, contributedEquity, month, cash: cash.closing, receivables, inventory, capitalPrepayments: cap.prepayments, fixedAssets, assets: totalAssets, payables, capitalPayables: cap.payables, nonCashReserve, liabilities, openingEquity, retainedEarnings, equity, balanceDifference, cashDifference: difference, trace, causes })
+  cashFlow.push({ month, opening: cash.opening, netIncome: profit.profit, nonCashExpense, receivablesChange, payablesChange, inventoryChange, operating, capex: -capex, disposalProceeds, investing, financing, change, closing, difference,
+   trace: `Net income ${money(profit.profit)} + noncash expenses ${money(nonCashExpense)} − increase in receivables ${money(-receivablesChange)} + increase in operating payables ${money(payablesChange)} − increase in inventory ${money(-inventoryChange)} = operating cash ${money(operating)}; capex ${money(-capex)} + disposal proceeds ${money(disposalProceeds)} = investing cash ${money(investing)}; financing ${money(financing)} from planned draws − principal repayments + equity raises; opening ${money(cash.opening)} + net change ${money(change)} = closing ${money(closing)}. Capital prepayments and capital payables reconcile purchase/payment timing on the balance sheet.` })
  }
  return { balanceSheet, cashFlow }
 }

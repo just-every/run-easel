@@ -1,3 +1,4 @@
+import { commercialInput } from './commercial-input'
 import { validateHistoryInput } from './history-input'
 import { libraryRevenueInput } from './revenue-input'
 import { requireScenarioEdit } from './scenario-access'
@@ -62,6 +63,9 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  if (kind === 'asset-category' || kind === 'asset') return validateAssetInput(s, kind, b, scenario)
  if (kind === 'revenue') {
   const base = { name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month', scenario), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
+  for (const cost of all(s, 'expense').filter(e => e.scenario === scenario && e.revenueOrigin === b.originId && b.originId)) {
+   requireThat(cost.department === base.department && b.kind === (cost.kind === 'inventory' ? 'volume' : 'customers'), 'Update or remove linked costs before changing this revenue driver kind or department', 409)
+  }
   const library = libraryRevenueInput(b, base)
   if (library) return library
   const kindOf = choice(b.kind, ['volume', 'customers'] as const, 'a driver')
@@ -76,9 +80,12 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
   return { title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
-  const kindOf = choice(b.kind, ['recurring', 'one-off'] as const, 'recurring or one-off')
+  const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory'] as const, 'an expense kind')
   const start = planMonth(s, b.start, kindOf === 'one-off' ? 'Month' : 'Start month', scenario)
-  return { name: text(b.name, 'Expense name'), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'expense line'), department: department(s, b.department), kind: kindOf, amountCents: cents(b.amount, kindOf === 'one-off' ? 'Amount' : 'Monthly amount', { negative: true }), start, end: kindOf === 'one-off' ? '' : optionalEnd(s, b.end, start, 'End month') }
+  const base = { name: text(b.name, 'Expense name'), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'expense line'), department: department(s, b.department), start, end: kindOf === 'recurring' ? optionalEnd(s, b.end, start, 'End month') : '' }
+  const linked = commercialInput(s, b, scenario, base)
+  if (linked) return linked
+  return { ...base, kind: kindOf, amountCents: cents(b.amount, kindOf === 'one-off' ? 'Amount' : 'Monthly amount', { negative: true }) }
  }
  if (kind === 'schedule') {
   if (b.history) {

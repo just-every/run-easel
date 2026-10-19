@@ -1,3 +1,4 @@
+import { CommercialExpenseForm, CommercialExpenseSummary } from './commercial-costs'
 import { HistoryInputs } from './history'
 import { PlanningGrid } from './planning-grid'
 import { FinancingInputs } from './financing'
@@ -67,9 +68,9 @@ export function Plan({ state, refresh }: Shared) {
   <section className="card">
    <h2>Expenses</h2>
    <Table caption="Expenses" heads={['Name', 'Line', 'Department', 'Kind', 'Amount', 'From', 'To', '']}>
-    {(inputs.expense ?? []).map((e: D) => <tr key={e.id}><td>{e.name}</td><td>{lineName(e.line)}</td><td>{deptName(e.department)}</td><td>{e.kind}</td><td className="num">{money(e.amountCents, currency)}</td><td>{monthLabel(e.start)}</td><td>{e.end ? monthLabel(e.end) : '—'}</td><td><Action label="Edit" kind="quiet" run={async () => edit('expense', e)} /><Action label="Remove" kind="danger" run={() => remove('expense', e.id)} /></td></tr>)}
+    {(inputs.expense ?? []).map((e: D) => <tr key={e.id}><td>{e.name}</td><td>{lineName(e.line)}</td><td>{deptName(e.department)}</td><td>{e.kind}</td><td className="num">{['acquisition', 'inventory'].includes(e.kind) ? <CommercialExpenseSummary row={e} currency={currency} /> : money(e.amountCents, currency)}</td><td>{monthLabel(e.start)}</td><td>{e.end ? monthLabel(e.end) : '—'}</td><td><Action label="Edit" kind="quiet" run={async () => edit('expense', e)} /><Action label="Remove" kind="danger" run={() => remove('expense', e.id)} /></td></tr>)}
    </Table>
-   {(() => { const e = form('expense'); return <Form key={e?.id ?? `new-expense-${round}`} submit={e ? 'Save expense' : 'Add expense'} onSubmit={v => save('expense', { ...v, id: e?.id })}>
+   {(() => { const e = form('expense'); if (e && ['acquisition', 'inventory'].includes(e.kind)) return <CommercialExpenseForm row={e} view={view!} currency={currency} save={save} />; return <Form key={e?.id ?? `new-expense-${round}`} submit={e ? 'Save expense' : 'Add expense'} onSubmit={v => save('expense', { ...v, id: e?.id })}>
     <Field label="Expense name" name="name" defaultValue={e?.name} />
     <Field label="Expense line" name="line" options={costLines} defaultValue={e?.line} />
     <Field label="Department" name="department" options={depts} defaultValue={e?.department} />

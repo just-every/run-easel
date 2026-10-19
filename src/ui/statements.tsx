@@ -6,6 +6,7 @@ type StatementLine = readonly [key: string, label: string, total?: boolean]
 const balanceLines: StatementLine[] = [
  ['cash', 'Cash'],
  ['receivables', 'Receivables'],
+ ['inventory', 'Inventory (estimate)'],
  ['capitalPrepayments', 'Capital prepayments'],
  ['fixedAssets', 'Fixed assets, net'],
  ['assets', 'Total assets', true],
@@ -25,6 +26,7 @@ const cashFlowLines: StatementLine[] = [
  ['netIncome', 'Net income'],
  ['nonCashExpense', 'Non-cash expense'],
  ['receivablesChange', 'Receivables change'],
+ ['inventoryChange', 'Inventory change'],
  ['payablesChange', 'Payables change'],
  ['operating', 'Net operating cash flow', true],
  ['capex', 'Capital expenditure'],
