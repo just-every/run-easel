@@ -2683,7 +2683,7 @@
       "executable": false
     },
     "tests/metric-tasks.test.mjs": {
-      "sha256": "62c0f8012181102af41d121c1de081c41d5d8d8b0e0bbb5a7f123717ed20d25e",
+      "sha256": "410181a282baf3871e86119574d1b9e36ae4484ac8a54c998962ee686d442304",
       "executable": false
     },
     "tests/mobile.mjs": {

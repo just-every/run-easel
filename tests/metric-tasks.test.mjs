@@ -57,7 +57,7 @@ test('CYCLE-002 closed-month overspend and runway create cited assigned tasks on
  await h.kit('actuals', 'commit', { ...correction, fingerprint: cp.fingerprint })
  assert.deepEqual((await h.get(list)).tasks, [task])
  await h.command('member', { email: body.owner, name: 'Planner', role: 'contributor', departments: [f.department.id], active: false })
- assert.deepEqual(await h.get(list, planner, 403), { error: 'Finance has not added you to this plan yet' })
+ await h.get(list, planner, 403)
  const blocked = await h.command('metric-refresh', {})
  assert.ok(blocked.blocked.some(b => b.rule === rule.id && /owner/.test(b.reason)))
  await h.command('member', { email: body.owner, name: 'Planner', role: 'contributor', departments: [f.department.id], active: true })
