@@ -47,6 +47,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const input = get(s, kind, b.id)
   const scenario = get(s, 'scenario', input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
+  requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
   remove(s, kind, input.id)
   bump(c, scenario, `${kind}-removed`, input.id, { name: input.name ?? input.title })
   return { removed: input.id }

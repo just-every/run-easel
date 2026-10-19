@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { revealHorizontally } from './scroll'
+import { AssetSchedule } from './assets'
 import { ClosingCashChart } from './chart'
 import { api, kindLabel, money, monthLabel, ScenarioPicker, Person, Table, type D } from './shared'
 
@@ -70,6 +71,7 @@ export function Overview({ state }: Shared) {
      <p className="muted trace">{calc.cash[0]?.trace}</p>
      {calc.warnings.length > 0 && <><h3>Check these</h3><ul className="plain">{calc.warnings.map((w: string) => <li key={w}>{w}</li>)}</ul></>}
     </section>}
+    {calc && <AssetSchedule calculation={{ ...calc, assets: (calc.assets ?? []).filter((a: D) => !department || a.department === department) }} currency={currency} />}
    </div>
    {trace && <TracePanel heading={`${trace.line.name}, ${monthLabel(trace.month)}`} onClose={() => setTrace(null)}
     sources={cells.filter((c: D) => c.line === trace.line.id && c.month === trace.month).flatMap((c: D) => c.sources.map((s: D) => ({ ...s, department: deptName(c.department) })))} currency={currency} />}

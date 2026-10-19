@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
+import { AssetInputs } from './assets'
 import { defaultScenario } from './overview'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, options, ScenarioPicker, Table, type D, type Option } from './shared'
 
@@ -82,6 +83,8 @@ export function Plan({ state, refresh }: Shared) {
     {inputs.schedule.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{lineName(s.line)}</td><td>{deptName(s.department)}</td><td>{Object.keys(s.values).length}</td><td className="num">{money(Object.values(s.values as Record<string, number>).reduce((a, v) => a + v, 0), currency)}</td><td>{s.provenance ? `${s.provenance.file} ${s.provenance.sheet} row ${s.provenance.row}` : 'entered'}</td><td><Action label="Remove" kind="danger" run={() => remove('schedule', s.id)} /></td></tr>)}
    </Table>
   </section>}
+
+  {view && <AssetInputs key={`assets-${round}`} view={view} state={state} save={save} remove={remove} />}
 
   {me.role === 'finance' && <section className="card">
    <h2>Shared-cost allocation</h2>

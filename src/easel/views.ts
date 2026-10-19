@@ -21,11 +21,11 @@ export function canSeeScenario(x: Access, sc: Data) {
 
 export function filterCalculation(x: Access, calc: Calculation): Calculation {
  if (x.role === 'finance') return calc
- return { ...calc, cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? c : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
+ return { ...calc, assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? c : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
 }
 
 const filterInputs = (x: Access, inputs: Record<string, Data[]>) =>
- Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => visibleInput(x, k, i))]))
+ Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => k === 'asset-category' || visibleInput(x, k, i))]))
 
 export async function stateView(c: Context) {
  const { s, x } = c

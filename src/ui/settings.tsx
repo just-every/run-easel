@@ -29,11 +29,12 @@ export function Settings({ state, refresh }: Shared) {
   </section>
   <section className="card">
    <h2>Planning lines</h2>
-   <Table caption="Planning lines" heads={['Line', 'Type', 'Payroll', '']}>{state.lines.map((l: D) => <tr key={l.id}><td>{l.name}</td><td>{kindLabel[l.type]}</td><td>{l.payroll ? 'Yes' : '—'}</td><td><Action kind="danger" label="Delete" run={async () => { await command('line-delete', { id: l.id }); await refresh() }} /></td></tr>)}</Table>
+   <Table caption="Planning lines" heads={['Line', 'Type', 'Cash treatment', '']}>{state.lines.map((l: D) => <tr key={l.id}><td>{l.name}</td><td>{kindLabel[l.type]}</td><td>{l.nonCash ? 'Non-cash' : l.payroll ? 'Payroll' : 'Standard'}</td><td><Action kind="danger" label="Delete" run={async () => { await command('line-delete', { id: l.id }); await refresh() }} /></td></tr>)}</Table>
    <Form submit="Add line" onSubmit={run('line')}>
     <Field label="Line name" name="name" />
     <Field label="Type" name="type" options={Object.entries(kindLabel).map(([value, label]) => ({ value, label }))} />
     <Field label="Payroll line (paid in its month, pay detail private)" name="payroll" type="checkbox" required={false} />
+    <Field label="Non-cash expense line" name="nonCash" type="checkbox" required={false} hint="Depreciation and disposal gains or losses do not become cash payments." />
    </Form>
   </section>
   <section className="card">

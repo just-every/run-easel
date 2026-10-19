@@ -34,6 +34,8 @@ const tools = [
  tool('position', 'Add or edit a position in your working proposal.', ['scenario', 'title', 'department', 'line', 'start', 'annualSalary'], ['id', 'holder', 'end', 'onCostPercent']),
  tool('expense', 'Add or edit an expense in your working proposal.', ['scenario', 'name', 'line', 'department', 'kind', 'amount', 'start'], ['id', 'end']),
  tool('schedule', 'Add or edit monthly decimal amounts in your working proposal.', ['scenario', 'name', 'line', 'department', 'values'], ['id']),
+ tool('asset-category', 'Finance: add or edit an asset category in your own working proposal.', ['scenario', 'name', 'usefulLifeMonths'], ['id']),
+ tool('asset', 'Add or edit an asset in your own working proposal, within your departments.', ['scenario', 'name', 'category', 'department', 'line', 'kind', 'cost', 'start'], ['id', 'paymentMonth', 'openingAccumulated', 'remainingLifeMonths', 'disposalMonth', 'disposalProceeds']),
  tool('allocation', 'Finance: add or edit allocation rules in your own working proposal.', ['scenario', 'name', 'sourceDepartment', 'basis', 'targets'], ['id']),
  tool('input-delete', 'Remove an input from your own working proposal.', ['kind', 'id']),
  tool('comment', 'Comment on a visible scenario within your department authority.', ['scenario', 'department', 'text']),

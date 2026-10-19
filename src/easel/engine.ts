@@ -3,6 +3,7 @@
 // cell keyed by line, department and month, each with the sources and the
 // arithmetic that produced it, then profit and monthly cash. No model or
 // network call supplies a number: the same inputs always give the same cells.
+import { calculateAssets, type AssetMonth } from './assets'
 import { addMonths, monthLabel, monthsBetween, range } from './months'
 import { rampFactorBps, RAMP_RULE } from './ramp'
 import { apportion, formatBps, formatHundredths, formatMoney, mulDiv } from './units'
@@ -11,7 +12,7 @@ import type { Data } from './types'
 export const ENGINE = 'easel-engine-1'
 
 export type LineType = 'revenue' | 'cost-of-sales' | 'operating-expense'
-export type Line = { id: string; name: string; type: LineType; payroll?: boolean }
+export type Line = { id: string; name: string; type: LineType; payroll?: boolean; nonCash?: boolean }
 export type Department = { id: string; name: string; shared?: boolean }
 export type Source = { kind: string; id?: string; label: string; amount: number; trace: string }
 export type Cell = { line: string; department: string; month: string; amount: number; basis: 'plan' | 'actual'; sources: Source[] }
@@ -24,7 +25,7 @@ export type Model = {
  lines: Line[]
  departments: Department[]
  scenario: Data
- inputs: { revenue: Data[]; position: Data[]; expense: Data[]; schedule: Data[]; allocation: Data[] }
+ inputs: { revenue: Data[]; position: Data[]; expense: Data[]; schedule: Data[]; allocation: Data[]; asset?: Data[]; 'asset-category'?: Data[] }
 }
 
 export type Calculation = {
@@ -39,6 +40,7 @@ export type Calculation = {
  cash: CashMonth[]
  headcount: Record<string, Record<string, number>>
  warnings: string[]
+ assets?: AssetMonth[]
 }
 
 const active = (p: Data, m: string) => p.start <= m && (!p.end || m <= p.end)
@@ -65,11 +67,12 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   if (!c) { c = { line, department, month, amount: 0, basis, sources: [] }; cells.set(k, c) }
   return c
  }
- const add = (line: string, department: string, month: string, source: Source, lag?: number) => {
+ const add = (line: string, department: string, month: string, source: Source, lag?: number, nonCash = false) => {
   if (!inHorizon.has(month) || closed(month)) return
   const c = cell(line, department, month, 'plan')
   c.amount += source.amount
   c.sources.push(source)
+  if (nonCash || lineById.get(line)?.nonCash) return
   const type = lineById.get(line)?.type
   if (type === 'revenue') cash.push({ month: addMonths(month, lag ?? collectionLag), amount: source.amount, collection: true, label: source.label })
   else cash.push({ month: addMonths(month, lineById.get(line)?.payroll ? 0 : paymentLag), amount: source.amount, collection: false, label: source.label })
@@ -140,12 +143,20 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   }
  }
 
+ const assets = calculateAssets(inputs.asset ?? [], inputs['asset-category'] ?? [], months, actualsThrough, currency)
+ for (const row of assets) {
+  if (row.expense !== 0) add(row.line, row.department, row.month, { kind: 'asset', id: row.originId, label: row.name, amount: row.expense, trace: row.trace }, 0, true)
+  if (row.capex) cash.push({ month: row.month, amount: row.capex, collection: false, label: row.name })
+  if (row.disposalProceeds) cash.push({ month: row.month, amount: row.disposalProceeds, collection: true, label: row.name })
+ }
+
  for (const a of actuals) {
   if (!closed(a.month) || !inHorizon.has(a.month)) continue
   const c = cell(a.line, a.department, a.month, 'actual')
   c.amount += a.amount
   c.sources.push({ kind: 'actual', label: 'Accepted actuals', amount: a.amount, trace: `${monthLabel(a.month)}: ${money(a.amount)} from ${a.rows} accepted row${a.rows === 1 ? '' : 's'} in ${a.batches.length} import${a.batches.length === 1 ? '' : 's'}` })
   const type = lineById.get(a.line)?.type
+  if (lineById.get(a.line)?.nonCash) continue
   cash.push({ month: addMonths(a.month, type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll ? 0 : paymentLag), amount: a.amount, collection: type === 'revenue', label: 'Actuals' })
  }
  for (const m of months) if (closed(m) && ![...cells.values()].some(c => c.month === m)) warnings.push(`${monthLabel(m)} is closed but has no accepted actuals`)
@@ -203,6 +214,6 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
  return {
   engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
-  lineTotals, profit, cash: cashMonths, headcount, warnings,
+  lineTotals, profit, cash: cashMonths, headcount, warnings, assets,
  }
 }

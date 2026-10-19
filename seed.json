@@ -102,6 +102,12 @@
       "clauses": [
         "PORT-001"
       ]
+    },
+    {
+      "id": "fixed-asset-planning",
+      "clauses": [
+        "FIN-004"
+      ]
     }
   ],
   "nonGoals": [

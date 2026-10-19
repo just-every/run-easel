@@ -36,6 +36,7 @@ export function scenarioSheets(view: Data, prefix = '', department = ''): Sheet[
  }
  sheets.push({ name: `${prefix}Cells`, rows: [['Amounts in minor units; restricted detail is removed by the server'], ['Month', 'Line', 'Department', 'Amount', 'Basis', 'Sources'], ...cells.map(c => [c.month, lines.find((l: Data) => l.id === c.line)?.name ?? c.line, departments.find((d: Data) => d.id === c.department)?.name ?? '', c.amount, c.basis, c.sources.map((s: Data) => s.trace).join('\n')])] })
  sheets.push({ name: `${prefix}Inputs`, rows: [['Only inputs visible to this reader; money fields ending Cents are minor units'], ['Kind', 'Name', 'Definition'], ...Object.entries(inputs).flatMap(([kind, records]) => (records as Data[]).filter(i => !department || i.department === department).map(i => [kind, i.name ?? i.title ?? '', JSON.stringify(i)]))] })
+ if (calc.assets?.length) sheets.push({ name: `${prefix}Fixed assets`, rows: [[`${workspace.currency} minor units`], ['Month','Asset','Opening book value','Depreciation','Disposal book value','Closing book value','Capex cash','Disposal cash'], ...calc.assets.filter((a: Data) => !department || a.department === department).map((a: Data, i: number) => [a.month,a.name,a.openingBookValue,a.depreciation,a.disposalBookValue,formula(`C${i+3}-D${i+3}-E${i+3}`,a.closingBookValue),a.capex,a.disposalProceeds])] })
  return sheets
 }
 export const scenarioWorkbook = (view: Data, department = '') => workbook(scenarioSheets(view, '', department))

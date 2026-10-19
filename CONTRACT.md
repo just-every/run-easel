@@ -261,11 +261,11 @@ Term loans, lines of credit and venture debt carry principal, rate (fixed, or va
 *Status:* missing.
 
 #### FIN-004 — Capex and depreciation.
-Planned asset purchases by category depreciate straight-line over a useful life set per category. Disposals and existing fixed assets (from `CONNECT-007`) continue their schedules. Capex reaches cash in its payment month.
+Planned asset purchases by category depreciate straight-line over a useful life set per category. Disposals and existing fixed assets (from `CONNECT-007`) continue their schedules. Capex reaches cash in its payment month. Current purchased and opening existing assets conform; `CONNECT-007` inherits asset-record mapping into these schedules before its imported fixed-asset capability ships. Category useful life is in whole months. With zero residual value, each ordinary month depreciates the opening depreciable balance divided by its life, rounded down to integer cents; the final month takes the remaining cents. For an existing asset that balance is cost minus entered opening accumulated depreciation, spread over its entered remaining life. Depreciation begins in the in-service month, inclusive. No depreciation is charged in the disposal month: book value is removed, proceeds reach cash and the book value minus proceeds is a gain or loss on the non-cash expense line. Non-cash lines, including accepted depreciation actuals, do not create cash payments. Purchases are paid in the explicit payment month (the in-service month when omitted). Categories and assets copy with scenarios and freeze with approvals; schedules appear in plan exports and published pack workbooks.
 
 *Acceptance:* the API journey adds $120,000 of equipment over 5 years and reads $2,000 of monthly depreciation, net book value and the cash outflow.
 
-*Status:* missing.
+*Status:* done.
 
 #### FIN-005 — Runway, burn and an agreed cash floor.
 Every scenario shows, by month, gross burn (cash paid out), net burn (cash paid out less cash received), months of runway (closing cash divided by the trailing three-month average net burn), the lowest cash month, and the cash-zero date (the first forecast month whose closing cash falls below zero). Finance records an agreed cash floor and runway minimum, which every scenario, proposal and comparison checks and marks where they are crossed.
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 6 | 39 | 41 | 86 |
-| All | 23 | 39 | 41 | 103 |
+| Target and push further | 7 | 39 | 40 | 86 |
+| All | 24 | 39 | 40 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -854,7 +854,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `FIN-001` | Linked P&L, balance sheet and cash flow | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Profit and cash are linked monthly; a forecast balance sheet, an indirect cash-flow statement and a balance check are missing |
 | `FIN-002` | Working-capital timing | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Collection and payment lags with opening receivables and payables ship; DSO and DPO curves, deferred revenue, prepaids and accruals are missing |
 | `FIN-003` | Debt and financing | target | missing |  | No loans, credit lines, interest, covenants or equity events |
-| `FIN-004` | Capex and depreciation | target | missing |  | No asset purchases, depreciation or fixed-asset schedules |
+| `FIN-004` | Capex and depreciation | target | done | `src/easel/assets.ts`, `tests/assets.test.mjs`, `tests/assets-browser-journey.mjs` | Category useful lives, purchased/opening assets, cent-exact depreciation and book values, disposals, non-cash expense lines, explicit cash timing, immutable snapshots and formula exports |
 | `FIN-005` | Runway, burn and an agreed cash floor | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Monthly closing cash per scenario ships; burn, runway, cash-zero date and an agreed floor checked across scenarios are missing |
 | `FIN-006` | US tax estimates in the forecast | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | On-costs are one flat percentage of salary; US employer taxes with wage bases, income-tax estimates and sales-tax pass-through are missing |
 | `FIN-007` | 13-week cash forecast | target | missing |  | No weekly direct cash view |
