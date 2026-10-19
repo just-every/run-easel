@@ -10,7 +10,7 @@ export type Context = {
  activity: Activity[]
  snapshots: Snapshot[]
  /** Accepted actuals mapped to lines and departments. */
- actuals: () => Promise<ActualCell[]>
+ actuals: (through?: string) => Promise<ActualCell[]>
  now: string
 }
 

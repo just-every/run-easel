@@ -132,6 +132,12 @@
       "clauses": [
         "CYCLE-006"
       ]
+    },
+    {
+      "id": "reusable-actuals-mapping",
+      "clauses": [
+        "CONNECT-006"
+      ]
     }
   ],
   "nonGoals": [

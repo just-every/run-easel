@@ -98,35 +98,45 @@ These clauses complete the category job alongside the published clauses. Each st
 #### CONNECT-001 — QuickBooks Online actuals connector.
 Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. The first connection backfills history: finance chooses 12 to 36 closed months (24 by default), and each backfilled month lands as its own reviewed batch with its own trial-balance reconciliation, so prior-year actuals are there to plan from (`MODEL-009`) and to report against (`REPORT-001`). Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not.
 
-*Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox.
+Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
+
+*Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
 
 *Status:* missing.
 
 #### CONNECT-002 — Xero actuals connector.
 Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`.
 
-*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company.
+Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
 
 *Status:* missing.
 
 #### CONNECT-003 — NetSuite actuals connector.
 Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`.
 
-*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account.
+Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
 
 *Status:* missing.
 
 #### CONNECT-004 — Pantry actuals connector.
 A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`.
 
-*Acceptance:* two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree.
+Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
+
+*Acceptance:* two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
 
 *Status:* missing.
 
 #### CONNECT-011 — Sage Intacct actuals connector.
 Finance connects Sage Intacct with a Web Services sender ID and a read-only web-services user, or through the Sage Intacct REST API with OAuth 2.0. Easel pulls the chart of accounts, entities (a multi-entity shared company maps its entities under `ENTITY-001`), the standard dimensions (location, department, class, project, customer and vendor), any user-defined dimensions, and general-ledger detail by period. Location and department map to Easel dimension members under `CONNECT-006` and `MODEL-003`. It has the same history backfill, preview, idempotent re-pull by the provider's record number, change detection and trial-balance reconciliation as `CONNECT-001`, and drill-through links to the Intacct entry (`CONNECT-008`).
 
-*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company.
+Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
 
 *Status:* missing.
 
@@ -140,14 +150,18 @@ Each connection refreshes on a schedule finance sets (hourly, nightly or weekly,
 #### CONNECT-006 — Mapping rules that survive refresh.
 Account and dimension mappings are reusable rules, not only one-to-one picks. They cover a single account, an account-number range, a prefix or a provider account type to a planning line, the cash balance, a balance-sheet line or an exclusion, and a provider department, class or tracking option to an Easel dimension member. A new account that a rule covers is mapped automatically and listed. A new account that no rule covers blocks only the conclusions that depend on it, and is never treated as zero.
 
+For current CSV sources, exact account picks override reusable rules. Number ranges are inclusive and compare digit-only account codes numerically, including leading zeros. Prefixes and account types match case sensitively after trimming surrounding spaces. Multiple rules with the same target agree; differing targets are ambiguous until finance resolves them, including by an exact pick. Optional account-type metadata comes from a selected CSV column. Each preview lists automatic rule matches and period completeness. EASEL-003 still requires the whole file to map before acceptance. An accepted period with unresolved account or department rows blocks calculations consuming that period, even when unresolved rows net to zero; its revenue and cost conclusions are absent, never zero. Earlier complete-period reviews and frozen snapshots remain available. Existing mappings continue to classify working actuals; changing rules never changes frozen arithmetic. Current CSV doors satisfy this obligation. CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004 and CONNECT-011 inherit provider refresh and metadata resolution; MODEL-003 inherits custom dimension mappings and finer line/dimension dependency blocking; CONNECT-007 inherits balance-sheet targets, each before shipping.
+
 *Acceptance:* the API journey maps by range, pulls a month containing a new in-range account (mapped and listed) and a new out-of-range account, and sees the dependent month's reconciliation blocked until finance maps it.
 
-*Status:* partial.
+*Status:* done. Acceptance: `tests/mapping-rules.test.mjs` and `tests/mapping-rules-browser.mjs` (CONNECT-006).
 
 #### CONNECT-007 — Balance-sheet actuals and the trial balance.
 Accepted actuals include month-end balance-sheet balances (cash, receivables, prepaid, fixed assets, payables, accrued liabilities, deferred revenue, debt and equity), not only profit-and-loss flows and the cash account. Each closed month shows a trial balance that sums to zero, and the forecast balance sheet (`FIN-001`) opens from the last closed month's actual balances.
 
-*Acceptance:* the API journey accepts a ledger month with balance-sheet accounts, reads a zero-sum trial balance, closes the month and sees the forecast balance sheet open from those balances.
+Before balance-sheet actuals ship, CONNECT-007 inherits CONNECT-006: single-account, numeric-range, prefix and source-account-type rules can target every supported balance-sheet line, with automatic listing and dependency blocking for unresolved balances.
+
+*Acceptance:* the API journey accepts a ledger month with balance-sheet accounts, reads a zero-sum trial balance, closes the month and sees the forecast balance sheet open from those balances. Also assert inherited CONNECT-006 rules targeting supported balance-sheet lines: a new in-range balance-sheet account maps automatically, and an unresolved balance blocks dependent balance-sheet conclusions until mapped.
 
 *Status:* partial.
 
@@ -191,7 +205,9 @@ Finance sets a rolling window (for example always 18 months ahead). Closing a mo
 #### MODEL-003 — Custom dimensions and hierarchies.
 Beyond lines and departments, finance defines dimensions (for example entity, region, product, customer segment, project, class or location), each with a hierarchy of members and roll-ups. Inputs, actuals and reports can be cut by any dimension, and source dimensions map onto them (`CONNECT-006`). Lines get a chart-of-accounts hierarchy with subtotals.
 
-*Acceptance:* the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals; it then builds a chart-of-accounts hierarchy (for example Operating expense, then Sales and marketing, then Advertising and Events) and reads subtotals equal to the sum of their lines in every month.
+Before custom dimensions ship, MODEL-003 inherits CONNECT-006: source departments, classes and tracking options map to their dimension members through reusable rules. Source dimension metadata also enables finer line/dimension-level dependency blocking, which remains a gap until this clause ships; unrelated conclusions remain available and unresolved inputs are never zero.
+
+*Acceptance:* the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals; it then builds a chart-of-accounts hierarchy (for example Operating expense, then Sales and marketing, then Advertising and Events) and reads subtotals equal to the sum of their lines in every month. Also assert inherited CONNECT-006 source department/class/tracking-option rules for custom dimension members, and finer line/dimension-level blocking: an unresolved member blocks its dependent cells while unrelated cells remain available, with no invented zero.
 
 *Status:* partial.
 
@@ -809,8 +825,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 11 | 36 | 39 | 86 |
-| All | 28 | 36 | 39 | 103 |
+| Target and push further | 12 | 35 | 39 | 86 |
+| All | 29 | 35 | 39 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -837,7 +853,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CONNECT-004` | Pantry actuals connector | target | missing |  | No Pantry API connector |
 | `CONNECT-011` | Sage Intacct actuals connector | target | missing |  | No Sage Intacct connector, dimension mapping or entity mapping |
 | `CONNECT-005` | Scheduled refresh with visible freshness | target | missing |  | No scheduled handler, freshness display, refresh failure state or restatement notice |
-| `CONNECT-006` | Mapping rules that survive refresh | target | partial | `src/easel/actuals.ts` `tests/easel.test.mjs` | One-to-one account and department mappings are reused and unmapped accounts block acceptance; range, prefix and account-type rules and per-conclusion blocking are missing |
+| `CONNECT-006` | Mapping rules that survive refresh | target | done | `src/easel/account-rules.ts`, `src/easel/actuals-read.ts`, `tests/mapping-rules.test.mjs`, `tests/mapping-rules-browser.mjs` | Current CSV exact/range/prefix/type rules, automatic match listing, reviewed fingerprints and period-dependent blocking; future connectors, balance-sheet targets and dimensions inherit the obligation in their clauses |
 | `CONNECT-007` | Balance-sheet actuals and the trial balance | target | partial | `src/easel/actuals.ts` | Only the cash balance account maps to the balance sheet; other balance-sheet balances, a zero-sum trial balance and a forecast balance sheet opened from actuals are missing |
 | `CONNECT-008` | Drill-through to the ledger transaction | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Variance cells drill to accepted file rows with role filtering; links to the provider transaction need connectors |
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |

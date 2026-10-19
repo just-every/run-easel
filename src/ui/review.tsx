@@ -13,7 +13,7 @@ export function Review({ state, refresh }: Shared) {
  const [month, setMonth] = useState(closedMonths[closedMonths.length - 1] ?? '')
  const [v, setV] = useState<D | null>(null)
  const [error, setError] = useState('')
- useEffect(() => { let live = true; if (month) api(`variance/${month}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state])
+ useEffect(() => { let live = true; setV(null); setError(''); if (month) api(`variance/${month}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state])
  useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.actualsThrough])
  const next = forecast ? (forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : state.workspace.planStart) : ''
  const reviewState = { ...state, actorNames: { ...state.actorNames, ...v?.actorNames } }

@@ -1,5 +1,6 @@
 // Installation-level commands: the planning calendar, departments, planning
 // lines, people and their roles, and how source accounts map to lines.
+import { accountRules } from './account-rules'
 import { requireFinance } from './access'
 import type { Context } from './context'
 import { cents, hundredths } from './units'
@@ -10,6 +11,8 @@ import { all, choice, find, get, integer, put, remove, requireThat, text, uid, t
 export const LINE_TYPES = ['revenue', 'cost-of-sales', 'operating-expense'] as const
 
 export function setup(c: Context, op: string, b: Data): Data | undefined {
+ const rules = accountRules(c, op, b)
+ if (rules) return rules
  const { s, x } = c
  if (op === 'cash-constraints') {
   requireFinance(x)

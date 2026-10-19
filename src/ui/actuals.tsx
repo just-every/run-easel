@@ -6,6 +6,7 @@ import { Action, api, command, money, monthLabel, Person, Table, type D } from '
 const ROLES = [
  ['date', 'Date', /^(date|transaction date|posted)$/i], ['period', 'Period (YYYY-MM)', /^(period|month)$/i],
  ['account', 'Account code', /account (code|no|number)|^account$|^code$/i], ['accountName', 'Account name', /account name|^name$/i],
+ ['accountType', 'Account type', /^(account type|type)$/i],
  ['department', 'Department', /department|tracking|cost cent/i], ['debit', 'Debit', /^debit/i], ['credit', 'Credit', /^credit/i],
  ['amount', 'Amount', /^(amount|net|value)$/i], ['description', 'Description', /description|memo|narration/i], ['reference', 'Reference', /reference|^ref/i],
 ] as const
@@ -34,10 +35,10 @@ export function Actuals({ state, refresh }: Shared) {
    <h2>Reconciliation</h2>
    <p><a href="/api/easel/actuals.xlsx" download>Download reconciliation (Excel)</a></p>
    <p className="muted">Every imported amount is mapped to a planning line, excluded, held as cash, or shown here as unmapped. Amounts are debit-positive as imported.</p>
-   <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Unmapped', 'Revenue', 'Costs', 'Balanced']}>
-    {reconciliation.months.map((m: D) => <tr key={m.period}><td>{m.label}</td><td className="num">{m.rows}</td><td className="num">{money(m.imported, currency)}</td><td className="num">{money(m.mapped, currency)}</td><td className="num">{money(m.excluded, currency)}</td><td className="num">{money(m.cash, currency)}</td><td className="num">{money(m.unmapped, currency)}</td><td className="num">{money(m.revenue, currency)}</td><td className="num">{money(m.costs, currency)}</td><td>{m.balanced ? 'Yes' : 'No'}</td></tr>)}
+   <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Unmapped', 'Revenue', 'Costs', 'Balanced', 'Mapping status']}>
+    {reconciliation.months.map((m: D) => <tr key={m.period}><td>{m.label}</td><td className="num">{m.rows}</td><td className="num">{money(m.imported, currency)}</td><td className="num">{money(m.mapped, currency)}</td><td className="num">{money(m.excluded, currency)}</td><td className="num">{money(m.cash, currency)}</td><td className="num">{money(m.unmapped, currency)}</td><td className="num">{money(m.revenue, currency)}</td><td className="num">{money(m.costs, currency)}</td><td>{m.balanced ? 'Yes' : 'No'}</td><td>{m.blocked ? `Blocked: ${[...m.unmappedAccounts, ...m.unmappedDepartments].join(', ')}` : 'Complete'}</td></tr>)}
    </Table>
-   {reconciliation.unmapped.length > 0 && <p role="alert">Unmapped accounts: {reconciliation.unmapped.map((u: D) => `${u.account} (${u.rows} rows)`).join(', ')}</p>}
+   {reconciliation.unmapped.length > 0 && <p role="alert">Unmapped accounts: {reconciliation.unmapped.map((u: D) => `${u.period}: ${u.account} (${u.rows} rows; ${u.reason})`).join(', ')}</p>}
   </section>}
   <WorkbookImport state={state} refresh={refresh} />
  </>
@@ -82,8 +83,8 @@ function CsvImport({ state, refresh }: { state: D; refresh: () => Promise<void> 
    <h3>Preview of {preview.file}</h3>
    <p role="status">{saving > 0 ? 'Saving mappings…' : preview.unmappedAccounts.length || preview.unmappedDepartments.length ? `${preview.unmappedAccounts.length} accounts and ${preview.unmappedDepartments.length} departments still need a mapping.` : 'Every account and department is mapped.'}</p>
    <p>{preview.rows} rows read · {preview.accepted} can be accepted · {preview.rejected.length} rejected · net {money(preview.net, currency)} (debit-positive)</p>
-   <Table caption="Months in this file" heads={['Month', 'Rows', 'Debits', 'Credits']}>{preview.periods.map((p: D) => <tr key={p.period}><td>{p.label}</td><td className="num">{p.rows}</td><td className="num">{money(p.debit, currency)}</td><td className="num">{money(p.credit, currency)}</td></tr>)}</Table>
-   <Table caption="Accounts" heads={['Account', 'Name', 'Rows', 'Net', 'Maps to', 'Sign check']}>{preview.accounts.map((a: D) => <tr key={a.account}><td>{a.account}</td><td>{a.name}</td><td className="num">{a.rows}</td><td className="num">{money(a.net, currency)}</td><td><MappingSelect state={state} account={a} save={save} /></td><td className="wrap">{a.sign || 'OK'}</td></tr>)}</Table>
+   <Table caption="Months in this file" heads={['Month', 'Rows', 'Debits', 'Credits', 'Mapping status']}>{preview.periods.map((p: D) => <tr key={p.period}><td>{p.label}</td><td className="num">{p.rows}</td><td className="num">{money(p.debit, currency)}</td><td className="num">{money(p.credit, currency)}</td><td>{p.blocked ? `Blocked: ${[...p.unmappedAccounts, ...p.unmappedDepartments].join(', ')}` : 'Complete'}</td></tr>)}</Table>
+   <Table caption="Accounts" heads={['Account', 'Name', 'Rows', 'Net', 'Maps to', 'Mapping source', 'Sign check']}>{preview.accounts.map((a: D) => <tr key={a.account}><td>{a.account}</td><td>{a.name}</td><td className="num">{a.rows}</td><td className="num">{money(a.net, currency)}</td><td><MappingSelect state={state} account={a} save={save} /></td><td>{a.mappingStatus === 'ambiguous' ? 'Conflicting rules' : a.ruleIds.length ? `Automatic (${a.ruleIds.length} matching ${a.ruleIds.length === 1 ? 'rule' : 'rules'})` : a.target ? 'Single account' : 'Not mapped'}</td><td className="wrap">{a.sign || 'OK'}</td></tr>)}</Table>
    <Table caption="Departments" heads={['In the file', 'Rows', 'Maps to']}>{preview.departments.map((d: D) => <tr key={d.source}><td>{d.source}</td><td className="num">{d.rows}</td><td><select aria-label={`Map department ${d.source}`} defaultValue={d.department ?? '__'} onChange={e => save('department-map', { source: d.source === '(blank)' ? '' : d.source, department: e.target.value })}>{d.department === null && <option value="__" disabled>Not mapped</option>}<option value="">No department</option>{state.departments.map((x: D) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></td></tr>)}</Table>
    {preview.rejected.length > 0 && <Table caption="Rejected rows" heads={['Line', 'Why']}>{preview.rejected.map((r: D) => <tr key={r.line}><td className="num">{r.line}</td><td className="wrap">{r.reason}</td></tr>)}</Table>}
    <div className="row">

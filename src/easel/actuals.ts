@@ -7,12 +7,12 @@ import { applyD1ImportBatches, canonicalJson, createD1ImportJob, planD1Import, r
 import { requireFinance } from './access'
 import type { Context, KitStep } from './context'
 import { parseCsv } from './csv'
-import type { ActualCell } from './engine'
+import { resolveAccount } from './account-rules'
 import { base64, journalContext, kitContext } from './kit'
 import { lines, workspace } from './model'
 import { monthLabel } from './months'
 import { cents } from './units'
-import { all, choice, find, get, put, requireThat, type Data, type State } from './types'
+import { all, choice, find, get, put, requireThat, type Data } from './types'
 
 export const CSV_NAMESPACE = 'easel-csv-actuals'
 export const CSV_MAPPING = 'csv-actuals-v1'
@@ -20,8 +20,8 @@ const MAX_BYTES = 2_000_000, MAX_ROWS = 5000
 
 export const departmentKey = (source: string) => source.trim() || '(blank)'
 
-type Columns = { date?: string; period?: string; account: string; accountName?: string; department?: string; amount?: string; debit?: string; credit?: string; description?: string; reference?: string }
-type Normal = { line: number; date: string; period: string; account: string; accountName: string; department: string; amount: number; description: string; reference: string; fingerprint: string; sourceId: string }
+type Columns = { date?: string; period?: string; account: string; accountName?: string; accountType?: string; department?: string; amount?: string; debit?: string; credit?: string; description?: string; reference?: string }
+type Normal = { line: number; date: string; period: string; account: string; accountName: string; accountType: string; department: string; amount: number; description: string; reference: string; fingerprint: string; sourceId: string }
 
 function parseDate(v: string, format: string): { date: string; period: string } | null {
  const s = v.trim()
@@ -74,7 +74,7 @@ export async function readActuals(b: Data) {
     requireThat(!(debit !== 0 && credit !== 0), 'has both a debit and a credit')
     amount = debit - credit
    } else amount = money(at(cells, cols.amount), 'Amount') * (amountMode === 'credit-positive' ? -1 : 1)
-   const row = { date: when.date, period: when.period, account, accountName: at(cells, cols.accountName), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
+   const row = { date: when.date, period: when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
    const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference]))
    const earlier = seen.get(fingerprint) ?? []
    if (earlier.length && !allowRepeats) { rejected.push({ line, reason: `repeats line ${earlier[0]} exactly` }); continue }
@@ -114,8 +114,8 @@ export async function previewActuals(c: Context, b: Data) {
  const accounts = new Map<string, Data>(), departments = new Map<string, Data>(), periods = new Map<string, Data>()
  type Summary = Data
  for (const r of accepted) {
-  const a = accounts.get(r.account) ?? { account: r.account, name: r.accountName, rows: 0, net: 0 }
-  a.rows++; a.net += r.amount; if (!a.name && r.accountName) a.name = r.accountName
+  const a = accounts.get(r.account) ?? { account: r.account, name: r.accountName, accountTypes: [] as string[], rows: 0, net: 0 }
+  a.rows++; a.net += r.amount; if (!a.accountTypes.includes(r.accountType)) a.accountTypes.push(r.accountType); if (!a.name && r.accountName) a.name = r.accountName
   accounts.set(r.account, a)
   const d = departments.get(r.department) ?? { source: r.department, rows: 0, net: 0 }
   d.rows++; d.net += r.amount
@@ -125,17 +125,21 @@ export async function previewActuals(c: Context, b: Data) {
   periods.set(r.period, p)
  }
  const accountRows: Summary[] = [...accounts.values()].sort((a, b) => a.account.localeCompare(b.account)).map(a => {
-  const map = find(s, 'account-map', a.account)
-  const type = map ? lineType.get(map.target) : undefined
+  const resolutions = a.accountTypes.map((t: string) => resolveAccount(s, a.account, t))
+  const targets = [...new Set<string | null>(resolutions.map((r: Data) => r.target))]
+  const target = targets.length === 1 ? targets[0] : null
+  const ruleIds = [...new Set(resolutions.flatMap((r: Data) => r.ruleIds))]
+  const mappingStatus = target ? 'mapped' : resolutions.some((r: Data) => r.mappingStatus === 'ambiguous') || targets.length > 1 ? 'ambiguous' : 'unmapped'
+  const type = target ? lineType.get(target) : undefined
   const sign = type === 'revenue' && a.net > 0 ? 'This revenue account is net debit in this file: check the sign convention' : type && type !== 'revenue' && a.net < 0 ? 'This cost account is net credit in this file: check the sign convention' : ''
-  return { ...a, target: map?.target ?? null, sign }
+  return { ...a, target, ruleIds, mappingStatus, sign }
  })
  const departmentRows: Summary[] = [...departments.values()].sort((a, b) => a.source.localeCompare(b.source)).map(d => ({ ...d, department: find(s, 'department-map', d.source)?.department ?? null }))
  const unmappedAccounts = accountRows.filter(a => a.target === null).map(a => a.account)
  const unmappedDepartments = departmentRows.filter(d => d.department === null).map(d => d.source)
  const destination = `actuals:${read.sha.slice(0, 20)}`
  const reviewed = { config: read.config, workspace: workspace(s),
-  accounts: accountRows.map(a => ({ account: a.account, mapping: find(s, 'account-map', a.account) ?? null, line: find(s, 'line', a.target) ?? null })),
+  accounts: accountRows.map(a => ({ account: a.account, resolutions: a.accountTypes.map((t: string) => resolveAccount(s, a.account, t)), line: find(s, 'line', a.target) ?? null })),
   departments: departmentRows.map(d => ({ source: d.source, mapping: find(s, 'department-map', d.source) ?? null, department: find(s, 'department', d.department) ?? null })),
  }
  const ctx = kitContext(c.db, c.x.actor, destination, CSV_NAMESPACE, `${CSV_MAPPING}:${kitSha(canonicalJson(reviewed))}`)
@@ -153,7 +157,12 @@ export async function previewActuals(c: Context, b: Data) {
  return {
   file: read.file, sha256: read.sha, size: read.bytes.length, headers: read.headers, destination, config: read.config,
   rows: read.normal.length + read.rejected.length, accepted: accepted.length, rejected, net,
-  periods: [...periods.values()].sort((a, b) => a.period.localeCompare(b.period)),
+  periods: [...periods.values()].sort((a, b) => a.period.localeCompare(b.period)).map(p => {
+   const rows = accepted.filter(r => r.period === p.period)
+   const unmappedAccounts = [...new Set(rows.filter(r => !resolveAccount(s, r.account, r.accountType).target).map(r => r.account))]
+   const unmappedDepartments = [...new Set(rows.filter(r => !find(s, 'department-map', r.department)).map(r => r.department))]
+   return { ...p, blocked: !!(unmappedAccounts.length || unmappedDepartments.length), unmappedAccounts, unmappedDepartments }
+  }),
   accounts: accountRows, departments: departmentRows, unmappedAccounts, unmappedDepartments,
   fingerprint: plan.fingerprint, counts: plan.counts, ctx, plan,
  }
@@ -226,63 +235,4 @@ function finishBatch(c: Context, id: string, job: Data) {
 export const jobFor = (db: D1Database, destination: string) =>
  db.prepare("SELECT id, state, mapping_version, principal_id FROM ik_jobs WHERE destination=? AND namespace=? ORDER BY rowid DESC LIMIT 1").bind(destination, CSV_NAMESPACE).first<any>()
 
-/** Accepted actuals grouped by month, source account and source department. */
-async function grouped(db: D1Database) {
- const { results } = await db.prepare('SELECT period, account, department, SUM(amount) AS amount, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals GROUP BY period, account, department').all<any>()
- return results.map(r => ({ period: r.period as string, account: r.account as string, department: r.department as string, amount: Number(r.amount), rows: Number(r.rows), batches: String(r.batches).split(',') }))
-}
-
-/** Natural-sign actuals per planning line and department, for the engine. */
-export async function actualCells(db: D1Database, s: State): Promise<ActualCell[]> {
- const lineType = new Map(lines(s).map(l => [l.id, l.type]))
- const cells = new Map<string, ActualCell>()
- for (const g of await grouped(db)) {
-  const target = find(s, 'account-map', g.account)?.target
-  if (!target || !lineType.has(target)) continue
-  const department = find(s, 'department-map', g.department)?.department ?? ''
-  const k = `${target}|${department}|${g.period}`
-  const c = cells.get(k) ?? { line: target, department, month: g.period, amount: 0, rows: 0, batches: [] }
-  c.amount += lineType.get(target) === 'revenue' ? -g.amount : g.amount
-  c.rows += g.rows
-  c.batches = [...new Set([...c.batches, ...g.batches])]
-  cells.set(k, c)
- }
- return [...cells.values()]
-}
-
-/** Month-by-month proof that every imported amount is mapped, excluded or visibly unmapped. */
-export async function reconciliation(db: D1Database, s: State) {
- const lineType = new Map(lines(s).map(l => [l.id, l.type]))
- const months = new Map<string, Data>()
- const unmapped = new Map<string, Data>()
- for (const g of await grouped(db)) {
-  const m = months.get(g.period) ?? { period: g.period, label: monthLabel(g.period), rows: 0, imported: 0, mapped: 0, excluded: 0, cash: 0, unmapped: 0, revenue: 0, costs: 0 }
-  m.rows += g.rows; m.imported += g.amount
-  const target = find(s, 'account-map', g.account)?.target
-  if (target === 'excluded') m.excluded += g.amount
-  else if (target === 'cash') m.cash += g.amount
-  else if (target && lineType.has(target)) { m.mapped += g.amount; if (lineType.get(target) === 'revenue') m.revenue -= g.amount; else m.costs += g.amount }
-  else { m.unmapped += g.amount; const u = unmapped.get(g.account) ?? { account: g.account, rows: 0, amount: 0 }; u.rows += g.rows; u.amount += g.amount; unmapped.set(g.account, u) }
-  months.set(g.period, m)
- }
- const list = [...months.values()].sort((a, b) => a.period.localeCompare(b.period)).map(m => ({ ...m, balanced: m.mapped + m.excluded + m.cash + m.unmapped === m.imported }))
- return { months: list, unmapped: [...unmapped.values()] }
-}
-
-export async function cashBalance(db: D1Database, s: State, before: string) {
- const cashAccounts = all(s, 'account-map').filter(m => m.target === 'cash').map(m => m.id)
- if (!cashAccounts.length) return { cents: 0, rows: 0, batches: [] as string[] }
- const r = await db.prepare(`SELECT COALESCE(SUM(amount),0) AS amount, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals WHERE period<? AND account IN (${cashAccounts.map(() => '?').join(',')})`).bind(before, ...cashAccounts).first<any>()
- return { cents: Number(r.amount), rows: Number(r.rows), batches: r.batches ? String(r.batches).split(',') : [] }
-}
-
-/** The accepted rows behind one line, department and month: the citations for a variance. */
-export async function rowsFor(db: D1Database, s: State, month: string, line: string, department: string) {
- const accounts = all(s, 'account-map').filter(m => m.target === line).map(m => m.id)
- if (!accounts.length) return []
- const sources = all(s, 'department-map').filter(m => (m.department ?? '') === department).map(m => m.id)
- if (!sources.length) return []
- const { results } = await db.prepare(`SELECT value, amount FROM e_actuals WHERE period=? AND account IN (${accounts.map(() => '?').join(',')}) AND department IN (${sources.map(() => '?').join(',')}) ORDER BY ABS(amount) DESC, id LIMIT 200`).bind(month, ...accounts, ...sources).all<any>()
- const type = lines(s).find(l => l.id === line)?.type
- return results.map(r => { const v = JSON.parse(r.value); return { file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) } })
-}
+export { actualCells, reconciliation, cashBalance, rowsFor } from './actuals-read'

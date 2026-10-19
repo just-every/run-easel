@@ -266,7 +266,7 @@ test('Easel planning flows through native sessions, HTTP and real D1', async t =
   forecast = f.scenario
  })
 
- await t.test('EASEL-013 closing months keeps the prior forecast and explains variances from evidence', async () => {
+ await t.test('EASEL-013 CONNECT-008 closing months keeps the prior forecast and explains variances from evidence', async () => {
   await cmd('close-month', { scenario: forecast.id, month: '2026-08' }, h.owner, 409)
   await cmd('close-month', { scenario: forecast.id, month: '2026-07' })
   const p = await kit('actuals', 'preview', await csvBody('gl-detail-2026-08.csv'))

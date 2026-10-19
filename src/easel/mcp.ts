@@ -84,8 +84,8 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
  try {
   const person = { ...await actor(request, env), agent: { name: 'MCP client', via: 'mcp' } }
   const { state, revision } = await load(env.DB)
-  let cached: ReturnType<typeof actualCells> | undefined
-  const c: Context = { s: state, x: access(state, person), db: env.DB, now: new Date().toISOString(), activity: [], snapshots: [], actuals: () => (cached ??= actualCells(env.DB, state)) }
+  const cached = new Map<string, ReturnType<typeof actualCells>>()
+  const c: Context = { s: state, x: access(state, person), db: env.DB, now: new Date().toISOString(), activity: [], snapshots: [], actuals: (through) => { const key = through ?? ''; if (!cached.has(key)) cached.set(key, actualCells(env.DB, state, through)); return cached.get(key)! } }
   requireMember(c.x)
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { ...headers, Allow: 'POST' } })
   const protocol = request.headers.get('MCP-Protocol-Version')

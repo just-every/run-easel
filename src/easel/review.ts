@@ -33,7 +33,7 @@ export async function variance(c: Context, month: string) {
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorCalc: Calculation | null = prior ? (await snapshot(c.db, prior.snapshot)).body.calculation : null
- const currentCalc = calculate(model(s, forecast.id), await c.actuals())
+ const currentCalc = calculate(model(s, forecast.id), await c.actuals(month))
  const actual = cellMap(currentCalc, month)
  const comparison = await versionComparison(c, forecast, budget, currentCalc, month)
  const planned = cellMap(budget.body.calculation, month)
@@ -121,7 +121,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const w = workspace(s)
   const v = await variance(c, pack.month)
   const forecast = get(s, 'scenario', pack.forecast)
-  const forecastCalc = calculate(model(s, forecast.id), await c.actuals())
+  const forecastCalc = calculate(model(s, forecast.id), await c.actuals(forecast.actualsThrough))
   const budget = await snapshot(c.db, forecast.budgetSnapshot)
   const ytd = range(w.planStart, w.horizon).filter(m => m <= pack.month)
   const reportLines: Data[] = [...new Map([...lines(s), ...budget.body.lines].map(l => [l.id, l])).values()]

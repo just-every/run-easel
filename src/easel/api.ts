@@ -60,8 +60,8 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const a = c.get('apiActor') ?? await actor(c.req.raw, c.env)
  const { state, revision } = await load(c.env.DB)
  if (a.token) requireMember(access(state, a))
- let cached: ReturnType<typeof actualCells> | undefined
- return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString(), actuals: () => (cached ??= actualCells(c.env.DB, state)) }
+ const cached = new Map<string, ReturnType<typeof actualCells>>()
+ return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString(), actuals: (through) => { const key = through ?? ''; if (!cached.has(key)) cached.set(key, actualCells(c.env.DB, state, through)); return cached.get(key)! } }
 }
 
 async function commit(ctx: Awaited<ReturnType<typeof open>>) {

@@ -26,7 +26,7 @@ export async function reforecasts(c: Context, op: string, b: Data): Promise<Data
  const name = text(b.name, 'Reforecast name')
  requireThat(!all(c.s, 'scenario').some(sc => sc.kind === 'reforecast' && sc.name.toLowerCase() === name.toLowerCase()), 'A reforecast already has this name; choose a new version name', 409)
  const m = model(c.s, from.id)
- const calculation = calculate(m, from.actualsThrough ? await c.actuals() : [])
+ const calculation = calculate(m, from.actualsThrough ? await c.actuals(from.actualsThrough) : [])
  const id = uid(), snapshotId = uid()
  const source = { scenario: from.id, revision: from.revision, name: from.name }
  const saved = {

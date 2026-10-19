@@ -31,7 +31,7 @@ or credentials. A missing directory entry is omitted from the map.
 Amounts are decimal strings ("12000.50"), percentages decimal percent ("12.5"),
 months `YYYY-MM`.
 
-- Setup (finance): `workspace` {name, currency, fiscalYearStart, planStart}; `department` {id?, name, shared}; `department-delete` {id}; `line` {id?, name, type: revenue | cost-of-sales | operating-expense, payroll}; `line-delete` {id}; `member` {email, name, role: finance | contributor | viewer, departments, active}; `account-map` {account, target: lineId | excluded | cash}; `department-map` {source, department}.
+- Setup (finance): `workspace` {name, currency, fiscalYearStart, planStart}; `department` {id?, name, shared}; `department-delete` {id}; `line` {id?, name, type: revenue | cost-of-sales | operating-expense, payroll}; `line-delete` {id}; `member` {email, name, role: finance | contributor | viewer, departments, active}; `account-map` {account, target: lineId | excluded | cash}; `department-map` {source, department}; `account-rule` {id?, match: range | prefix | type, from, to? (range), target: lineId | excluded | cash}; `account-rule-delete` {id}.
 - Inputs (finance, or a contributor in scope): `revenue` {scenario, id?, name, kind: volume | customers, line, department, start, collectionLag, startVolume, growthPercent, rate | startCustomers, newPerMonth, newPerRep, repDepartment, rampMonths, churnPercent, arpa}; `position` {scenario, id?, title, holder, department, line, start, end, annualSalary, onCostPercent}; `expense` {scenario, id?, name, line, department, kind: recurring | one-off, amount, start, end}; `schedule` {scenario, id?, name, line, department, values: {month: amount}}; `allocation` {scenario, name, sourceDepartment, basis: headcount | fixed, targets: [{department, percent}]}; `input-delete` {kind, id}; `scenario-cash` (finance) {scenario, basis: estimate | imported, opening, receivables, payables, collectionLag, paymentLag, note}.
 - Scenarios: `branch` (finance) {from, name}; `scenario-adopt` (finance) {from, into, revision}; `scenario-delete` (finance) {id}; `proposal-create` {from, name, request}; `proposal-submit` {id, summary}; `proposal-promote` (finance) {id, revision}; `proposal-decline` (finance) {id, reason}.
 - Cash health (finance): `cash-constraints` {floor, runwayMinimum}; both are nonnegative decimal strings (currency units and months). The agreement records currency, person and time on the workspace. Scenario reads return `cashHealth`, and comparisons return it on each side; the current agreement checks saved cash without rewriting frozen snapshots. Burn is in cents, runway is in hundredths of months, and null runway means nonpositive average net burn, with its basis distinguishing not-burning from cash-exhausted. A negative finite runway is the signed cash/burn ratio and means cash is exhausted. The trailing window is the current and up to two preceding available months; checks use the exact ratio before rounding and equality meets a minimum. Cross-currency checks are not assessed. Scenario and comparison XLSX downloads include Cash health sheets.
@@ -115,3 +115,23 @@ Finance saves through `POST /api/easel/command/long-range-save`:
 ```
 
 For updates include `id` and the reviewed annual `revision`; also send the current `budgetRevision`. A stale revision returns 409 and changes nothing. `years` is 3–5; `drivers` has one entry per later year. Monetary command values are decimal currency units; returned amounts are integer minor units, rates basis points and headcount whole people. Growth is at least −100%, margin at most 100%, and projected headcount nonnegative. Year one sums the first twelve operating-budget months; headcount and cash are the year-end values. Later revenue compounds prior projected revenue, profit applies that year’s margin, headcount adds the entered change, and cash adds the entered net cash change independently of accounting profit. Each division rounds half away from zero once. Revenue targets compound prior-year revenue at the target growth rate; profit applies the target margin; headcount and cash targets stay fixed across years. Each gap is projection minus target. Working-budget edits flow through; approvals use captured arithmetic. A currency change requires finance to review and save assumptions in the new currency.
+
+## Reusable mapping rules (CONNECT-006)
+
+`state.accountRules` lists finance's rules. Exact account picks take priority.
+Numeric ranges include both ends, treating leading-zero codes as integers;
+prefix and source-type matches are case sensitive after trimming. Agreeing
+rules resolve together; conflicting targets leave an account ambiguous.
+CSV `columns.accountType` optionally selects source-type metadata.
+Previews list each account's `target`, `ruleIds` and `mappingStatus`, and each
+period's `blocked`, `unmappedAccounts` and `unmappedDepartments`. A rule or
+metadata change invalidates the reviewed preview fingerprint.
+
+Accepted reconciliation reports the same period completeness. Unresolved
+accounts or departments (even zero-net groups) block dependent close, live
+scenario, variance and publication calculations with 409; incomplete monthly
+revenue/cost totals are null, never zero. Earlier complete-period reviews and
+frozen snapshots remain readable. A whole-file commit still requires every
+account and department to map, as EASEL-003 requires. Rules are planning
+records included in open and installation exports. Balance-sheet targets and
+custom dimensions still depend on CONNECT-007 and MODEL-003.

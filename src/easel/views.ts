@@ -42,6 +42,7 @@ export async function stateView(c: Context) {
   submissions: all(s, 'submission'),
   comments: all(s, 'comment').filter(cm => finance || x.departments.includes(cm.department)).sort((a, b) => a.at.localeCompare(b.at)),
   accountMaps: finance ? all(s, 'account-map') : [],
+  accountRules: finance ? all(s, 'account-rule') : [],
   departmentMaps: finance ? all(s, 'department-map') : [],
   batches: finance ? all(s, 'batch').sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : [],
   workbooks: finance ? all(s, 'workbook-import') : [],
@@ -69,7 +70,7 @@ export async function scenarioView(c: Context, id: string) {
  requireThat(canSeeScenario(c.x, sc), 'Scenario not found', 404)
  const frozen = sc.status === 'frozen' ? await frozenModel(c, sc) : null
  const m = frozen ?? model(c.s, id)
- const calc = frozen ? frozen.calculation : calculate(m, sc.actualsThrough ? await c.actuals() : [])
+ const calc = frozen ? frozen.calculation : calculate(m, sc.actualsThrough ? await c.actuals(sc.actualsThrough) : [])
  return { cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: m.scenario, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
 }
 

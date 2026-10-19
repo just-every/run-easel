@@ -113,5 +113,5 @@ export function requireEditable(s: State, x: Access, scenario: Data, dept: strin
  requireThat(scenario.kind === 'proposal' && scenario.createdBy === x.actor.email, 'Contributors change budgets through submissions and other plans through their own proposals', 403)
 }
 
-export const usesLine = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.line === id)) || all(s, 'account-map').some(m => m.target === id)
+export const usesLine = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.line === id)) || ['account-map', 'account-rule'].some(k => all(s, k).some(m => m.target === id))
 export const usesDepartment = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.department === id || i.repDepartment === id || i.sourceDepartment === id || i.targets?.some((t: Data) => t.department === id))) || all(s, 'department-map').some(m => m.department === id) || all(s, 'member').some(m => m.departments?.includes(id))
