@@ -1,3 +1,4 @@
+import { versionStructure } from './structure-versions'
 // Easel's HTTP surface. Every private route resolves the native session,
 // loads one model revision, checks the person's role inside the command, and
 // saves atomically behind the revision and session fence.
@@ -70,8 +71,9 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString(), actuals: (through) => { const key = through ?? ''; if (!cached.has(key)) cached.set(key, actualCells(c.env.DB, state, through)); return cached.get(key)! } }
 }
 
-async function commit(ctx: Awaited<ReturnType<typeof open>>) {
+async function commit(ctx: Awaited<ReturnType<typeof open>>, structureBefore = ctx.before, structureRevision = ctx.revision) {
  const changed = ctx.activity.length > 0 || ctx.snapshots.length > 0 || [...ctx.s].some(([k, r]) => ctx.before.get(k)?.revision !== r.revision) || [...ctx.before.keys()].some(k => !ctx.s.has(k))
+ if (changed) await versionStructure(ctx, structureBefore, structureRevision)
  if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance')
  else await readFence(ctx.db, ctx.x.actor, ctx.revision)
 }
@@ -226,6 +228,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  requireThat(step, 'Unknown import action', 404)
  await commit(ctx)
  if (!step.kit) return c.json(step.result)
+ const structureBefore = await load(ctx.db)
  let outcome: unknown
  try { outcome = await step.kit() } catch (e) {
   if (step.failed) { const after = await open(c); requireFinance(after.x); await step.failed(after, e as Error); await commit(after) }
@@ -235,7 +238,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  requireFinance(after.x)
  const result = step.record!(after, outcome)
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
- await commit(after)
+ await commit(after, structureBefore.state, structureBefore.revision)
  return c.json(result)
 })
 

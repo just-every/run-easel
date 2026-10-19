@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { harness } from './harness.mjs'
 
-test('current finance can undo another operator workbook while other roles cannot and edits survive', async t => {
+test('MODEL-005 current finance can undo another operator workbook while other roles cannot and edits survive', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Workbook undo', currency: 'AUD', fiscalYearStart: 7, planStart: '2026-07' })
  const departments = {}
@@ -16,8 +16,13 @@ test('current finance can undo another operator workbook while other roles canno
  const body = { filename: 'fy27-budget.xlsx', base64: (await readFile('fixtures/fy27-budget.xlsx')).toString('base64') }
  const records = async () => (await h.db.batch(['e_records', 'ik_jobs', 'e_activity'].map(table => h.db.prepare(`SELECT * FROM ${table} ORDER BY rowid`)))).map(r => r.results)
  for (const preserveEdit of [false, true]) {
+  const versionsBefore = await h.get('/api/easel/activity?action=structure-version')
   const preview = await h.kit('workbook', 'preview', body)
+  assert.deepEqual(await h.get('/api/easel/activity?action=structure-version'), versionsBefore)
   const done = await h.kit('workbook', 'commit', { ...body, fingerprint: preview.fingerprint })
+  const importedVersions = await h.get('/api/easel/activity?action=structure-version')
+  assert.equal(importedVersions[0].detail.changes.filter(c => c.kind === 'schedule' && c.after !== null).length, preview.rows.length)
+  assert.ok(importedVersions[0].detail.scenarios.some(sc => sc.changedCells.length > 0))
   const imported = await h.get(`/api/easel/scenario/${done.import.scenario}`)
   assert.equal(imported.inputs.schedule.length, preview.rows.length)
   const job = await h.db.prepare('SELECT principal_id FROM ik_jobs WHERE id=?').bind(done.job.id).first()
@@ -39,6 +44,8 @@ test('current finance can undo another operator workbook while other roles canno
   t.diagnostic(`finance workbook undo: HTTP ${response.status}; import ${current.status}; remaining schedules ${remaining}`)
   assert.equal(response.status, 200, JSON.stringify(response.value))
   const undone = response.value
+  const undoneVersion = (await h.get('/api/easel/activity?action=structure-version'))[0]
+  assert.ok(undoneVersion.detail.changes.some(c => c.kind === 'schedule' && c.after === null))
   assert.equal(undone.import.status, 'undone')
   assert.equal(undone.job.state, 'undone')
   assert.equal(undone.import.createdBy, 'owner@example.test')

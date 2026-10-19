@@ -168,6 +168,12 @@
       "clauses": [
         "REPORT-005"
       ]
+    },
+    {
+      "id": "versioned-model-structure",
+      "clauses": [
+        "MODEL-005"
+      ]
     }
   ],
   "nonGoals": [

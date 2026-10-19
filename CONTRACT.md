@@ -217,25 +217,27 @@ Finance sets a rolling window (for example always 18 months ahead). Closing a mo
 #### MODEL-003 — Custom dimensions and hierarchies.
 Beyond lines and departments, finance defines dimensions (for example entity, region, product, customer segment, project, class or location), each with a hierarchy of members and roll-ups. Inputs, actuals and reports can be cut by any dimension, and source dimensions map onto them (`CONNECT-006`). Lines get a chart-of-accounts hierarchy with subtotals.
 
-Before custom dimensions ship, MODEL-003 inherits CONNECT-006: source departments, classes and tracking options map to their dimension members through reusable rules. Source dimension metadata also enables finer line/dimension-level dependency blocking, which remains a gap until this clause ships; unrelated conclusions remain available and unresolved inputs are never zero.
+Before custom dimensions ship, MODEL-003 inherits MODEL-005: each dimension/hierarchy definition and change has an exact version, readable diff and moved-cell list under existing authority; approved budgets, kept forecasts and published packs retain their captured structure and arithmetic. MODEL-003 also inherits CONNECT-006: source departments, classes and tracking options map to their dimension members through reusable rules. Source dimension metadata also enables finer line/dimension-level dependency blocking, which remains a gap until this clause ships; unrelated conclusions remain available and unresolved inputs are never zero.
 
-*Acceptance:* the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals; it then builds a chart-of-accounts hierarchy (for example Operating expense, then Sales and marketing, then Advertising and Events) and reads subtotals equal to the sum of their lines in every month. Also assert inherited CONNECT-006 source department/class/tracking-option rules for custom dimension members, and finer line/dimension-level blocking: an unresolved member blocks its dependent cells while unrelated cells remain available, with no invented zero.
+*Acceptance:* the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals; it then builds a chart-of-accounts hierarchy (for example Operating expense, then Sales and marketing, then Advertising and Events) and reads subtotals equal to the sum of their lines in every month. Also assert inherited CONNECT-006 source department/class/tracking-option rules for custom dimension members, and finer line/dimension-level blocking: an unresolved member blocks its dependent cells while unrelated cells remain available, with no invented zero. Also assert inherited MODEL-005 exact custom-dimension/hierarchy structure versions, readable diffs and moved cells, with frozen definitions/arithmetic unchanged.
 
 *Status:* partial.
 
 #### MODEL-004 — User-defined formulas and driver lines.
-Finance writes driver lines and formulas over named drivers, lines, dimensions and time: arithmetic, prior-period and offset references (including references to the Actuals version and other versions at an offset, `MODEL-009`), growth, lookups by dimension member, IF, MIN, MAX, ROUND and SUM over a dimension. Evaluation keeps the published arithmetic rules: integer cents, counts in hundredths, one rounding half away from zero per division, and a trace per cell. Circular references are refused with the cycle named. Every formula change is a revision that a proposal can carry (`EASEL-012`).
+Finance writes driver lines and formulas over named drivers, lines, dimensions and time: arithmetic, prior-period and offset references (including references to the Actuals version and other versions at an offset, `MODEL-009`), growth, lookups by dimension member, IF, MIN, MAX, ROUND and SUM over a dimension. Evaluation keeps the published arithmetic rules: integer cents, counts in hundredths, one rounding half away from zero per division, and a trace per cell. Circular references are refused with the cycle named. Every formula change is a revision that a proposal can carry (`EASEL-012`). Before user-defined formulas ship, MODEL-004 inherits MODEL-005: every definition and change has an exact structure version, readable formula diff and moved-cell list, and approved budgets, kept forecasts and published packs retain their captured definitions and arithmetic.
 
-*Acceptance:* the API journey defines a support-cost driver as tickets per customer × cost per ticket with a lookup by region, reads exact cells with traces, and is refused a circular formula with the cycle named.
+*Acceptance:* the API journey defines a support-cost driver as tickets per customer × cost per ticket with a lookup by region, reads exact cells with traces, and is refused a circular formula with the cycle named. Also assert inherited MODEL-005 exact formula structure versions, readable diffs and moved cells, with frozen definitions/arithmetic unchanged.
 
 *Status:* partial.
 
 #### MODEL-005 — Versioned model structure.
 Changes to model structure (dimensions, formulas, driver forms, mapping rules) are versioned with a readable diff of what changed and which cells moved. Approved budgets, kept forecasts and published packs keep the structure they were made with and never recompute.
 
-*Acceptance:* change a formula in the API journey, read the structure diff and moved cells, and confirm the approved budget snapshot keeps its SHA-256 and cells.
+Current editable structures conform: workspace/calendar and cash settings, lines, departments, account and department mappings, reusable account rules and every current driver/input form. Each fenced save appends a structure version to the existing finance-only Activity trail, identified by its sequence and source model revision, with actor/time, exact changed definitions, field differences, captured global definitions and affected working-scenario revisions and cells. Current formula changes mean changes to the fixed driver forms and their parameters. Cells use integer minor units; difference is after minus before in the same currency. An absent side or changed currency has no difference value. Incomplete sources are explicitly blocked, never substituted with zero. Frozen scenarios never recalculate; new approvals, kept forecasts, reforecasts and packs capture global definitions as well as their existing saved arithmetic, with individual inputs remaining under existing snapshot filtering. Journal-backed workbook imports and undo and MCP proposal changes also enter the version trail. Existing older immutable snapshots stay as captured. Ct approved current-capability completion on 19 October; MODEL-003 inherits custom-dimension/hierarchy structure versions, and MODEL-004 inherits user-defined formula structure versions, readable diffs and moved-cell lists before either ships.
 
-*Status:* partial.
+*Acceptance:* `tests/structure-versions.test.mjs` (MODEL-005) changes a working forecast's rate/growth formula parameters, reads exact definitions, field diffs and every moved cell through HTTP, changes dimensions/lines/mappings/rules, and proves approved/kept/reforecast/pack bodies and SHA-256 values unchanged. It asserts append-only storage, filtered API/CSV/Excel and open exports, failed-write atomicity and MCP attribution. `tests/workbook-undo.test.mjs` (MODEL-005) asserts no-write preview, imported structure versions and exact undo effects. `tests/structure-versions-browser.mjs` (MODEL-005) edits Plan and reads Activity definitions, moved cells and filtered Excel at 1440/390 without page overflow.
+
+*Status:* done.
 
 #### MODEL-006 — Starter models for US small businesses.
 Setup offers starter models that a buyer edits rather than builds from nothing: SaaS (ARR, churn, CAC, seats), professional services (billable headcount, utilization, rate), project or backlog businesses, and wholesale or ecommerce (units, price, COGS, inventory days). Each comes with its drivers, lines, dimensions, dashboards and cash timing, in USD.
@@ -841,8 +843,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 17 | 32 | 37 | 86 |
-| All | 34 | 32 | 37 | 103 |
+| Target and push further | 18 | 31 | 37 | 86 |
+| All | 35 | 31 | 37 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -878,7 +880,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `MODEL-002` | A rolling forecast that extends itself | target | done | `tests/rolling-forecast.test.mjs` (MODEL-002) |  |
 | `MODEL-003` | Custom dimensions and hierarchies | target | partial | `src/easel/setup.ts` `tests/easel.test.mjs` | Lines and departments are the only dimensions; user-defined dimensions, hierarchies and account roll-ups are missing |
 | `MODEL-004` | User-defined formulas and driver lines | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Fixed driver forms (revenue, positions, expenses, schedules, allocations) calculate exactly with traces; a user formula language with lookups and cycle refusal is missing |
-| `MODEL-005` | Versioned model structure | target | partial | `src/easel/approved.ts` `tests/review-fixes.test.mjs` | Approved snapshots keep saved arithmetic when engine code changes; user-editable structure, structure diffs and moved-cell lists for structure changes are missing |
+| `MODEL-005` | Versioned model structure | target | done | `src/easel/structure-versions.ts` `tests/structure-versions.test.mjs` `tests/workbook-undo.test.mjs` `tests/structure-versions-browser.mjs` | Current structures versioned in append-only Activity with exact diffs/moved cells and immutable captures; MODEL-003/004 inherit future dimensions/formulas |
 | `MODEL-006` | Starter models for US small businesses | target | missing |  | No starter models; setup starts from an empty plan |
 | `MODEL-007` | Recalculation at small-business scale | target | partial | `src/easel/engine.ts` | Deterministic synchronous recalculation exists; no measured scale target, background calculation or calculating state |
 | `MODEL-008` | Planning grid entry | target | partial | `src/easel/model.ts` `tests/easel.test.mjs` | Schedule inputs hold entered monthly values per line and department through the API; a grid, paste, spreading, copy forward, split sub-rows and cell notes are missing |

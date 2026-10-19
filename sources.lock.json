@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "2a1f5c56f066d3f642f1c7f73fe8c807a5b18a9846ca50f01b5acdd20dab0b10",
+      "sha256": "6f5a038bdda5604eb69495c0b6e319a5db161d175d1a9651f7def3bc5791d3c5",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "10e27c1730a21f4db494e3f5f739d6e5105482d7688525f894d0340ef2b5cc3b",
+      "sha256": "d582006914eb9563a74b27985f3502548d9501829ce702d289cbabbba8fef416",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "4c77a91c9734a3bc57fb3e1a90895216e87ce6337df84babde23cd99cace25e5",
+      "sha256": "4f96dd7703f9de1a2d7be1a2fba6643ea6ef714cf95fd2cbf89464a61ed3c703",
       "executable": false
     },
     "DEMO.md": {
@@ -463,7 +463,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "710fc2ca12a500851d7b08ada9194b0b112b4ad72613de752c79d60a930191fb",
+      "sha256": "12c60e33048a4cd7a57c535da034d4dac0c76642345e84deced4609232270ca9",
       "executable": false
     },
     "SOURCE.md": {
@@ -611,7 +611,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "d30c937e91153154be415cd150ac9ecb1d56e1d3280f142b1c082930901cd939",
+      "sha256": "44b124fefa3c77b1e178b03928dd56e166406948f263ff40dc371e7afa4f714e",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -631,7 +631,7 @@
       "executable": false
     },
     "src/easel/audit.ts": {
-      "sha256": "cc1f049eb1a4d6879627bacc05c721faa0a3a78a72ab2d375c8b4e1647c32c1c",
+      "sha256": "2d5a7287a2185cdc40661482e067a933ed0e4b4994aa91abad506ed3ba2bd724",
       "executable": false
     },
     "src/easel/cash-health-workbook.ts": {
@@ -683,7 +683,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "d25c5afee4dd0a15c9d0628657792ab1e2fb6a0d049cddc9be18ce999a9bc7cf",
+      "sha256": "3c50ea63f30e682fae5366d92d6000f602c890e6c015664c6363cc11e00fec3a",
       "executable": false
     },
     "src/easel/metric-rules.ts": {
@@ -760,6 +760,10 @@
     },
     "src/easel/store.ts": {
       "sha256": "c8b6924c9063821491013dde1f59a845e11dbea514e5a5e95641a1ade9ba9326",
+      "executable": false
+    },
+    "src/easel/structure-versions.ts": {
+      "sha256": "b2b047adb38ebaa2b33fd11e0e015a08326368f8119cf4486645e61509087e22",
       "executable": false
     },
     "src/easel/token-admin.ts": {
@@ -2491,15 +2495,15 @@
       "executable": false
     },
     "src/ui/activity-format.ts": {
-      "sha256": "4c28e52916db923f9ebad7e6f326eb229da4a3d82e4511960fa215637212229f",
+      "sha256": "cfa61a02b854dcc1f310ea2ab163ae04ecc1ccdf6dc8eea025d0f0480670a8b6",
       "executable": false
     },
     "src/ui/activity-style.ts": {
-      "sha256": "f0d673dfa531339fa31fa703cc88b50a62121c5e8eb2981a2a85467525affe5e",
+      "sha256": "e2b8702dc20be32839717e78a63f66ba0d41d302dfe31a201dd53124af8c5d2f",
       "executable": false
     },
     "src/ui/activity.tsx": {
-      "sha256": "e28e3375a58234d9017d25de898401f06cc4471ee3c11e0050ae12cb00ba7e80",
+      "sha256": "6b62cc87e978ac442cb9837b8f908630eae954e1468a986f9b512734dfcee757",
       "executable": false
     },
     "src/ui/actuals.tsx": {
@@ -2600,6 +2604,10 @@
     },
     "src/ui/statements.tsx": {
       "sha256": "1722b327bb275fac25d8b34ec4cb67002db9f2a106c490bf99d82438b6e3e009",
+      "executable": false
+    },
+    "src/ui/structure-change.tsx": {
+      "sha256": "11cedf25052f532e96fcbf2905cff4dd22cedbb1a8081703f833b92feab0c868",
       "executable": false
     },
     "src/ui/style.ts": {
@@ -2794,12 +2802,20 @@
       "sha256": "d5490e771429be92b01f2588b017cedc8323fe1a4f2e7c737d318b40ac1a5510",
       "executable": false
     },
+    "tests/structure-versions-browser.mjs": {
+      "sha256": "b10123c321b310df2a814f85a642382cb66821489da3329fbf50252b5b8c2831",
+      "executable": false
+    },
+    "tests/structure-versions.test.mjs": {
+      "sha256": "f92a5385dd409fc3b141516f6cbb94c5116ee10b931a087ec37b5cf2eacfe791",
+      "executable": false
+    },
     "tests/totals.test.mjs": {
       "sha256": "6e471edd12a39b1943d6c2a4ab15c211ede3b50f442edf180c408a09355016c4",
       "executable": false
     },
     "tests/workbook-undo.test.mjs": {
-      "sha256": "f71c7d6dad238c910032a9c3888e35de14f48fc460d6bc581b7f6cb5a50bfc3a",
+      "sha256": "2c0cb4ed5f9d5e90d0bb9b2dd1090916cbfd1ee8da252a6922eec80246c6e7c5",
       "executable": false
     },
     "tsconfig.json": {

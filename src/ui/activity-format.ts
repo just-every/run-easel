@@ -26,6 +26,7 @@ export function activityRecord(state: D, row: D) {
  const d = row.detail ?? {}
  const action = row.action as string
  if (['token-issued', 'token-revoked', 'api-token-used'].includes(action)) return safeText(d.label ?? d.token?.label) || 'API credential'
+ if (action === 'structure-version') return d.scenarios?.length === 1 ? d.scenarios[0].name : 'Company model'
  if (action === 'record-changed') return safeText(d.after?.name ?? d.after?.title ?? d.before?.name ?? d.before?.title) || `${d.kind} values`
  if (action === 'workspace') return state.workspace.name
  if (action === 'department' || action === 'department-delete') return safeText(d.name) || named(state, 'departments', row.record, 'Removed department')

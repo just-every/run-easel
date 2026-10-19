@@ -1,3 +1,4 @@
+import { versionStructure } from './structure-versions'
 // Stateless Streamable HTTP: JSON responses, native identity, and a closed
 // tool list. No command supplied by a client is dispatched directly.
 import type { Bindings } from '../auth.server'
@@ -126,6 +127,7 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
   try {
    const before = new Map(state)
    const result = await invoke(c, params.name, params.arguments ?? {})
+   if (c.activity.length || c.snapshots.length) await versionStructure(c, before, revision)
    if (c.activity.length || c.snapshots.length) await save(env.DB, person, before, state, revision, c.activity, c.snapshots, c.x.role === 'finance')
    else await readFence(env.DB, person, revision)
    return reply({ result: { structuredContent: result, content: [{ type: 'text', text: JSON.stringify(result) }] } })

@@ -2,14 +2,17 @@ import { requireFinance } from './access'
 import type { Context } from './context'
 import { requireThat, type Data } from './types'
 
-export type AuditFilters = { actor?: string; record?: string; scenario?: string; from?: string; to?: string; before?: string }
+export type AuditFilters = { actor?: string; record?: string; scenario?: string; from?: string; to?: string; before?: string; action?: string }
 
 export async function activityView(c: Context, filters: AuditFilters = {}): Promise<Data[]> {
  requireFinance(c.x)
  const conditions: string[] = [], params: (string | number)[] = []
- for (const field of ['actor', 'record', 'scenario'] as const) if (filters[field]) {
+ for (const field of ['actor', 'record', 'scenario', 'action'] as const) if (filters[field]) {
   requireThat(filters[field]!.length <= 320, 'Filter is too long')
-  conditions.push(`a.${field}=?`); params.push(filters[field]!)
+  if (field === 'scenario') {
+   conditions.push("(a.scenario=? OR (a.action='structure-version' AND EXISTS(SELECT 1 FROM json_each(a.detail,'$.scenarios') j WHERE json_extract(j.value,'$.id')=?)))")
+   params.push(filters[field]!, filters[field]!)
+  } else { conditions.push(`a.${field}=?`); params.push(filters[field]!) }
  }
  for (const field of ['from', 'to'] as const) if (filters[field]) {
   const date = filters[field]!
