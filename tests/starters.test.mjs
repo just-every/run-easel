@@ -72,6 +72,21 @@ test('MODEL-006: four real editable USD starters reconcile statements, dashboard
     await h.command('revenue', { ...revenueBody(units), startVolume: '2000' })
     v = await view(); assert.equal(total(units), 16000000); assert.equal(total(inventory), 12000000)
    }
+   if (['saas', 'wholesale'].includes(starter)) {
+    const call = async (name, args) => {
+     const response = await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }, h.owner)
+     assert.equal(response.status, 200)
+     assert.ok(!response.value.error && !response.value.result.isError, JSON.stringify(response.value))
+     return response.value.result.structuredContent
+    }
+    const proposal = await call('proposal-create', { from: id, name: 'Revised starter assumptions', request: 'Review linked acquisition or inventory cost' })
+    const proposed = await h.get(`/api/easel/scenario/${proposal.id}`)
+    const linked = proposed.inputs.expense.find(e => ['acquisition', 'inventory'].includes(e.kind))
+    const changed = await call('expense', { scenario: proposal.id, id: linked.id, name: linked.name, line: linked.line, department: linked.department, kind: linked.kind, start: linked.start, revenueOrigin: linked.revenueOrigin,
+     ...(linked.kind === 'acquisition' ? { cac: '751' } : { unitCost: '61', inventoryDays: '15' }) })
+    assert.equal(changed[linked.kind === 'acquisition' ? 'cacCents' : 'unitCostCents'], linked.kind === 'acquisition' ? 75100 : 6100)
+    assert.deepEqual((await view()).calculation, v.calculation, 'An agent edits its proposal without changing the budget')
+   }
    v = await view(); balanced(v.calculation)
    const viewer = await h.person('board@example.test', 'viewer')
    const read = await h.get(`/api/easel/scenario/${id}`, viewer)

@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "10ac1bfcb971e7fce96b829cf6f888576e6e4a089c27178518e9b88775bba24c",
+      "sha256": "d2c940325b60e3fec84e32caef5b2c32d23f3b1ab66301b9a0987a67bb78ebcf",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "5ce9788e4f644849abb42e3eaa0570e64260d873d8acbf93ed484ffb36f129d3",
+      "sha256": "2ee5222851a30ca8ba37986d45143c166301687b4800d9dcd93039253e9aa006",
       "executable": false
     },
     "DEMO.md": {
@@ -755,7 +755,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "49a00cc42931daffa367cd1f856270ebba7a9a09965e1f2e11164ebbf0edc19d",
+      "sha256": "21638c32fcff7c104759886eb0c4dee8ca09816723a082746e07064447031950",
       "executable": false
     },
     "src/easel/metric-rules.ts": {
@@ -2686,14 +2686,6 @@
       "sha256": "9f3f7725ce9dce6c43eb854f8449b66c446864b1346ec6eccfa3298d943c5faa",
       "executable": false
     },
-    "src/ui/planning-grid.css": {
-      "sha256": "7fecf528acf1e8404d86f742fedf7a5337225d2e525b4d02e509e2fa3a7beda8",
-      "executable": false
-    },
-    "src/ui/planning-grid.tsx": {
-      "sha256": "9f3f7725ce9dce6c43eb854f8449b66c446864b1346ec6eccfa3298d943c5faa",
-      "executable": false
-    },
     "src/ui/reforecast-comparison.tsx": {
       "sha256": "3d51a8b45c9b08e9d575d62f871b60ec2ac8452f65c9df50c43ac70e2cb8a9d7",
       "executable": false
@@ -2999,7 +2991,7 @@
       "executable": false
     },
     "tests/starters.test.mjs": {
-      "sha256": "0d80e9b05803e3fa596a63e8f42e6210d1795118cef2edf6827489f272807be9",
+      "sha256": "6c28fa1a28a5e1381657d4b766370f57c5d091b6edcb6049cea01a6e75c3e0f4",
       "executable": false
     },
     "tests/statements-browser.mjs": {
