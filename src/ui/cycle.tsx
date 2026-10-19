@@ -1,4 +1,5 @@
 import type { Shared } from './app'
+import { MetricTasks } from './metric-tasks'
 import { Action, command, Field, Form, monthLabel, Person, Table, type D } from './shared'
 
 /** Department submissions for the working budget, then approval. */
@@ -39,5 +40,6 @@ export function Cycle({ state, refresh }: Shared) {
    </Form>}
   </section>
   {budget.status === 'frozen' && <section className="card"><h2>After approval</h2><p>The forecast opened from the approved budget. Close months with actuals under Review; prior forecasts are kept at each close{state.scenarios.find((s: D) => s.kind === 'forecast')?.actualsThrough ? ` (actuals through ${monthLabel(state.scenarios.find((s: D) => s.kind === 'forecast').actualsThrough)})` : ''}.</p></section>}
+  {me.role !== 'viewer' && <MetricTasks state={state} />}
  </>
 }

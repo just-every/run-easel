@@ -9,6 +9,8 @@ import { access, requireFinance, requireMember } from './access'
 import { actualCells, actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
+import { metricRules, metricTaskList } from './metric-rules'
+import { evaluateMetricTasks, needsMetricRefresh } from './metric-tasks'
 import { longRange, longRangeList, longRangeView } from './long-range'
 import { longRangeWorkbook } from './long-range-workbook'
 import { handleMcp } from './mcp'
@@ -116,6 +118,8 @@ api.get('/api/easel/parallel-month/template/:file', async c => {
 })
 api.get('/api/easel/parallel-month/:id', c => read(c, ctx => parallelView(ctx, c.req.param('id'))))
 
+api.get('/api/easel/metric-tasks', c => read(c, metricTaskList))
+
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
@@ -183,7 +187,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, plan, cycle, review, reforecasts, longRange, parallelMonth]
+const commands = [setup, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -192,6 +196,10 @@ api.post('/api/easel/command/:op', async c => {
  let result: Data | undefined
  for (const command of commands) { result = await command(ctx, op, b); if (result !== undefined) break }
  requireThat(result !== undefined, 'Unknown action', 404)
+ if (needsMetricRefresh(ctx)) {
+  const evaluation = await evaluateMetricTasks(ctx)
+  if (op === 'metric-refresh') result = evaluation
+ }
  await commit(ctx)
  return c.json(result)
 })
@@ -213,6 +221,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  const after = await open(c)
  requireFinance(after.x)
  const result = step.record!(after, outcome)
+ if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
  await commit(after)
  return c.json(result)
 })

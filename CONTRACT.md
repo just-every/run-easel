@@ -372,7 +372,11 @@ A buyer whose PEO or payroll provider has no connector (for example Justworks, T
 #### REV-001 — Pipeline drivers from Orbit, HubSpot and Salesforce.
 Finance connects [Orbit](https://github.com/just-every/run-orbit), HubSpot or Salesforce (OAuth, read-only) and pulls open and closed deals with stage, amount, owner, close date and product. From Salesforce, Easel reads Opportunities with their stage and that stage's probability (custom stages included), their OpportunityLineItems (product, quantity, unit price and term), and the org's fiscal periods, so a close date lands in the fiscal period Salesforce assigns it, custom fiscal years included. A deal with line items is split by product, and each product follows its own deal-to-revenue rule. From Orbit, Easel reads deals through Orbit's API with a scoped read-only token. Finance owns the assumptions, which are explicit and versioned: probability by stage (or the CRM's own probability, labelled), close-date slippage by stage, and the deal-to-revenue rule (one-time, ratable over term, or subscription start). Weighted bookings feed revenue, deferred revenue, commissions and cash. Each revenue cell traces to the deals behind it, under role filtering.
 
+Before pipeline capability ships, REV-001 inherits CYCLE-002: next-quarter pipeline coverage is a rule metric with a finance-set threshold, evaluated on refresh/close to create cited owned/due tasks, with no duplicate while open. Existing task authority, blocking and evidence rules apply.
+
 *Acceptance:* a HubSpot fake with deals at three stages; the API journey sets probabilities and slippage, reads weighted bookings and revenue traced to deal IDs, moves a deal's close date in the fake, refreshes, and sees the revenue move; one recorded run against a HubSpot developer test account. The same journey against a recorded Salesforce fake of Opportunity, OpportunityLineItem and fiscal-period records: a custom stage whose CRM probability is 60% is overridden by finance to 40%, and weighted bookings use 40% with the trace labelling the override; an opportunity with a one-time setup product and a 12-month subscription product recognises the first in its close month and the second ratably over 12 months; a close date inside a custom fiscal period lands in that period; one recorded run against a Salesforce Developer Edition org. Two local installations (Orbit and Easel), as in `CONNECT-004`: Easel pulls Orbit's deals, a deal's close date changed in Orbit moves its revenue on Easel's next refresh, and the trace cites the Orbit deal ID.
+
+Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold refresh creates a cited owned/due task, a second unchanged refresh does not duplicate it while open, and live task visibility, owner authority and blocked-source handling hold.
 
 *Status:* missing.
 
@@ -453,11 +457,11 @@ Finance sets a planning calendar with tasks (submit department budget, review he
 *Status:* partial.
 
 #### CYCLE-002 — Metric-triggered tasks.
-Finance writes rules such as "a department's actual spend exceeds budget by 10% and $5,000 in a closed month", "runway falls below 12 months" or "pipeline coverage for next quarter falls below 3×". When a refresh or close meets a rule, Easel creates a task with an owner and due date that cites the numbers, and does not create a duplicate while the task is open.
+Finance writes rules such as "a department's actual spend exceeds budget by 10% and $5,000 in a closed month", "runway falls below 12 months" or "pipeline coverage for next quarter falls below 3×". When a refresh or close meets a rule, Easel creates a task with an owner and due date that cites the numbers, and does not create a duplicate while the task is open. Current actuals and runway metrics conform (ct, 19 October); before pipeline capability ships, REV-001 inherits the pipeline-coverage metric, rule evaluation on refresh/close, cited tasks and open-task deduplication. Finance creates, revises and disables rules. Closed-month spend is the department's natural-sign cost-of-sales plus operating expense, including non-cash costs, against the approved budget in the same currency and covered period. Both percentage and amount bounds are strict; equality does not trigger. A nonpositive budget has no finite overspend percentage: positive actual expense above the amount bound meets the percentage condition. Runway uses FIN-005's exact unrounded ratio and the earliest future breach; non-burning positive cash does not breach. Rules evaluate after accepted CSV refreshes and month closes, on save and on an explicit check. Incomplete imports, unresolved consumed mappings, unavailable owners, absent approved periods and currency mismatches are visibly blocked, never replaced with zero. Overspend tasks are deduplicated per rule/month, runway per rule/forecast while open; completing a task permits a new task on a subsequent check. Each task captures its rule revision and numeric/source evidence, owner and due date (N UTC calendar days after trigger). An overspend owner must be an active contributor of that department; runway owners must be active finance owners/admins. Finance sees/completes all tasks; an assignee sees/completes only their own tasks while their role and department remain valid. Rules are finance-only. Tasks are in-app records; CYCLE-003 carries notification delivery. Disabling a rule preserves existing tasks and their captured evidence.
 
-*Acceptance:* the API journey sets a 10% overspend rule, accepts a month that breaks it, sees one task for the department contributor with the cited variance, and refreshes again without a duplicate.
+*Acceptance:* `tests/metric-tasks.test.mjs` and `tests/metric-tasks-browser.mjs` (`CYCLE-002`): the API journey sets a 10% overspend rule, accepts and closes a month that breaks it, sees one task for the department contributor with actual/budget/variance/source citations and due date, and refreshes again without a duplicate. Assert strict percentage/amount boundaries, zero-budget spend, automatic late-refresh checks, immutable open-task evidence, all live authority restrictions, explicit blocking, runway arithmetic/earliest future breach and completion/retrigger semantics. At 1440/390 finance creates/checks/disables a rule, reads cited tasks and the assignee completes them with persisted attribution; viewers see neither rules nor tasks. REV-001 carries future pipeline metric/evaluation/dedup acceptance before shipping.
 
-*Status:* missing.
+*Status:* done. Acceptance: `tests/metric-tasks.test.mjs` and `tests/metric-tasks-browser.mjs` (`CYCLE-002`).
 
 #### CYCLE-003 — Notifications from discussions and events.
 Mentioning a person in a comment or explanation, a returned submission, a pending approval, a restatement notice, a failed refresh and a triggered task each notify the person by email and, if connected, in Slack, Microsoft Teams or Nook. The notification links to the exact cell or record. Each person sets their channels, and a daily digest is the default.
@@ -837,8 +841,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 14 | 34 | 38 | 86 |
-| All | 31 | 34 | 38 | 103 |
+| Target and push further | 15 | 34 | 37 | 86 |
+| All | 32 | 34 | 37 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -904,7 +908,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `SHEET-004` | Excel exports with formulas | target | done | `src/easel/report-workbooks.ts`, `src/easel/pack-workbook.ts`, `tests/spreadsheet-export.test.mjs`, `tests/export-browser-journey.mjs` | Every current plan/report/pack exports XLSX with live subtotal, total and variance formulas; statement sheets, scoped detail, immutable packs and CSV retained |
 | `SHEET-005` | Scheduled spreadsheet pulls | target | missing |  | No linked-range scheduled pulls |
 | `CYCLE-001` | Budget calendar, tasks and reminders | target | partial | `src/easel/cycle.ts` `tests/easel.test.mjs` | Submission requests, states and history ship; a planning calendar, due dates, reminders and escalation are missing |
-| `CYCLE-002` | Metric-triggered tasks | target | missing |  | No rules or automatic task creation |
+| `CYCLE-002` | Metric-triggered tasks | target | done | `tests/metric-tasks.test.mjs` `tests/metric-tasks-browser.mjs` |  |
 | `CYCLE-003` | Notifications from discussions and events | target | missing |  | No mention, approval or event notifications by email or chat |
 | `CYCLE-004` | Private and shared scenarios | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | Contributor proposals are visible to their author and finance; private sandboxes for any planner, sharing grants and official-scenario marking are missing |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |

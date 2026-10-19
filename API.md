@@ -163,3 +163,30 @@ Commands use `/api/easel/command/<command>`. Finance alone can read
 `GET /api/easel/parallel-month/:id` (full record including retained CSV).
 Every write uses the current session and model revision fence. Stale content
 or revision returns 409, unauthorized access 403, invalid CSV 400.
+
+### Metric-triggered tasks (`CYCLE-002`)
+
+Finance saves `metric-rule-save` with `{name,kind,owner,dueDays,enabled}`.
+For `kind: "overspend"` supply `{department,percent,amount}`; both bounds
+are strict, in the reporting currency. Spend is cost-of-sales plus operating
+expense, including non-cash costs. For a nonpositive budget, positive actual
+expense above the amount bound meets the percentage condition. For
+`kind: "runway"` supply `{runway}` in months. Edit with `{id,revision}`.
+Overspend owners must be active department contributors; runway owners active
+finance owners/admins. Rules capture the currency and block after a mismatch.
+
+`GET /api/easel/metric-tasks` returns `{rules,tasks}`. Only finance sees rules;
+contributors see their own tasks while their department scope remains valid;
+viewers get empty lists. `metric-task-complete` takes `{id,revision}` and is
+allowed for finance or the current assignee. Tasks retain evidence and
+attribution when complete; they grant no additional plan access.
+
+Checks run automatically after accepted actuals refreshes and closes and on
+rule save. Finance can call `metric-refresh` with `{}` to check explicitly;
+it returns `{created,blocked}`. An open task is deduplicated by rule/month for
+overspend or rule/forecast for runway; completion permits later retrigger.
+Runway uses FIN-005's unrounded ratio and first future breach. Due dates add
+whole UTC calendar days to trigger time. Source problems and unavailable
+owners are recorded as blocked rules, never invented values. Tasks are
+in-app work records; no email delivery is claimed. REV-001 inherits pipeline
+coverage rules before its future pipeline source can ship.

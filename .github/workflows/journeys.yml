@@ -43,6 +43,10 @@ jobs:
         run: node tests/parallel-month-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/parallel-month
+      - name: CYCLE-002 metric tasks at desktop and phone widths
+        run: node tests/metric-tasks-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/metric-tasks
       - uses: actions/upload-artifact@v4
         if: always()
         with:

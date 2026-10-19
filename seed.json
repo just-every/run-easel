@@ -150,6 +150,12 @@
       "clauses": [
         "MOVE-004"
       ]
+    },
+    {
+      "id": "metric-triggered-tasks",
+      "clauses": [
+        "CYCLE-002"
+      ]
     }
   ],
   "nonGoals": [
