@@ -135,3 +135,31 @@ frozen snapshots remain readable. A whole-file commit still requires every
 account and department to map, as EASEL-003 requires. Rules are planning
 records included in open and installation exports. Balance-sheet targets and
 custom dimensions still depend on CONNECT-007 and MODEL-003.
+
+### Parallel month (`MOVE-004`)
+
+Finance compares a closed month to the old tool before switching. Download
+`GET /api/easel/parallel-month/template/YYYY-MM.csv` and replace its monetary
+columns with the old tool's natural-sign decimal amounts in the reporting
+currency. Headers are `line,department,actual,budget,forecast`; use the existing
+planning IDs in the template, with a blank department for no department.
+Missing rows on either side mean zero; unknown IDs and duplicate keys refuse
+the entire file. No employee detail is needed.
+
+- `parallel-month-preview`: `{month,name,filename,csv}`; writes nothing and
+  returns rows, per-measure differences and a SHA-256. Forecast means the
+  immutable forecast kept immediately before that month's close.
+- `parallel-month-save`: the same body plus `fingerprint` from that preview.
+  Recomputes before saving; changed contents require another preview.
+- `parallel-month-classify`: `{id,revision,key,kind,explanation}`; `key` is a
+  returned difference key; `kind` is `mapping`, `timing`, `formula` or
+  `source-data`. The classification is finance's judgment, not an inference.
+- `parallel-month-sign`: `{id,revision,sha256}`; requires all differences
+  classified with explanations. Records signer/time and freezes the captured
+  comparison; subsequent model edits leave it intact. It does not switch tools.
+
+Commands use `/api/easel/command/<command>`. Finance alone can read
+`GET /api/easel/parallel-month?month=YYYY-MM` (summaries) and
+`GET /api/easel/parallel-month/:id` (full record including retained CSV).
+Every write uses the current session and model revision fence. Stale content
+or revision returns 409, unauthorized access 403, invalid CSV 400.

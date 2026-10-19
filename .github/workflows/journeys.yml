@@ -39,6 +39,10 @@ jobs:
         run: node tests/long-range-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/long-range
+      - name: MOVE-004 parallel month at desktop and phone widths
+        run: node tests/parallel-month-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/parallel-month
       - uses: actions/upload-artifact@v4
         if: always()
         with:

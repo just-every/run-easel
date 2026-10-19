@@ -14,6 +14,7 @@ import { longRangeWorkbook } from './long-range-workbook'
 import { handleMcp } from './mcp'
 import { packCsv, packHtml } from './pack-documents'
 import { plan } from './plan'
+import { parallelMonth, parallelList, parallelView, parallelTemplate } from './parallel-month'
 import { scenarioWorkbook, scenarioCsv, comparisonWorkbook, varianceWorkbook } from './report-workbooks'
 import { packWorkbook } from './pack-workbook'
 import { actualsWorkbook, activityWorkbook } from './operational-workbooks'
@@ -107,6 +108,14 @@ api.get('/api/easel/long-range/:id/document.xlsx', async c => {
  return spreadsheet(longRangeWorkbook(view), 'easel-long-range')
 })
 
+api.get('/api/easel/parallel-month', c => read(c, ctx => parallelList(ctx, c.req.query('month'))))
+api.get('/api/easel/parallel-month/template/:file', async c => {
+ const ctx = await open(c), csv = await parallelTemplate(ctx, c.req.param('file').replace(/\.csv$/, ''))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="parallel-month.csv"' } })
+})
+api.get('/api/easel/parallel-month/:id', c => read(c, ctx => parallelView(ctx, c.req.param('id'))))
+
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
@@ -174,7 +183,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, plan, cycle, review, reforecasts, longRange]
+const commands = [setup, plan, cycle, review, reforecasts, longRange, parallelMonth]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

@@ -636,11 +636,11 @@ Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, lo
 *Status:* missing.
 
 #### MOVE-004 — A parallel month against the old tool.
-For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching.
+For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools.
 
-*Acceptance:* with a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off.
+*Acceptance:* `tests/parallel-month.test.mjs` and `tests/parallel-month-browser.mjs` (`MOVE-004`): with a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off. The API asserts actual, budget and kept-forecast amounts, zero/missing rows, all four explicit classifications with explanations, no-write preview, exact digest/revision fences, restricted access, and signed persistence after model edits. Finance uploads, previews, classifies and signs at 1440 and 390, then reloads the frozen record with source/comparison digests and attribution.
 
-*Status:* missing.
+*Status:* done. Acceptance: `tests/parallel-month.test.mjs` and `tests/parallel-month-browser.mjs` (`MOVE-004`).
 
 #### PORT-001 — An export a buyer can open without Easel.
 Besides the `rer export` archive (`EASEL-016`), finance can download the whole plan as open files: one CSV per table, an .xlsx per scenario with formulas (`SHEET-004`), the model definition as JSON, and every snapshot and original file, with a manifest of digests.
@@ -837,8 +837,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 13 | 34 | 39 | 86 |
-| All | 30 | 34 | 39 | 103 |
+| Target and push further | 14 | 34 | 38 | 86 |
+| All | 31 | 34 | 38 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -929,7 +929,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `MOVE-001` | Move in from Adaptive Planning | target | missing |  | No Adaptive Planning import, including personnel modeled-sheet rows as positions |
 | `MOVE-002` | Move in from Planful | target | missing |  | No Planful import |
 | `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | missing |  | No Anaplan, Runway or Pigment import |
-| `MOVE-004` | A parallel month against the old tool | target | missing |  | No parallel-month comparison or sign-off |
+| `MOVE-004` | A parallel month against the old tool | target | done | `tests/parallel-month.test.mjs` `tests/parallel-month-browser.mjs` |  |
 | `PORT-001` | An export a buyer can open without Easel | target | done | `src/easel/open-export.ts`, `tests/open-export.test.mjs`, `tests/open-export-browser-journey.mjs` | Finance downloads product and import-journal table CSVs, scenario formula workbooks, model JSON, every immutable snapshot and retained original, with digest manifest; existing credential exclusions preserved |
 | `MOBILE-001` | Review and approve at phone width | target | done | `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001): complete planning/review journeys at 390, persisted exact-revision approval/promotion, dashboard cash equals API, page overflow checks |  |
 | `MOBILE-002` | Native iOS and Android apps | target | missing |  | No native apps or push notifications |

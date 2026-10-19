@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { ReforecastComparison } from './reforecast-comparison'
+import { ParallelMonth } from './parallel-month'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 
 /** Closing months, variance explanations and review packs. */
@@ -10,11 +11,15 @@ export function Review({ state, refresh }: Shared) {
  const forecast = state.scenarios.find((s: D) => s.kind === 'forecast')
  const closedMonths: string[] = []
  if (forecast?.actualsThrough) for (let m = state.workspace.planStart; m <= forecast.actualsThrough; m = addMonths(m, 1)) closedMonths.push(m)
- const [month, setMonth] = useState(closedMonths[closedMonths.length - 1] ?? '')
+ const [month, setMonth] = useState(() => {
+  const remembered = typeof window === 'undefined' ? null : new URL(window.location.href).searchParams.get('reviewMonth')
+  return remembered && closedMonths.includes(remembered) ? remembered : closedMonths[closedMonths.length - 1] ?? ''
+ })
  const [v, setV] = useState<D | null>(null)
  const [error, setError] = useState('')
  useEffect(() => { let live = true; setV(null); setError(''); if (month) api(`variance/${month}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state])
  useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.actualsThrough])
+ useEffect(() => { if (month) { const url = new URL(window.location.href); url.searchParams.set('reviewMonth', month); window.history.replaceState(window.history.state, '', url) } }, [month])
  const next = forecast ? (forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : state.workspace.planStart) : ''
  const reviewState = { ...state, actorNames: { ...state.actorNames, ...v?.actorNames } }
  const packs = state.packs.filter((p: D) => !month || p.month === month)
@@ -52,6 +57,7 @@ export function Review({ state, refresh }: Shared) {
    </details>)}
   </section>}
   {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
+  {me.role === 'finance' && closedMonths.includes(month) && <ParallelMonth key={month} state={state} month={month} />}
   <section className="card">
    <h2>Review packs</h2>
    {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}
