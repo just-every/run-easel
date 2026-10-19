@@ -11,8 +11,9 @@ const csvCell = (v: unknown) => { const s = String(v ?? ''); return /[",\n\r]/.t
 export function packHtml(sn: Data): string {
  const b = sn.body, money = (n: number | null) => n === null || n === undefined ? '—' : formatMoney(n, b.currency)
  const row = (cells: unknown[]) => `<tr>${cells.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`
+ const statement = (heading: string, values: Data[] | undefined, fields: [string, string][]) => values ? `<h2>${esc(heading)}</h2><table><thead><tr><th>Month</th>${fields.map(([, label]) => `<th>${esc(label)}</th>`).join('')}<th>Completeness</th></tr></thead><tbody>${values.map(m => row([monthLabel(m.month), ...fields.map(([key]) => money(m[key])), m.incompleteReasons?.join(' ') ?? 'Complete planning schedule'])).join('')}</tbody></table>` : ''
  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(b.title)} · ${esc(b.company)}</title>
-<style>body{font-family:system-ui,sans-serif;margin:2rem;color:#1b2724}table{border-collapse:collapse;width:100%;margin:1rem 0}td,th{border:1px solid #9aa8a3;padding:.35rem .5rem;text-align:left;vertical-align:top}th{background:#eef2f0}.meta{color:#4a5a55}</style></head><body>
+<style>body{font-family:system-ui,sans-serif;margin:2rem;color:#1b2724}table{display:block;overflow-x:auto;max-width:100%;border-collapse:collapse;width:100%;margin:1rem 0}td,th{border:1px solid #9aa8a3;padding:.35rem .5rem;text-align:left;vertical-align:top}th{background:#eef2f0}.meta{color:#4a5a55}</style></head><body>
 <h1>${esc(b.title)} · ${esc(b.company)}</h1>
 <p class="meta">Published by ${esc(b.publishedBy.name)} (${esc(b.publishedBy.email)}) at ${esc(b.publishedAt)}. Snapshot ${esc(sn.id)}, SHA-256 ${esc(sn.sha256)}.</p>
 <p class="meta">Approved budget: revision ${esc(b.budget.revision)}, approved by ${esc(b.budget.approvedBy?.name)} at ${esc(b.budget.approvedAt)} (snapshot SHA-256 ${esc(b.budget.sha256)}). Forecast: ${esc(b.forecast.name)} revision ${esc(b.forecast.revision)}, actuals through ${esc(monthLabel(b.forecast.actualsThrough))}.</p>
@@ -27,9 +28,12 @@ ${b.variances.map((v: Data) => row([`${v.line} · ${v.department}`, money(v.actu
 </tbody></table>
 ${b.versionComparison ? `<h2>Actual against every version</h2><p>Δ = actual minus version. — means an absent month or, for Δ, differing currencies.</p><table><thead><tr><th>Line · department</th><th>Actual (${esc(b.currency)})</th>${b.versionComparison.versions.map((v: Data) => `<th>${esc(v.name)} (${esc(v.currency)}) · revision ${esc(v.revision)}</th>`).join('')}</tr></thead><tbody>${b.versionComparison.rows.map((r: Data) => row([`${r.lineName} · ${r.departmentName}`, money(r.actual), ...b.versionComparison.versions.map((v: Data) => { const value = r.comparisons.find((c: Data) => c.id === v.id); return `${value.amount === null ? '—' : formatMoney(value.amount, v.currency)} · Δ ${money(value.variance)}` })])).join('')}</tbody></table>` : ''}
 <h2>Cash</h2>
-<table><thead><tr><th>Month</th><th>Forecast closing cash</th><th>Budget closing cash</th></tr></thead><tbody>
-${b.cash.map((m: Data) => row([monthLabel(m.month), money(m.closing), money(m.budget)])).join('')}
+<table><thead><tr><th>Month</th><th>Forecast closing cash</th><th>Budget closing cash</th><th>Completeness</th></tr></thead><tbody>
+${b.cash.map((m: Data) => row([monthLabel(m.month), money(m.closing), money(m.budget), m.incompleteReasons?.join(' ') ?? ''])).join('')}
 </tbody></table>
+${b.contracts ? `<h2>Bookings, billings, revenue and collections</h2><p>Captured contract planning assumptions; invoices and collections are not billing actuals.</p><table><thead><tr><th>Month</th><th>Bookings</th><th>Billings</th><th>Revenue</th><th>Collections</th><th>Receivables</th><th>Deferred revenue</th></tr></thead><tbody>${b.contracts.months.map((m: Data) => row([monthLabel(m.month), ...['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue'].map(k => money(m[k]))])).join('')}</tbody></table>` : ''}
+${statement('Balance sheet', b.balanceSheet, [['cash', 'Cash'], ['receivables', 'Receivables'], ['deferredRevenue', 'Deferred revenue'], ['assets', 'Assets'], ['liabilities', 'Liabilities'], ['equity', 'Equity'], ['balanceDifference', 'Reconciliation difference']])}
+${statement('Indirect cash flow', b.cashFlow, [['netIncome', 'Net income'], ['receivablesChange', 'Receivables change'], ['deferredRevenueChange', 'Deferred revenue change'], ['operating', 'Operating cash'], ['investing', 'Investing cash'], ['financing', 'Financing cash'], ['closing', 'Closing cash'], ['difference', 'Reconciliation difference']])}
 <h2>Decisions and actions</h2>
 ${b.decisions.length ? `<table><thead><tr><th>Decision or action</th><th>Owner</th><th>Due</th></tr></thead><tbody>${b.decisions.map((d: Data) => row([d.text, d.owner, d.due])).join('')}</tbody></table>` : '<p>No decisions recorded.</p>'}
 <h2>Sources</h2>
@@ -44,6 +48,8 @@ export function packCsv(sn: Data): string {
  const lines = [['section', 'line', 'department', 'actual_minor', 'budget_minor', 'variance_minor', 'explanation', 'explanation_status', 'version_name', 'version_currency', 'version_minor', 'version_variance_minor'].join(',')]
  for (const l of b.lines) lines.push(['line', l.line, '', l.actual, l.budget, l.actual - l.budget, '', '', '', '', '', ''].map(csvCell).join(','))
  for (const v of b.variances) lines.push(['variance', v.line, v.department, v.actual, v.budget, v.variance, v.explanation?.text ?? '', v.explanation?.status ?? '', '', '', '', ''].map(csvCell).join(','))
+ for (const m of b.cash) if (m.incompleteReasons?.length) lines.push(['cash-incomplete', m.month, '', m.closing, '', '', m.incompleteReasons.join(' '), 'incomplete', '', '', '', ''].map(csvCell).join(','))
+ if (b.contracts) for (const m of b.contracts.months) for (const key of ['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue', 'unbilledRevenue']) lines.push(['contract', `${m.month} ${key}`, '', m[key], '', '', 'Captured planning schedule', '', '', '', '', ''].map(csvCell).join(','))
  for (const d of b.decisions) lines.push(['decision', d.text, d.owner, '', '', '', d.due, '', '', '', '', ''].map(csvCell).join(','))
  if (b.versionComparison) for (const r of b.versionComparison.rows) for (const v of b.versionComparison.versions) {
   const value = r.comparisons.find((c: Data) => c.id === v.id)

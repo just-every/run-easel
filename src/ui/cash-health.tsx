@@ -8,10 +8,11 @@ export function CashHealth({ health, currency, title = 'Cash health' }: { health
  const check = (value: boolean | null) => value === null ? 'Not assessed' : value ? 'Below minimum' : 'Meets minimum'
  return <section className="card" aria-label={title}>
   <h2>{title}</h2>
+  {health.incompleteReasons?.length > 0 && <p role="status">Incomplete: these diagnostics describe the known cash planning schedule. Actual contract receipt allocation is unresolved.</p>}
   <p>Lowest cash: {monthLabel(health.lowestCash?.month)} · {money(health.lowestCash?.closing, currency)}. Cash-zero month: {health.cashZeroMonth ? monthLabel(health.cashZeroMonth) : 'None in forecast'}.</p>
   {health.agreementStatus === 'not-agreed' ? <p>No finance-agreed cash floor or runway minimum yet.</p> : health.agreementStatus === 'different-currency' ? <p className="error">The agreement is in {health.agreement.currency}; these {currency} amounts cannot be checked against it.</p> : <>
    <p>Current agreed cash floor: {money(health.agreement.floorCents, currency)}. Runway minimum: {decimalText(health.agreement.runwayMinimumHundredths)} months.</p>
-   <p>First below cash floor: {health.firstFloorBreach ? monthLabel(health.firstFloorBreach) : 'None'}. First below runway minimum: {health.firstRunwayBreach ? monthLabel(health.firstRunwayBreach) : 'None'}.</p>
+   <p>First below cash floor: {health.incompleteReasons?.length ? 'Not assessed: incomplete cash' : health.firstFloorBreach ? monthLabel(health.firstFloorBreach) : 'None'}. First below runway minimum: {health.incompleteReasons?.length ? 'Not assessed: incomplete cash' : health.firstRunwayBreach ? monthLabel(health.firstRunwayBreach) : 'None'}.</p>
   </>}
   {crossing && <p>Runway at cash-floor crossing: {crossingRunway}.</p>}
   <p className="muted">Runway uses closing cash divided by the current and up to two preceding months’ average net burn. Negative runway means cash is already exhausted; nonpositive average burn has no finite runway. Current agreed thresholds also check frozen cash without changing its saved numbers.</p>

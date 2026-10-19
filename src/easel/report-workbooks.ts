@@ -1,3 +1,4 @@
+import { contractSheets } from './contract-workbook'
 import { historySheet } from './history-workbook'
 import { financingSheets } from './financing-workbook'
 import { cashHealthSheet } from './cash-health-workbook'
@@ -35,10 +36,11 @@ export function scenarioSheets(view: Data, prefix = '', department = ''): Sheet[
  rows.push(['Profit', ...profits.map((n, i) => { const col = columnName(i + 2); return formula(`${col}${subtotals[0].row}-${col}${subtotals[1].row}-${col}${subtotals[2].row}`, n) }), formula(`SUM(B${profitRow}:${columnName(months.length + 1)}${profitRow})`, sum(profits))])
  const sheets: Sheet[] = [{ name: `${prefix}Profit and loss`, rows }]
  if (!department) {
-  const cashRows: Cell[][] = [[`${scenario.name} · ${workspace.currency} minor units`], ['Month', 'Opening', 'Collections', 'Payments', 'Closing']]
-  for (const c of calc.cash) { const r = cashRows.length + 1; cashRows.push([c.month, r === 3 ? c.opening : formula(`E${r - 1}`, c.opening), c.collections, c.payments, formula(`B${r}+C${r}-D${r}`, c.closing)]) }
+  const cashRows: Cell[][] = [[`${scenario.name} · ${workspace.currency} minor units`], ['Month', 'Opening', 'Collections', 'Payments', 'Closing', 'Completeness']]
+  for (const c of calc.cash) { const r = cashRows.length + 1; cashRows.push([c.month, r === 3 ? c.opening : formula(`E${r - 1}`, c.opening), c.collections, c.payments, formula(`B${r}+C${r}-D${r}`, c.closing), c.incompleteReasons?.join('\n') ?? 'Complete planning schedule']) }
   sheets.push({ name: `${prefix}Cash`, rows: cashRows })
   if (calc.balanceSheet && calc.cashFlow) sheets.push(...statementSheets(calc.balanceSheet, calc.cashFlow, calc.cash, workspace.currency, prefix))
+  if (calc.contracts) sheets.push(...contractSheets(calc.contracts, workspace.currency, prefix))
   if (calc.financing) sheets.push(...financingSheets(calc.financing, workspace.currency, prefix))
   if (view.cashHealth) sheets.push(cashHealthSheet(view.cashHealth, calc.cash, workspace.currency, prefix))
  }

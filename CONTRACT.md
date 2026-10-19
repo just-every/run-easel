@@ -447,9 +447,13 @@ Every fixed form ships through Plan, HTTP and proposal/MCP doors, retaining depa
 #### REV-004 — Bookings, billings, revenue and cash.
 For contract revenue, a booking carries term, billing frequency (monthly, quarterly, annual upfront) and start date. Billings, deferred revenue, recognized revenue and collections follow from it and appear on the three statements (`FIN-001`, `FIN-002`).
 
-*Acceptance:* a $120,000 annual-upfront booking in the API journey produces a $120,000 billing, $10,000 a month of revenue, a declining deferred-revenue balance and collection by the DSO.
+Contract inputs are planning assumptions, never issued invoices or confirmed receipts. They use existing scenario, department and proposal authority and retain their definitions and arithmetic in frozen versions. Total contract value is integer cents; service terms are whole months. Monthly service periods begin on the start date and its monthly anniversaries, clamped to the last day of a shorter month. Each ordinary service period recognizes floor(total cents / term); the final period takes the remaining cents. A service period crossing calendar months allocates its recognition by its exact UTC service days, with the final calendar segment taking the cent remainder. Monthly, quarterly and annual-upfront invoices occur on those anniversaries every one, three or twelve service months and bill the sum of their service-period amounts; the final partial billing interval takes its remaining amount. Collections occur on the invoice date plus the entered whole-day DSO, assigned to that UTC calendar month, independently of the legacy monthly collection lag. No service, billing or collection schedule restarts at the displayed horizon.
 
-*Status:* missing.
+Bookings, invoices, recognized revenue and collections remain distinct. Billed amounts less recognition produce deferred revenue; recognition ahead of billing produces unbilled revenue, and billed receivables decrease on collection. The three statements include those assets/liabilities and their indirect cash movements with exact reconciliation checks, and formula Excel exports use the same role-filtered schedules. Accepted closed-month ledger revenue retains precedence on the P&L; contract invoices and collections remain explicitly planned until source invoice actuals exist. A mismatch or ambiguous mixed-driver closed cell is reported as an unresolved reconciliation with its source amounts, never silently allocated into an invented receipt. Known invoice receivables remain unchanged by that mismatch; real statement differences remain visible. Cash minimums are not assessed, affected dashboard cash/burn/runway values are unavailable and runway task conclusions are blocked until the reconciliation is resolved. FIN-002 retains its other collection curves, vendor terms, prepaids and accrued-payroll obligations; CONNECT-007 retains imported balance-sheet openings.
+
+*Acceptance:* `tests/contracts.test.mjs` (REV-004) asserts a $120,000 annual-upfront booking creates a $120,000 billing, $10,000 monthly revenue, declining deferred revenue, and exact-day DSO collection; it also asserts monthly and quarterly schedules, partial terms, anniversary/day allocation and cent remainders, linked statement identities, role filtering, proposals, frozen arithmetic and independently evaluated formula Excel. `tests/contracts-browser.mjs` (REV-004) creates and edits a contract through Plan and reads billing, revenue, collection and reconciled statements at 1440/390 without page overflow.
+
+*Status:* done.
 
 ### Spend
 
@@ -907,8 +911,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 25 | 27 | 34 | 86 |
-| All | 42 | 27 | 34 | 103 |
+| Target and push further | 26 | 27 | 33 | 86 |
+| All | 43 | 27 | 33 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -966,7 +970,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `REV-001` | Pipeline drivers from Orbit, HubSpot and Salesforce | target | missing |  | No Orbit, HubSpot or Salesforce connector, stage probabilities, line-item revenue rules or pipeline drivers |
 | `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | missing |  | No billing connectors, ARR bridge or cohorts |
 | `REV-003` | A revenue driver library | target | done | `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Fixed forms and reviewed Gauge operational actuals; MODEL-004 carries formula-line drivers |
-| `REV-004` | Bookings, billings, revenue and cash | target | missing |  | No bookings, billing schedules or deferred revenue |
+| `REV-004` | Bookings, billings, revenue and cash | target | done | `tests/revenue-drivers.test.mjs` `tests/contracts-browser.mjs` | Contract billing/recognition/DSO schedules, deferred and unbilled balances, linked statements and formula exports |
 | `SPEND-001` | Committed and card spend | target | missing |  | No purchasing, expense or card connectors and no committed-spend view |
 | `SHEET-001` | Excel add-in with live formulas | target | partial | `src/easel/workbook.ts` `tests/easel.test.mjs` | One-way .xlsx import with cell and formula provenance ships; an Excel add-in with live functions, on-demand and on-open refresh, direct entry during an open submission and proposal write-back is missing |
 | `SHEET-002` | Google Sheets add-on with live formulas | target | missing |  | No Google Sheets add-on, refresh on open or installable-trigger refresh |

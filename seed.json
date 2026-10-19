@@ -210,6 +210,12 @@
       "clauses": [
         "CONNECT-010"
       ]
+    },
+    {
+      "id": "contract-revenue",
+      "clauses": [
+        "REV-004"
+      ]
     }
   ],
   "nonGoals": [

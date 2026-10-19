@@ -64,7 +64,8 @@ export async function evaluateMetricTasks(c: Context) {
      if (budget.body.calculation.currency !== rule.currency) reason = 'The approved budget has a different currency; this rule cannot compare those amounts.'
      else if (forecast.actualsThrough && !budget.body.calculation.months.includes(forecast.actualsThrough)) reason = 'The latest closed month has no approved budget period; only covered months can be compared.'
      if (!reason) hits = overspend(rule, c, forecast, calc, budget)
-    } else hits = runway(rule, forecast, calc)
+    } else if (calc.cash.some(row => row.incompleteReasons?.length)) reason = 'Incomplete contract receipt allocation; runway conclusions unavailable until the cash reconciliation is resolved.'
+    else hits = runway(rule, forecast, calc)
    } catch (e) {
     if (e instanceof Fault && e.status === 409) reason = e.message
     else throw e

@@ -49,7 +49,8 @@ export function dashboardMetrics(view: Data, subscriptions: Data[], department: 
    } else arrBasis = 'Subscription source amounts unavailable'
   }
   const cashMonth = cash.get(month)
-  const cashBlocked = !!firstMissing && month >= firstMissing
+  const incompleteCash = !!cashMonth?.incompleteReasons?.length
+  const cashBlocked = (!!firstMissing && month >= firstMissing) || incompleteCash
   const companyCash = !department && !cashBlocked && !!cashMonth
   return {
    month, revenue, grossMargin, headcount, arr,
@@ -57,7 +58,7 @@ export function dashboardMetrics(view: Data, subscriptions: Data[], department: 
    runway: companyCash ? cashMonth.runwayBasis === 'cash-exhausted' ? 0 : cashMonth.runwayHundredths : null,
    closingCash: companyCash ? cashMonth.closing : null,
    arrBasis,
-   runwayBasis: department ? 'Company cash only' : cashBlocked ? 'Missing accepted actuals' : cashMonth?.runwayBasis ?? 'Cash unavailable',
+   runwayBasis: department ? 'Company cash only' : incompleteCash ? 'Incomplete contract receipt allocation; known cash schedule only' : cashBlocked ? 'Missing accepted actuals' : cashMonth?.runwayBasis ?? 'Cash unavailable',
   }
  })
 }

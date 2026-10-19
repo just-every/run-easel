@@ -7,13 +7,13 @@ import { formatMoney } from './units'
 
 export type BalanceMonth = {
  month: string; cash: number; receivables: number; inventory: number; capitalPrepayments: number; fixedAssets: number; assets: number
- payables: number; capitalPayables: number; nonCashReserve: number; debt: number; liabilities: number
+ deferredRevenue?: number; unbilledRevenue?: number; payables: number; capitalPayables: number; nonCashReserve: number; debt: number; liabilities: number
  openingEquity: number; retainedEarnings: number; contributedEquity: number; equity: number; balanceDifference: number; cashDifference: number
- trace: string; causes: string[]
+ incompleteReasons?: string[]; trace: string; causes: string[]
 }
 export type CashFlowMonth = {
  month: string; opening: number; netIncome: number; nonCashExpense: number; receivablesChange: number; payablesChange: number
- inventoryChange: number; operating: number; capex: number; disposalProceeds: number; investing: number; financing: number; change: number; closing: number; difference: number; trace: string
+ deferredRevenueChange?: number; unbilledRevenueChange?: number; inventoryChange: number; operating: number; capex: number; disposalProceeds: number; investing: number; financing: number; change: number; closing: number; difference: number; incompleteReasons?: string[]; trace: string
 }
 
 export function statements(model: Model, calc: Calculation): { balanceSheet: BalanceMonth[]; cashFlow: CashFlowMonth[] } {
@@ -29,9 +29,10 @@ export function statements(model: Model, calc: Calculation): { balanceSheet: Bal
   payables: sum(assets.filter(a => a.kind === 'purchase' && a.start <= m && m < (a.paymentMonth || a.start)).map(a => a.costCents)),
  })
  const openingCapital = capital(before)
- let receivables = scenario.cash?.receivablesCents ?? 0, payables = scenario.cash?.payablesCents ?? 0
- const openingEquity = (scenario.cash?.openingCents ?? 0) + receivables + openingFixed + openingCapital.prepayments - payables - openingCapital.payables - (calc.financing?.totals[0]?.openingDebt ?? 0)
- let retainedEarnings = 0, nonCashReserve = 0
+ const openingContracts = calc.contracts?.opening
+ let receivables = (openingContracts?.receivables ?? 0) + (scenario.cash?.receivablesCents ?? 0), payables = scenario.cash?.payablesCents ?? 0
+ const openingEquity = (scenario.cash?.openingCents ?? 0) + receivables + openingFixed + openingCapital.prepayments + (openingContracts?.unbilledRevenue ?? 0) - (openingContracts?.deferredRevenue ?? 0) - payables - openingCapital.payables - (calc.financing?.totals[0]?.openingDebt ?? 0)
+ let retainedEarnings = 0, nonCashReserve = 0, deferredRevenue = openingContracts?.deferredRevenue ?? 0, unbilledRevenue = openingContracts?.unbilledRevenue ?? 0
  const balanceSheet: BalanceMonth[] = [], cashFlow: CashFlowMonth[] = []
  for (const [i, month] of calc.months.entries()) {
   const profit = calc.profit[i], cash = calc.cash[i]
@@ -53,19 +54,27 @@ export function statements(model: Model, calc: Calculation): { balanceSheet: Bal
   const inventory = calc.inventory?.[i]?.closing ?? 0, priorInventory = calc.inventory?.[i]?.opening ?? 0
   const inventoryChange = priorInventory - inventory
   const priorReceivables = receivables, priorPayables = payables
-  receivables += profit.revenue - (cash.collections - disposalProceeds - (funding?.draws ?? 0) - (funding?.equityRaised ?? 0))
+  const contract = calc.contracts?.months[i]
+  const deferredRevenueChange = (contract?.deferredRevenue ?? 0) - deferredRevenue
+  const unbilledRevenueChange = unbilledRevenue - (contract?.unbilledRevenue ?? 0)
+  deferredRevenue = contract?.deferredRevenue ?? 0; unbilledRevenue = contract?.unbilledRevenue ?? 0
+  // A closed aggregate revenue cell cannot supply invoice actuals. Keep known
+  // invoice AR; P&L disagreements remain statement differences, never AR plugs.
+  const contractKeys = new Set((calc.contracts?.rows ?? []).filter(r => r.month === month && (r.revenue || r.billings || r.receivables || r.deferredRevenue)).map(r => `${r.line}|${r.department}`))
+  const contractRecognition = closed ? sum(calc.cells.filter(c => c.month === month && c.basis === 'actual' && contractKeys.has(`${c.line}|${c.department}`)).map(c => c.amount)) : contract?.revenue ?? 0
+  receivables += profit.revenue + (contract?.billings ?? 0) - contractRecognition - (cash.collections - disposalProceeds - (funding?.draws ?? 0) - (funding?.equityRaised ?? 0))
   payables += profit.costOfSales + profit.operatingExpenses - nonCashExpense + inventory - priorInventory - (cash.payments - capex - (funding?.repayments ?? 0))
   retainedEarnings += profit.profit
   const cap = capital(month), fixedAssets = sum(assetRows.map(a => a.closingBookValue))
-  const totalAssets = cash.closing + receivables + inventory + cap.prepayments + fixedAssets
-  const liabilities = payables + cap.payables + nonCashReserve + debt, equity = openingEquity + retainedEarnings + contributedEquity
+  const totalAssets = cash.closing + receivables + unbilledRevenue + inventory + cap.prepayments + fixedAssets
+  const liabilities = payables + deferredRevenue + cap.payables + nonCashReserve + debt, equity = openingEquity + retainedEarnings + contributedEquity
   const balanceDifference = totalAssets - liabilities - equity
   const receivablesChange = priorReceivables - receivables, payablesChange = payables - priorPayables
-  const operating = profit.profit + nonCashExpense + receivablesChange + payablesChange + inventoryChange
+  const operating = profit.profit + nonCashExpense + receivablesChange + payablesChange + inventoryChange + deferredRevenueChange + unbilledRevenueChange
   const investing = -capex + disposalProceeds, financing = funding?.financingCash ?? 0
   const change = operating + investing + financing, closing = cash.opening + change
   const difference = closing - cash.closing
-  const causes: string[] = []
+  const causes: string[] = [...(cash.incompleteReasons ?? [])]
   if (balanceDifference !== 0) {
    causes.push(`Assets minus liabilities and equity = ${money(balanceDifference)}; no balancing adjustment was made.`)
    if (closed && assetRows.length) {
@@ -78,10 +87,10 @@ export function statements(model: Model, calc: Calculation): { balanceSheet: Bal
    for (const row of assetRows) causes.push(`Asset schedule: opening ${money(row.openingBookValue)}, depreciation ${money(row.depreciation)}, disposal book value ${money(row.disposalBookValue)}, closing ${money(row.closingBookValue)}.`)
   }
   if (difference !== 0) causes.push(`Indirect closing cash differs from the direct cash schedule by ${money(difference)}.`)
-  const trace = `Cash ${money(cash.closing)} + receivables ${money(receivables)} + inventory estimate ${money(inventory)} + capital prepayments ${money(cap.prepayments)} + fixed assets ${money(fixedAssets)} = assets ${money(totalAssets)}; payables ${money(payables)} + capital payables ${money(cap.payables)} + other noncash reserve ${money(nonCashReserve)} + debt ${money(debt)} = liabilities ${money(liabilities)}; opening equity estimate ${money(openingEquity)} + cumulative net income ${money(retainedEarnings)} + contributed equity ${money(contributedEquity)} = equity ${money(equity)}. Opening equity is opening cash + receivables + net fixed assets + capital prepayments − payables − capital payables − opening debt, not an imported equity balance.`
-  balanceSheet.push({ debt, contributedEquity, month, cash: cash.closing, receivables, inventory, capitalPrepayments: cap.prepayments, fixedAssets, assets: totalAssets, payables, capitalPayables: cap.payables, nonCashReserve, liabilities, openingEquity, retainedEarnings, equity, balanceDifference, cashDifference: difference, trace, causes })
-  cashFlow.push({ month, opening: cash.opening, netIncome: profit.profit, nonCashExpense, receivablesChange, payablesChange, inventoryChange, operating, capex: -capex, disposalProceeds, investing, financing, change, closing, difference,
-   trace: `Net income ${money(profit.profit)} + noncash expenses ${money(nonCashExpense)} − increase in receivables ${money(-receivablesChange)} + increase in operating payables ${money(payablesChange)} − increase in inventory ${money(-inventoryChange)} = operating cash ${money(operating)}; capex ${money(-capex)} + disposal proceeds ${money(disposalProceeds)} = investing cash ${money(investing)}; financing ${money(financing)} from planned draws − principal repayments + equity raises; opening ${money(cash.opening)} + net change ${money(change)} = closing ${money(closing)}. Capital prepayments and capital payables reconcile purchase/payment timing on the balance sheet.` })
+  const trace = `${cash.incompleteReasons?.length ? "INCOMPLETE: known invoice/cash schedule; unresolved actual receipt allocation. " : ""}Cash ${money(cash.closing)} + receivables ${money(receivables)} + unbilled contract revenue ${money(unbilledRevenue)} + inventory estimate ${money(inventory)} + capital prepayments ${money(cap.prepayments)} + fixed assets ${money(fixedAssets)} = assets ${money(totalAssets)}; deferred revenue ${money(deferredRevenue)} + payables ${money(payables)} + capital payables ${money(cap.payables)} + other noncash reserve ${money(nonCashReserve)} + debt ${money(debt)} = liabilities ${money(liabilities)}; opening equity estimate ${money(openingEquity)} + cumulative net income ${money(retainedEarnings)} + contributed equity ${money(contributedEquity)} = equity ${money(equity)}. Opening equity is opening cash + receivables + unbilled revenue + net fixed assets + capital prepayments − deferred revenue − payables − capital payables − opening debt, not an imported equity balance.`
+  balanceSheet.push({ ...(cash.incompleteReasons ? { incompleteReasons: cash.incompleteReasons } : {}), debt, contributedEquity, month, cash: cash.closing, receivables, deferredRevenue, unbilledRevenue, inventory, capitalPrepayments: cap.prepayments, fixedAssets, assets: totalAssets, payables, capitalPayables: cap.payables, nonCashReserve, liabilities, openingEquity, retainedEarnings, equity, balanceDifference, cashDifference: difference, trace, causes })
+  cashFlow.push({ ...(cash.incompleteReasons ? { incompleteReasons: cash.incompleteReasons } : {}), month, opening: cash.opening, netIncome: profit.profit, nonCashExpense, receivablesChange, payablesChange, deferredRevenueChange, unbilledRevenueChange, inventoryChange, operating, capex: -capex, disposalProceeds, investing, financing, change, closing, difference,
+   trace: `${cash.incompleteReasons?.length ? "INCOMPLETE: known invoice/cash schedule; unresolved actual receipt allocation. " : ""}Net income ${money(profit.profit)} + noncash expenses ${money(nonCashExpense)} − increase in receivables ${money(-receivablesChange)} + increase in operating payables ${money(payablesChange)} − increase in inventory ${money(-inventoryChange)} + increase in deferred revenue ${money(deferredRevenueChange)} − increase in unbilled revenue ${money(-unbilledRevenueChange)} = operating cash ${money(operating)}; capex ${money(-capex)} + disposal proceeds ${money(disposalProceeds)} = investing cash ${money(investing)}; financing ${money(financing)} from planned draws − principal repayments + equity raises; opening ${money(cash.opening)} + net change ${money(change)} = closing ${money(closing)}. Capital prepayments and capital payables reconcile purchase/payment timing on the balance sheet.` })
  }
  return { balanceSheet, cashFlow }
 }

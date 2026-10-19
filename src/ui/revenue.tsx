@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { decimalText, Field, Form, money, type D, type Option } from './shared'
 
 export const revenueForms = [
- ['customers', 'Customers × revenue per customer'], ['volume', 'Volume × rate'],
+ ['contract', 'Contract bookings and upfront billing'], ['customers', 'Customers × revenue per customer'], ['volume', 'Volume × rate'],
  ['seats', 'Seats × price with expansion'], ['usage', 'Usage × unit price'],
  ['services', 'Billable headcount × utilization × rate'], ['milestones', 'Project milestones'], ['backlog', 'Backlog burn-down'],
 ] as const
 
 export function RevenueSummary({ row: r, currency }: { row: D; currency: string }) {
+ if (r.kind === 'contract') return <>{money(r.contractValueCents, currency)}, {r.termMonths} months from {r.startDate}, {r.billingCadence} upfront, DSO {r.dsoDays} days</>
  if (r.kind === 'volume') return <>{decimalText(r.startVolume)} units × {money(r.rateCents, currency)}, {decimalText(r.growthBps)}% a month</>
  if (r.kind === 'customers') return <>{decimalText(r.startCustomers)} customers × {money(r.arpaCents, currency)}, churn {decimalText(r.churnBps)}%</>
  if (r.kind === 'seats') return <>{decimalText(r.startSeats)} seats × {money(r.priceCents, currency)} a month, expansion {decimalText(r.expansionBps)}%</>
@@ -30,7 +31,15 @@ export function RevenueForm({ row, lines, depts, allDepts, onSave }: { row: D | 
   <Field label="Revenue line" name="line" options={lines} defaultValue={row?.line} />
   <Field label="Department" name="department" options={depts} defaultValue={row?.department} />
   <Field label="Start month" name="start" type="month" defaultValue={row?.start} />
-  <Field label="Collected after (months)" name="collectionLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(row?.collectionLag ?? 1)} />
+  {kind !== 'contract' && <Field label="Collected after (months)" name="collectionLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(row?.collectionLag ?? 1)} />}
+  {kind === 'contract' && <>
+   <Field label="Contract start date" name="startDate" type="date" defaultValue={row?.startDate} hint="Use a date in the start month. Service runs from this date to its anniversary after the term." />
+   <Field label="Total contract value" name="contractValue" defaultValue={value('contractValueCents')} />
+   <Field label="Contract term (months)" name="termMonths" type="number" defaultValue={String(row?.termMonths ?? 12)} />
+   <Field label="Upfront billing cadence" name="billingCadence" options={['monthly', 'quarterly', 'annual'].map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} defaultValue={row?.billingCadence ?? 'annual'} />
+   <Field label="DSO (days)" name="dsoDays" type="number" defaultValue={String(row?.dsoDays ?? 30)} hint="Collect each invoice this many calendar days after its invoice date (0–365)." />
+   <p className="muted wide">Bookings record the whole contract at start. Revenue is earned in equal service-month installments, with the final cent remainder in the last installment. Mid-month service is split by actual days; anniversaries clamp to month end. Billing occurs upfront for each interval, including a final short interval.</p>
+  </>}
   {kind === 'volume' && <>
    <Field label="Starting volume" name="startVolume" defaultValue={value('startVolume')} />
    <Field label="Monthly growth %" name="growthPercent" defaultValue={value('growthBps', '0')} />

@@ -1,3 +1,4 @@
+import { contractRevenue, type ContractCalculation } from './contract-revenue'
 import { commercialCosts, type InventoryMonth } from './commercial-costs'
 import { historySchedule } from './history-schedules'
 import { calculateFinancing, evaluateCovenants, type FinancingCalculation } from './financing'
@@ -22,7 +23,7 @@ export type Department = { id: string; name: string; shared?: boolean }
 export type Source = { kind: string; id?: string; label: string; amount: number; trace: string }
 export type Cell = { line: string; department: string; month: string; amount: number; basis: 'plan' | 'actual'; sources: Source[] }
 export type ActualCell = { line: string; department: string; month: string; amount: number; rows: number; batches: string[] }
-export type CashMonth = { month: string; opening: number; collections: number; payments: number; closing: number; trace: string }
+export type CashMonth = { month: string; opening: number; collections: number; payments: number; closing: number; trace: string; incompleteReasons?: string[] }
 export type ProfitMonth = { month: string; revenue: number; costOfSales: number; operatingExpenses: number; grossMargin: number; profit: number }
 
 export type Model = {
@@ -49,6 +50,7 @@ export type Calculation = {
  cashFlow?: CashFlowMonth[]
  assets?: AssetMonth[]
  inventory?: InventoryMonth[]
+ contracts?: ContractCalculation
  financing?: FinancingCalculation
 }
 
@@ -94,7 +96,10 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   headcount[p.department][m] = (headcount[p.department][m] ?? 0) + 1
  }
 
- for (const r of inputs.revenue) {
+ const contracts = contractRevenue(inputs.revenue, months, currency)
+ for (const row of contracts.rows) add(row.line, row.department, row.month, { kind: 'revenue', id: row.originId, label: row.name, amount: row.revenue, trace: row.trace }, 0, true)
+ for (const invoice of contracts.invoices) cash.push({ month: invoice.collectionDate.slice(0, 7), amount: invoice.amount, collection: true, label: 'Planned contract invoice collection' })
+ for (const r of inputs.revenue.filter(r => r.kind !== 'contract')) {
   const lag = Number(r.collectionLag ?? collectionLag)
   if (libraryRevenue(r, inputs.position, months[months.length - 1], currency, (month, source) => add(r.line, r.department, month, source, lag))) continue
   if (r.kind === 'volume') {
@@ -180,6 +185,22 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   if (row.disposalProceeds) cash.push({ month: row.month, amount: row.disposalProceeds, collection: true, label: row.name })
  }
 
+ // Aggregate ledger revenue is not invoice/receipt actuals. Retain the known
+ // invoice plan and explicitly disclose cells that cannot reconcile its source.
+ const contractActualKeys = new Set<string>()
+ contracts.actualsIssues = []
+ for (const row of contracts.rows.filter(r => closed(r.month) && (r.revenue || r.billings || r.receivables || r.deferredRevenue))) {
+  const key = `${row.line}|${row.department}|${row.month}`
+  if (contractActualKeys.has(key)) continue
+  contractActualKeys.add(key)
+  const scheduledRevenue = contracts.rows.filter(r => `${r.line}|${r.department}|${r.month}` === key).reduce((n, r) => n + r.revenue, 0)
+  const acceptedRevenue = actuals.filter(a => `${a.line}|${a.department}|${a.month}` === key).reduce((n, a) => n + a.amount, 0)
+  const mixed = inputs.revenue.some(r => r.kind !== 'contract' && r.line === row.line && r.department === row.department && r.start <= row.month) || inputs.schedule.some(r => r.line === row.line && r.department === row.department && (r.history || r.values?.[row.month] !== undefined))
+  if (mixed || acceptedRevenue !== scheduledRevenue) {
+   const reason = `${row.month}: incomplete cash and receivables reconciliation on line ${lineById.get(row.line)?.name ?? row.line}, department ${deptName.get(row.department) ?? row.department}: accepted revenue ${money(acceptedRevenue)} versus scheduled contract recognition ${money(scheduledRevenue)}${mixed ? '; aggregate cell mixes contract and other revenue sources' : ''}. Accepted P&L is retained; contract invoices and collections remain planning assumptions, not billing actuals. Unresolved receipt allocation is not inferred from revenue.`
+   contracts.actualsIssues.push({ month: row.month, line: row.line, department: row.department, acceptedRevenue, scheduledRevenue, reason }); warnings.push(reason)
+  }
+ }
  for (const a of actuals) {
   if (!closed(a.month) || !inHorizon.has(a.month)) continue
   const c = cell(a.line, a.department, a.month, 'actual')
@@ -187,6 +208,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   c.sources.push({ kind: 'actual', label: 'Accepted actuals', amount: a.amount, trace: `${monthLabel(a.month)}: ${money(a.amount)} from ${a.rows} accepted row${a.rows === 1 ? '' : 's'} in ${a.batches.length} import${a.batches.length === 1 ? '' : 's'}` })
   const type = lineById.get(a.line)?.type
   if (lineById.get(a.line)?.nonCash || inventoryLines.has(`${a.line}|${a.department}`)) continue
+  if (type === 'revenue' && contractActualKeys.has(`${a.line}|${a.department}|${a.month}`)) continue
   cash.push({ month: addMonths(a.month, type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll || interestLines.has(a.line) ? 0 : paymentLag), amount: a.amount, collection: type === 'revenue', label: 'Actuals' })
  }
  for (const m of months) if (closed(m) && ![...cells.values()].some(c => c.month === m)) warnings.push(`${monthLabel(m)} is closed but has no accepted actuals`)
@@ -237,7 +259,9 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   payments += funding.repayments
   const closing = opening + collections - payments
   const basis = i === 0 ? ` (opening cash ${scenario.cash?.basis === 'imported' ? 'imported from actuals' : 'is an estimate'})` : ''
-  const row = { month: m, opening, collections, payments, closing, trace: `${money(opening)}${basis} + collections ${money(collections)} − payments ${money(payments)} = ${money(closing)}; financing inflows ${money(funding.draws + funding.equityRaised)}, principal repayments ${money(funding.repayments)}; revenue collected ${monthCount(collectionLag)} after it is earned, non-payroll costs paid ${monthCount(paymentLag)} after, payroll in the month; inventory purchases fund the stock buffer and follow supplier payment timing${extra.length ? '; ' + extra.join('; ') : ''}` }
+  const incompleteReasons = contracts.actualsIssues.filter(issue => issue.month <= m).map(issue => issue.reason)
+  const row = { ...(incompleteReasons.length ? { incompleteReasons } : {}), month: m, opening, collections, payments, closing, trace: `${money(opening)}${basis} + collections ${money(collections)} − payments ${money(payments)} = ${money(closing)}; financing inflows ${money(funding.draws + funding.equityRaised)}, principal repayments ${money(funding.repayments)}; revenue collected ${monthCount(collectionLag)} after it is earned, non-payroll costs paid ${monthCount(paymentLag)} after, payroll in the month; contract invoices collect on invoice date plus their exact DSO days; inventory purchases fund the stock buffer and follow supplier payment timing${extra.length ? '; ' + extra.join('; ') : ''}` }
+  if (incompleteReasons.length) row.trace += ` INCOMPLETE: known schedule only. ${incompleteReasons.join(' ')}`
   opening = closing
   return row
  })
@@ -255,7 +279,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
   ...(inventoryLines.size ? { inventory: commercial.inventory } : {}),
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
-  lineTotals, profit, cash: cashMonths, headcount, warnings, assets, financing,
+  lineTotals, profit, cash: cashMonths, headcount, warnings, assets, financing, ...(contracts.rows.length ? { contracts } : {}),
  }
  return { ...result, ...statements(model, result) }
 }
