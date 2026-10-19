@@ -198,6 +198,12 @@
       "clauses": [
         "REPORT-002"
       ]
+    },
+    {
+      "id": "actuals-history-planning",
+      "clauses": [
+        "MODEL-009"
+      ]
     }
   ],
   "nonGoals": [

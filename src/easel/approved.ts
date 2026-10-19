@@ -4,12 +4,12 @@ import { snapshot } from './store'
 import { requireThat, type Data } from './types'
 
 /** Approved metadata, assumptions and arithmetic have one immutable source. */
-export async function approvedModel(c: Context, scenario: Data): Promise<Model & { calculation: Calculation }> {
+export async function approvedModel(c: Context, scenario: Data): Promise<Model & { calculation: Calculation; actualsHistory?: Data }> {
  const sn = await snapshot(c.db, scenario.approval?.snapshot)
  const b = sn.body
  requireThat(sn.kind === 'approval' && sn.scenario === scenario.id && b.scenario.id === scenario.id && b.revision === scenario.approval.revision && b.scenario.revision === b.revision, 'The approval does not match this budget', 409)
  return {
   scenario: { ...b.scenario, approval: { snapshot: sn.id, by: b.approvedBy.email, at: b.approvedAt, revision: b.revision } },
-  workspace: b.workspace, lines: b.lines, departments: b.departments, inputs: b.inputs, calculation: b.calculation,
+  workspace: b.workspace, lines: b.lines, departments: b.departments, inputs: b.inputs, calculation: b.calculation, actualsHistory: b.actualsHistory,
  }
 }

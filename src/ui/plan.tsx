@@ -1,3 +1,4 @@
+import { HistoryInputs } from './history'
 import { FinancingInputs } from './financing'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
@@ -82,9 +83,11 @@ export function Plan({ state, refresh }: Shared) {
    <h2>Monthly schedules</h2>
    <p className="muted">Entered month by month, usually moved in from a workbook; each keeps the sheet and cell it came from.</p>
    <Table caption="Schedules" heads={['Name', 'Line', 'Department', 'Months', 'Total', 'Source', '']}>
-    {inputs.schedule.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{lineName(s.line)}</td><td>{deptName(s.department)}</td><td>{Object.keys(s.values).length}</td><td className="num">{money(Object.values(s.values as Record<string, number>).reduce((a, v) => a + v, 0), currency)}</td><td>{s.provenance ? `${s.provenance.file} ${s.provenance.sheet} row ${s.provenance.row}` : 'entered'}</td><td><Action label="Remove" kind="danger" run={() => remove('schedule', s.id)} /></td></tr>)}
+    {inputs.schedule.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{lineName(s.line)}</td><td>{deptName(s.department)}</td><td>{s.history ? 'Actual reference' : Object.keys(s.values).length}</td><td className="num">{s.history ? 'Calculated' : money(Object.values(s.values as Record<string, number>).reduce((a, v) => a + v, 0), currency)}</td><td>{s.provenance ? `${s.provenance.file} ${s.provenance.sheet}${s.provenance.row == null ? '' : ` row ${s.provenance.row}`}` : 'entered'}</td><td><Action label="Remove" kind="danger" run={() => remove('schedule', s.id)} /></td></tr>)}
    </Table>
   </section>}
+
+  {view && <HistoryInputs state={state} view={view} save={save} refresh={refresh} />}
 
   {view && me.role === 'finance' && <FinancingInputs view={view} state={state} save={save} remove={remove} />}
 

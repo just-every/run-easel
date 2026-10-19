@@ -1,7 +1,7 @@
 import type { Bindings } from './auth.server'
 import type { Context } from './easel/context'
 import { access } from './easel/access'
-import { actualCells, actualsCommand } from './easel/actuals'
+import { actualsCommand } from './easel/actuals'
 import { cycle } from './easel/cycle'
 import { review } from './easel/review'
 import { load, save } from './easel/store'
@@ -24,7 +24,7 @@ export async function seedDemo(env: Bindings, { ownerEmail, now }: { ownerEmail:
  }
  const open = async () => {
   const { state, revision } = await load(db)
-  const c: Context = { s: state, x: access(state, owner), db, activity: [], snapshots: [], now: now.toISOString(), actuals: () => actualCells(db, state) }
+  const c: Context = { s: state, x: access(state, owner), db, activity: [], snapshots: [], now: now.toISOString() }
   return { c, before: new Map(state), revision }
  }
  const persist = async ({ c, before, revision }: Awaited<ReturnType<typeof open>>) => save(db, owner, before, c.s, revision, c.activity, c.snapshots, true)

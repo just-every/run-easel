@@ -1,3 +1,4 @@
+import { historyBudget } from './history-budget'
 import { dashboards, dashboardList, dashboardView } from './dashboards'
 import { dashboardWorkbook } from './dashboard-workbook'
 import { sandboxes } from './sandboxes'
@@ -10,7 +11,7 @@ import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { deploymentHealth } from '../base/deployment-health'
 import { activityCsv, activityView as filteredActivity } from './audit'
 import { access, requireFinance, requireMember } from './access'
-import { actualCells, actualsCommand } from './actuals'
+import { actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
 import { departmentStatements, departmentStatementList, departmentStatementView, queueDepartmentStatements } from './department-statements'
@@ -70,8 +71,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const a = c.get('apiActor') ?? await actor(c.req.raw, c.env)
  const { state, revision } = await load(c.env.DB)
  if (a.token) requireMember(access(state, a))
- const cached = new Map<string, ReturnType<typeof actualCells>>()
- return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString(), actuals: (through) => { const key = through ?? ''; if (!cached.has(key)) cached.set(key, actualCells(c.env.DB, state, through)); return cached.get(key)! } }
+ return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString() }
 }
 
 async function commit(ctx: Awaited<ReturnType<typeof open>>, structureBefore = ctx.before, structureRevision = ctx.revision) {
@@ -211,7 +211,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, dashboards, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [setup, historyBudget, dashboards, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -224,7 +224,7 @@ api.post('/api/easel/command/:op', async c => {
   const evaluation = await evaluateMetricTasks(ctx)
   if (op === 'metric-refresh') result = evaluation
  }
- const statementIds = op === 'close-month' ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
+ const statementIds = op === 'close-month' && !result.alternativeBudget ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  return c.json(result)

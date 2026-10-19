@@ -1,3 +1,4 @@
+import { historySchedule } from './history-schedules'
 import { calculateFinancing, evaluateCovenants, type FinancingCalculation } from './financing'
 import { libraryRevenue } from './revenue-drivers'
 // The deterministic planning calculation. Given one scenario's inputs (and,
@@ -144,6 +145,10 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
  }
 
  for (const s of inputs.schedule) {
+  if (s.history) {
+   for (const row of historySchedule(s, actuals, months.filter(m => !closed(m)), currency)) add(s.line, s.department, row.month, { kind: 'schedule', id: s.originId, label: s.name, amount: row.amount, trace: row.trace })
+   continue
+  }
   for (const [m, amount] of Object.entries(s.values as Record<string, number>)) {
    if (!inHorizon.has(m)) { warnings.push(`${s.name}: ${monthLabel(m)} is outside the plan months and is not counted`); continue }
    add(s.line, s.department, m, { kind: 'schedule', id: s.originId, label: s.name, amount, trace: `${s.name}: ${money(amount)} entered for ${monthLabel(m)}${s.provenance ? ` (${s.provenance.file} ${s.provenance.sheet}!${s.provenance.cells?.[m] ?? ''})` : ''}` })

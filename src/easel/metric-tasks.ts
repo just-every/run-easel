@@ -1,8 +1,9 @@
+import { workingCalculation } from './calculation'
 // Refresh creates explicit, cited work. A blocked source is visible to finance;
 // it never supplies a made-up zero or a conclusion to a contributor.
 import { cashHealth } from './cash-health'
 import type { Context } from './context'
-import { calculate, type Calculation } from './engine'
+import { type Calculation } from './engine'
 import { model, workspace } from './model'
 import { validMetricOwner } from './metric-rules'
 import { snapshot } from './store'
@@ -44,7 +45,7 @@ function runway(rule: Data, forecast: Data, calc: Calculation) {
 
 export async function evaluateMetricTasks(c: Context) {
  const created: string[] = [], blocked: Data[] = []
- const forecast = all(c.s, 'scenario').find(s => s.kind === 'forecast')
+ const forecast = all(c.s, 'scenario').find(s => s.kind === 'forecast' && !s.alternativeBudget)
  const w = workspace(c.s)
  // Pending multi-batch imports must not produce final conclusions.
  const pending = all(c.s, 'batch').some(b => ['importing', 'undoing'].includes(b.status))
@@ -57,7 +58,7 @@ export async function evaluateMetricTasks(c: Context) {
   let hits: Data[] = []
   if (!reason && forecast) {
    try {
-    const calc = calculate(model(c.s, forecast.id), await c.actuals(forecast.actualsThrough ?? undefined))
+    const calc = await workingCalculation(c, forecast.id)
     if (rule.kind === 'overspend') {
      const budget = await snapshot(c.db, forecast.budgetSnapshot)
      if (budget.body.calculation.currency !== rule.currency) reason = 'The approved budget has a different currency; this rule cannot compare those amounts.'

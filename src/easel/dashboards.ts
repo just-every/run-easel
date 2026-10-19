@@ -1,8 +1,8 @@
+import { workingCalculation } from './calculation'
 import { requireFinance, requireMember } from './access'
 import { canSeeDashboard } from './dashboard-access'
 import { dashboardMetrics } from './dashboard-metrics'
 import type { Context } from './context'
-import { calculate } from './engine'
 import { model } from './model'
 import { frozenModel } from './reforecasts'
 import { scenarioAccess } from './scenario-access'
@@ -37,7 +37,7 @@ export async function dashboardView(c: Context, id: unknown) {
  // Aggregate raw arithmetic locally; no input, source, salary or name leaves
  // this view. Reading frozen versions uses their original sources and values.
  const pending = sc.status !== 'frozen' && !!sc.actualsThrough && all(c.s, 'batch').some(b => ['importing', 'undoing'].includes(b.status))
- const calculation = 'calculation' in m ? m.calculation : calculate(m, sc.actualsThrough ? await c.actuals(sc.actualsThrough) : [])
+ const calculation = 'calculation' in m ? m.calculation : await workingCalculation(c, sc.id)
  const rows = dashboardMetrics({ lines: m.lines, calculation }, m.inputs.revenue, dashboard.department)
  const blocked = pending ? 'Complete the in-progress actuals import before reading final dashboard metrics.' : null
  if (blocked) for (const row of rows) {

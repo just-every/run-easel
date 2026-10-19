@@ -1,9 +1,10 @@
+import { historyOverlay } from './history-sources'
+import { addMonths } from './months'
+import { workingCalculation } from './calculation'
 // The existing append-only, finance-only trail is the model's version store.
 // Capture definitions and their effects inside the same fenced model save.
-import { actualCells } from './actuals'
 import type { Context } from './context'
-import { calculate } from './engine'
-import { INPUT_KINDS, model } from './model'
+import { INPUT_KINDS } from './model'
 import { semanticEqual } from './semantic'
 import { all, Fault, find, type Data, type State } from './types'
 
@@ -28,7 +29,7 @@ async function cells(c: Context, s: State, id: string) {
  const sc = find(s, 'scenario', id)
  if (!sc || !find(s, 'workspace', 'main')) return { cells: [], currency: null }
  try {
-  const calc = calculate(model(s, id), sc.actualsThrough ? await actualCells(c.db, s, sc.actualsThrough) : [])
+  const calc = await workingCalculation({ ...c, s }, id)
   return { cells: calc.cells, currency: calc.currency }
  } catch (error) {
   if (!(error instanceof Fault) || error.status !== 409) throw error
@@ -40,6 +41,7 @@ export async function versionStructure(c: Context, before: State, modelRevisionB
  // Every newly captured immutable version carries today's global definitions.
  for (const sn of c.snapshots) {
   sn.body.structure = capturedStructure(c.s)
+  if (sn.body.calculation?.months) sn.body.actualsHistory = await historyOverlay(c, [...new Set<string>(sn.body.calculation.months.flatMap((m: string) => [m, addMonths(m, -12)]))])
   if (sn.kind === 'forecast') {
    sn.body.lines = all(c.s, 'line'); sn.body.departments = all(c.s, 'department')
   }

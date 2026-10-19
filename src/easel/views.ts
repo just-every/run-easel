@@ -1,3 +1,6 @@
+import { historyOverlay } from './history-sources'
+import { addMonths } from './months'
+import { workingCalculation } from './calculation'
 import { canSeeScenario, scenarioAccess } from './scenario-access'
 import { aggregateFinancing } from './financing-view'
 import { cashHealth } from './cash-health'
@@ -9,7 +12,7 @@ import { requireFinance, requireMember, seesDepartmentDetail, visibleInput } fro
 import { reconciliation } from './actuals'
 import { actorNames } from './actor-names'
 import type { Context } from './context'
-import { calculate, type Calculation } from './engine'
+import { type Calculation } from './engine'
 import { departments, INPUT_KINDS, lines, model, scenarioInputs, workspace } from './model'
 import { snapshot, snapshotList } from './store'
 import { frozenModel } from './reforecasts'
@@ -22,6 +25,8 @@ export function filterCalculation(x: Access, calc: Calculation): Calculation {
  if (x.role === 'finance') return calc
  return { ...calc, ...(calc.financing ? { financing: aggregateFinancing(calc.financing) } : {}), assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? { ...c, sources: c.sources.map(source => source.kind === 'financing' ? { kind: 'financing', label: 'Financing interest', amount: source.amount, trace: 'Interest expense; instrument terms restricted to finance' } : source) } : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
 }
+
+const filterHistory = (x: Access, history: Data) => ({ ...history, cells: history.cells.map((cell: Data) => seesDepartmentDetail(x, cell.department) ? cell : { ...cell, rows: 0, batches: [] }) })
 
 const filterInputs = (x: Access, inputs: Record<string, Data[]>) =>
  Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => k === 'asset-category' || visibleInput(x, k, i))]))
@@ -69,8 +74,10 @@ export async function scenarioView(c: Context, id: string) {
  requireThat(canSeeScenario(c.x, sc), 'Scenario not found', 404)
  const frozen = sc.status === 'frozen' ? await frozenModel(c, sc) : null
  const m = frozen ?? model(c.s, id)
- const calc = frozen ? frozen.calculation : calculate(m, sc.actualsThrough ? await c.actuals(sc.actualsThrough) : [])
- return { cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
+ const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
+ const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
+ const visibleHistory = filterHistory(c.x, actualsHistory)
+ return { actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }
@@ -108,7 +115,7 @@ export async function snapshotView(c: Context, id: string) {
  if (sn.scenario) scenarioAccess(c.s, c.x, sn.scenario)
  if (sn.kind === 'pack' || c.x.role === 'finance') return sn
  requireThat(sn.kind === 'approval' || sn.kind === 'reforecast' || c.x.role === 'contributor', 'Snapshot not found', 404)
- const body = { ...sn.body, calculation: filterCalculation(c.x, sn.body.calculation), inputs: filterInputs(c.x, sn.body.inputs ?? {}) }
+ const body = { ...sn.body, ...(sn.body.actualsHistory ? { actualsHistory: filterHistory(c.x, sn.body.actualsHistory) } : {}), calculation: filterCalculation(c.x, sn.body.calculation), inputs: filterInputs(c.x, sn.body.inputs ?? {}) }
  return { ...sn, body }
 }
 

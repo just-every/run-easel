@@ -10,7 +10,7 @@ import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person
 export function Review({ state, refresh }: Shared) {
  const me = state.me
  const currency = state.workspace.currency
- const forecast = state.scenarios.find((s: D) => s.kind === 'forecast')
+ const forecast = state.scenarios.find((s: D) => s.kind === 'forecast' && !s.alternativeBudget)
  const closedMonths: string[] = []
  if (forecast?.actualsThrough) for (let m = state.workspace.planStart; m <= forecast.actualsThrough; m = addMonths(m, 1)) closedMonths.push(m)
  const [month, setMonth] = useState(() => {

@@ -1,6 +1,10 @@
 // Scenario inputs, branching and agent-ready proposals. A proposal is a
 // branch bound to the exact revision of the scenario it would change; finance
 // promotes the exact proposal revision it reviewed, or nothing changes.
+import { actualCells } from './actuals-read'
+import { assertHistorySources } from './history-sources'
+import { referenceMonths, historySchedule } from './history-schedules'
+import { range } from './months'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 import { requireDepartment, requireFinance, requireMember } from './access'
 import type { Context } from './context'
@@ -45,6 +49,13 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const originId = prior?.originId ?? uid()
   const value: Data = { ...validateInput(s, kind, { ...b, originId }, scenario.id), scenario: scenario.id, originId }
   requireEditable(s, x, scenario, inputDepartment(kind, value))
+  if (kind === 'schedule' && b.scenarioRevision !== undefined) requireThat(Number(b.scenarioRevision) === scenario.revision, 'The plan changed; reload before saving the grid', 409)
+  if (kind === 'schedule' && value.history) {
+   requireDepartment(x, value.history.sourceDepartment)
+   const months = range(workspace(s).planStart, scenario.horizon ?? workspace(s).horizon).filter(m => !scenario.actualsThrough || m > scenario.actualsThrough)
+   await assertHistorySources(c, months.flatMap(m => referenceMonths(value.history, m)))
+   historySchedule(value, await actualCells(c.db, s), months, workspace(s).currency)
+  }
   const id = prior?.id ?? uid()
   put(s, kind, id, value)
   bump(c, scenario, prior ? `${kind}-changed` : `${kind}-added`, id, { name: value.name ?? value.title, department: value.department ?? value.sourceDepartment })

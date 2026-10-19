@@ -1,19 +1,20 @@
+import { workingCalculation } from './calculation'
 import { scenarioAccess } from './scenario-access'
 import { requireFinance } from './access'
 import { approvedModel } from './approved'
 import type { Context } from './context'
-import { calculate, type Calculation, type Model } from './engine'
+import { type Calculation, type Model } from './engine'
 import { model } from './model'
 import { snapshot } from './store'
 import { all, get, put, requireThat, text, uid, type Data } from './types'
 
 /** Frozen versions always read their captured structure, inputs and arithmetic. */
-export async function frozenModel(c: Context, scenario: Data): Promise<Model & { calculation: Calculation }> {
+export async function frozenModel(c: Context, scenario: Data): Promise<Model & { calculation: Calculation; actualsHistory?: Data }> {
  if (scenario.kind !== 'reforecast') return approvedModel(c, scenario)
  const sn = await snapshot(c.db, scenario.reforecast?.snapshot)
  const b = sn.body
  requireThat(sn.kind === 'reforecast' && sn.scenario === scenario.id && b.scenario.id === scenario.id && b.revision === scenario.revision && b.scenario.revision === b.revision, 'The saved reforecast does not match this version', 409)
- return { scenario: b.scenario, workspace: b.workspace, lines: b.lines, departments: b.departments, inputs: b.inputs, calculation: b.calculation }
+ return { scenario: b.scenario, workspace: b.workspace, lines: b.lines, departments: b.departments, inputs: b.inputs, calculation: b.calculation, actualsHistory: b.actualsHistory }
 }
 
 /** Saving a version leaves its working source unchanged. The revision fence in
@@ -28,7 +29,7 @@ export async function reforecasts(c: Context, op: string, b: Data): Promise<Data
  const name = text(b.name, 'Reforecast name')
  requireThat(!all(c.s, 'scenario').some(sc => sc.kind === 'reforecast' && sc.name.toLowerCase() === name.toLowerCase()), 'A reforecast already has this name; choose a new version name', 409)
  const m = model(c.s, from.id)
- const calculation = calculate(m, from.actualsThrough ? await c.actuals(from.actualsThrough) : [])
+ const calculation = await workingCalculation(c, from.id)
  const id = uid(), snapshotId = uid()
  const source = { scenario: from.id, revision: from.revision, name: from.name }
  const saved = {

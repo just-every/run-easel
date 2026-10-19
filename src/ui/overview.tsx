@@ -1,3 +1,4 @@
+import { ActualHistoryOverlay } from './history'
 import { FinancingSchedule } from './financing'
 import { CashAgreement, CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
@@ -8,7 +9,7 @@ import { Statements } from './statements'
 import { ClosingCashChart } from './chart'
 import { api, kindLabel, money, monthLabel, ScenarioPicker, Person, Table, type D } from './shared'
 
-export const defaultScenario = (scenarios: D[]) => (scenarios.find(s => s.kind === 'forecast') ?? scenarios.find(s => s.kind === 'budget') ?? scenarios[0])?.id ?? ''
+export const defaultScenario = (scenarios: D[]) => (scenarios.find(s => s.kind === 'forecast' && !s.alternativeBudget) ?? scenarios.find(s => s.kind === 'budget' && !s.alternativeBudget) ?? scenarios[0])?.id ?? ''
 
 /** The newest working scenario branched from `id`: the dashed line beside it on the Closing cash chart. */
 const comparisonFor = (scenarios: D[], id: string) => scenarios.filter(s => s.kind === 'scenario' && s.status === 'working' && s.branchedFrom?.scenario === id).at(-1)
@@ -78,6 +79,7 @@ export function Overview({ state, refresh }: Shared) {
     </section>}
     {calc && !department && <FinancingSchedule calculation={calc} currency={currency} />}
     {calc && !department && <Statements calculation={calc} currency={currency} />}
+    {view && <ActualHistoryOverlay view={view} department={department} />}
     {calc && <AssetSchedule calculation={{ ...calc, assets: (calc.assets ?? []).filter((a: D) => !department || a.department === department) }} currency={currency} />}
    </div>
    {trace && <TracePanel heading={`${trace.line.name}, ${monthLabel(trace.month)}`} onClose={() => setTrace(null)}

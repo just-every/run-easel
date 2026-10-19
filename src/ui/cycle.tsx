@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Shared } from './app'
 import { MetricTasks } from './metric-tasks'
 import { Action, command, Field, Form, monthLabel, Person, Table, type D } from './shared'
@@ -5,7 +6,9 @@ import { Action, command, Field, Form, monthLabel, Person, Table, type D } from 
 /** Department submissions for the working budget, then approval. */
 export function Cycle({ state, refresh }: Shared) {
  const me = state.me
- const budget = state.scenarios.find((s: D) => s.kind === 'budget')
+ const budgets = state.scenarios.filter((s: D) => s.kind === 'budget')
+ const [selected, setSelected] = useState('')
+ const budget = budgets.find((s: D) => s.id === selected) ?? budgets[0]
  if (!budget) return <section className="card"><p>No budget yet.</p></section>
  const subs = state.submissions.filter((s: D) => s.scenario === budget.id)
  const deptName = (d: string) => state.departments.find((x: D) => x.id === d)?.name ?? '—'
@@ -13,6 +16,7 @@ export function Cycle({ state, refresh }: Shared) {
  const act = (op: string, body: D) => async () => { await command(op, { scenario: budget.id, ...body }); await refresh() }
  const waiting = subs.filter((s: D) => s.status !== 'submitted')
  return <>
+  {budgets.length > 1 && <label className="inline">Budget<select aria-label="Budget" value={budget.id} onChange={e => setSelected(e.target.value)}>{budgets.map((b: D) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>}
   <section className="card">
    <h2>{budget.name}</h2>
    <p>{budget.status === 'frozen' ? <>Approved by <Person state={state} email={budget.approval.by} /> at <span className="date-token">{budget.approval.at.slice(0, 19).replace('T', ' ')}</span> (revision {budget.approval.revision}). The approved numbers are kept exactly as approved.</> : `Working · revision ${budget.revision}`}</p>
@@ -39,7 +43,7 @@ export function Cycle({ state, refresh }: Shared) {
     <Field label="Comment" name="text" type="textarea" />
    </Form>}
   </section>
-  {budget.status === 'frozen' && <section className="card"><h2>After approval</h2><p>The forecast opened from the approved budget. Close months with actuals under Review; prior forecasts are kept at each close{state.scenarios.find((s: D) => s.kind === 'forecast')?.actualsThrough ? ` (actuals through ${monthLabel(state.scenarios.find((s: D) => s.kind === 'forecast').actualsThrough)})` : ''}.</p></section>}
+  {budget.status === 'frozen' && <section className="card"><h2>After approval</h2>{budget.alternativeBudget ? <p>This alternative budget opened its own forecast, available in Plan and Overview. The operating budget, monthly review and metric rules are unchanged.</p> : <p>The operating forecast opened from this approved budget. Close months with actuals under Review; prior forecasts are kept at each close.</p>}</section>}
   {me.role !== 'viewer' && <MetricTasks state={state} />}
  </>
 }

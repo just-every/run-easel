@@ -1,3 +1,4 @@
+import { workingCalculation } from './calculation'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 // The budget cycle: finance requests department submissions, contributors
 // revise and submit their own scope, finance returns or approves. Approval
@@ -5,7 +6,6 @@ import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 // Closing a month keeps the prior forecast before actuals replace the plan.
 import { requireDepartment, requireFinance, requireMember } from './access'
 import type { Context } from './context'
-import { calculate } from './engine'
 import { departments, model, scenarioInputs, workspace, INPUT_KINDS } from './model'
 import { addMonths, fiscalYearLabel, monthLabel, monthsBetween } from './months'
 import { bump, copyInputs } from './plan'
@@ -69,7 +69,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   requireThat(!open.length, `Waiting for submissions from ${open.map(o => find(s, 'department', o.department)?.name).join(', ')}`, 409)
   const w = workspace(s)
   const m = model(s, budget.id)
-  const calculation = calculate(m)
+  const calculation = await workingCalculation(c, budget.id)
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'approval', scenario: budget.id, label: `${budget.name} approved at revision ${budget.revision}`, body: {
    scenario: { ...budget, status: 'frozen' }, workspace: w, lines: m.lines, departments: m.departments, inputs: m.inputs, calculation,
@@ -79,7 +79,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   put(s, 'scenario', budget.id, { ...budget, status: 'frozen', approval: { snapshot: snapshotId, by: x.actor.email, at: c.now, revision: budget.revision } })
   c.activity.push({ action: op, record: budget.id, scenario: budget.id, before: budget.revision, after: budget.revision, detail: { snapshot: snapshotId } })
   const forecastId = uid()
-  put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)} forecast`, kind: 'forecast', status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
+  put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
   copyInputs(s, budget.id, forecastId)
   c.activity.push({ action: 'forecast-opened', record: forecastId, scenario: forecastId, after: 1, detail: { from: budget.id } })
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
@@ -108,7 +108,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   requireThat(Number(covered?.n) > 0, `No accepted actuals cover ${monthLabel(next)} yet`, 409)
   const pending = all(s, 'batch').filter(x => x.status === 'importing' || x.status === 'undoing')
   requireThat(!pending.length, 'Finish or undo the import in progress first', 409)
-  const priorCalc = calculate(model(s, forecast.id), await c.actuals(next))
+  const priorCalc = await workingCalculation(c, forecast.id, next)
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'forecast', scenario: forecast.id, label: `Forecast before closing ${monthLabel(next)}`, body: { scenario: forecast, workspace: model(s, forecast.id).workspace, month: next, calculation: priorCalc, inputs: Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, forecast.id, k)])), keptBy: x.actor.email, at: c.now } })
   put(s, 'scenario', forecast.id, { ...forecast, ...(forecast.rollingWindow ? { horizon: monthsBetween(w.planStart, next) + 1 + forecast.rollingWindow } : {}), actualsThrough: next, priorForecasts: [...(forecast.priorForecasts ?? []), { month: next, snapshot: snapshotId }] })

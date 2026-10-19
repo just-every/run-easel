@@ -1,3 +1,4 @@
+import { workingCalculation } from './calculation'
 import { aggregateFinancing } from './financing-view'
 // Monthly review: actual against the approved budget and the forecast kept
 // before the month closed, with the accepted rows and plan sources behind
@@ -8,7 +9,7 @@ import { requireDepartment, requireFinance, requireMember, seesDepartmentDetail 
 import { rowsFor } from './actuals'
 import { actorNames } from './actor-names'
 import type { Context } from './context'
-import { calculate, type Calculation, type Cell } from './engine'
+import { type Calculation, type Cell } from './engine'
 import { departments, lines, model, workspace } from './model'
 import { addMonths, monthLabel, range } from './months'
 import { snapshot } from './store'
@@ -19,7 +20,7 @@ import { all, find, get, put, requireThat, text, uid, type Access, type Data, ty
 const cellMap = (calc: Calculation, month: string) => new Map(calc.cells.filter(c => c.month === month).map(c => [`${c.line}|${c.department}`, c]))
 
 export function forecastFor(s: State, month: string) {
- const f = all(s, 'scenario').find(x => x.kind === 'forecast')
+ const f = all(s, 'scenario').find(x => x.kind === 'forecast' && !x.alternativeBudget)
  requireThat(f, 'Approve the budget first; the forecast opens then', 409)
  requireThat(f.actualsThrough && month <= f.actualsThrough, `${monthLabel(month)} is not closed yet`, 409)
  return f
@@ -34,7 +35,7 @@ export async function variance(c: Context, month: string) {
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorCalc: Calculation | null = prior ? (await snapshot(c.db, prior.snapshot)).body.calculation : null
- const currentCalc = calculate(model(s, forecast.id), await c.actuals(month))
+ const currentCalc = await workingCalculation(c, forecast.id, month)
  const actual = cellMap(currentCalc, month)
  const comparison = await versionComparison(c, forecast, budget, currentCalc, month)
  const planned = cellMap(budget.body.calculation, month)
@@ -132,7 +133,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const w = workspace(s)
   const v = await variance(c, pack.month)
   const forecast = get(s, 'scenario', pack.forecast)
-  const forecastCalc = calculate(model(s, forecast.id), await c.actuals(forecast.actualsThrough))
+  const forecastCalc = await workingCalculation(c, forecast.id, forecast.actualsThrough)
   const budget = await snapshot(c.db, forecast.budgetSnapshot)
   const ytd = range(w.planStart, w.horizon).filter(m => m <= pack.month)
   const reportLines: Data[] = [...new Map([...lines(s), ...budget.body.lines].map(l => [l.id, l])).values()]

@@ -63,6 +63,11 @@ export async function validateEaselStaged(staged) {
   } else requireValid(false, 'snapshot_kind');
  }
  for (const [key, r] of records) {
+  if (key.startsWith('schedule:') && r.history) {
+   const h = r.history;
+   requireValid(!r.values && object(h) && records.has(`line:${h.sourceLine}`) && records.has(`department:${h.sourceDepartment}`) && records.has(`scenario:${r.scenario}`), 'history_schedule_reference');
+   requireValid(Number.isSafeInteger(h.offset) && h.offset >= 1 && h.offset <= 60 && Number.isSafeInteger(h.window) && h.window >= 1 && h.window <= 60 && Number.isSafeInteger(h.growthBps) && h.growthBps >= -10000 && h.growthBps <= 100000, 'history_schedule_definition');
+  }
   if (key.startsWith('scenario:')) {
    if (r.kind === 'budget' && r.status === 'frozen') reference(r.approval?.snapshot, 'approval', r.id);
    if (r.kind === 'reforecast') reference(r.reforecast?.snapshot, 'reforecast', r.id);

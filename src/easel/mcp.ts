@@ -3,7 +3,6 @@ import { versionStructure } from './structure-versions'
 // tool list. No command supplied by a client is dispatched directly.
 import type { Bindings } from '../auth.server'
 import { access, requireMember } from './access'
-import { actualCells } from './actuals'
 import type { Context } from './context'
 import { cycle } from './cycle'
 import { INPUT_KINDS } from './model'
@@ -20,6 +19,7 @@ const fields: Record<string, Data> = {
  milestones: { type: 'array', items: { type: 'object', properties: { name: str, month: str, amount: str }, required: ['name', 'month', 'amount'], additionalProperties: false } },
  draws: { type: 'object', additionalProperties: str }, repayments: { type: 'object', additionalProperties: str }, baseRates: { type: 'object', additionalProperties: str },
  covenants: { type: 'object', properties: { minimumCash: str, minimumLiquidity: str, maximumLeverage: str }, additionalProperties: false },
+ history: { type: 'object', properties: { sourceLine: str, sourceDepartment: str, offset: { type: 'integer' }, window: { type: 'integer' }, growthPercent: str }, required: ['sourceLine', 'sourceDepartment'], additionalProperties: false },
  values: { type: 'object', additionalProperties: str },
  targets: { type: 'array', items: { type: 'object', properties: { department: str, percent: str }, required: ['department'] } },
 }
@@ -37,7 +37,7 @@ const tools = [
  tool('revenue', 'Add or edit a revenue driver in your working proposal: volume, customers, seats, usage, services, milestones or backlog. Services assumes all active department positions are billable. Amounts and percentages are decimal strings.', ['scenario', 'name', 'kind', 'line', 'department', 'start'], ['id', 'collectionLag', 'startVolume', 'growthPercent', 'rate', 'startCustomers', 'newPerMonth', 'newPerRep', 'repDepartment', 'rampMonths', 'churnPercent', 'arpa', 'startSeats', 'expansionPercent', 'price', 'startUsage', 'unitPrice', 'monthlyHours', 'utilizationPercent', 'hourlyRate', 'milestones', 'openingBacklog', 'monthlyAdditions', 'burnPercent']),
  tool('position', 'Add or edit a position in your working proposal.', ['scenario', 'title', 'department', 'line', 'start', 'annualSalary'], ['id', 'holder', 'end', 'onCostPercent']),
  tool('expense', 'Add or edit an expense in your working proposal.', ['scenario', 'name', 'line', 'department', 'kind', 'amount', 'start'], ['id', 'end']),
- tool('schedule', 'Add or edit monthly decimal amounts in your working proposal.', ['scenario', 'name', 'line', 'department', 'values'], ['id']),
+ tool('schedule', 'Add or edit entered monthly amounts or an actuals-reference schedule in your working proposal; source months must be complete.', ['scenario', 'name', 'line', 'department'], ['values', 'history', 'id']),
  tool('asset-category', 'Finance: add or edit an asset category in your own working proposal.', ['scenario', 'name', 'usefulLifeMonths'], ['id']),
  tool('asset', 'Add or edit an asset in your own working proposal, within your departments.', ['scenario', 'name', 'category', 'department', 'line', 'kind', 'cost', 'start'], ['id', 'paymentMonth', 'openingAccumulated', 'remainingLifeMonths', 'disposalMonth', 'disposalProceeds']),
  tool('allocation', 'Finance: add or edit allocation rules in your own working proposal.', ['scenario', 'name', 'sourceDepartment', 'basis', 'targets'], ['id']),
@@ -90,8 +90,7 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
  try {
   const person = { ...await actor(request, env), agent: { name: 'MCP client', via: 'mcp' } }
   const { state, revision } = await load(env.DB)
-  const cached = new Map<string, ReturnType<typeof actualCells>>()
-  const c: Context = { s: state, x: access(state, person), db: env.DB, now: new Date().toISOString(), activity: [], snapshots: [], actuals: (through) => { const key = through ?? ''; if (!cached.has(key)) cached.set(key, actualCells(env.DB, state, through)); return cached.get(key)! } }
+  const c: Context = { s: state, x: access(state, person), db: env.DB, now: new Date().toISOString(), activity: [], snapshots: [] }
   requireMember(c.x)
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { ...headers, Allow: 'POST' } })
   const protocol = request.headers.get('MCP-Protocol-Version')

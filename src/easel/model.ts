@@ -1,3 +1,4 @@
+import { validateHistoryInput } from './history-input'
 import { libraryRevenueInput } from './revenue-input'
 import { requireScenarioEdit } from './scenario-access'
 import { validateFinancingInput } from './financing-input'
@@ -80,6 +81,10 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
   return { name: text(b.name, 'Expense name'), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'expense line'), department: department(s, b.department), kind: kindOf, amountCents: cents(b.amount, kindOf === 'one-off' ? 'Amount' : 'Monthly amount', { negative: true }), start, end: kindOf === 'one-off' ? '' : optionalEnd(s, b.end, start, 'End month') }
  }
  if (kind === 'schedule') {
+  if (b.history) {
+   requireThat(!b.values || !Object.keys(b.values).length, 'Choose entered values or an actuals reference, never both')
+   return { name: text(b.name, 'Schedule name'), line: get(s, 'line', b.line, 'line').id, department: department(s, b.department), history: validateHistoryInput(s, b) }
+  }
   requireThat(b.values && typeof b.values === 'object' && !Array.isArray(b.values), 'Enter monthly values')
   const values: Record<string, number> = {}
   for (const [m, v] of Object.entries(b.values)) if (v !== '' && v !== null && v !== undefined) values[month(m)] = cents(v, `Value for ${m}`, { negative: true })
@@ -121,5 +126,5 @@ export function requireEditable(s: State, x: Access, scenario: Data, dept: strin
  requireThat(scenario.kind === 'proposal' && scenario.createdBy === x.actor.email, 'Contributors change budgets through submissions and other plans through their own proposals', 403)
 }
 
-export const usesLine = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.line === id)) || ['account-map', 'account-rule'].some(k => all(s, k).some(m => m.target === id))
-export const usesDepartment = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.department === id || i.repDepartment === id || i.sourceDepartment === id || i.targets?.some((t: Data) => t.department === id))) || all(s, 'department-map').some(m => m.department === id) || all(s, 'member').some(m => m.departments?.includes(id))
+export const usesLine = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.line === id || i.history?.sourceLine === id)) || ['account-map', 'account-rule'].some(k => all(s, k).some(m => m.target === id))
+export const usesDepartment = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.department === id || i.history?.sourceDepartment === id || i.repDepartment === id || i.sourceDepartment === id || i.targets?.some((t: Data) => t.department === id))) || all(s, 'department-map').some(m => m.department === id) || all(s, 'member').some(m => m.departments?.includes(id))

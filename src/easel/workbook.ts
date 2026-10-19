@@ -79,7 +79,7 @@ export async function previewWorkbook(c: Context, b: Data) {
  const id = `wb-${sha.slice(0, 16)}`
  const destination = `workbook:${sha.slice(0, 20)}`
  const ctx = kitContext(c.db, c.x.actor, destination, WORKBOOK_NAMESPACE, `${WORKBOOK_MAPPING}:${kitSha(canonicalJson({ sheet: sheet.name, lineMap, deptMap })).slice(0, 16)}`)
- const budget = all(c.s, 'scenario').find(x => x.kind === 'budget')
+ const budget = all(c.s, 'scenario').find(x => x.kind === 'budget' && !x.alternativeBudget)
  const scenarioValue = { name: `Imported from ${file}`, kind: 'scenario', status: 'working', revision: 1, createdBy: c.x.actor.email, parent: null, actualsThrough: null, cash: budget?.cash ?? { openingCents: 0, basis: 'estimate', note: '', receivablesCents: 0, payablesCents: 0, collectionLag: 0, paymentLag: 0 }, imported: { file, sha256: sha, sheet: sheet.name, destination } }
  const records = [
   { namespace: WORKBOOK_NAMESPACE, kind: 'workbook', sourceId: sha, payload: { file, sheet: sheet.name, headerRow, months: monthCols.map(m => ({ month: m.month, ref: m.ref })) } as any, payloadHash: '', artifactHash: sha, location: { artifact: file, pointer: `${sheet.name}!${columnName(lineCol)}${headerRow}` } },

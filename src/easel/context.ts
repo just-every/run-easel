@@ -1,5 +1,4 @@
 import type { Activity, Snapshot } from './store'
-import type { ActualCell } from './engine'
 import type { Access, Data, State } from './types'
 
 /** Everything one command may read or record. The command mutates `s`; the API saves it atomically. */
@@ -9,8 +8,6 @@ export type Context = {
  db: D1Database
  activity: Activity[]
  snapshots: Snapshot[]
- /** Accepted actuals mapped to lines and departments. */
- actuals: (through?: string) => Promise<ActualCell[]>
  now: string
 }
 
