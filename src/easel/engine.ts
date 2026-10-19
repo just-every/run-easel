@@ -151,7 +151,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   }
   for (const [m, amount] of Object.entries(s.values as Record<string, number>)) {
    if (!inHorizon.has(m)) { warnings.push(`${s.name}: ${monthLabel(m)} is outside the plan months and is not counted`); continue }
-   add(s.line, s.department, m, { kind: 'schedule', id: s.originId, label: s.name, amount, trace: `${s.name}: ${money(amount)} entered for ${monthLabel(m)}${s.provenance ? ` (${s.provenance.file} ${s.provenance.sheet}!${s.provenance.cells?.[m] ?? ''})` : ''}` })
+   add(s.line, s.department, m, { kind: 'schedule', id: s.originId, label: s.name, amount, trace: `${s.name}: ${money(amount)} entered for ${monthLabel(m)}${s.provenance ? ` (${s.provenance.file} ${s.provenance.sheet}!${s.provenance.cells?.[m] ?? ''})` : ''}${s.subrows?.[m]?.length ? `; split: ${s.subrows[m].map((row: Data) => `${row.name} ${money(row.amount)}`).join(' + ')}` : ''}${s.notes?.[m] ? `; note: ${s.notes[m]}` : ''}${s.gridRevisions?.[m] ? `; cell revision ${s.gridRevisions[m].revision}` : ''}` })
   }
  }
 

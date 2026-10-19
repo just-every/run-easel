@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "95185a3fb3c6055e36af6c86d4ec1abcc4e81931e1c6cc21e070ba2de7b274fd",
+      "sha256": "8dcd6fcb5406d3324c8664aac8c5e1fa9defd4be12cf0c1612e11361a1aa1278",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "d749f1034de95b61fc2955222293e2ab0514805bcf41e6b180dda2336f5ed23f",
+      "sha256": "56f30168d9630098d7466f11e8ac4918cfff5966d086094b57c5f1ae70e9305c",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "9b855efeca59b5407723fedb6eca0dc1012daa39f85c834007f9db725d09523b",
+      "sha256": "f03ac791ba92430e597913408d568f98d07dce2927574ea7855c112aed10c55b",
       "executable": false
     },
     "DEMO.md": {
@@ -611,7 +611,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "480ca1c13a424424d8e8067f8b27a924117e072e29c7a5612291f171656f3c1b",
+      "sha256": "19bfac3fcfc892c9b801af5f204f479aab6ba5c701ba66b07f69e11503673770",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -687,7 +687,7 @@
       "executable": false
     },
     "src/easel/engine.ts": {
-      "sha256": "00677f7ba13e55620974a1118a3c950d0fb3d7fdbc35761ee05ce764431b9657",
+      "sha256": "8e34afad85470ba7d35de04a04f33020c9ea4493318280b186a90b2c247dffdb",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -779,7 +779,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "ee822935c370876d0c4978c981d912fca9dee3bf3e812173a61f04eb9734c2bf",
+      "sha256": "40f8a195fdae72686bcaf84bad4b8a6e9401cc6ee890ed8397b7c4fb0229206f",
       "executable": false
     },
     "src/easel/ramp.ts": {
@@ -2647,7 +2647,7 @@
       "executable": false
     },
     "src/ui/plan.tsx": {
-      "sha256": "c3b21c6dbcadf469859102891daa025b75de1fd2700b2c946dac58330086d9b1",
+      "sha256": "1e2227b2fd40c24a23f8da8d1b3c5b7041bb8218ad8682c9bae2fee909bc2848",
       "executable": false
     },
     "src/ui/reforecast-comparison.tsx": {

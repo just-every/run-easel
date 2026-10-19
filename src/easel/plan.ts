@@ -50,6 +50,10 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const value: Data = { ...validateInput(s, kind, { ...b, originId }, scenario.id), scenario: scenario.id, originId }
   requireEditable(s, x, scenario, inputDepartment(kind, value))
   if (kind === 'schedule' && b.scenarioRevision !== undefined) requireThat(Number(b.scenarioRevision) === scenario.revision, 'The plan changed; reload before saving the grid', 409)
+  if (kind === 'schedule' && prior && !value.history) {
+   for (const [m, parts] of Object.entries(prior.subrows ?? {})) requireThat(!(parts as Data[]).length || value.values[m] === prior.values[m], 'Edit split cells through the planning grid', 409)
+   Object.assign(value, { notes: prior.notes ?? {}, subrows: prior.subrows ?? {}, gridRevisions: prior.gridRevisions ?? {} })
+  }
   if (kind === 'schedule' && value.history) {
    requireDepartment(x, value.history.sourceDepartment)
    const months = range(workspace(s).planStart, scenario.horizon ?? workspace(s).horizon).filter(m => !scenario.actualsThrough || m > scenario.actualsThrough)

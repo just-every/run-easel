@@ -1,3 +1,4 @@
+import { grid } from './grid'
 import { historyBudget } from './history-budget'
 import { dashboards, dashboardList, dashboardView } from './dashboards'
 import { dashboardWorkbook } from './dashboard-workbook'
@@ -211,7 +212,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, historyBudget, dashboards, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
