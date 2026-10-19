@@ -13,7 +13,7 @@ import { scenarioView } from './views'
 
 const encoder = new TextEncoder()
 // Product and import-journal tables; credentials follow the existing backup policy.
-const credentialTables = new Set(['e_api_tokens', 'e_api_limits'])
+const credentialTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets'])
 const identifier = (name: string) => `"${name.replaceAll('"', '""')}"`
 function portableCell(value: unknown): unknown {
  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value) || Array.isArray(value)) {

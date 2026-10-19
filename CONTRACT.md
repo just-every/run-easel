@@ -102,6 +102,8 @@ Before this connector ships, it inherits CONNECT-006: source account-type and di
 
 Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
@@ -112,6 +114,8 @@ Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pul
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
 Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
 
 *Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
@@ -124,6 +128,8 @@ Before this connector ships, it inherits CONNECT-006: source account-type and di
 
 Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
@@ -135,6 +141,8 @@ Before this connector ships, it inherits CONNECT-006: source account-type and di
 
 Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
@@ -145,6 +153,8 @@ Finance connects Sage Intacct with a Web Services sender ID and a read-only web-
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
 Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
 
 *Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
@@ -187,6 +197,8 @@ All accepted CSV rows behind each variance cell are available, without an eviden
 #### CONNECT-009 — Bank balances for current cash.
 Finance can connect bank accounts read-only through Plaid (balances and transactions). Current cash position and daily balance movement then feed the cash alerts (`REPORT-006`) and the 13-week view (`FIN-007`) between ledger closes, labeled as bank balances rather than ledger actuals. Easel never initiates a payment or transfer.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* a Plaid sandbox fake supplies two accounts; the 13-week view and a cash alert use the bank balance and label it as such; no payment route exists.
 
 *Status:* missing.
@@ -194,9 +206,11 @@ Finance can connect bank accounts read-only through Plaid (balances and transact
 #### CONNECT-010 — Connection custody and status.
 Every connector credential (OAuth tokens, API keys, certificates) is stored encrypted, excluded from `rer export`, shown only by masked suffix, and removed on disconnect, which also revokes the token at the provider where the provider supports it. A Connections page lists each source with its scopes, owner, schedule, last refresh, row counts, errors and rate-limit state. Only finance connects, disconnects or changes schedules, and each of those actions enters the audit trail (`AUDIT-001`).
 
-*Acceptance:* connect and disconnect a provider fake through the API; the archive from `rer export` and the stored rows contain no planted token; a contributor's connect attempt is refused with 403; the audit trail shows both actions.
+Future connector capabilities inherit these custody, status, finance authority and audit obligations before shipping: CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004, CONNECT-009, CONNECT-011, PEOPLE-001, PEOPLE-002, PEOPLE-003, REV-001, REV-002, SPEND-001, SHEET-001, SHEET-002 and SHEET-005. CONNECT-005 inherits connection schedule changes and their audit trail. Where a future provider's scoped credential supports remote revocation, disconnect performs it; otherwise the UI states the exact owner action still needed and never claims revocation. Gauge's existing read key does not yet support remote revocation and therefore keeps this clause partial until its self-revoke door ships and is used.
 
-*Status:* missing.
+*Acceptance:* `tests/gauge-utilization.test.mjs` (CONNECT-010) exercises the current custody slice. Connect and disconnect a provider fake through the API; the archive from `rer export` and the stored rows contain no planted token; a contributor's connect attempt is refused with 403; the audit trail shows both actions.
+
+*Status:* partial. Gauge scoped-key custody and native Connections UI ship. Gauge must add a scoped-key self-revoke door; Easel disconnect must call it, delete its sealed key either way, and record an unconfirmed revocation with "Gauge did not confirm revocation; revoke it in Gauge Access" when it fails (ct, 19 October 18:17Z). Complete error/rate-limit inspection remains to prove.
 
 ### Flexible model
 
@@ -341,6 +355,8 @@ A weekly direct cash view for the next 13 weeks is built from open receivables b
 #### PEOPLE-001 — Roster and payroll actuals from Gusto.
 Finance connects Gusto (OAuth, read-only). Easel pulls employees and contractors, with department, title, employment type (W-2 or 1099), compensation, start and termination dates, and payroll run totals by employee. The roster is reconciled to planned positions: matched, unplanned hires, planned but not hired, and changed salaries. Payroll actuals reconcile to the ledger's payroll lines. Pay detail stays under `EASEL-007` and `PEOPLE-005`.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* a recorded Gusto demo-company fake; the API journey connects, sees reconciliation buckets, accepts matches, and confirms a viewer receives headcount totals without names or salaries; one recorded run against Gusto's demo environment.
 
 *Status:* missing.
@@ -348,12 +364,16 @@ Finance connects Gusto (OAuth, read-only). Easel pulls employees and contractors
 #### PEOPLE-002 — Roster from Rippling, Willow, BambooHR and ADP.
 The same roster pull, reconciliation and restriction as `PEOPLE-001` from Rippling, [Willow](https://github.com/just-every/run-willow), BambooHR and ADP Workforce Now, with each provider's own fields mapped and anything unmapped listed.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* the `PEOPLE-001` journey against a fake for each provider, with an unmapped custom field listed rather than dropped.
 
 *Status:* missing.
 
 #### PEOPLE-003 — Open roles from the ATS.
 Open requisitions from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse become to-be-hired positions with department, level and target start. An accepted offer updates the position's name, salary and start date as a proposal for finance (`EASEL-012`), and a closed requisition proposes removing the position.
+
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
 
 *Acceptance:* an ATS fake opens a requisition, then marks an offer accepted with a later start; the API journey sees a proposal with the changed start and cost and promotes it.
 
@@ -396,6 +416,8 @@ Before pipeline capability ships, REV-001 inherits CYCLE-002: next-quarter pipel
 
 Before pipeline capability ships, REV-001 also inherits REPORT-002 dashboard pipeline-coverage widgets, with saved layouts, audience filtering and aggregate Excel exports.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* a HubSpot fake with deals at three stages; the API journey sets probabilities and slippage, reads weighted bookings and revenue traced to deal IDs, moves a deal's close date in the fake, refreshes, and sees the revenue move; one recorded run against a HubSpot developer test account. The same journey against a recorded Salesforce fake of Opportunity, OpportunityLineItem and fiscal-period records: a custom stage whose CRM probability is 60% is overridden by finance to 40%, and weighted bookings use 40% with the trace labeling the override; an opportunity with a one-time setup product and a 12-month subscription product recognizes the first in its close month and the second ratably over 12 months; a close date inside a custom fiscal period lands in that period; one recorded run against a Salesforce Developer Edition org. Two local installations (Orbit and Easel), as in `CONNECT-004`: Easel pulls Orbit's deals, a deal's close date changed in Orbit moves its revenue on Easel's next refresh, and the trace cites the Orbit deal ID.
 
 Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold refresh creates a cited owned/due task, a second unchanged refresh does not duplicate it while open, and live task visibility, owner authority and blocked-source handling hold.
@@ -407,6 +429,8 @@ Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://g
 
 Before subscription imports ship, REV-002 inherits REPORT-002 imported ARR widgets, with saved layouts, audience filtering and aggregate Excel exports.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* a Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months; the API journey reads an ARR bridge and a cohort table that agree with hand-computed values, and a reconciliation to ledger revenue; one recorded run against Stripe test mode.
 
 *Status:* missing.
@@ -414,11 +438,11 @@ Before subscription imports ship, REV-002 inherits REPORT-002 imported ARR widge
 #### REV-003 — A revenue driver library.
 Beyond volume × rate and customers × revenue per customer, revenue can come from seats × price with expansion, usage × unit price, billable headcount × utilization × rate (with actuals from [Gauge](https://github.com/just-every/run-gauge) or Harvest), project milestones and backlog burn-down, and the formula lines of `MODEL-004`. Every driver traces.
 
-Every fixed form ships through Plan, HTTP and proposal/MCP doors, retaining department/pay filtering, cash collection timing, exact structure revisions and frozen arithmetic. Starting seats and usage apply in their start month; subsequent months compound the entered monthly expansion/growth and round quantities to hundredths before quantity × price rounds once to cents. Services uses the number of active positions in its own department (inclusive start/end months), explicitly assuming those positions are billable, × entered available hours per position per month × utilization × hourly rate, with one final division/rounding and no salary in revenue. Named milestones recognize their amounts in their specified months. Backlog begins with entered opening backlog, adds entered bookings at each month's start, recognizes the entered percentage rounded once to cents and capped at the available amount, then carries the remaining backlog forward; bookings are never added again as revenue. All driver cells cite their origin and arithmetic; closed ledger actuals replace them rather than adding twice. Ct approved MODEL-004 as the carrier for user-defined formula-line revenue drivers on 19 October; it inherits those driver forms and their exact traced-cell journey before shipping. REV-003 itself still requires Gauge/Harvest utilization actuals. Ct rejected transferring native Gauge session cookies: the integration needs a Gauge owner-created aggregate-only scoped read key, then sealed Easel custody under CONNECT-010 and reviewed utilization import. No connector or provider verification is claimed here.
+Every fixed form ships through Plan, HTTP and proposal/MCP doors, retaining department/pay filtering, cash collection timing, exact structure revisions and frozen arithmetic. Starting seats and usage apply in their start month; subsequent months compound the entered monthly expansion/growth and round quantities to hundredths before quantity × price rounds once to cents. Services uses the number of active positions in its own department (inclusive start/end months), explicitly assuming those positions are billable, × entered available hours per position per month × utilization × hourly rate, with one final division/rounding and no salary in revenue. Named milestones recognize their amounts in their specified months. Backlog begins with entered opening backlog, adds entered bookings at each month's start, recognizes the entered percentage rounded once to cents and capped at the available amount, then carries the remaining backlog forward; bookings are never added again as revenue. All driver cells cite their origin and arithmetic; closed ledger actuals replace them rather than adding twice. Ct approved MODEL-004 as the carrier for user-defined formula-line revenue drivers on 19 October; it inherits those driver forms and their exact traced-cell journey before shipping. Gauge operational actuals now use its owner-created `utilization:read` key, sealed under CONNECT-010; native session cookies are never transferred. Finance previews a complete inclusive calendar month against the installation-configured GAUGE_ORIGIN and explicitly maps the entire agency aggregate to one services driver; Gauge has no department/service filter, names, pay or monetary amounts in this door. A Gauge month cannot be counted in two drivers in the same scenario. Missing capacity blocks; an explicit zero is valid only with zero billable time. The reviewed digest binds the source aggregate, scenario revision, target driver, planned hourly rate and reporting currency; acceptance refetches and refuses any changed source or plan. Gauge's volatile observation timestamp is retained as provenance but excluded from this equality digest. Approved billable seconds × the reviewed hourly rate in cents / 3600 rounds once half away from zero to cents, labelled operational utilization actuals at planned rate, never ledger revenue. Accepted months keep that reviewed rate after forecast assumption edits; unimported months retain their assumptions and closed ledger actuals retain precedence. Identical pulls do not duplicate or revise the model. The native append-only model/activity journal retains provenance, actor, acceptance time, source dates, counts, seconds and digest; one atomic save applies the aggregate. Undo restores exactly the preceding imported values while its resulting scenario revision remains current; later changes refuse undo. Snapshots and exports keep accepted nonsecret provenance and frozen arithmetic. CONNECT-005 inherits scheduled Gauge refresh, source freshness/failure notifications and restatement handling before shipping. Harvest remains an alternative provider, not a claimed shipped connector.
 
-*Acceptance:* `tests/revenue-drivers.test.mjs` (REV-003) plans a separate line for volume, customers, seats, usage, services, milestones and backlog, checks hand-computed monthly cents and complete traces, all forms' collection timing, active headcount boundaries, invalid-input atomicity, role filtering, proposal/MCP editing, structure diffs, live Excel formulas and frozen approvals/reforecasts/kept forecasts/published packs after edits. `tests/revenue-drivers-browser.mjs` (REV-003) enters and edits every new fixed form, reads traced cells and downloads Excel at 1440/390 with no page overflow. Gauge/Harvest operational utilization actuals remain unasserted and keep this clause partial. MODEL-004 inherits the formula-line revenue journey.
+*Acceptance:* `tests/revenue-drivers.test.mjs` (REV-003) plans a separate line for volume, customers, seats, usage, services, milestones and backlog, checks hand-computed monthly cents and complete traces, all forms' collection timing, active headcount boundaries, invalid-input atomicity, role filtering, proposal/MCP editing, structure diffs, live Excel formulas and frozen approvals/reforecasts/kept forecasts/published packs after edits. `tests/revenue-drivers-browser.mjs` (REV-003) enters and edits every new fixed form, reads traced cells and downloads Excel at 1440/390 with no page overflow. `tests/gauge-utilization.test.mjs` (REV-003) asserts reviewed Gauge import, exact seconds/rounding/collection timing, no-write preview, source/period/capacity failures, replay, corrections, undo, role filtering and frozen values through HTTP. `tests/gauge-browser.mjs` (REV-003) starts a real current Gauge installation, creates and approves time through its public API, creates its scoped owner key, and imports through the Easel UI with exact traced cents, reload and undo at 1440/390. MODEL-004 inherits the formula-line revenue journey.
 
-*Status:* partial. Gap: Gauge/Harvest utilization actuals (needs a Gauge scoped read key).
+*Status:* done.
 
 #### REV-004 — Bookings, billings, revenue and cash.
 For contract revenue, a booking carries term, billing frequency (monthly, quarterly, annual upfront) and start date. Billings, deferred revenue, recognized revenue and collections follow from it and appear on the three statements (`FIN-001`, `FIN-002`).
@@ -432,6 +456,8 @@ For contract revenue, a booking carries term, billing frequency (monthly, quarte
 #### SPEND-001 — Committed and card spend.
 Purchase orders and committed contracts from [Purse](https://github.com/just-every/run-purse), expense reports from [Coaster](https://github.com/just-every/run-coaster), and card and bill-payment data from Ramp, Brex and Bill.com feed the forecast as committed spend by line, department and month. The variance view shows budget, committed, actual and remaining for each.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* a Ramp fake and a Purse fake add a card transaction and a purchase order; the API journey reads budget, committed, actual and remaining for the affected department.
 
 *Status:* missing.
@@ -441,12 +467,16 @@ Purchase orders and committed contracts from [Purse](https://github.com/just-eve
 #### SHEET-001 — Excel add-in with live formulas.
 A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand (a Refresh command for the workbook or the selection) and when the workbook opens, and each refresh pulls every change made in Easel since the last one, under server-side role filtering for the person refreshing. Write-back follows the same rules as the browser. While a contributor's department submission is requested or returned (`EASEL-009`), their write to that department's budget inputs lands directly as their own entry at the next plan revision, as an entry in the grid (`MODEL-008`) would, and their later submission includes it. Once the department is submitted, a write to its working plan becomes a proposal bound to the current revision (`EASEL-012`). A write to an approved budget, a kept forecast or another department's cells is refused with the reason. The workbook's own formulas around Easel cells stay live: a formula that references an Easel function cell (for example a `SUM` over them) recalculates whenever a refresh changes that cell, as any Excel dependency does.
 
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+
 *Acceptance:* an Office.js test host loads the add-in against a running Easel, in a workbook holding `=EASEL.VALUE(...)` cells and a plain `=SUM(...)` over them: the functions return role-filtered values; a value changed in Easel through the browser or the API, followed by an on-demand refresh, shows the new value in its function cell and the new total in the `SUM`; after a second Easel change, closing and reopening the workbook refreshes on open and shows that change in the cell and the `SUM`; a viewer refreshing the same workbook receives role-filtered values without restricted detail; during a requested submission a contributor's write to their own department lands directly at the next revision and reads back in the browser and the API; after they submit, the same write returns as a proposal bound to the revision; a write to the approved budget and a write to another department are refused; one recorded run in Excel on the web.
 
 *Status:* partial.
 
 #### SHEET-002 — Google Sheets add-on with live formulas.
 The same functions, refresh, role filtering and write-back rules as `SHEET-001` (direct entry during an open submission, a proposal once submitted, refusal on approved budgets, kept forecasts and other departments), as a Google Workspace add-on with custom functions. Refresh runs on demand from the add-on menu and when the spreadsheet opens, and scheduled refresh runs through an installable time-driven trigger that pulls Easel changes without the spreadsheet being open. Sheet formulas over Easel cells recalculate after each refresh.
+
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
 
 *Acceptance:* an Apps Script test harness against a running Easel replays the `SHEET-001` journey, including the on-demand refresh, the refresh on open and a `SUM` over Easel cells recalculating after each, and the viewer's role-filtered refresh; the harness then fires the installable time-driven trigger with the spreadsheet closed, and on reopening the sheet shows an Easel change made before the trigger ran; one recorded run in a Google Workspace test domain.
 
@@ -468,6 +498,8 @@ Any report, plan or pack exports as .xlsx with live subtotal, total and variance
 
 #### SHEET-005 — Scheduled spreadsheet pulls.
 A linked sheet range (for example a sales team's capacity sheet) is pulled on a schedule. Its changes arrive as a previewed proposal for finance with the changed cells listed. A sheet that went missing or changed shape is reported, never read as zeros.
+
+Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
 
 *Acceptance:* a Google Sheets fake changes two cells and then deletes a column between scheduled pulls; the API journey sees a proposal with two changed cells, then a shape error with no write.
 
@@ -875,8 +907,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 24 | 27 | 35 | 86 |
-| All | 41 | 27 | 35 | 103 |
+| Target and push further | 25 | 27 | 34 | 86 |
+| All | 42 | 27 | 34 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -907,7 +939,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CONNECT-007` | Balance-sheet actuals and the trial balance | target | partial | `src/easel/actuals.ts` | Only the cash balance account maps to the balance sheet; other balance-sheet balances, a zero-sum trial balance and a forecast balance sheet opened from actuals are missing |
 | `CONNECT-008` | Drill-through to the ledger transaction | target | done | `src/easel/actuals-read.ts`, `src/easel/review.ts`, `tests/drillthrough.test.mjs`, `tests/mapping-rules-browser.mjs` | Every accepted CSV row is drillable under inherited department filtering; future connectors carry provider links and browser assertions before shipping |
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |
-| `CONNECT-010` | Connection custody and status | target | missing |  | No connector credential storage, Connections page or token revocation |
+| `CONNECT-010` | Connection custody and status | target | partial | `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Gauge sealed custody/connect/local disconnect ship; provider self-revoke door and complete error/rate-limit inspection remain |
 | `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 or 5-4-4 calendars are missing |
 | `MODEL-002` | A rolling forecast that extends itself | target | done | `tests/rolling-forecast.test.mjs` (MODEL-002) |  |
 | `MODEL-003` | Custom dimensions and hierarchies | target | partial | `src/easel/setup.ts` `tests/easel.test.mjs` | Lines and departments are the only dimensions; user-defined dimensions, hierarchies and account roll-ups are missing |
@@ -933,7 +965,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `PEOPLE-007` | Roster and payroll-register file import | target | missing |  | No roster or payroll-register file import or roster reconciliation |
 | `REV-001` | Pipeline drivers from Orbit, HubSpot and Salesforce | target | missing |  | No Orbit, HubSpot or Salesforce connector, stage probabilities, line-item revenue rules or pipeline drivers |
 | `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | missing |  | No billing connectors, ARR bridge or cohorts |
-| `REV-003` | A revenue driver library | target | partial | `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` | Gauge/Harvest utilization actuals (needs a Gauge scoped read key); MODEL-004 carries formula-line drivers |
+| `REV-003` | A revenue driver library | target | done | `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Fixed forms and reviewed Gauge operational actuals; MODEL-004 carries formula-line drivers |
 | `REV-004` | Bookings, billings, revenue and cash | target | missing |  | No bookings, billing schedules or deferred revenue |
 | `SPEND-001` | Committed and card spend | target | missing |  | No purchasing, expense or card connectors and no committed-spend view |
 | `SHEET-001` | Excel add-in with live formulas | target | partial | `src/easel/workbook.ts` `tests/easel.test.mjs` | One-way .xlsx import with cell and formula provenance ships; an Excel add-in with live functions, on-demand and on-open refresh, direct entry during an open submission and proposal write-back is missing |

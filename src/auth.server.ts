@@ -10,6 +10,7 @@ const theme = { href: '/rer-theme.css', productName: branding.name, accentColor:
 
 export interface Bindings {
  ASSETS?: Fetcher
+ GAUGE_ORIGIN?: string
  DB: D1Database
  AUTH_ORIGIN: string
  AUTH_LOCAL?: string

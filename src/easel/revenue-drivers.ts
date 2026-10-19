@@ -32,6 +32,12 @@ export function libraryRevenue(r: Data, positions: Data[], lastMonth: string, cu
    const amount = mulDiv(quantity, price, 100)
    source(month, amount, `${seats ? 'seats' : 'usage units'} ${formatHundredths(quantity)}${index === 0 ? ' (starting quantity; expansion/growth begins next month)' : ` = prior ${formatHundredths(prior)} × (1 + ${formatBps(growth)} monthly ${seats ? 'expansion' : 'growth'}), rounded to hundredths`} × ${money(price)} per ${seats ? 'seat per month' : 'unit'} = ${money(amount)}`)
   } else if (r.kind === 'services') {
+   const actual = r.gaugeActuals?.[month]
+   if (actual) {
+    const g = actual.source
+    source(month, actual.amountCents, `Gauge agency-wide operational utilization actuals at planned rate (not ledger revenue); ${g.from} through ${g.to}; ${g.participantCount} participants; ${g.availableSeconds} available seconds; ${g.approvedBillableSeconds} approved billable seconds × ${money(actual.hourlyRateCents)} per hour / 3600 = ${money(actual.amountCents)}; rounded once half away from zero; source ${g.origin}; digest ${actual.digest}; observed ${g.asOf}`)
+    continue
+   }
    const count = positions.filter(p => p.department === r.department && p.start <= month && (!p.end || month <= p.end)).length
    // One mulDiv across all factors, with no intermediate billable-hours rounding.
    // Check integer products before multiplying as Numbers so precision is never lost.

@@ -81,7 +81,7 @@ export async function validateEaselStaged(staged) {
 }
 
 export const easelPolicy = {
- product: 'just-every/planning-easel', excludeTables: ['e_api_tokens', 'e_api_limits'], replaceableTables: ['e_meta'],
+ product: 'just-every/planning-easel', excludeTables: ['e_api_tokens', 'e_api_limits', 'e_connection_secrets'], replaceableTables: ['e_meta'],
  requiredConfiguration: ['OWNER_EMAIL', 'SESSION_SECRET', 'SETUP_TOKEN', 'AUTH_ORIGIN', 'MAIL_PROVIDER', 'MAIL_FROM'],
  validateStaged: validateEaselStaged,
 };

@@ -29,9 +29,9 @@ test('PORT-001 finance opens the complete plan export with verified digests, ori
  assert.equal(model.workspace.name, state.workspace.name)
  assert.equal(model.records.length, Number((await h.db.prepare('SELECT COUNT(*) AS n FROM e_records').first()).n))
  // Every product and import-journal table travels; native auth/credential data does not.
- const { results: tables } = await h.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') AND name NOT IN ('e_api_tokens','e_api_limits')").all()
+ const { results: tables } = await h.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') AND name NOT IN ('e_api_tokens','e_api_limits','e_connection_secrets')").all()
  for (const {name} of tables) assert.ok(archive.file(`tables/${name}.csv`), name)
- assert.ok(!Object.keys(archive.files).some(name => /oa_|e_api_tokens|e_api_limits/.test(name)))
+ assert.ok(!Object.keys(archive.files).some(name => /oa_|e_api_tokens|e_api_limits|e_connection_secrets/.test(name)))
  const originals = manifest.originals.filter(o => o.status === 'retained')
  assert.ok(originals.length)
  assert.ok((await Promise.all(originals.map(o => archive.file(o.path).async('string')))).includes(f.body.csv), 'Original accepted ledger bytes are exact')

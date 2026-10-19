@@ -235,3 +235,17 @@ Finance calls `budget-from-actuals {name,growth:{lineId:percent}}` to create a g
 ### Starter models (MODEL-006)
 
 Before company setup, finance calls `starter-model {name,starter:saas|services|project|wholesale,planStart:YYYY-01,openingCash?}`. The command creates the USD workspace, budget, department/line definitions, editable inputs, cash timing and leadership dashboard in one fenced save. Values are labelled starter assumptions. Existing companies refuse this command. Linked `expense` forms add `kind:acquisition` with `{revenueOrigin,cac}` or `kind:inventory` with `{revenueOrigin,unitCost,inventoryDays}` to the usual `{scenario,id?,name,line,department,start}` fields. The original revenue driver must be in the same scenario and department: customer drivers feed acquisition cost, units × price drivers feed inventory COGS. Linked revenue cannot be removed or moved to an incompatible kind/department until its cost links are removed. Plan exposes these same assumptions as editable forms. Calculation inventory aggregates, statement inventory assets and inventory cash adjustments retain the normal server-side detail filtering and frozen arithmetic. CONTRACT.md specifies the stock buffer and purchase/payment arithmetic.
+
+### Gauge operational utilization (REV-003, CONNECT-010)
+
+The installation owner configures `GAUGE_ORIGIN` (HTTPS; HTTP loopback only in local mode). In Settings → Connections, finance stores an owner-created Gauge `utilization:read` key. Easel encrypts it with AES-GCM using a purpose-derived installation key, keeps it outside model rows and both export formats, and shows only its final four characters. Disconnect deletes local custody; the Gauge owner revokes the provider key in Gauge Access because read keys cannot administer keys. Reconnect after restore. Never enter a native session cookie.
+
+All following doors require a native finance session and the ordinary origin/session/revision fences:
+
+- `GET /api/easel/connections/gauge`: masked connection metadata.
+- `POST /api/easel/connections/gauge/connect` `{key}`; `POST .../disconnect` `{}`.
+- `POST /api/easel/gauge/preview` `{scenario,driver,month,scenarioRevision}`: no-write preview of the entire Gauge agency's complete calendar month.
+- `POST /api/easel/gauge/accept` with those same fields plus the reviewed `digest`: refetch, compare and apply once; changed inputs return 409.
+- `POST /api/easel/gauge/undo` `{scenario,driver,scenarioRevision}`: restore the preceding import while its resulting scenario revision is still current.
+
+Gauge supplies participant count, available and approved-billable seconds, inclusive dates and an observation timestamp. Missing capacity blocks import. The selected services driver receives the entire agency aggregate; each scenario/month can map to only one driver. Revenue is approved billable seconds × the reviewed planned hourly rate / 3600, rounded once to cents. Labels explicitly distinguish these operational actuals from ledger revenue; closed ledger values take precedence. Later forecast months keep their entered assumptions. No scheduled refresh is claimed (CONNECT-005).

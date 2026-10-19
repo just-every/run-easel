@@ -67,6 +67,10 @@ jobs:
         run: node tests/dashboards-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/dashboards
+      - name: REV-003 Gauge operational import and CONNECT-010 custody at desktop and phone widths
+        run: node tests/gauge-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/gauge
       - name: REV-003 fixed revenue forms at desktop and phone widths
         run: node tests/revenue-drivers-browser.mjs
         env:

@@ -1,4 +1,5 @@
 import { AccountRules } from './account-rules'
+import { GaugeConnection } from './gauge-connection'
 import type { Shared } from './app'
 import { Action, api, command, Field, Form, kindLabel, fiscalMonths, Table, type D } from './shared'
 
@@ -50,6 +51,7 @@ export function Settings({ state, refresh }: Shared) {
    </Form>
   </section>
   <AccountRules state={state} refresh={refresh} />
+  {state.me.role === 'finance' && <GaugeConnection />}
   <section className="card">
    <h2>Account mappings</h2>
    <Table caption="Source accounts" heads={['Account', 'Name', 'Maps to']}>{state.accountMaps.map((m: D) => <tr key={m.id}><td>{m.id}</td><td>{m.name}</td><td>{target(m.target)}</td></tr>)}</Table>

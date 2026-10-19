@@ -204,6 +204,12 @@
       "clauses": [
         "MODEL-009"
       ]
+    },
+    {
+      "id": "connection-custody",
+      "clauses": [
+        "CONNECT-010"
+      ]
     }
   ],
   "nonGoals": [
@@ -220,6 +226,17 @@
       "why": "Worker hosting",
       "data": [
         "HTTP requests"
+      ],
+      "adapters": []
+    },
+    {
+      "id": "gauge",
+      "required": false,
+      "why": "Optional read-only operational utilization import (REV-003)",
+      "data": [
+        "Scoped utilization read key sent only to the installation-configured Gauge origin",
+        "Inclusive calendar-month dates",
+        "Received agency participant count, available seconds and approved billable seconds; no names, pay or monetary amounts"
       ],
       "adapters": []
     }

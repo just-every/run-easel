@@ -1,4 +1,5 @@
 import { CommercialExpenseForm, CommercialExpenseSummary } from './commercial-costs'
+import { GaugeUtilization } from './gauge-utilization'
 import { HistoryInputs } from './history'
 import { PlanningGrid } from './planning-grid'
 import { FinancingInputs } from './financing'
@@ -46,6 +47,8 @@ export function Plan({ state, refresh }: Shared) {
    </Table>
    <RevenueForm key={form('revenue')?.id ?? `new-revenue-${round}`} row={form('revenue')} lines={revenueLines} depts={depts} allDepts={options(state.departments)} onSave={b => save('revenue', b)} />
   </section>
+
+  {me.role === 'finance' && sc && <GaugeUtilization key={`gauge-${sc.id}:${sc.revision}`} scenario={id} revision={sc.revision} drivers={(inputs.revenue ?? []).filter((r: D) => r.kind === 'services')} currency={currency} onChange={async () => { await load(); await refresh() }} />}
 
   <section className="card">
    <h2>Positions</h2>

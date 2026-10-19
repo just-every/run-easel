@@ -1,3 +1,5 @@
+import { gaugeStatus, gaugeConnection } from './gauge-connection'
+import { gaugeUtilization } from './gauge-utilization'
 import { starterModels } from './starter-models'
 import { grid } from './grid'
 import { historyBudget } from './history-budget'
@@ -108,6 +110,18 @@ api.post('/api/easel/tokens/:op', async c => {
  const op = c.req.param('op')
  requireThat(op === 'issue' || op === 'revoke', 'Unknown token action', 404)
  return c.json(await tokenAdmin(await open(c), c.req.raw, c.env, op, await body(c)))
+})
+
+api.get('/api/easel/connections/gauge', c => read(c, ctx => gaugeStatus(ctx, c.env)))
+api.post('/api/easel/connections/gauge/:op', async c => {
+ const ctx = await open(c), extra = await gaugeConnection(ctx, c.env, c.req.param('op'), await body(c))
+ await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ return c.json(await gaugeStatus(ctx, c.env))
+})
+api.post('/api/easel/gauge/:op', async c => {
+ const ctx = await open(c), result = await gaugeUtilization(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(result)
 })
 
 api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))

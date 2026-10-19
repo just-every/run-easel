@@ -41,7 +41,7 @@ export async function sha256(text: string) {
  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-export async function save(db: D1Database, a: Actor, before: State, after: State, revision: number, activity: Activity[], snapshots: Snapshot[] = [], finance = false) {
+export async function save(db: D1Database, a: Actor, before: State, after: State, revision: number, activity: Activity[], snapshots: Snapshot[] = [], finance = false, extra: D1PreparedStatement[] = []) {
  const auth = authority(a, finance)
  const guard = (extra = '') => db.prepare(`INSERT INTO e_guard SELECT CASE WHEN (${auth.sql})${extra} THEN 1 ELSE 0 END`)
  const q: D1PreparedStatement[] = [guard(' AND (SELECT revision FROM e_meta WHERE id=1)=?').bind(...auth.params, revision)]
@@ -54,6 +54,7 @@ export async function save(db: D1Database, a: Actor, before: State, after: State
   q.push(eventStatement(db, a, changeEvent(r, undefined)))
   q.push(db.prepare('DELETE FROM e_records WHERE kind=? AND id=?').bind(r.kind, r.id))
  }
+ q.push(...extra)
  const at = new Date().toISOString()
  for (const s of snapshots) {
   const body = JSON.stringify(s.body)
