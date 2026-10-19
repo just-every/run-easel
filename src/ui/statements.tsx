@@ -12,9 +12,11 @@ const balanceLines: StatementLine[] = [
  ['payables', 'Payables'],
  ['capitalPayables', 'Capital payables'],
  ['nonCashReserve', 'Non-cash reserve'],
+ ['debt', 'Debt'],
  ['liabilities', 'Total liabilities', true],
  ['openingEquity', 'Opening equity (estimate)'],
  ['retainedEarnings', 'Retained earnings'],
+ ['contributedEquity', 'Contributed equity'],
  ['equity', 'Total equity', true],
 ]
 
@@ -40,7 +42,7 @@ export function Statements({ calculation, currency }: { calculation: D; currency
    <p className="muted">Opening equity is an estimate from opening assets less opening liabilities. Retained earnings accumulate the plan's net income.</p>
   </Statement>
   <Statement heading="Indirect cash flow" caption="Indirect cash flow by month" calculation={calculation} rows={calculation.cashFlow} lines={cashFlowLines} currency={currency}>
-   <p className="muted">Future financing is unavailable: borrowing, repayments, equity contributions and distributions are not modelled. Financing shown as zero does not represent a funding plan.</p>
+   <p className="muted">{calculation.financing ? 'Financing includes planned debt draws, principal repayments and equity raises. Interest is an operating cash outflow. These are planning assumptions, never executed payments.' : 'Financing assumptions were not captured in this older snapshot; its saved figures remain unchanged.'}</p>
   </Statement>
  </>
 }
@@ -58,7 +60,7 @@ function Statement({ heading, caption, calculation, rows, lines, currency, balan
    <Table caption={caption} heads={['Line', ...months.map(m => <span className={m <= (calculation.actualsThrough ?? '') ? 'actual' : ''}>{monthLabel(m)}</span>)]}>
     {lines.map(([key, label, total]) => <tr key={key} className={total ? 'total' : undefined}>
      <th scope="row">{label}</th>
-     {months.map(month => <td key={month} className={`num${month <= (calculation.actualsThrough ?? '') ? ' actual' : ''}`}>{money(rows.find(r => r.month === month)?.[key], currency)}</td>)}
+     {months.map(month => <td key={month} className={`num${month <= (calculation.actualsThrough ?? '') ? ' actual' : ''}`}>{rows.find(r => r.month === month)?.[key] === undefined ? 'Not captured' : money(rows.find(r => r.month === month)?.[key], currency)}</td>)}
     </tr>)}
     <tr><th scope="row">Reconciliation</th>{months.map(month => {
      const row = rows.find(r => r.month === month)

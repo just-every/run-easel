@@ -1,3 +1,4 @@
+import { calculateFinancing, evaluateCovenants, type FinancingCalculation } from './financing'
 // The deterministic planning calculation. Given one scenario's inputs (and,
 // for a forecast, the accepted actuals of its closed months) it produces every
 // cell keyed by line, department and month, each with the sources and the
@@ -26,7 +27,7 @@ export type Model = {
  lines: Line[]
  departments: Department[]
  scenario: Data
- inputs: { revenue: Data[]; position: Data[]; expense: Data[]; schedule: Data[]; allocation: Data[]; asset?: Data[]; 'asset-category'?: Data[] }
+ inputs: { revenue: Data[]; position: Data[]; expense: Data[]; schedule: Data[]; allocation: Data[]; asset?: Data[]; 'asset-category'?: Data[]; debt?: Data[]; equity?: Data[] }
 }
 
 export type Calculation = {
@@ -44,6 +45,7 @@ export type Calculation = {
  balanceSheet?: BalanceMonth[]
  cashFlow?: CashFlowMonth[]
  assets?: AssetMonth[]
+ financing?: FinancingCalculation
 }
 
 const active = (p: Data, m: string) => p.start <= m && (!p.end || m <= p.end)
@@ -78,7 +80,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   if (nonCash || lineById.get(line)?.nonCash) return
   const type = lineById.get(line)?.type
   if (type === 'revenue') cash.push({ month: addMonths(month, lag ?? collectionLag), amount: source.amount, collection: true, label: source.label })
-  else cash.push({ month: addMonths(month, lineById.get(line)?.payroll ? 0 : paymentLag), amount: source.amount, collection: false, label: source.label })
+  else cash.push({ month: addMonths(month, lineById.get(line)?.payroll ? 0 : lag ?? paymentLag), amount: source.amount, collection: false, label: source.label })
  }
 
  // Headcount by department and month: active positions, used by ramp rules and allocations.
@@ -146,6 +148,15 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   }
  }
 
+ const financing = calculateFinancing(inputs.debt ?? [], inputs.equity ?? [], months, currency)
+ const debtByOrigin = new Map((inputs.debt ?? []).map(d => [d.originId, d]))
+ const interestLines = new Set((inputs.debt ?? []).map(d => d.line))
+ for (const row of financing.rows) {
+  if (row.interest === 0) continue
+  const debt = debtByOrigin.get(row.originId)!
+  add(debt.line, debt.department, row.month, { kind: 'financing', id: row.originId, label: row.name, amount: row.interest, trace: row.trace }, 0)
+ }
+
  const assets = calculateAssets(inputs.asset ?? [], inputs['asset-category'] ?? [], months, actualsThrough, currency)
  for (const row of assets) {
   if (row.expense !== 0) add(row.line, row.department, row.month, { kind: 'asset', id: row.originId, label: row.name, amount: row.expense, trace: row.trace }, 0, true)
@@ -160,7 +171,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   c.sources.push({ kind: 'actual', label: 'Accepted actuals', amount: a.amount, trace: `${monthLabel(a.month)}: ${money(a.amount)} from ${a.rows} accepted row${a.rows === 1 ? '' : 's'} in ${a.batches.length} import${a.batches.length === 1 ? '' : 's'}` })
   const type = lineById.get(a.line)?.type
   if (lineById.get(a.line)?.nonCash) continue
-  cash.push({ month: addMonths(a.month, type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll ? 0 : paymentLag), amount: a.amount, collection: type === 'revenue', label: 'Actuals' })
+  cash.push({ month: addMonths(a.month, type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll || interestLines.has(a.line) ? 0 : paymentLag), amount: a.amount, collection: type === 'revenue', label: 'Actuals' })
  }
  for (const m of months) if (closed(m) && ![...cells.values()].some(c => c.month === m)) warnings.push(`${monthLabel(m)} is closed but has no accepted actuals`)
 
@@ -205,19 +216,29 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   const extra: string[] = []
   if (i === 0 && scenario.cash?.receivablesCents) { collections += scenario.cash.receivablesCents; extra.push(`opening receivables ${money(scenario.cash.receivablesCents)} collected`) }
   if (i === 0 && scenario.cash?.payablesCents) { payments += scenario.cash.payablesCents; extra.push(`opening payables ${money(scenario.cash.payablesCents)} paid`) }
+  const funding = financing.totals[i]
+  collections += funding.draws + funding.equityRaised
+  payments += funding.repayments
   const closing = opening + collections - payments
   const basis = i === 0 ? ` (opening cash ${scenario.cash?.basis === 'imported' ? 'imported from actuals' : 'is an estimate'})` : ''
-  const row = { month: m, opening, collections, payments, closing, trace: `${money(opening)}${basis} + collections ${money(collections)} − payments ${money(payments)} = ${money(closing)}; revenue collected ${monthCount(collectionLag)} after it is earned, non-payroll costs paid ${monthCount(paymentLag)} after, payroll in the month${extra.length ? '; ' + extra.join('; ') : ''}` }
+  const row = { month: m, opening, collections, payments, closing, trace: `${money(opening)}${basis} + collections ${money(collections)} − payments ${money(payments)} = ${money(closing)}; financing inflows ${money(funding.draws + funding.equityRaised)}, principal repayments ${money(funding.repayments)}; revenue collected ${monthCount(collectionLag)} after it is earned, non-payroll costs paid ${monthCount(paymentLag)} after, payroll in the month${extra.length ? '; ' + extra.join('; ') : ''}` }
   opening = closing
   return row
  })
  const uncollected = cash.filter(e => e.month > months[months.length - 1]).reduce((s, e) => s + (e.collection ? e.amount : -e.amount), 0)
  if (uncollected !== 0) warnings.push(`${money(uncollected)} of net cash timing falls after ${monthLabel(months[months.length - 1])} and is outside the plan months`)
 
+ for (const row of financing.totals) if (closed(row.month)) {
+  const recognized = [...interestLines].reduce((sum, line) => sum + (lineTotals[line]?.[row.month] ?? 0), 0)
+  Object.assign(row, { recognizedInterest: recognized })
+  if (recognized !== row.interest) warnings.push(`${row.month}: accepted interest ${money(recognized)} differs from scheduled financing interest ${money(row.interest)}. Closed profit and operating cash use accepted interest; borrowing and principal remain planned schedules until balance-sheet actuals (CONNECT-007).`)
+ }
+ const nonCashByMonth = Object.fromEntries(months.map(m => [m, lines.filter(l => l.nonCash).reduce((sum, l) => sum + (lineTotals[l.id]?.[m] ?? 0), 0)]))
+ financing.covenants = evaluateCovenants(financing, inputs.debt ?? [], profit, cashMonths, nonCashByMonth)
  const result: Calculation = {
   engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
-  lineTotals, profit, cash: cashMonths, headcount, warnings, assets,
+  lineTotals, profit, cash: cashMonths, headcount, warnings, assets, financing,
  }
  return { ...result, ...statements(model, result) }
 }

@@ -1,3 +1,4 @@
+import { financingSheets } from './financing-workbook'
 // An Excel review workbook rendered only from the immutable published pack.
 import { workbook, type Sheet, type Cell } from './xlsx-write'
 import type { Data } from './types'
@@ -109,6 +110,7 @@ export function packWorkbook(sn: Data): Uint8Array {
   { name: 'Sources', rows: sources },
   { name: 'Metadata', rows: metadata },
  ]
+ if (b.financing) sheets.push(...financingSheets(b.financing, b.currency))
  if (b.versionComparison) sheets.push(versionComparisonSheet(b.versionComparison))
  if (b.assets?.length) sheets.push({ name: 'Fixed assets', rows: [['Fixed assets · amounts in integer minor units'], ['Month','Opening book value','Depreciation','Disposal book value','Closing book value','Capex cash','Disposal cash'], ...b.assets.map((a: Data, i: number) => [a.month,a.openingBookValue,a.depreciation,a.disposalBookValue,formula(`B${i+3}-C${i+3}-D${i+3}`,a.closingBookValue),a.capex,a.disposalProceeds])] })
  return workbook(sheets)

@@ -17,6 +17,8 @@ import { compareView, scenarioView, stateView } from './views'
 const versions = ['2025-11-25', '2025-06-18', '2025-03-26']
 const str = { type: 'string' }
 const fields: Record<string, Data> = {
+ draws: { type: 'object', additionalProperties: str }, repayments: { type: 'object', additionalProperties: str }, baseRates: { type: 'object', additionalProperties: str },
+ covenants: { type: 'object', properties: { minimumCash: str, minimumLiquidity: str, maximumLeverage: str }, additionalProperties: false },
  values: { type: 'object', additionalProperties: str },
  targets: { type: 'array', items: { type: 'object', properties: { department: str, percent: str }, required: ['department'] } },
 }
@@ -38,6 +40,8 @@ const tools = [
  tool('asset-category', 'Finance: add or edit an asset category in your own working proposal.', ['scenario', 'name', 'usefulLifeMonths'], ['id']),
  tool('asset', 'Add or edit an asset in your own working proposal, within your departments.', ['scenario', 'name', 'category', 'department', 'line', 'kind', 'cost', 'start'], ['id', 'paymentMonth', 'openingAccumulated', 'remainingLifeMonths', 'disposalMonth', 'disposalProceeds']),
  tool('allocation', 'Finance: add or edit allocation rules in your own working proposal.', ['scenario', 'name', 'sourceDepartment', 'basis', 'targets'], ['id']),
+ tool('debt', 'Finance: plan borrowing and repayment in your own draft proposal; never execute a payment.', ['scenario','name','debtKind','line','department','maturity'], ['id','start','opening','limit','rateKind','annualRate','baseName','baseRates','spreadPercent','draws','repayments','amortization','amortizationStart','termMonths','covenants']),
+ tool('equity', 'Finance: plan an equity raise in your own draft proposal.', ['scenario','name','month','amount'], ['id']),
  tool('input-delete', 'Remove an input from your own working proposal.', ['kind', 'id']),
  tool('comment', 'Comment on a visible scenario within your department authority.', ['scenario', 'department', 'text']),
  tool('explanation', 'Draft a variance explanation within your department authority.', ['month', 'line', 'department', 'text']),

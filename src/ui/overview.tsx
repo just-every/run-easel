@@ -1,3 +1,4 @@
+import { FinancingSchedule } from './financing'
 import { CashAgreement, CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
@@ -75,6 +76,7 @@ export function Overview({ state, refresh }: Shared) {
      <p className="muted trace">{calc.cash[0]?.trace}</p>
      {calc.warnings.length > 0 && <><h3>Check these</h3><ul className="plain">{calc.warnings.map((w: string) => <li key={w}>{w}</li>)}</ul></>}
     </section>}
+    {calc && !department && <FinancingSchedule calculation={calc} currency={currency} />}
     {calc && !department && <Statements calculation={calc} currency={currency} />}
     {calc && <AssetSchedule calculation={{ ...calc, assets: (calc.assets ?? []).filter((a: D) => !department || a.department === department) }} currency={currency} />}
    </div>

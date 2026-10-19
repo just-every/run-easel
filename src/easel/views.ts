@@ -1,3 +1,4 @@
+import { aggregateFinancing } from './financing-view'
 import { cashHealth } from './cash-health'
 // Read models for the UI and for agents. Every view is filtered here, on the
 // server, by the reader's role: individual positions, salaries and the rows
@@ -22,7 +23,7 @@ export function canSeeScenario(x: Access, sc: Data) {
 
 export function filterCalculation(x: Access, calc: Calculation): Calculation {
  if (x.role === 'finance') return calc
- return { ...calc, assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? c : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
+ return { ...calc, ...(calc.financing ? { financing: aggregateFinancing(calc.financing) } : {}), assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? { ...c, sources: c.sources.map(source => source.kind === 'financing' ? { kind: 'financing', label: 'Financing interest', amount: source.amount, trace: 'Interest expense; instrument terms restricted to finance' } : source) } : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
 }
 
 const filterInputs = (x: Access, inputs: Record<string, Data[]>) =>

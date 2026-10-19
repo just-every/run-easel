@@ -1,3 +1,4 @@
+import { validateFinancingInput } from './financing-input'
 // Turning stored records into an engine Model, and validating scenario inputs.
 import { addMonths, month, monthsBetween } from './months'
 import { validateAssetInput } from './asset-input'
@@ -5,7 +6,7 @@ import { cents, decimal, hundredths, percentBps } from './units'
 import { all, choice, find, get, integer, optionalText, requireThat, text, type Access, type Data, type State } from './types'
 import type { Line, Model } from './engine'
 
-export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset'] as const
+export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity'] as const
 export type InputKind = typeof INPUT_KINDS[number]
 
 export function workspace(s: State) {
@@ -27,7 +28,7 @@ export function model(s: State, scenarioId: string): Model {
  return {
   workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon },
   lines: lines(s), departments: departments(s), scenario,
-  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset') },
+  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity') },
  }
 }
 
@@ -54,6 +55,7 @@ const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
 
 /** Validates one input against the model's lines and departments. Returns the stored value. */
 export function validateInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
+ if (kind === 'debt' || kind === 'equity') return validateFinancingInput(s, kind, b, scenario)
  if (kind === 'asset-category' || kind === 'asset') return validateAssetInput(s, kind, b, scenario)
  if (kind === 'revenue') {
   const base = { name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month', scenario), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
@@ -97,7 +99,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
 }
 
 /** The department an input belongs to, for contributor scope. Allocations belong to finance. */
-export const inputDepartment = (kind: InputKind, value: Data) => (kind === 'allocation' || kind === 'asset-category') ? null : value.department as string
+export const inputDepartment = (kind: InputKind, value: Data) => (['allocation', 'asset-category', 'debt', 'equity'].includes(kind)) ? null : value.department as string
 
 /** Whether this person may change this department's inputs in this scenario right now. */
 export function requireEditable(s: State, x: Access, scenario: Data, dept: string | null) {

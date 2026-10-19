@@ -1,3 +1,4 @@
+import { aggregateFinancing } from './financing-view'
 // Monthly review: actual against the approved budget and the forecast kept
 // before the month closed, with the accepted rows and plan sources behind
 // each difference. Drafts state what the evidence shows and mark anything
@@ -147,6 +148,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
    versionComparison: { currency: w.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
    budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
    lines: lineRows, profit: { month: forecastCalc.profit.find(p => p.month === pack.month), budget: budget.body.calculation.profit.find((p: Data) => p.month === pack.month) },
+   ...(forecastCalc.financing ? { financing: aggregateFinancing(forecastCalc.financing) } : {}),
    assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),
    cash: forecastCalc.cash.map(m => ({ month: m.month, closing: m.closing, budget: budget.body.calculation.cash.find((b: Data) => b.month === m.month)?.closing ?? null })),
    // Pack readers include viewers: individual pay detail never enters the pack.

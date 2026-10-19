@@ -1,0 +1,150 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { harness } from './harness.mjs'
+import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
+
+test('FIN-003 debt, interest, monthly covenants and equity reconcile all statements without executing payments', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Harbour Analytics', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const department = await h.command('department', { name: 'Operations' })
+ const revenue = await h.command('line', { name: 'Contracts', type: 'revenue' })
+ const expense = await h.command('line', { name: 'Operations', type: 'operating-expense' })
+ const interestLine = await h.command('line', { name: 'Interest', type: 'operating-expense' })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('scenario-cash', { scenario: budget.id, basis: 'estimate', opening: '50000', collectionLag: 0, paymentLag: 0 })
+ await h.command('revenue', { scenario: budget.id, department: department.id, line: revenue.id, name: 'Retainers', kind: 'volume', start: '2026-01', startVolume: '10', rate: '1000', collectionLag: 0 })
+ await h.command('expense', { scenario: budget.id, department: department.id, line: expense.id, name: 'Delivery', kind: 'recurring', start: '2026-01', amount: '15000' })
+ const downside = await h.command('branch', { from: budget.id, name: 'Downside funding' })
+ const planner = await h.person('planner@example.test', 'contributor', [department.id])
+ const viewer = await h.person('board@example.test', 'viewer')
+ const read = (id = downside.id, who = h.owner) => h.get(`/api/easel/scenario/${id}`, who)
+ const debt = { scenario: downside.id, name: 'Private revolving facility', debtKind: 'credit', department: department.id, line: interestLine.id, start: '2026-01', maturity: '2026-12', limit: '50000', rateKind: 'fixed', annualRate: '12', draws: { '2026-02': '20000' }, covenants: { minimumCash: '40000', minimumLiquidity: '60000', maximumLeverage: '3' } }
+ for (const who of [planner, viewer]) await h.command('debt', debt, who, 403)
+ const facility = await h.command('debt', debt)
+ let view = await read(), f = view.calculation.financing
+ assert.equal(f.rows.length, 12)
+ assert.equal(f.totals[1].draws, 2000000)
+ assert.equal(f.totals[1].interest, 20000)
+ assert.equal(f.totals[1].closingDebt, 2000000)
+ assert.equal(view.calculation.profit[1].profit, -520000)
+ assert.equal(view.calculation.cash[1].closing, 5980000)
+ assert.equal(f.covenants.find(c => c.kind === 'minimum-cash' && c.status === 'breach').month, '2026-06')
+ assert.ok(f.covenants.filter(c => c.kind === 'minimum-cash').every(c => c.firstBreachMonth === '2026-06'))
+ assert.equal(f.covenants.find(c => c.kind === 'minimum-liquidity' && c.month === '2026-06').numerator, 6900000)
+ assert.equal(f.covenants.find(c => c.kind === 'maximum-leverage' && c.month === '2026-02').status, 'breach')
+ assert.equal(f.covenants.find(c => c.kind === 'maximum-leverage' && c.month === '2026-02').ratioBps, null)
+ assert.equal(f.totals[11].repayments, 2000000)
+ const source = view.calculation.cells.find(c => c.line === interestLine.id && c.month === '2026-02').sources[0]
+ assert.equal(source.id, facility.originId); assert.equal(source.amount, 20000); assert.ok(source.trace.includes('120000'))
+ const checkStatements = value => {
+  for (const [i, balance] of value.calculation.balanceSheet.entries()) {
+   const cash = value.calculation.cash[i], flow = value.calculation.cashFlow[i], funding = value.calculation.financing.totals[i]
+   assert.equal(balance.debt, funding.closingDebt)
+   assert.equal(balance.contributedEquity, funding.cumulativeEquity)
+   assert.equal(balance.assets, balance.liabilities + balance.equity)
+   assert.equal(flow.financing, funding.draws - funding.repayments + funding.equityRaised)
+   assert.equal(flow.closing, cash.closing)
+   assert.equal(balance.cash, cash.closing)
+   assert.equal(balance.balanceDifference, 0); assert.equal(balance.cashDifference, 0); assert.equal(flow.difference, 0)
+  }
+ }
+ checkStatements(view)
+ const prior = structuredClone(view)
+ const raise = await h.command('equity', { scenario: downside.id, name: 'Private Series A', month: '2026-06', amount: '5000000' })
+ view = await read(); checkStatements(view)
+ assert.deepEqual(view.calculation.profit, prior.calculation.profit)
+ for (let i = 0; i < 12; i++) {
+  assert.equal(view.calculation.cash[i].closing - prior.calculation.cash[i].closing, i >= 5 ? 500000000 : 0)
+  assert.equal(view.calculation.balanceSheet[i].equity - prior.calculation.balanceSheet[i].equity, i >= 5 ? 500000000 : 0)
+ }
+ assert.equal(view.calculation.financing.equityRows[0].originId, raise.originId)
+ for (const who of [planner, viewer]) {
+  const filtered = await read(downside.id, who)
+  assert.deepEqual(filtered.inputs.debt, []); assert.deepEqual(filtered.inputs.equity, [])
+  assert.deepEqual(filtered.calculation.financing.rows, []); assert.deepEqual(filtered.calculation.financing.equityRows, [])
+  assert.deepEqual(filtered.calculation.balanceSheet, view.calculation.balanceSheet)
+  assert.doesNotMatch(JSON.stringify(filtered), /Private revolving facility|Private Series A|annualRateBps|baseRatesBps/)
+  assert.equal(filtered.calculation.financing.covenants.length, f.covenants.length)
+  const cmp = await h.get(`/api/easel/compare?a=${budget.id}&b=${downside.id}`, who)
+  assert.doesNotMatch(JSON.stringify(cmp), /Private revolving facility|Private Series A/)
+  const response = await h.mf.dispatchFetch(h.origin + `/api/easel/scenario/${downside.id}/document.xlsx`, { headers: { cookie: who } })
+  const book = await readWorkbook(await response.arrayBuffer()); proveFormulas(book)
+  assert.ok(book.getWorksheet('Financing')); assert.equal(book.getWorksheet('Debt schedule'), undefined)
+  assert.doesNotMatch(JSON.stringify(book.worksheets.map(s => s.getSheetValues())), /Private revolving facility|Private Series A|annualRateBps/)
+ }
+ // Separate scenario: opening debt, equal principal, variable reference rates,
+ // additional repayments, exact final cents and operating timing independent of vendor terms.
+ const amort = await h.command('branch', { from: budget.id, name: 'Term and venture financing' })
+ await h.command('scenario-cash', { scenario: amort.id, basis: 'estimate', opening: '100000', collectionLag: 0, paymentLag: 2 })
+ const term = { ...debt, scenario: amort.id, name: 'Term facility', debtKind: 'term', opening: '12000.01', draws: {}, annualRate: '12', amortization: 'equal-principal', amortizationStart: '2026-01', termMonths: 6, maturity: '2026-06', covenants: { minimumCash: '0', maximumLeverage: '3' } }
+ const termInput = await h.command('debt', term)
+ const venture = { ...debt, scenario: amort.id, name: 'Venture facility', debtKind: 'venture', opening: '0', maturity: '2026-03', rateKind: 'variable', baseName: 'Reference rate', baseRates: { '2026-01': '4', '2026-02': '5', '2026-03': '6' }, spreadPercent: '2', draws: { '2026-01': '6000' }, covenants: {} }
+ const ventureInput = await h.command('debt', venture)
+ let amortView = await read(amort.id); checkStatements(amortView)
+ const termRows = amortView.calculation.financing.rows.filter(r => r.originId === termInput.originId)
+ assert.deepEqual(termRows.slice(0,6).map(r => r.repayment), [200000,200000,200000,200000,200000,200001])
+ assert.equal(termRows[5].closing, 0)
+ const variableRows = amortView.calculation.financing.rows.filter(r => r.originId === ventureInput.originId)
+ assert.deepEqual(variableRows.slice(0,3).map(r => r.interest), [3000,3500,4000])
+ assert.deepEqual(variableRows.slice(0,3).map(r => r.annualRateBps), [600,700,800])
+ assert.equal(variableRows[2].repayment, 600000)
+ assert.equal(amortView.calculation.balanceSheet[0].payables, 1500000, 'principal repayments never create operating payables and interest pays immediately')
+ assert.equal(amortView.calculation.balanceSheet[0].openingEquity, 8799999)
+ const stable = await h.command('reforecast-save', { from: amort.id, revision: amortView.scenario.revision, name: 'Financing approved case' })
+ const saved = await read(stable.id)
+ await h.command('debt', { ...term, id: termInput.id, repayments: { '2026-02': '1000' } })
+ assert.deepEqual(await read(stable.id), saved)
+ // Invalid inputs and scope attempts never change the plan revision.
+ const beforeBad = await read(amort.id)
+ for (const invalid of [{ ...venture, baseRates: {} }, { ...debt, scenario: amort.id, draws: { '2026-02': '50000.01' } }, { ...debt, scenario: amort.id, repayments: { '2026-01': '1' } }, { ...term, termMonths: 7 }, { ...debt, scenario: amort.id, line: revenue.id }]) await h.command('debt', invalid, h.owner, 400)
+ await h.command('line', { ...interestLine, payroll: true }, h.owner, 409)
+ await h.command('input-delete', { kind: 'debt', id: termInput.id }, planner, 403)
+ assert.deepEqual(await read(amort.id), beforeBad)
+ const financeBook = await h.mf.dispatchFetch(h.origin + `/api/easel/scenario/${amort.id}/document.xlsx`, { headers: { cookie: h.owner } })
+ const book = await readWorkbook(await financeBook.arrayBuffer()); proveFormulas(book)
+ assert.ok(book.getWorksheet('Debt schedule')); assert.ok(book.getWorksheet('Covenants'))
+ const version = (await h.get(`/api/easel/activity?action=structure-version&scenario=${amort.id}`))[0]
+ assert.equal(version.detail.changes[0].kind, 'debt', 'MODEL-005 automatically versions financing definitions')
+ // Close two months through real CSV imports: ledger interest replaces the
+ // forecast expense exactly once; kept and published records retain funding.
+ await h.command('debt', { ...debt, scenario: budget.id })
+ const approved = await h.command('approve-budget', { scenario: budget.id, revision: (await read(budget.id)).scenario.revision })
+ const approvedSnapshot = await h.get(`/api/easel/snapshot/${approved.snapshot}`)
+ assert.equal(approvedSnapshot.body.inputs.debt.length, 1)
+ for (const [account,target] of [['4000',revenue.id],['5000',expense.id],['6000',interestLine.id]]) await h.command('account-map', { account, target })
+ await h.command('department-map', { source: 'Operations', department: department.id })
+ const actuals = { filename: 'first-two-months.csv', csv: 'Date,Account,Department,Amount\n2026-01-31,4000,Operations,-10000\n2026-01-31,5000,Operations,15000\n2026-02-28,4000,Operations,-10000\n2026-02-28,5000,Operations,15000\n2026-02-28,6000,Operations,200\n', columns: { date:'Date',account:'Account',department:'Department',amount:'Amount' }, dateFormat:'YYYY-MM-DD',amountMode:'debit-positive' }
+ const preview = await h.kit('actuals','preview',actuals)
+ await h.kit('actuals','commit',{...actuals,fingerprint:preview.fingerprint})
+ await h.command('close-month',{scenario:approved.forecast.id,month:'2026-01'})
+ await h.command('close-month',{scenario:approved.forecast.id,month:'2026-02'})
+ const closed = await read(approved.forecast.id); checkStatements(closed)
+ assert.equal(closed.calculation.profit[1].profit,-520000)
+ assert.equal(closed.calculation.cash[1].closing,5980000)
+ assert.equal(closed.calculation.financing.totals[1].recognizedInterest,20000)
+ const pack = await h.command('pack-create',{month:'2026-02'})
+ const published = await h.command('pack-publish',{pack:pack.id})
+ const packSnapshot = await h.get(`/api/easel/snapshot/${published.snapshot}`,viewer)
+ assert.doesNotMatch(JSON.stringify(packSnapshot), /Private revolving facility|annualRateBps/)
+ assert.equal(packSnapshot.body.financing.totals[1].financingCash,2000000)
+ const packResponse = await h.mf.dispatchFetch(h.origin + `/api/easel/pack/${pack.id}/document.xlsx`,{headers:{cookie:viewer}})
+ const packBook = await readWorkbook(await packResponse.arrayBuffer());proveFormulas(packBook)
+ assert.ok(packBook.getWorksheet('Financing'));assert.equal(packBook.getWorksheet('Debt schedule'),undefined)
+ assert.deepEqual(await h.get(`/api/easel/snapshot/${approved.snapshot}`),approvedSnapshot)
+ const upside = await h.command('branch',{from:budget.id,name:'Covenant exact boundaries'})
+ const upsideBefore = await read(upside.id)
+ await h.command('expense',{...upsideBefore.inputs.expense[0],amount:'5000'})
+ await h.command('debt',{...debt,scenario:upside.id,id:upsideBefore.inputs.debt[0].id,draws:{'2026-02':'30000','2026-03':'0.01'},covenants:{minimumCash:'55000',minimumLiquidity:'105000',maximumLeverage:'0.5'}})
+ const upsideView = await read(upside.id);checkStatements(upsideView)
+ const covenants = upsideView.calculation.financing.covenants
+ for(const kind of ['minimum-cash','minimum-liquidity'])assert.equal(covenants.find(c=>c.kind===kind&&c.month==='2026-01').status,'pass','minimum includes equality')
+ const febRatio=covenants.find(c=>c.kind==='maximum-leverage'&&c.month==='2026-02')
+ assert.equal(febRatio.numerator,3000000);assert.equal(febRatio.denominator,6000000);assert.equal(febRatio.status,'pass')
+ const marRatio=covenants.find(c=>c.kind==='maximum-leverage'&&c.month==='2026-03')
+ assert.equal(marRatio.ratioBps,5000);assert.equal(marRatio.status,'breach','exact bound is applied before display rounding')
+ const proposal=await h.command('proposal-create',{from:upside.id,name:'Funding options',request:'Plan a later contribution'})
+ const mcp=await h.send('/api/easel/mcp',{jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'equity',arguments:{scenario:proposal.id,name:'Optional contribution',month:'2026-10',amount:'100000'}}},h.owner)
+ assert.equal(mcp.status,200);assert.equal(mcp.value.result.isError,undefined)
+ assert.equal((await read(proposal.id)).inputs.equity[0].amountCents,10000000)
+ assert.ok(h.messages.every(m => !String(m.text).includes('Private revolving facility')), 'planning never dispatches a funding or payment message')
+})
