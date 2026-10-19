@@ -706,6 +706,14 @@
       "sha256": "39bf895f1ceb9c9710e8dfa659249fb9fd9c8f1fce1edea94b190fe9749afc35",
       "executable": false
     },
+    "src/easel/grid-math.ts": {
+      "sha256": "2bee200a48b3d7da3a41529ead737679c657faf2205597ee6b1c83017561f92b",
+      "executable": false
+    },
+    "src/easel/grid.ts": {
+      "sha256": "dde8ea6f0787309a26cdc6384c569583f8fc5a203bbe359c37520b319dc8313a",
+      "executable": false
+    },
     "src/easel/history-budget.ts": {
       "sha256": "c94b06a03c2cc132534f2845bd656abe96bf4447224fb0b9ab57a16ef5255455",
       "executable": false
@@ -2650,6 +2658,14 @@
       "sha256": "1e2227b2fd40c24a23f8da8d1b3c5b7041bb8218ad8682c9bae2fee909bc2848",
       "executable": false
     },
+    "src/ui/planning-grid.css": {
+      "sha256": "7fecf528acf1e8404d86f742fedf7a5337225d2e525b4d02e509e2fa3a7beda8",
+      "executable": false
+    },
+    "src/ui/planning-grid.tsx": {
+      "sha256": "9f3f7725ce9dce6c43eb854f8449b66c446864b1346ec6eccfa3298d943c5faa",
+      "executable": false
+    },
     "src/ui/reforecast-comparison.tsx": {
       "sha256": "3d51a8b45c9b08e9d575d62f871b60ec2ac8452f65c9df50c43ac70e2cb8a9d7",
       "executable": false
@@ -2804,6 +2820,18 @@
     },
     "tests/financing.test.mjs": {
       "sha256": "b97dfe848418103b5c4858c4340f627d4b0cf8383818a43a0bbf7619b2ffe6fb",
+      "executable": false
+    },
+    "tests/grid-browser.mjs": {
+      "sha256": "c88e8fc0e1cfe0dd5e0379b5680d4e54425e047c958d124f4c821ef090904b86",
+      "executable": false
+    },
+    "tests/grid-fixture.mjs": {
+      "sha256": "8cda61e5be445897ad231ffa84199b85af86d3efe332d626fa6d9eba644444de",
+      "executable": false
+    },
+    "tests/grid.test.mjs": {
+      "sha256": "f772f47b1e22896faa05376c61e9463a3342234ccc8c9cb1683abec64f7b84d3",
       "executable": false
     },
     "tests/harness.mjs": {
