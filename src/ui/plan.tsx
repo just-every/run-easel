@@ -2,8 +2,9 @@ import { FinancingInputs } from './financing'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { AssetInputs } from './assets'
+import { RevenueForm, RevenueSummary } from './revenue'
 import { defaultScenario } from './overview'
-import { Action, api, command, decimalText, Field, Form, money, monthLabel, options, ScenarioPicker, Table, type D, type Option } from './shared'
+import { Action, api, command, decimalText, Field, Form, money, monthLabel, options, ScenarioPicker, Table, type D } from './shared'
 
 /** The assumptions behind a scenario: drivers, positions, expenses, schedules, allocations and cash timing. */
 export function Plan({ state, refresh }: Shared) {
@@ -38,7 +39,7 @@ export function Plan({ state, refresh }: Shared) {
   <section className="card">
    <h2>Revenue drivers</h2>
    <Table caption="Revenue models" heads={['Name', 'Driver', 'Line', 'Department', 'From', '']}>
-    {(inputs.revenue ?? []).map((r: D) => <tr key={r.id}><td>{r.name}</td><td>{r.kind === 'volume' ? `${decimalText(r.startVolume)} units × ${money(r.rateCents, currency)}, ${decimalText(r.growthBps)}% a month` : `${decimalText(r.startCustomers)} customers × ${money(r.arpaCents, currency)}, churn ${decimalText(r.churnBps)}%`}</td><td>{lineName(r.line)}</td><td>{deptName(r.department)}</td><td>{monthLabel(r.start)}</td><td><Action label="Edit" kind="quiet" run={async () => edit('revenue', r)} /><Action label="Remove" kind="danger" run={() => remove('revenue', r.id)} /></td></tr>)}
+    {(inputs.revenue ?? []).map((r: D) => <tr key={r.id}><td>{r.name}</td><td><RevenueSummary row={r} currency={currency} /></td><td>{lineName(r.line)}</td><td>{deptName(r.department)}</td><td>{monthLabel(r.start)}</td><td><Action label="Edit" kind="quiet" run={async () => edit('revenue', r)} /><Action label="Remove" kind="danger" run={() => remove('revenue', r.id)} /></td></tr>)}
    </Table>
    <RevenueForm key={form('revenue')?.id ?? `new-revenue-${round}`} row={form('revenue')} lines={revenueLines} depts={depts} allDepts={options(state.departments)} onSave={b => save('revenue', b)} />
   </section>
@@ -117,29 +118,4 @@ export function Plan({ state, refresh }: Shared) {
    </Form>
   </section>}
  </>
-}
-
-function RevenueForm({ row, lines, depts, allDepts, onSave }: { row: D | null; lines: Option[]; depts: Option[]; allDepts: Option[]; onSave: (b: D) => Promise<void> }) {
- const [kind, setKind] = useState(row?.kind ?? 'customers')
- return <Form submit={row ? 'Save revenue model' : 'Add revenue model'} onSubmit={v => onSave({ ...v, id: row?.id, kind })}>
-  <label className="wide-select">Driver<select aria-label="Driver" value={kind} onChange={e => setKind(e.target.value)}><option value="customers">Customers × revenue per customer</option><option value="volume">Volume × rate</option></select></label>
-  <Field key="name" label="Revenue model name" name="name" defaultValue={row?.name} />
-  <Field key="line" label="Revenue line" name="line" options={lines} defaultValue={row?.line} />
-  <Field key="department" label="Department" name="department" options={depts} defaultValue={row?.department} />
-  <Field key="start" label="Start month" name="start" type="month" defaultValue={row?.start} />
-  <Field key="collectionLag" label="Collected after (months)" name="collectionLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(row?.collectionLag ?? 1)} />
-  {kind === 'volume' ? <>
-   <Field key="startVolume" label="Starting volume" name="startVolume" defaultValue={decimalText(row?.startVolume)} />
-   <Field key="growthPercent" label="Monthly growth %" name="growthPercent" defaultValue={row ? decimalText(row.growthBps) : '0'} />
-   <Field key="rate" label="Rate per unit" name="rate" defaultValue={decimalText(row?.rateCents)} />
-  </> : <>
-   <Field key="startCustomers" label="Starting customers" name="startCustomers" defaultValue={decimalText(row?.startCustomers)} />
-   <Field key="newPerMonth" label="New customers per month" name="newPerMonth" defaultValue={row ? decimalText(row.newPerMonth) : '0'} />
-   <Field key="newPerRep" label="New customers per ramped hire" name="newPerRep" defaultValue={row ? decimalText(row.newPerRep) : '0'} />
-   <Field key="repDepartment" label="Hiring department" name="repDepartment" required={false} options={allDepts} defaultValue={row?.repDepartment} />
-   <Field key="rampMonths" label="Ramp months" name="rampMonths" defaultValue={String(row?.rampMonths ?? 3)} />
-   <Field key="churnPercent" label="Monthly churn %" name="churnPercent" defaultValue={row ? decimalText(row.churnBps) : '0'} />
-   <Field key="arpa" label="Monthly revenue per customer" name="arpa" defaultValue={decimalText(row?.arpaCents)} />
-  </>}
- </Form>
 }

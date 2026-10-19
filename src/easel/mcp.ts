@@ -17,6 +17,7 @@ import { compareView, scenarioView, stateView } from './views'
 const versions = ['2025-11-25', '2025-06-18', '2025-03-26']
 const str = { type: 'string' }
 const fields: Record<string, Data> = {
+ milestones: { type: 'array', items: { type: 'object', properties: { name: str, month: str, amount: str }, required: ['name', 'month', 'amount'], additionalProperties: false } },
  draws: { type: 'object', additionalProperties: str }, repayments: { type: 'object', additionalProperties: str }, baseRates: { type: 'object', additionalProperties: str },
  covenants: { type: 'object', properties: { minimumCash: str, minimumLiquidity: str, maximumLeverage: str }, additionalProperties: false },
  values: { type: 'object', additionalProperties: str },
@@ -33,7 +34,7 @@ const tools = [
  tool('metrics', 'Read monthly profit, cash and department headcount for a visible scenario.', ['scenario'], [], true),
  tool('proposal-create', 'Create your proposal from a visible working scenario.', ['from', 'name', 'request']),
  tool('proposal-submit', 'Submit your proposal for finance review; never promote it.', ['id'], ['summary']),
- tool('revenue', 'Add or edit a revenue driver in your working proposal. Amounts and percentages are decimal strings.', ['scenario', 'name', 'kind', 'line', 'department', 'start'], ['id', 'collectionLag', 'startVolume', 'growthPercent', 'rate', 'startCustomers', 'newPerMonth', 'newPerRep', 'repDepartment', 'rampMonths', 'churnPercent', 'arpa']),
+ tool('revenue', 'Add or edit a revenue driver in your working proposal: volume, customers, seats, usage, services, milestones or backlog. Services assumes all active department positions are billable. Amounts and percentages are decimal strings.', ['scenario', 'name', 'kind', 'line', 'department', 'start'], ['id', 'collectionLag', 'startVolume', 'growthPercent', 'rate', 'startCustomers', 'newPerMonth', 'newPerRep', 'repDepartment', 'rampMonths', 'churnPercent', 'arpa', 'startSeats', 'expansionPercent', 'price', 'startUsage', 'unitPrice', 'monthlyHours', 'utilizationPercent', 'hourlyRate', 'milestones', 'openingBacklog', 'monthlyAdditions', 'burnPercent']),
  tool('position', 'Add or edit a position in your working proposal.', ['scenario', 'title', 'department', 'line', 'start', 'annualSalary'], ['id', 'holder', 'end', 'onCostPercent']),
  tool('expense', 'Add or edit an expense in your working proposal.', ['scenario', 'name', 'line', 'department', 'kind', 'amount', 'start'], ['id', 'end']),
  tool('schedule', 'Add or edit monthly decimal amounts in your working proposal.', ['scenario', 'name', 'line', 'department', 'values'], ['id']),

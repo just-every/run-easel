@@ -1,3 +1,4 @@
+import { libraryRevenueInput } from './revenue-input'
 import { requireScenarioEdit } from './scenario-access'
 import { validateFinancingInput } from './financing-input'
 // Turning stored records into an engine Model, and validating scenario inputs.
@@ -60,6 +61,8 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  if (kind === 'asset-category' || kind === 'asset') return validateAssetInput(s, kind, b, scenario)
  if (kind === 'revenue') {
   const base = { name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month', scenario), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
+  const library = libraryRevenueInput(b, base)
+  if (library) return library
   const kindOf = choice(b.kind, ['volume', 'customers'] as const, 'a driver')
   if (kindOf === 'volume') return { ...base, kind: kindOf, startVolume: hundredths(b.startVolume, 'Starting volume'), growthBps: decimal(b.growthPercent ?? '0', 'Monthly growth %', 2, { negative: true, max: 100000n }), rateCents: cents(b.rate, 'Rate per unit') }
   const repDepartment = b.repDepartment ? department(s, b.repDepartment, 'hiring department') : ''

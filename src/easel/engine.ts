@@ -1,4 +1,5 @@
 import { calculateFinancing, evaluateCovenants, type FinancingCalculation } from './financing'
+import { libraryRevenue } from './revenue-drivers'
 // The deterministic planning calculation. Given one scenario's inputs (and,
 // for a forecast, the accepted actuals of its closed months) it produces every
 // cell keyed by line, department and month, each with the sources and the
@@ -92,6 +93,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
 
  for (const r of inputs.revenue) {
   const lag = Number(r.collectionLag ?? collectionLag)
+  if (libraryRevenue(r, inputs.position, months[months.length - 1], currency, (month, source) => add(r.line, r.department, month, source, lag))) continue
   if (r.kind === 'volume') {
    let volume = r.startVolume
    for (let k = 0, m = r.start; m <= months[months.length - 1]; k++, m = addMonths(m, 1)) {

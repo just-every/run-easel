@@ -186,6 +186,12 @@
       "clauses": [
         "CYCLE-004"
       ]
+    },
+    {
+      "id": "fixed-revenue-library",
+      "clauses": [
+        "REV-003"
+      ]
     }
   ],
   "nonGoals": [
