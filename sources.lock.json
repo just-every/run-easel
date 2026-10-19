@@ -2583,7 +2583,7 @@
       "executable": false
     },
     "src/ui/dashboards.tsx": {
-      "sha256": "a113ad13630b29e3ca1ccea6adb4bf87715b0850e8e928162e30bd7bedd61491",
+      "sha256": "f19a0e998404980dca3edd1f51014c3a31d8b16d531804538b6fc143b68e830a",
       "executable": false
     },
     "src/ui/department-statements.tsx": {
