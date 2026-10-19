@@ -47,6 +47,10 @@ jobs:
         run: node tests/metric-tasks-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/metric-tasks
+      - name: FIN-001 linked statements at desktop and phone widths
+        run: node tests/statements-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/statements
       - uses: actions/upload-artifact@v4
         if: always()
         with:

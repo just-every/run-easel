@@ -1,5 +1,6 @@
 import { cashHealthSheet } from './cash-health-workbook'
 import { versionComparisonSheet } from './version-comparison-workbook'
+import { statementSheets } from './statements-workbook'
 // Spreadsheet projections of the same role-filtered read models as the app.
 import { columnName } from './xlsx'
 import { workbook, type Cell, type Sheet } from './xlsx-write'
@@ -35,6 +36,7 @@ export function scenarioSheets(view: Data, prefix = '', department = ''): Sheet[
   const cashRows: Cell[][] = [[`${scenario.name} · ${workspace.currency} minor units`], ['Month', 'Opening', 'Collections', 'Payments', 'Closing']]
   for (const c of calc.cash) { const r = cashRows.length + 1; cashRows.push([c.month, r === 3 ? c.opening : formula(`E${r - 1}`, c.opening), c.collections, c.payments, formula(`B${r}+C${r}-D${r}`, c.closing)]) }
   sheets.push({ name: `${prefix}Cash`, rows: cashRows })
+  if (calc.balanceSheet && calc.cashFlow) sheets.push(...statementSheets(calc.balanceSheet, calc.cashFlow, calc.cash, workspace.currency, prefix))
   if (view.cashHealth) sheets.push(cashHealthSheet(view.cashHealth, calc.cash, workspace.currency, prefix))
  }
  sheets.push({ name: `${prefix}Cells`, rows: [['Amounts in minor units; restricted detail is removed by the server'], ['Month', 'Line', 'Department', 'Amount', 'Basis', 'Sources'], ...cells.map(c => [c.month, lines.find((l: Data) => l.id === c.line)?.name ?? c.line, departments.find((d: Data) => d.id === c.department)?.name ?? '', c.amount, c.basis, c.sources.map((s: Data) => s.trace).join('\n')])] })

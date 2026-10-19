@@ -190,3 +190,7 @@ whole UTC calendar days to trigger time. Source problems and unavailable
 owners are recorded as blocked rules, never invented values. Tasks are
 in-app work records; no email delivery is claimed. REV-001 inherits pipeline
 coverage rules before its future pipeline source can ship.
+
+### FIN-001 linked statements
+
+Scenario reads include `calculation.balanceSheet` and `calculation.cashFlow` in integer currency minor units. These aggregate rows share the P&L horizon and are captured with new approvals and kept versions. `balanceDifference` is assets minus liabilities/equity; `cashDifference` and cash-flow `difference` compare indirect closing cash with direct cash. Each row explains its arithmetic; imbalance causes identify the month and source line without pay detail. Opening equity and other noncash reserves are labelled estimates. Financing inputs remain unavailable. Legacy snapshots remain unchanged and may have no statement arrays. Scenario Excel includes both statement sheets and live subtotal/reconciliation formulas; a department filter omits company-wide statements.

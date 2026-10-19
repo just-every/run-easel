@@ -156,6 +156,12 @@
       "clauses": [
         "CYCLE-002"
       ]
+    },
+    {
+      "id": "linked-statements",
+      "clauses": [
+        "FIN-001"
+      ]
     }
   ],
   "nonGoals": [

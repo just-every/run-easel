@@ -3,6 +3,7 @@
 // cell keyed by line, department and month, each with the sources and the
 // arithmetic that produced it, then profit and monthly cash. No model or
 // network call supplies a number: the same inputs always give the same cells.
+import { statements, type BalanceMonth, type CashFlowMonth } from './statements'
 import { calculateAssets, type AssetMonth } from './assets'
 import { addMonths, monthLabel, monthsBetween, range } from './months'
 import { rampFactorBps, RAMP_RULE } from './ramp'
@@ -40,6 +41,8 @@ export type Calculation = {
  cash: CashMonth[]
  headcount: Record<string, Record<string, number>>
  warnings: string[]
+ balanceSheet?: BalanceMonth[]
+ cashFlow?: CashFlowMonth[]
  assets?: AssetMonth[]
 }
 
@@ -211,9 +214,10 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
  const uncollected = cash.filter(e => e.month > months[months.length - 1]).reduce((s, e) => s + (e.collection ? e.amount : -e.amount), 0)
  if (uncollected !== 0) warnings.push(`${money(uncollected)} of net cash timing falls after ${monthLabel(months[months.length - 1])} and is outside the plan months`)
 
- return {
+ const result: Calculation = {
   engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
   lineTotals, profit, cash: cashMonths, headcount, warnings, assets,
  }
+ return { ...result, ...statements(model, result) }
 }

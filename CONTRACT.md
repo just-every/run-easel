@@ -167,7 +167,7 @@ For current CSV sources, exact account picks override reusable rules. Number ran
 *Status:* done. Acceptance: `tests/mapping-rules.test.mjs` and `tests/mapping-rules-browser.mjs` (CONNECT-006).
 
 #### CONNECT-007 — Balance-sheet actuals and the trial balance.
-Accepted actuals include month-end balance-sheet balances (cash, receivables, prepaid, fixed assets, payables, accrued liabilities, deferred revenue, debt and equity), not only profit-and-loss flows and the cash account. Each closed month shows a trial balance that sums to zero, and the forecast balance sheet (`FIN-001`) opens from the last closed month's actual balances.
+Accepted actuals include month-end balance-sheet balances (cash, receivables, prepaid, fixed assets, payables, accrued liabilities, deferred revenue, debt and equity), not only profit-and-loss flows and the cash account. Each closed month shows a trial balance that sums to zero, and the forecast balance sheet (`FIN-001`) opens from the last closed month's actual balances. Before shipping, CONNECT-007 inherits FIN-001: imported balances replace the corresponding opening estimates and reconcile the three statements, with visible traced differences rather than balancing plugs.
 
 Before balance-sheet actuals ship, CONNECT-007 inherits CONNECT-006: single-account, numeric-range, prefix and source-account-type rules can target every supported balance-sheet line, with automatic listing and dependency blocking for unresolved balances.
 
@@ -268,21 +268,21 @@ Accepted actuals (from connectors or files) form an Actuals version that every p
 ### Three statements and cash
 
 #### FIN-001 — Linked P&L, balance sheet and cash flow.
-Every scenario produces a monthly forecast profit and loss, balance sheet and indirect cash-flow statement that link: net income flows to retained earnings, working-capital, capex and financing movements flow to cash, and the balance sheet balances every month. A visible check marks any month that does not balance, and its cause is traced.
+Every scenario produces a monthly forecast profit and loss, balance sheet and indirect cash-flow statement that link: net income flows to retained earnings, working-capital, capex and financing movements flow to cash, and the balance sheet balances every month. A visible check marks any month that does not balance, and its cause is traced. Current working scenarios and newly captured approvals/reforecasts conform; older immutable snapshots remain as captured and explicitly show when statements were not captured. Opening equity is a labelled estimate: opening cash + receivables + net fixed assets + capital prepayments − operating payables − capital payables. Net income accumulates in retained earnings. Generic noncash expenses accumulate in a labelled other-noncash reserve; asset expenses reduce net fixed assets instead. Capital payments before service create capital prepayments; service before payment creates capital payables, which remain until paid. AR/AP movements follow existing monthly collection/payment timing, including settlement of opening AR/AP in the first month. Indirect operating cash is net income + noncash expense − increase in receivables + increase in operating payables; investing cash is disposal proceeds − capex payments. Financing is explicitly unavailable until FIN-003. No balancing plug is applied: inconsistent closed-month depreciation versus the asset schedule leaves a visible difference with the month, source line and amounts. Under ct 19 October pattern 1, current capabilities complete FIN-001; CONNECT-007 inherits imported balance-sheet openings and reconciliation, FIN-002 inherits its deferred/prepaid/accrual statement movements, and FIN-003 inherits debt/equity/financing statement movements before each ships.
 
 *Acceptance:* the API journey reads three statements for 24 months and asserts assets equal liabilities plus equity in every month and that cash-flow closing cash equals balance-sheet cash.
 
-*Status:* partial.
+*Status:* done.
 
 #### FIN-002 — Working-capital timing.
-Receivables follow days-sales-outstanding or a collection curve by revenue line, and payables follow days-payables-outstanding or payment terms by expense line. Annual-upfront billing creates deferred revenue that is recognised ratably, prepaid expenses amortise, and accrued payroll and bonuses settle on their pay dates. Opening balances come from actuals (`CONNECT-007`) or labelled estimates (`EASEL-005`).
+Receivables follow days-sales-outstanding or a collection curve by revenue line, and payables follow days-payables-outstanding or payment terms by expense line. Annual-upfront billing creates deferred revenue that is recognised ratably, prepaid expenses amortise, and accrued payroll and bonuses settle on their pay dates. Opening balances come from actuals (`CONNECT-007`) or labelled estimates (`EASEL-005`). Before shipping, FIN-002 inherits FIN-001: every deferred-revenue, prepaid and accrued-liability movement links its profit recognition, balance-sheet balance and indirect cash-flow adjustment, with visible traced reconciliation checks.
 
 *Acceptance:* the API journey sets 45-day DSO, a 30-day term on one vendor line and an annual-upfront plan, and reads receivables, payables, deferred revenue and cash that agree with the traces; a $24,000 annual insurance prepayment amortises at $2,000 a month with the prepaid balance declining to zero; payroll earned but unpaid at a month end is accrued and settles on the next pay date; and a quarterly bonus accrues monthly and settles in its pay month, with accrued liabilities and cash agreeing with the traces.
 
 *Status:* partial.
 
 #### FIN-003 — Debt and financing.
-Term loans, lines of credit and venture debt carry principal, rate (fixed, or variable over a stated base rate), draws, repayments and amortisation schedules, with interest flowing to the P&L. Covenant tests (minimum cash, liquidity, debt-to-EBITDA) are computed every month. Equity raises are planned events.
+Term loans, lines of credit and venture debt carry principal, rate (fixed, or variable over a stated base rate), draws, repayments and amortisation schedules, with interest flowing to the P&L. Covenant tests (minimum cash, liquidity, debt-to-EBITDA) are computed every month. Equity raises are planned events. Before shipping, FIN-003 inherits FIN-001: debt draws/repayments and equity events link financing cash flows and balance-sheet debt/equity; interest links profit and operating cash, with visible traced reconciliation checks.
 
 *Acceptance:* the API journey adds a line of credit with a minimum-cash covenant, draws on it in a downside, and reads interest, balances and a covenant breach month; it then plans a $5,000,000 equity raise in a month and reads the cash inflow and the equity increase on the balance sheet with no profit-and-loss effect.
 
@@ -841,8 +841,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 15 | 34 | 37 | 86 |
-| All | 32 | 34 | 37 | 103 |
+| Target and push further | 16 | 33 | 37 | 86 |
+| All | 33 | 33 | 37 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -883,7 +883,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `MODEL-007` | Recalculation at small-business scale | target | partial | `src/easel/engine.ts` | Deterministic synchronous recalculation exists; no measured scale target, background calculation or calculating state |
 | `MODEL-008` | Planning grid entry | target | partial | `src/easel/model.ts` `tests/easel.test.mjs` | Schedule inputs hold entered monthly values per line and department through the API; a grid, paste, spreading, copy forward, split sub-rows and cell notes are missing |
 | `MODEL-009` | Plans built from actuals history | target | partial | `src/easel/actuals.ts` `tests/easel.test.mjs` | Accepted actuals are kept by month for any period, including months before the plan year; plan lines that read actuals at an offset, seeding a budget from prior-year actuals and an actuals overlay are missing |
-| `FIN-001` | Linked P&L, balance sheet and cash flow | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Profit and cash are linked monthly; a forecast balance sheet, an indirect cash-flow statement and a balance check are missing |
+| `FIN-001` | Linked P&L, balance sheet and cash flow | target | done | `src/easel/statements.ts`, `tests/statements.test.mjs`, `tests/statements-browser.mjs` | Linked current statements, labelled opening equity/noncash reserve, AR/AP and asset timing, retained income, traced imbalance checks, frozen captures and formula Excel; future movements inherited by CONNECT-007/FIN-002/FIN-003 |
 | `FIN-002` | Working-capital timing | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Collection and payment lags with opening receivables and payables ship; DSO and DPO curves, deferred revenue, prepaids and accruals are missing |
 | `FIN-003` | Debt and financing | target | missing |  | No loans, credit lines, interest, covenants or equity events |
 | `FIN-004` | Capex and depreciation | target | done | `src/easel/assets.ts`, `tests/assets.test.mjs`, `tests/assets-browser-journey.mjs` | Category useful lives, purchased/opening assets, cent-exact depreciation and book values, disposals, non-cash expense lines, explicit cash timing, immutable snapshots and formula exports |
