@@ -161,7 +161,7 @@ one recorded run against the provider's sandbox before acceptance.
 | `ERASE-001` — Person erasure | missing | Through the API, erase a contributor who submitted and commented; their name is absent from live views, pack downloads and `rer export`, their submissions show the pseudonym, the snapshot digest is unchanged, and the receipt and audit row exist. |
 | `API-001` — Public API with scoped tokens | partial | Issue a read-only token, read a scenario, be refused a write, revoke the token and be refused a read. |
 | `API-002` — Webhooks and automation apps | missing | Register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID. The Crank, Zapier and Make apps each run against a running Easel in that platform's developer test tooling (a local Crank installation, the Zapier Platform CLI, and a Make custom app in a test organisation): a trigger receives an approval event, and a create-proposal action creates a proposal bound to the revision. |
-| `API-003` — MCP endpoint for outside agents | missing | An MCP client signed in as a contributor lists tools, reads a variance, creates a proposal, and is refused the approve and promote tools. |
+| `API-003` — MCP endpoint for outside agents | done | `tests/mcp.test.mjs` (`API-003`). An MCP client signed in as a contributor lists tools, reads a variance, creates a proposal, and is refused the approve and promote tools. |
 
 ### Entities, currency and US defaults
 

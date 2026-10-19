@@ -72,6 +72,12 @@
       "clauses": [
         "MODEL-002"
       ]
+    },
+    {
+      "id": "agent-mcp",
+      "clauses": [
+        "API-003"
+      ]
     }
   ],
   "nonGoals": [

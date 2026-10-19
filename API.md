@@ -45,3 +45,7 @@ months `YYYY-MM`.
 `POST /api/easel/invite` {email} (finance) sends a person their sign-in invitation through Base.
 
 The rolling window keeps that many future months after the last close. Closed months remain visible. Each close snapshots the current forecast before extending its end from the existing drivers. Budgets keep their fixed horizon.
+
+## MCP
+
+Agents can use the native-session [MCP endpoint](docs/mcp.md) at `POST /api/easel/mcp` for filtered reads and proposal, comment and explanation tools. Approval, close, publication and promotion stay with people.

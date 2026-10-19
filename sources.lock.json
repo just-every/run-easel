@@ -115,7 +115,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "4ffcabfffaaf07c87a07d1656eaf129356c724fb28dd152f4be938837942bf8c",
+      "sha256": "c83ea8ce458e8235849ec5de2157f1329b41c58f52a524ec139e4e31eba2381e",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -127,7 +127,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "95ece7fe4659df89b4416784571f7df4d3ca8cb209ec10e4059a547e5dc27ba7",
+      "sha256": "72dfb50d4f5e67438a2007ee0d046ecabe9b0a798b76ac1b3f61aa8d3fd9f4fd",
       "executable": false
     },
     "base-copies.json": {
@@ -139,7 +139,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "a8734b6ca870c31b3b032a41b34c23ae3e8b319a10dbe110d94064e99ed7d806",
+      "sha256": "aff26bfdee02217fead26ee065d866f71b07d4a4c08f163979efcb0f660732f1",
       "executable": false
     },
     "DEMO.md": {
@@ -176,6 +176,10 @@
     },
     "docs/getting-started.md": {
       "sha256": "1d2590e0e1e618afaf85aaf6f85863dcdcc916044c6a9d13dc166ab569af4507",
+      "executable": false
+    },
+    "docs/mcp.md": {
+      "sha256": "bcee139d95da0397ecbc1e950b925b175b488111dbf626335375251e56385fd7",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -447,7 +451,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "14621f1a35c1bc011601110e19b72355d9cbc9b1a5e45051c235a401cfe0a8fb",
+      "sha256": "9eafda2260828b22c1d98b8a972abdc32417fb4349dc1f822636d2306875969c",
       "executable": false
     },
     "SOURCE.md": {
@@ -587,7 +591,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "30a53b0dce180538e57a13c643d7d9af1ddb8f9dbd3ddc2b749244328a26fde4",
+      "sha256": "b9db1cb66708cf7b35ff282bc7bb30a0b990974bc13b10454f235c49883462e7",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -612,6 +616,10 @@
     },
     "src/easel/kit.ts": {
       "sha256": "4d02406f9ea14261d5aada5d804643b67e3b5398265db13a4fb87732fae2767d",
+      "executable": false
+    },
+    "src/easel/mcp.ts": {
+      "sha256": "20c62a8a87a3949a17e4b44a8a4385fe6fe915ea8541409df3dcc967079cb075",
       "executable": false
     },
     "src/easel/model.ts": {
@@ -2464,6 +2472,10 @@
     },
     "tests/harness.mjs": {
       "sha256": "974aa70aa1b7ffad509a8f2247382f8551cac24089e6827542186ca41ef6d77b",
+      "executable": false
+    },
+    "tests/mcp.test.mjs": {
+      "sha256": "04c9b7d0114ef07c4532b1059e525df438736ff526dd2cdf1e0eb0e49bd18024",
       "executable": false
     },
     "tests/restore-flow.mjs": {

@@ -8,6 +8,7 @@ import { access, requireFinance } from './access'
 import { actualCells, actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
+import { handleMcp } from './mcp'
 import { packCsv, packHtml } from './pack-documents'
 import { plan } from './plan'
 import { review, variance } from './review'
@@ -56,6 +57,8 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(result as any)
 }
+
+api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
 
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))

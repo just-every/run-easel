@@ -559,7 +559,7 @@ An MCP endpoint exposes Easel's reads (scenarios, comparisons, variances, metric
 
 *Acceptance:* an MCP client signed in as a contributor lists tools, reads a variance, creates a proposal, and is refused the approve and promote tools.
 
-*Status:* missing.
+*Status:* done. Acceptance: `tests/mcp.test.mjs` (API-003).
 
 ### Entities, currency and US defaults
 
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 1 | 43 | 42 | 86 |
-| All | 18 | 43 | 42 | 103 |
+| Target and push further | 2 | 43 | 41 | 86 |
+| All | 19 | 43 | 41 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -894,7 +894,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `ERASE-001` | Person erasure | target | missing |  | No erasure command, pseudonymised snapshot reads or receipt |
 | `API-001` | Public API with scoped tokens | target | partial | `src/easel/api.ts` `API.md` | The documented HTTP API works with a signed-in person's session; scoped personal and service tokens, expiry and rate limits are missing |
 | `API-002` | Webhooks and automation apps | target | missing |  | No webhooks or published automation apps |
-| `API-003` | MCP endpoint for outside agents | target | missing |  | No MCP endpoint |
+| `API-003` | MCP endpoint for outside agents | target | done | `tests/mcp.test.mjs` (API-003) |  |
 | `ENTITY-001` | Multiple entities and management consolidation | target | missing |  | One entity per installation; no consolidation or eliminations |
 | `ENTITY-002` | Multi-currency planning | target | missing |  | One reporting currency; no rate tables or translation |
 | `US-001` | US defaults | target | partial | `src/easel/setup.ts` `src/easel/csv.ts` | Currency is chosen at setup and CSV dates accept MM/DD/YYYY; the default is AUD, `$` formatting applies only to AUD, and US time zones and tax defaults are missing |
