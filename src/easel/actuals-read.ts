@@ -76,5 +76,5 @@ export async function rowsFor(db: D1Database, s: State, month: string, line: str
   const v = JSON.parse(r.value), mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })
   if (mapping.blocked || mapping.target !== line || mapping.department !== department) return []
   return [{ file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
- }).slice(0, 200)
+ })
 }

@@ -100,7 +100,9 @@ Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, r
 
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
-*Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
+Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+*Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
 
@@ -109,7 +111,9 @@ Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pul
 
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
-*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
+Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
 
@@ -118,7 +122,9 @@ Finance connects NetSuite through token-based authentication or OAuth 2.0 with a
 
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
-*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
+Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
 
@@ -127,7 +133,9 @@ A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it throug
 
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
-*Acceptance:* two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
+Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+*Acceptance:* two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
 
@@ -136,7 +144,9 @@ Finance connects Sage Intacct with a Web Services sender ID and a read-only web-
 
 Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
 
-*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
+Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
+
+*Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
 
@@ -168,9 +178,11 @@ Before balance-sheet actuals ship, CONNECT-007 inherits CONNECT-006: single-acco
 #### CONNECT-008 — Drill-through to the ledger transaction.
 Every actual cell drills to the accepted rows behind it (as `EASEL-013` does for files). For a connected source, each row also links to the transaction in QuickBooks Online, Xero, NetSuite, Sage Intacct or Pantry, under the same role filtering as `EASEL-007`.
 
+All accepted CSV rows behind each variance cell are available, without an evidence sample cap, under the existing department filtering. Current CSV doors satisfy CONNECT-008. CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004 and CONNECT-011 inherit provider transaction links and their provider-fake follow-link journeys before shipping.
+
 *Acceptance:* in the browser at 1440 and 390, open a variance cell, see its rows, and follow a row's link to the provider-fake transaction URL; a viewer sees amounts without another department's rows.
 
-*Status:* partial.
+*Status:* done. Acceptance: `tests/drillthrough.test.mjs`, `tests/easel.test.mjs` and `tests/mapping-rules-browser.mjs` (CONNECT-008).
 
 #### CONNECT-009 — Bank balances for current cash.
 Finance can connect bank accounts read-only through Plaid (balances and transactions). Current cash position and daily balance movement then feed the cash alerts (`REPORT-006`) and the 13-week view (`FIN-007`) between ledger closes, labelled as bank balances rather than ledger actuals. Easel never initiates a payment or transfer.
@@ -825,8 +837,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 12 | 35 | 39 | 86 |
-| All | 29 | 35 | 39 | 103 |
+| Target and push further | 13 | 34 | 39 | 86 |
+| All | 30 | 34 | 39 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -855,7 +867,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CONNECT-005` | Scheduled refresh with visible freshness | target | missing |  | No scheduled handler, freshness display, refresh failure state or restatement notice |
 | `CONNECT-006` | Mapping rules that survive refresh | target | done | `src/easel/account-rules.ts`, `src/easel/actuals-read.ts`, `tests/mapping-rules.test.mjs`, `tests/mapping-rules-browser.mjs` | Current CSV exact/range/prefix/type rules, automatic match listing, reviewed fingerprints and period-dependent blocking; future connectors, balance-sheet targets and dimensions inherit the obligation in their clauses |
 | `CONNECT-007` | Balance-sheet actuals and the trial balance | target | partial | `src/easel/actuals.ts` | Only the cash balance account maps to the balance sheet; other balance-sheet balances, a zero-sum trial balance and a forecast balance sheet opened from actuals are missing |
-| `CONNECT-008` | Drill-through to the ledger transaction | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Variance cells drill to accepted file rows with role filtering; links to the provider transaction need connectors |
+| `CONNECT-008` | Drill-through to the ledger transaction | target | done | `src/easel/actuals-read.ts`, `src/easel/review.ts`, `tests/drillthrough.test.mjs`, `tests/mapping-rules-browser.mjs` | Every accepted CSV row is drillable under inherited department filtering; future connectors carry provider links and browser assertions before shipping |
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |
 | `CONNECT-010` | Connection custody and status | target | missing |  | No connector credential storage, Connections page or token revocation |
 | `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 or 5-4-4 calendars are missing |

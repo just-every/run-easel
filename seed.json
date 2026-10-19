@@ -138,6 +138,12 @@
       "clauses": [
         "CONNECT-006"
       ]
+    },
+    {
+      "id": "accepted-row-drillthrough",
+      "clauses": [
+        "CONNECT-008"
+      ]
     }
   ],
   "nonGoals": [

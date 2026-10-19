@@ -59,7 +59,7 @@ export async function seedMappingReview(context, origin, services) {
  const { forecast } = await api(context, origin, 'command/approve-budget', { scenario: budget.id, revision: current.scenario.revision })
  await api(context, origin, 'command/close-month', { scenario: forecast.id, month: '2026-01' })
  const rule = await api(context, origin, 'command/account-rule', { match: 'prefix', from: 'FEB-', target: services.id })
- const source = { filename: 'february-services.csv', csv: 'Date,Account,Department,Amount,Description\n2026-02-15,FEB-retainer,US Sales,-15000,February consulting retainer\n', columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount', description: 'Description' }, dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive' }
+ const source = { filename: 'february-services.csv', csv: 'Date,Account,Department,Amount,Description\n' + Array.from({ length: 12 }, (_, i) => `2026-02-15,FEB-retainer,US Sales,-1250,February consulting retainer ${i+1}`).join('\n') + '\n', columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount', description: 'Description' }, dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive' }
  const preview = await api(context, origin, 'import/actuals/preview', source)
  await api(context, origin, 'import/actuals/commit', { ...source, fingerprint: preview.fingerprint })
  await api(context, origin, 'command/close-month', { scenario: forecast.id, month: '2026-02' })
@@ -73,7 +73,8 @@ export async function mappingReviewJourney(browser, root, origin, evidence, widt
   const variance = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Variances, Feb 2026', exact: true }) })
   await variance.locator('summary').first().click()
   await variance.getByRole('region', { name: 'Accepted rows', exact: true }).waitFor()
-  assert.match(await variance.innerText(), /February consulting retainer/)
+  assert.match(await variance.innerText(), /February consulting retainer 12/)
+  assert.equal(await variance.getByRole('region', { name: 'Accepted rows', exact: true }).getByRole('row').count(), 13, 'CONNECT-008 displays every row beyond the former eight-row sample')
   await noOverflow(page, `CONNECT-006 CONNECT-008 complete review ${width}`)
   await page.screenshot({ path: join(evidence, `mapping-${width}-review-complete.png`), fullPage: true })
   await page.getByLabel('Month', { exact: true }).selectOption('2026-01')

@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "e8e27bfdd1d1496fa22753d7d5eaa66d36bac3347ed3b895810156d84142bd7b",
+      "sha256": "cfe6669629e69bd6bfad25599c278f0be48ceecd8db49b3d9407e807967a9195",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "210e827eaa37bca6c52a6fa3de1e473cd350b0a0b6e0fafa121fb5d48186a7c2",
+      "sha256": "23c86a7ae76b47db8eec7c54d15d1994b4f473f577617b0fd8b21ae4c0dce461",
       "executable": false
     },
     "DEMO.md": {
@@ -463,7 +463,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "5f0ccc50318da3400e2a1a90c530470c51e6d01b9b2d483370b578f19bbb074b",
+      "sha256": "36189d69db584a6bddf5d00045f6de23473b504541d5786197caa7e91e38d9ac",
       "executable": false
     },
     "SOURCE.md": {
@@ -603,7 +603,7 @@
       "executable": false
     },
     "src/easel/actuals-read.ts": {
-      "sha256": "1e35b432b39138d9a43420467229ed0cd9f417c4adbf0584234d7a7c89f41f7b",
+      "sha256": "b5ab1577bc2ac3a7e953fdf93769c0ae10c9c496710dd114098b9cb02ee4db23",
       "executable": false
     },
     "src/easel/actuals.ts": {
@@ -715,7 +715,7 @@
       "executable": false
     },
     "src/easel/review.ts": {
-      "sha256": "e0d550f53f7e9ffce1423f7c42cc805b842b7f17020e4a84535d036f684ac2e4",
+      "sha256": "90dd35bbd08d5a54544468b5422d3e10a9d19f5046ae36f8f43fc4da58d17043",
       "executable": false
     },
     "src/easel/semantic.ts": {
@@ -2606,6 +2606,10 @@
       "sha256": "71c085340ee2875344717f88c4ba3a08c25253a9789f93d778e3d4543c28b057",
       "executable": false
     },
+    "tests/drillthrough.test.mjs": {
+      "sha256": "4b326ba2b62b847b20b7b5880dc35fbe122b30c75550091b81172d1ae1ad20ea",
+      "executable": false
+    },
     "tests/easel-worker.ts": {
       "sha256": "77503bd3867493d3c3398da38c7e2b90cfaf7e29f952ef5280dd47c49eb0cf8c",
       "executable": false
@@ -2639,7 +2643,7 @@
       "executable": false
     },
     "tests/mapping-rules-browser-journey.mjs": {
-      "sha256": "0cd44e50c400b4edc3181de34c8a7d71a510da3ee08817f92ce398dfc15e87d6",
+      "sha256": "8529bf23c1df3ca78d3a8cc761637b183959f750ac8bd23c683116154822ed5d",
       "executable": false
     },
     "tests/mapping-rules-browser.mjs": {

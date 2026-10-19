@@ -52,7 +52,7 @@ export async function variance(c: Context, month: string) {
   const v = a - bud
   const revenue = l?.type === 'revenue'
   const detail = seesDepartmentDetail(c.x, department)
-  const citations = detail ? (await rowsFor(c.db, s, month, line, department)).slice(0, 8) : []
+  const citations = detail ? (await rowsFor(c.db, s, month, line, department)) : []
   const planSources = detail ? (planned.get(k)?.sources ?? []).map(x => x.trace) : []
   // A budgeted item in the neighbouring month that matches the difference
   // suggests timing. It stays a hypothesis until the department confirms it.
