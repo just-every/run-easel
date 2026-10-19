@@ -114,6 +114,10 @@
       "sha256": "a0e27aeeac42d6102f4ff2bce40d8fb011c07e5cb28eff3c9d77e68df29e5dd6",
       "executable": false
     },
+    ".publish-check/reviewed.json": {
+      "sha256": "435a6ec9958a92f9316a645a77a11f0a790a825b2e40f6c509cc43ef49a07b40",
+      "executable": false
+    },
     "ACCEPTANCE.md": {
       "sha256": "69e02aeb4102b459f01daa2d51810e1afd35b4844891f9ba75379bfa0406c09f",
       "executable": false
@@ -139,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "732af0dd47bd95f76c4d6298eefd1087628ea49835c5eb5523d0d1d6530ebeba",
+      "sha256": "0ea86dcc9d7d1c736311234aacee93068d597a13eb4dbb6fe8f439d0756267d3",
       "executable": false
     },
     "DEMO.md": {
