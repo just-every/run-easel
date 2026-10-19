@@ -185,7 +185,7 @@ one recorded run against the provider's sandbox before acceptance.
 
 | Clause | Status | Acceptance evidence |
 |---|---|---|
-| `MOBILE-001` — Review and approve at phone width | partial | The browser journeys at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page. |
+| `MOBILE-001` — Review and approve at phone width | done | `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001). The browser journeys at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page. |
 | `MOBILE-002` — Native iOS and Android apps | missing | A native test build on an iOS simulator and an Android emulator signs in against a running Easel, receives a push for a cash alert through a push fake, and approves a pending proposal. |
 | `HOST-001` — Hosted operation on the buyer's Cloudflare account | partial | A deploy to a test Cloudflare account, a health check, a scheduled refresh run, a delivered invite email and a restore from backup. |
 

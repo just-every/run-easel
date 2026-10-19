@@ -20,7 +20,7 @@ const root = existing ? process.cwd() : await fresh()
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-browser-proof')
 await mkdir(evidence, { recursive: true })
 let second, server, browser
-const launch = async () => { let installed = true; try { await access(chromium.executablePath()) } catch { installed = false } return chromium.launch({ headless: true, ...(installed ? {} : { channel: 'chrome' }) }) }
+const launch = () => chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
 
 /** Everything a restored owner should see again: the model, every scenario's outputs, approvals and packs. */
 async function picture(context, origin) {

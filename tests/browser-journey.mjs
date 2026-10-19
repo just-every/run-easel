@@ -29,7 +29,7 @@ export async function api(context, origin, path, body) {
  return value
 }
 
-const tab = (page, name) => page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name, exact: true }).click()
+const tab = async (page, name) => { await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name, exact: true }).click(); await settle(page); await noOverflow(page, `MOBILE-001 ${name}`) }
 const card = (page, heading) => page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
 const fill = (scope, label, value) => scope.getByLabel(label, { exact: true }).fill(String(value))
 const pick = (scope, label, value) => scope.getByLabel(label, { exact: true }).selectOption(value)
@@ -59,7 +59,7 @@ async function onFailure(evidence, name, run) {
  }
 }
 
-async function shoot(page, evidence, name) { await settle(page); await page.screenshot({ path: join(evidence, `${name}.png`), fullPage: true }) }
+async function shoot(page, evidence, name) { await settle(page); await noOverflow(page, `MOBILE-001 ${name}`); await page.screenshot({ path: join(evidence, `${name}.png`), fullPage: true }) }
 
 async function everyTab(page, evidence, who, width) {
  for (const name of await page.getByRole('navigation', { name: 'Easel' }).getByRole('button').allInnerTexts()) {
@@ -70,10 +70,9 @@ async function everyTab(page, evidence, who, width) {
  }
 }
 
-/** At 1440: set up the plan, move in July's actuals, build the budget with two departments, approve it and close July. */
-export const planningJourney = (browser, root, origin, evidence) => onFailure(evidence, 'planning', pages => planning(browser, root, origin, evidence, pages))
-async function planning(browser, root, origin, evidence, pages) {
- const width = 1440
+/** MOBILE-001: at the requested width, set up the plan, move in July's actuals, build the budget with two departments, approve it and close July. */
+export const planningJourney = (browser, root, origin, evidence, width = 1440) => onFailure(evidence, 'planning', pages => planning(browser, root, origin, evidence, pages, width))
+async function planning(browser, root, origin, evidence, pages, width) {
  const finance = await session(browser, root, origin, 'owner', width, pages)
  const p = finance.page
  await fill(p, 'Company name', 'Harbour Analytics (fixture)')
@@ -188,9 +187,11 @@ async function planning(browser, root, origin, evidence, pages) {
  await tab(engineering.page, 'Budget cycle')
  await press(engineering.page, 'Submit Engineering')
  await engineering.page.getByRole('row').filter({ hasText: 'Engineering' }).getByText('submitted', { exact: true }).waitFor()
+ await noOverflow(engineering.page, 'MOBILE-001 engineering submitted')
 
  await p.reload(); await tab(p, 'Budget cycle')
  const approve = p.getByRole('button', { name: /^Approve and freeze revision \d+$/ })
+ await shoot(p, evidence, `${width}-finance-approval-review`)
  const reviewedRevision = Number((await approve.innerText()).match(/\d+$/)[0])
  await approve.click()
  await p.getByText(/Approved by .+ at .+revision \d+/).waitFor()
@@ -224,10 +225,9 @@ async function planning(browser, root, origin, evidence, pages) {
  return { width, steps: ['setup', 'settings', 'july-actuals', 'budget', 'submissions', 'approval', 'close-july', 'trace', 'viewer'] }
 }
 
-/** At 390: August actuals, close, explain, publish the pack, branch a downside, a contributor proposal, and the workbook move-in. */
-export const reviewJourney = (browser, root, origin, evidence) => onFailure(evidence, 'review', pages => review(browser, root, origin, evidence, pages))
-async function review(browser, root, origin, evidence, pages) {
- const width = 390
+/** MOBILE-001: August actuals, close, explain, publish the pack, branch a downside, a contributor proposal, and the workbook move-in. */
+export const reviewJourney = (browser, root, origin, evidence, width = 390) => onFailure(evidence, 'review', pages => review(browser, root, origin, evidence, pages, width))
+async function review(browser, root, origin, evidence, pages, width) {
  const finance = await session(browser, root, origin, 'finance', width, pages)
  const p = finance.page
  await tab(p, 'Actuals')
@@ -333,9 +333,21 @@ async function review(browser, root, origin, evidence, pages) {
  await press(sales.page, 'Submit for approval')
  await sales.page.getByRole('cell', { name: 'submitted', exact: true }).waitFor()
  await p.reload(); await tab(p, 'Scenarios')
- await p.getByRole('button', { name: /^Promote revision \d+$/ }).click()
+ await shoot(p, evidence, `${width}-finance-promotion-review`)
+ const promote = p.getByRole('button', { name: /^Promote revision \d+$/ })
+ const promotionRevision = Number((await promote.innerText()).match(/\d+$/)[0])
+ await promote.click()
  await p.getByRole('cell', { name: 'promoted', exact: true }).waitFor()
  await shoot(p, evidence, `${width}-finance-proposal-promoted`)
+ const promotedState = await api(finance.context, origin, 'state')
+ const promoted = promotedState.scenarios.find(s => s.name === 'Delay the new account executive')
+ assert.equal(promoted.proposalStatus, 'promoted', 'MOBILE-001 promotion is persisted')
+ assert.equal(promoted.revision, promotionRevision, 'MOBILE-001 finance promotes the reviewed revision')
+ const target = await api(finance.context, origin, `scenario/${promoted.branchedFrom.scenario}`)
+ assert.ok(target.inputs.position.some(i => i.title === 'Account executive' && i.start === '2027-01'), 'MOBILE-001 promoted hire reads back from the target')
+ await tab(p, 'Overview')
+ await assertDashboard(p, finance.context, origin)
+ await shoot(p, evidence, `${width}-finance-dashboard`)
 
  // The Excel planning workbook moves in as its own scenario.
  await tab(p, 'Actuals')
@@ -357,4 +369,21 @@ async function review(browser, root, origin, evidence, pages) {
  await everyTab(board.page, evidence, 'board', width)
  for (const s of [finance, sales, board]) await s.context.close()
  return { width, steps: ['august-actuals', 'close-august', 'explanations', 'pack', 'downside', 'proposal', 'workbook', 'viewer'] }
+}
+
+/** MOBILE-001: read the live dashboard, including every monthly cash value. */
+async function assertDashboard(page, context, origin) {
+ const state = await api(context, origin, 'state')
+ const forecast = state.scenarios.find(s => s.kind === 'forecast')
+ const view = await api(context, origin, `scenario/${forecast.id}`)
+ await page.getByLabel('Scenario', { exact: true }).selectOption(forecast.id)
+ await page.getByRole('heading', { name: 'Profit and loss', exact: true }).waitFor()
+ const table = page.getByRole('table', { name: 'Monthly cash', exact: true })
+ const closing = table.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Closing', exact: true }) })
+ await closing.waitFor()
+ const format = n => `${n < 0 ? '-' : ''}${view.workspace.currency === 'AUD' ? '$' : view.workspace.currency + ' '}${(Math.abs(n) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+ assert.deepEqual((await closing.getByRole('cell').allInnerTexts()).slice(1), view.calculation.cash.map(c => format(c.closing)), 'MOBILE-001 dashboard cash equals the public API')
+ await page.getByRole('img', { name: /Closing cash by month/ }).waitFor()
+ for (const warning of view.calculation.warnings) await page.getByText(warning, { exact: true }).waitFor()
+ await noOverflow(page, 'MOBILE-001 live dashboard and cash warnings')
 }

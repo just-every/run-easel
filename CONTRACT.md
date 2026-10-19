@@ -624,11 +624,11 @@ Besides the `rer export` archive (`EASEL-016`), finance can download the whole p
 ### Anywhere
 
 #### MOBILE-001 — Review and approve at phone width.
-Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal.
+Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001` to `CYCLE-006`, `REPORT-001` to `REPORT-007`, `AGENT-001` to `AGENT-011`) inherit the same 390-pixel obligation before they ship.
 
 *Acceptance:* the browser journeys at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page.
 
-*Status:* partial.
+*Status:* done. Acceptance: `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001).
 
 #### MOBILE-002 — Native iOS and Android apps.
 Native iOS and Android apps sign in as the person and show dashboards, alerts, tasks, approvals and comments. Push notifications cover alerts (`REPORT-006`), tasks (`CYCLE-001`, `CYCLE-002`), approvals and mentions. The apps hold no data offline beyond what the person may read, and sign-out wipes it.
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 7 | 39 | 40 | 86 |
-| All | 24 | 39 | 40 | 103 |
+| Target and push further | 8 | 38 | 40 | 86 |
+| All | 25 | 38 | 40 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -903,7 +903,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | missing |  | No Anaplan, Runway or Pigment import |
 | `MOVE-004` | A parallel month against the old tool | target | missing |  | No parallel-month comparison or sign-off |
 | `PORT-001` | An export a buyer can open without Easel | target | done | `src/easel/open-export.ts`, `tests/open-export.test.mjs`, `tests/open-export-browser-journey.mjs` | Finance downloads product and import-journal table CSVs, scenario formula workbooks, model JSON, every immutable snapshot and retained original, with digest manifest; existing credential exclusions preserved |
-| `MOBILE-001` | Review and approve at phone width | target | partial | `tests/browser-journey.mjs` | Actuals move-in, month close and explanation are journeyed at 390 with overflow checks; submission, approval, promotion and dashboards at 390 are not journeyed |
+| `MOBILE-001` | Review and approve at phone width | target | done | `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001): complete planning/review journeys at 390, persisted exact-revision approval/promotion, dashboard cash equals API, page overflow checks |  |
 | `MOBILE-002` | Native iOS and Android apps | target | missing |  | No native apps or push notifications |
 | `HOST-001` | Hosted operation on the buyer's Cloudflare account | target | partial | `tests/browser.mjs` `deploy.json` | `rer deploy --dry-run` runs; a real deployment, scheduled handler, delivered mail and hosted backup and restore are not exercised |
 | `AGENT-001` | Constraint watch | push-further | partial | `src/easel/engine.ts` `src/easel/views.ts` | Cash forecasts and scenario comparisons exist; constraints, refresh-triggered checks, decision items and cause tracing to sources are missing |

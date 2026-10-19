@@ -41,7 +41,7 @@ export async function command(root, args, { expected = 0 } = {}) {
 }
 
 export async function start(root, port, mode = 'dev') {
- const child = spawn(process.execPath, __rerTestEntryArgs([__rerTestEntry, mode, '--port', String(port)]), { cwd: root, env: env(), stdio: ['ignore', 'pipe', 'pipe'] })
+ const child = spawn(process.execPath, __rerTestEntryArgs([__rerTestEntry, mode, '--port', String(port)]), { cwd: root, env: env(), detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
  let output = ''
  for (const stream of [child.stdout, child.stderr]) stream.on('data', c => { output += c })
  const deadline = Date.now() + 20 * 60 * 1000
@@ -50,12 +50,12 @@ export async function start(root, port, mode = 'dev') {
   if (child.exitCode !== null) throw new Error(`${mode} exited: ${clean(output).slice(-4000)}`)
   await new Promise(r => setTimeout(r, 250))
  }
- if (!ready()) { await command(root, [mode, '--stop']); child.kill('SIGTERM'); throw new Error(`${mode} readiness timed out`) }
+ if (!ready()) { process.kill(-child.pid, 'SIGTERM'); throw new Error(`${mode} readiness timed out`) }
  return {
   origin: `http://127.0.0.1:${port}`,
   // Only the browser consumes this credential; never include it in logs or reports.
   openUrl: output.match(/^RER_OPEN (\S+)/m)?.[1],
-  async close() { await command(root, [mode, '--stop']); if (child.exitCode === null) { child.kill('SIGTERM'); await new Promise(r => child.once('exit', r)) } },
+  async close() { if (child.exitCode === null) { const exited = new Promise(r => child.once('exit', r)); process.kill(-child.pid, 'SIGTERM'); await exited } },
  }
 }
 

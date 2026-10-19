@@ -23,6 +23,10 @@ jobs:
       - run: node tests/browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof
+      - name: MOBILE-001 phone planning and review
+        run: node tests/mobile.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/mobile
       - uses: actions/upload-artifact@v4
         if: always()
         with:

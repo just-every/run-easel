@@ -108,6 +108,12 @@
       "clauses": [
         "FIN-004"
       ]
+    },
+    {
+      "id": "phone-width-planning",
+      "clauses": [
+        "MOBILE-001"
+      ]
     }
   ],
   "nonGoals": [
