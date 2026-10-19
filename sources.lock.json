@@ -811,7 +811,7 @@
       "executable": false
     },
     "src/easel/pack-documents.ts": {
-      "sha256": "6bb2af9609927d3fb971170e9b1d2971126f82590428e98ee8893d43fb92d96c",
+      "sha256": "f85003a394a6fa1fe41af2c6f216de78c31caade061493003b3b72b9ecf14292",
       "executable": false
     },
     "src/easel/pack-workbook.ts": {
