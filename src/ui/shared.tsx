@@ -70,7 +70,7 @@ export const options = (rows: D[], label = 'name'): { value: string; label: stri
 
 export function ScenarioPicker({ scenarios, value, onChange, label = 'Scenario' }: { scenarios: D[]; value: string; onChange: (id: string) => void; label?: string }) {
  const selectedId = useId()
- const description = (s: D) => `${s.name} · ${s.kind}${s.status === 'frozen' ? ' (approved)' : s.status === 'closed' ? ' (closed)' : ''}`
+ const description = (s: D) => `${s.name} · ${s.kind}${s.status === 'frozen' ? s.kind === 'reforecast' ? ' (frozen)' : ' (approved)' : s.status === 'closed' ? ' (closed)' : ''}`
  const selected = scenarios.find(s => s.id === value)
  const longName = selected && description(selected).length > 32 ? description(selected) : ''
  return <label className="scenario-picker">{label}<select aria-label={label} aria-describedby={longName ? selectedId : undefined} value={value} onChange={e => onChange(e.target.value)}>{scenarios.map(s => <option key={s.id} value={s.id}>{description(s)}</option>)}</select>{longName && <small id={selectedId} className="selected-option">{longName}</small>}</label>

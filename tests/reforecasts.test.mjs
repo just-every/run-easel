@@ -1,0 +1,130 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { harness } from './harness.mjs'
+import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
+
+test('CYCLE-005 exact-revision named reforecasts freeze complete models; actual compares with budget, every named version and current forecast in reports', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Harbour Analytics', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const dept = await h.command('department', { name: 'Sales' })
+ const revenue = await h.command('line', { name: 'Services', type: 'revenue' })
+ const payroll = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ const driver = { name: 'Consulting', kind: 'volume', department: dept.id, line: revenue.id, start: '2026-01', startVolume: '10', rate: '100', growthPercent: '0', collectionLag: 0 }
+ await h.command('revenue', { scenario: budget.id, ...driver })
+ await h.command('position', { scenario: budget.id, title: 'Sales lead', holder: 'Private compensation', department: dept.id, line: payroll.id, start: '2026-01', annualSalary: '120000', onCostPercent: '0' })
+ const approved = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })
+ const forecast = approved.forecast
+ const sales = await h.person('sales@example.test', 'contributor', [dept.id]), viewer = await h.person('board@example.test', 'viewer')
+ let source = await h.get(`/api/easel/scenario/${forecast.id}`)
+ const edit = async rate => h.command('revenue', { ...driver, id: source.inputs.revenue[0].id, scenario: forecast.id, rate })
+ await edit('120')
+ source = await h.get(`/api/easel/scenario/${forecast.id}`)
+ const save = { from: forecast.id, revision: source.scenario.revision, name: 'Q2 reforecast' }
+ for (const cookie of [sales, viewer]) await h.command('reforecast-save', save, cookie, 403)
+ const countBefore = (await h.get('/api/easel/state')).snapshots.length
+ await h.command('reforecast-save', { ...save, revision: source.scenario.revision - 1 }, h.owner, 409)
+ assert.equal((await h.get('/api/easel/state')).snapshots.length, countBefore)
+ const q2 = await h.command('reforecast-save', save)
+ const q2View = await h.get(`/api/easel/scenario/${q2.id}`)
+ const q2Snapshot = await h.get(`/api/easel/snapshot/${q2.reforecast.snapshot}`)
+ assert.deepEqual(q2Snapshot.body.sourceScenario, source.scenario)
+ assert.equal(q2.status, 'frozen')
+ assert.equal(q2.revision, source.scenario.revision)
+ assert.deepEqual(q2View.calculation, source.calculation)
+ assert.deepEqual(q2View.inputs, source.inputs)
+ assert.deepEqual(q2View.lines, source.lines)
+ assert.deepEqual(q2View.departments, source.departments)
+ assert.deepEqual(q2View.workspace, source.workspace)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${forecast.id}`), source, 'saving leaves the source unchanged')
+ await h.command('reforecast-save', { ...save, name: ' q2 REFORECAST ' }, h.owner, 409)
+ for (const [op, body] of [
+  ['revenue', { ...driver, scenario: q2.id }],
+  ['scenario-cash', { scenario: q2.id, basis: 'estimate', opening: '1' }],
+  ['scenario-adopt', { from: forecast.id, into: q2.id, revision: q2.revision }],
+  ['scenario-delete', { id: q2.id }],
+ ]) await h.command(op, body, h.owner, 409)
+ for (const sql of ["UPDATE e_snapshots SET label='changed' WHERE id=?", 'DELETE FROM e_snapshots WHERE id=?']) await assert.rejects(h.db.prepare(sql).bind(q2.reforecast.snapshot).run(), /snapshots are immutable/)
+ await edit('140')
+ source = await h.get(`/api/easel/scenario/${forecast.id}`)
+ const q3 = await h.command('reforecast-save', { from: forecast.id, revision: source.scenario.revision, name: 'Q3 reforecast' })
+ const q3Before = await h.get(`/api/easel/scenario/${q3.id}`)
+ await edit('160')
+ await h.command('account-map', { account: '400', target: revenue.id })
+ await h.command('department-map', { source: 'Sales', department: dept.id })
+ const actuals = { filename: 'january.csv', csv: 'Date,Account,Department,Amount\n' + Array.from({ length: 13 }, (_, i) => `${i === 12 ? '2027-01' : `2026-${String(i + 1).padStart(2, '0')}`}-01,400,Sales,-900\n`).join(''), columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount' }, dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive' }
+ const preview = await h.kit('actuals', 'preview', actuals)
+ await h.kit('actuals', 'commit', { ...actuals, fingerprint: preview.fingerprint })
+ await h.command('forecast-window', { scenario: forecast.id, revision: (await h.get(`/api/easel/scenario/${forecast.id}`)).scenario.revision, months: 18 })
+ await h.command('close-month', { scenario: forecast.id, month: '2026-01' })
+ const v = await h.get('/api/easel/variance/2026-01')
+ assert.deepEqual(v.versions.map(version => version.id), [budget.id, q2.id, q3.id, forecast.id])
+ const row = v.rows.find(row => row.line === revenue.id && row.department === dept.id)
+ assert.equal(row.actual, 90000)
+ assert.equal(row.priorForecast, 160000)
+ assert.deepEqual(row.comparisons, [
+  { id: budget.id, amount: 100000, variance: -10000 },
+  { id: q2.id, amount: 120000, variance: -30000 },
+  { id: q3.id, amount: 140000, variance: -50000 },
+  { id: forecast.id, amount: 90000, variance: 0 },
+ ])
+ const comparison = await h.get(`/api/easel/compare?a=${q2.id}&b=${forecast.id}`)
+ assert.deepEqual(comparison.left.profit, q2View.calculation.profit)
+ assert.deepEqual(comparison.changedCells.find(c => c.line === revenue.id && c.month === '2026-01'), { line: revenue.id, department: dept.id, month: '2026-01', before: 120000, after: 90000, difference: -30000 })
+ const bytes = async path => { const response = await h.mf.dispatchFetch(h.origin + path, { headers: { cookie: viewer } }); assert.equal(response.status, 200); return response.arrayBuffer() }
+ const report = await readWorkbook(await bytes('/api/easel/variance/2026-01/document.xlsx')); proveFormulas(report)
+ const sheet = report.getWorksheet('Version comparison'), reportRow = sheet.getColumn(1).values.findIndex(name => name === 'Services')
+ assert.deepEqual([3, 4, 6, 8, 10].map(col => sheet.getCell(reportRow, col).value), [90000, 100000, 120000, 140000, 90000])
+ assert.deepEqual([5, 7, 9, 11].map(col => sheet.getCell(reportRow, col).result), [-10000, -30000, -50000, 0])
+ const book = await readWorkbook(await bytes(`/api/easel/compare.xlsx?a=${q2.id}&b=${forecast.id}`)); proveFormulas(book)
+ assert.ok(!JSON.stringify(book.model).includes('Private compensation'))
+ const absentRow = book.getWorksheet('Comparison').getColumn(1).values.findIndex(month => month === '2027-01')
+ assert.equal(book.getWorksheet('Comparison').getCell(absentRow, 2).value, null)
+ assert.equal(book.getWorksheet('Comparison').getCell(absentRow, 4).value, null)
+ const pack = await h.command('pack-create', { month: '2026-01' })
+ const published = await h.command('pack-publish', { pack: pack.id })
+ const packBefore = await h.get(`/api/easel/snapshot/${published.snapshot}`)
+ assert.deepEqual(packBefore.body.versionComparison.versions, v.versions)
+ assert.deepEqual(packBefore.body.versionComparison.rows.find(r => r.key === row.key).comparisons, row.comparisons)
+ const packBook = await readWorkbook(await bytes(`/api/easel/pack/${pack.id}/document.xlsx`)); proveFormulas(packBook)
+ assert.equal(packBook.getWorksheet('Version comparison').getCell(reportRow, 6).value, 120000)
+ const packHtml = await h.get(`/api/easel/pack/${pack.id}/document.html`, viewer)
+ const packCsv = await h.get(`/api/easel/pack/${pack.id}/document.csv`, viewer)
+ assert.match(packHtml, /Q2 reforecast/)
+ assert.match(packHtml, /USD 1,200.00/)
+ assert.ok(packCsv.split('\r\n').includes(`version-comparison,Services,Sales,90000,,,,,Q2 reforecast,USD,120000,"'-30000"`), 'CSV retains the exact signed variance with its existing spreadsheet escaping')
+ const filtered = await h.get(`/api/easel/scenario/${q2.id}`, viewer)
+ assert.deepEqual(filtered.inputs.position, [])
+ assert.ok(!JSON.stringify(filtered).includes('Private compensation'))
+ assert.ok(!JSON.stringify(await h.get(`/api/easel/snapshot/${q2.reforecast.snapshot}`, viewer)).includes('Private compensation'))
+ assert.deepEqual((await h.get(`/api/easel/scenario/${q2.id}`, sales)).inputs.position, q2View.inputs.position)
+ const branch = await h.command('branch', { from: q2.id, name: 'From Q2' })
+ const branched = await h.get(`/api/easel/scenario/${branch.id}`)
+ assert.deepEqual(branched.calculation.lineTotals, q2View.calculation.lineTotals)
+ const disposable = await h.command('branch', { from: forecast.id, name: 'Temporary working source' })
+ const saved = await h.command('reforecast-save', { from: disposable.id, revision: disposable.revision, name: 'Archived source' })
+ const savedBefore = await h.get(`/api/easel/scenario/${saved.id}`)
+ await h.command('scenario-delete', { id: disposable.id })
+ assert.deepEqual(await h.get(`/api/easel/scenario/${saved.id}`), savedBefore)
+ // Reports distinguish missing frozen periods from zero after the rolling forecast extends.
+ for (let i = 1; i <= 12; i++) await h.command('close-month', { scenario: forecast.id, month: i === 12 ? '2027-01' : `2026-${String(i + 1).padStart(2, '0')}` })
+ const outside = await h.get('/api/easel/variance/2027-01')
+ const outsideRow = outside.rows.find(r => r.line === revenue.id && r.department === dept.id)
+ for (const id of [budget.id, q2.id, q3.id]) assert.deepEqual(outsideRow.comparisons.find(v => v.id === id), { id, amount: null, variance: null })
+ assert.deepEqual(outsideRow.comparisons.find(v => v.id === forecast.id), { id: forecast.id, amount: 90000, variance: 0 })
+ // Changed live metadata and currency cannot alter captured models or arithmetic.
+ await h.command('line', { ...revenue, name: 'Renamed live services' })
+ await h.command('department', { ...dept, name: 'Renamed live Sales' })
+ await h.command('workspace', { name: 'Renamed live company', currency: 'AUD', fiscalYearStart: 1, planStart: '2026-01' })
+ assert.deepEqual(await h.get(`/api/easel/scenario/${q2.id}`), q2View)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${q3.id}`), q3Before)
+ assert.deepEqual(await h.get(`/api/easel/snapshot/${q2.reforecast.snapshot}`), q2Snapshot)
+ assert.deepEqual(await h.get(`/api/easel/snapshot/${published.snapshot}`), packBefore)
+ assert.equal(await h.get(`/api/easel/pack/${pack.id}/document.html`, viewer), packHtml)
+ assert.equal(await h.get(`/api/easel/pack/${pack.id}/document.csv`, viewer), packCsv)
+ const changedCurrency = await h.get('/api/easel/variance/2026-01')
+ assert.equal(changedCurrency.versions.find(v => v.id === q2.id).currency, 'USD')
+ assert.equal(changedCurrency.rows.find(r => r.line === revenue.id).comparisons.find(v => v.id === q2.id).variance, null)
+ const activity = await h.get('/api/easel/activity')
+ assert.ok(activity.some(e => e.action === 'reforecast-save' && e.record === q2.id))
+})

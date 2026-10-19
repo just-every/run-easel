@@ -120,6 +120,12 @@
       "clauses": [
         "FIN-005"
       ]
+    },
+    {
+      "id": "named-reforecasts",
+      "clauses": [
+        "CYCLE-005"
+      ]
     }
   ],
   "nonGoals": [

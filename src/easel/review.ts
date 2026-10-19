@@ -11,6 +11,7 @@ import { calculate, type Calculation, type Cell } from './engine'
 import { departments, lines, model, workspace } from './model'
 import { addMonths, monthLabel, range } from './months'
 import { snapshot } from './store'
+import { versionComparison } from './version-comparison'
 import { formatMoney } from './units'
 import { all, find, get, put, requireThat, text, uid, type Access, type Data, type State } from './types'
 
@@ -32,18 +33,21 @@ export async function variance(c: Context, month: string) {
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorCalc: Calculation | null = prior ? (await snapshot(c.db, prior.snapshot)).body.calculation : null
- const actual = cellMap(calculate(model(s, forecast.id), await c.actuals()), month)
+ const currentCalc = calculate(model(s, forecast.id), await c.actuals())
+ const actual = cellMap(currentCalc, month)
+ const comparison = await versionComparison(c, forecast, budget, currentCalc, month)
  const planned = cellMap(budget.body.calculation, month)
  const kept = priorCalc ? cellMap(priorCalc, month) : new Map<string, Cell>()
  const next = cellMap(budget.body.calculation, addMonths(month, 1)), previous = cellMap(budget.body.calculation, addMonths(month, -1))
- const lineById = new Map<string, Data>([...lines(s), ...budget.body.lines].map(l => [l.id, l])), deptById = new Map<string, Data>([...departments(s), ...budget.body.departments].map(d => [d.id, d]))
+ const lineById = new Map<string, Data>([...comparison.lines, ...lines(s), ...budget.body.lines].map(l => [l.id, l])), deptById = new Map<string, Data>([...comparison.departments, ...departments(s), ...budget.body.departments].map(d => [d.id, d]))
  const money = (n: number) => formatMoney(n, w.currency)
- const keys = [...new Set([...actual.keys(), ...planned.keys(), ...kept.keys()])]
+ const keys = [...new Set([...actual.keys(), ...planned.keys(), ...kept.keys(), ...comparison.keys])]
  const rows = []
  for (const k of keys) {
   const [line, department] = k.split('|')
   const a = actual.get(k)?.amount ?? 0, bud = planned.get(k)?.amount ?? 0, f = kept.get(k)?.amount ?? 0
-  if (a === 0 && bud === 0 && f === 0) continue
+  const comparisons = comparison.comparisons(k, a)
+  if (a === 0 && bud === 0 && f === 0 && comparisons.every(v => !v.amount)) continue
   const l = lineById.get(line), d = deptById.get(department)
   const v = a - bud
   const revenue = l?.type === 'revenue'
@@ -63,11 +67,11 @@ export async function variance(c: Context, month: string) {
    ...hypotheses,
   ].filter(Boolean).join(' ')
   const saved = find(s, 'explanation', `${month}|${k}`)
-  rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation: saved ?? null })
+  rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation: saved ?? null, comparisons })
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))
  const names = await actorNames(c.db, [budget.body.approvedBy?.email, ...rows.flatMap(row => [row.explanation?.writtenBy, row.explanation?.confirmedBy])])
- return { month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, actorNames: names }
+ return { month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
 }
 
 export async function review(c: Context, op: string, b: Data): Promise<Data | undefined> {
@@ -130,6 +134,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'pack', scenario: forecast.id, label: pack.title, body: {
    title: pack.title, company: w.name, month: pack.month, currency: w.currency, status: 'published',
+   versionComparison: { currency: w.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
    budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
    lines: lineRows, profit: { month: forecastCalc.profit.find(p => p.month === pack.month), budget: budget.body.calculation.profit.find((p: Data) => p.month === pack.month) },
    assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),

@@ -44,7 +44,7 @@ export function Overview({ state, refresh }: Shared) {
     <a href={`/api/easel/scenario/${id}/document.xlsx${department ? `?department=${encodeURIComponent(department)}` : ''}`} download>Download Excel</a>
     <a href={`/api/easel/scenario/${id}/document.csv`} download>Download CSV</a>
    </div>
-   {sc && <p className="muted">Revision {sc.revision} · {sc.status === 'frozen' ? <>approved by <Person state={state} email={sc.approval?.by} /> at <span className="date-token">{sc.approval?.at?.slice(0, 19).replace('T', ' ')}</span></> : sc.status}{sc.actualsThrough ? ` · actuals through ${monthLabel(sc.actualsThrough)}` : ''}{sc.branchedFrom ? ` · branched from ${sc.branchedFrom.name} at revision ${sc.branchedFrom.revision}` : ''}</p>}
+   {sc && <p className="muted">Revision {sc.revision} · {sc.status === 'frozen' ? sc.kind === 'reforecast' ? <>frozen · saved by <Person state={state} email={sc.reforecast?.by} /> at <span className="date-token">{sc.reforecast?.at?.slice(0, 19).replace('T', ' ')}</span></> : <>approved by <Person state={state} email={sc.approval?.by} /> at <span className="date-token">{sc.approval?.at?.slice(0, 19).replace('T', ' ')}</span></> : sc.status}{sc.actualsThrough ? ` · actuals through ${monthLabel(sc.actualsThrough)}` : ''}{sc.branchedFrom ? ` · branched from ${sc.branchedFrom.name} at revision ${sc.branchedFrom.revision}` : ''}</p>}
   </div>
   {error && <p role="alert" className="error">{error}</p>}
   <div className={trace ? 'overview has-trace' : 'overview'}>

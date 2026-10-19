@@ -2,7 +2,8 @@ import { CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
 import { assumptionText } from './assumptions'
 import type { Shared } from './app'
-import { ClosingCashChart } from './chart'
+import { ScenarioComparison } from './reforecast-comparison'
+import { SaveReforecast } from './reforecast-save'
 import { Action, api, command, Field, Form, money, monthLabel, ScenarioPicker, Person, Table, type D } from './shared'
 
 /** Branches, proposals and side-by-side comparison. */
@@ -17,7 +18,6 @@ export function Scenarios({ state, refresh }: Shared) {
  const leftCurrency = cmp?.left.workspace.currency ?? state.workspace.currency
  const rightCurrency = cmp?.right.workspace.currency ?? state.workspace.currency
  useEffect(() => { let live = true; setCmp(null); if (a && b && a !== b) api(`compare?a=${a}&b=${b}`).then(v => { if (live) setCmp(v) }, e => setError(e.message)); return () => { live = false } }, [a, b, state])
- const name = (id: string) => state.scenarios.find((s: D) => s.id === id)?.name ?? '—'
  const comparedName = (kind: 'lines' | 'departments', id: string, missing: string) => {
   const left = cmp?.left[kind].find((item: D) => item.id === id)?.name ?? missing
   const right = cmp?.right[kind].find((item: D) => item.id === id)?.name ?? missing
@@ -28,7 +28,7 @@ export function Scenarios({ state, refresh }: Shared) {
   <section className="card">
    <h2>Scenarios</h2>
    <Table caption="Scenarios" heads={['Name', 'Kind', 'Status', 'Revision', 'Made from', '']}>
-    {plans.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{s.kind}</td><td>{s.status === 'frozen' ? 'approved' : s.status}</td><td className="num">{s.revision}</td><td>{s.branchedFrom ? `${s.branchedFrom.name} r${s.branchedFrom.revision}` : s.imported ? `${s.imported.file} (${s.imported.sheet})` : '—'}</td><td>
+    {plans.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{s.kind}</td><td>{s.status === 'frozen' && s.kind === 'budget' ? 'approved' : s.status}</td><td className="num">{s.revision}</td><td>{s.branchedFrom ? `${s.branchedFrom.name} r${s.branchedFrom.revision}` : s.imported ? `${s.imported.file} (${s.imported.sheet})` : '—'}</td><td>
      {me.role === 'finance' && s.kind === 'scenario' && working.filter((w: D) => w.id !== s.id && w.kind !== 'scenario').map((w: D) => <Action key={w.id} kind="quiet" label={`Use as ${w.name}`} confirm={`Replace every assumption in ${w.name} (revision ${w.revision}) with ${s.name}?`} run={async () => { await command('scenario-adopt', { from: s.id, into: w.id, revision: w.revision }); await refresh() }} />)}
      {me.role === 'finance' && s.kind === 'scenario' && <Action kind="danger" label="Delete" confirm={`Delete ${s.name}?`} run={async () => { await command('scenario-delete', { id: s.id }); await refresh() }} />}
     </td></tr>)}
@@ -37,6 +37,7 @@ export function Scenarios({ state, refresh }: Shared) {
     <Field label="Branch from" name="from" options={plans.map((s: D) => ({ value: s.id, label: s.name }))} />
     <Field label="Scenario name" name="name" defaultValue="Downside" />
    </Form>}
+   {me.role === 'finance' && <SaveReforecast scenarios={state.scenarios} refresh={refresh} />}
   </section>
 
   <section className="card">
@@ -45,12 +46,7 @@ export function Scenarios({ state, refresh }: Shared) {
    {error && <p role="alert" className="error">{error}</p>}
    {cmp && <>
     <p><a href={`/api/easel/compare.xlsx?a=${a}&b=${b}`} download>Download comparison (Excel)</a></p>
-    {cmp.currencyComparable && <ClosingCashChart ticks months={cmp.left.cash.map((c: D) => c.month)} actualsThrough={cmp.left.scenario.actualsThrough} currency={leftCurrency}
-     series={[cmp.left, cmp.right].map((side: D) => ({ name: side.scenario.name, values: side.cash.map((c: D) => c.closing) }))}
-     label={`Closing cash by month, ${cmp.left.scenario.name} and ${cmp.right.scenario.name}; ${money(cmp.left.cash.at(-1)?.closing, leftCurrency)} and ${money(cmp.right.cash.at(-1)?.closing, rightCurrency)} at ${monthLabel(cmp.left.cash.at(-1)?.month)}.`} />}
-    <Table caption={`Profit and closing cash: ${name(a)} → ${name(b)}`} heads={['Month', `Profit ${cmp.left.scenario.name}`, `Profit ${cmp.right.scenario.name}`, 'Difference', `Cash ${cmp.left.scenario.name}`, `Cash ${cmp.right.scenario.name}`, 'Difference']}>
-     {cmp.left.profit.map((p: D, i: number) => { const q = cmp.right.profit[i], c = cmp.left.cash[i], d = cmp.right.cash[i]; return <tr key={p.month}><td>{monthLabel(p.month)}</td><td className="num">{money(p.profit, leftCurrency)}</td><td className="num">{money(q.profit, rightCurrency)}</td><td className="num">{money(cmp.currencyComparable ? q.profit - p.profit : null, leftCurrency)}</td><td className="num">{money(c.closing, leftCurrency)}</td><td className="num">{money(d.closing, rightCurrency)}</td><td className="num">{money(cmp.currencyComparable ? d.closing - c.closing : null, leftCurrency)}</td></tr> })}
-    </Table>
+    <ScenarioComparison comparison={cmp} />
     <CashHealth title={`Cash health: ${cmp.left.scenario.name}`} health={cmp.left.cashHealth} currency={leftCurrency} />
     <CashHealth title={`Cash health: ${cmp.right.scenario.name}`} health={cmp.right.cashHealth} currency={rightCurrency} />
     <h3>Changed assumptions ({cmp.changedInputs.length})</h3>

@@ -102,6 +102,23 @@ export async function restoreFlow(h) {
    rows => { changeBody(rows, 'forecast', b => { b.scenario.revision++ }); const row = snapshot(rows, 'forecast'); row.sha256 = createHash('sha256').update(row.body).digest('hex') },
    rows => { changeBody(rows, 'pack', b => { b.forecast.revision-- }); const row = snapshot(rows, 'pack'); row.sha256 = createHash('sha256').update(row.body).digest('hex') },
   ]
+  if (originalRows.some(i => i.table === 'e_snapshots' && i.row.kind === 'reforecast')) {
+   const changeReforecast = (rows, mutate) => {
+    changeBody(rows, 'reforecast', mutate)
+    const row = snapshot(rows, 'reforecast')
+    row.sha256 = createHash('sha256').update(row.body).digest('hex')
+   }
+   mutations.push(
+    rows => changeBody(rows, 'reforecast', b => { b.calculation.profit[0].profit += 100 }),
+    rows => { snapshot(rows, 'reforecast').sha256 = '0'.repeat(64) },
+    rows => { const sn = snapshot(rows, 'reforecast'), row = rows.find(i => i.table === 'e_records' && i.row.kind === 'scenario' && i.row.id === sn.scenario).row; const value = JSON.parse(row.value); value.reforecast.snapshot = snapshot(rows, 'approval').id; row.value = JSON.stringify(value) },
+    // Rehashing a body cannot break its lineage, revision or full-model contract.
+    rows => changeReforecast(rows, b => { b.source.scenario = b.scenario.id }),
+    rows => changeReforecast(rows, b => { b.revision++ }),
+    rows => changeReforecast(rows, b => { delete b.inputs.schedule }),
+    rows => { const sn = snapshot(rows, 'reforecast'), row = rows.find(i => i.table === 'e_activity' && i.row.action === 'reforecast-save' && i.row.record === sn.scenario).row; const detail = JSON.parse(row.detail); detail.source = sn.scenario; row.detail = JSON.stringify(detail) },
+   )
+  }
   for (const mutate of mutations) {
    const records = await altered(original, mutate)
    await writeArchive(destination, records)

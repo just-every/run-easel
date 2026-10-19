@@ -10,7 +10,7 @@ import type { Context } from './context'
 import { calculate, type Calculation } from './engine'
 import { departments, INPUT_KINDS, lines, model, scenarioInputs, workspace } from './model'
 import { snapshot, snapshotList } from './store'
-import { approvedModel } from './approved'
+import { frozenModel } from './reforecasts'
 import { semanticEqual } from './semantic'
 import { all, find, get, requireThat, type Access, type Data, type State } from './types'
 
@@ -38,7 +38,7 @@ export async function stateView(c: Context) {
  const view = {
   me, workspace, lines: lines(s), departments: departments(s),
   members: finance ? all(s, 'member') : [],
-  scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async sc => sc.status === 'frozen' ? (await approvedModel(c, sc)).scenario : sc)),
+  scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async sc => sc.status === 'frozen' ? (await frozenModel(c, sc)).scenario : sc)),
   submissions: all(s, 'submission'),
   comments: all(s, 'comment').filter(cm => finance || x.departments.includes(cm.department)).sort((a, b) => a.at.localeCompare(b.at)),
   accountMaps: finance ? all(s, 'account-map') : [],
@@ -53,7 +53,7 @@ export async function stateView(c: Context) {
  // not portable; the persisted attribution emails remain the source of truth.
  const emails = [
   ...view.members.map(m => m.email),
-  ...view.scenarios.flatMap(sc => [sc.createdBy, sc.approval?.by, sc.promotedBy, sc.declinedBy]),
+  ...view.scenarios.flatMap(sc => [sc.createdBy, sc.approval?.by, sc.reforecast?.by, sc.promotedBy, sc.declinedBy]),
   ...view.submissions.flatMap(sub => [sub.requestedBy, sub.submittedBy, ...(sub.history ?? []).map((entry: Data) => entry.by)]),
   ...view.comments.map(cm => cm.author),
   ...[...view.batches, ...view.workbooks].flatMap(item => [item.createdBy, item.acceptedBy, item.undoneBy]),
@@ -67,7 +67,7 @@ export async function scenarioView(c: Context, id: string) {
  requireMember(c.x)
  const sc = get(c.s, 'scenario', id)
  requireThat(canSeeScenario(c.x, sc), 'Scenario not found', 404)
- const frozen = sc.status === 'frozen' ? await approvedModel(c, sc) : null
+ const frozen = sc.status === 'frozen' ? await frozenModel(c, sc) : null
  const m = frozen ?? model(c.s, id)
  const calc = frozen ? frozen.calculation : calculate(m, sc.actualsThrough ? await c.actuals() : [])
  return { cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: m.scenario, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
@@ -106,7 +106,7 @@ export async function snapshotView(c: Context, id: string) {
  requireMember(c.x)
  const sn = await snapshot(c.db, id)
  if (sn.kind === 'pack' || c.x.role === 'finance') return sn
- requireThat(sn.kind === 'approval' || c.x.role === 'contributor', 'Snapshot not found', 404)
+ requireThat(sn.kind === 'approval' || sn.kind === 'reforecast' || c.x.role === 'contributor', 'Snapshot not found', 404)
  const body = { ...sn.body, calculation: filterCalculation(c.x, sn.body.calculation), inputs: filterInputs(c.x, sn.body.inputs ?? {}) }
  return { ...sn, body }
 }

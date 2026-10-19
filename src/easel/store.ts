@@ -34,7 +34,7 @@ export async function load(db: D1Database) {
 }
 
 export type Activity = { action: string; record: string; scenario?: string; before?: number; after?: number; detail?: Data }
-export type Snapshot = { id: string; kind: 'approval' | 'forecast' | 'pack'; scenario: string; label: string; body: Data }
+export type Snapshot = { id: string; kind: 'approval' | 'forecast' | 'pack' | 'reforecast'; scenario: string; label: string; body: Data }
 
 export async function sha256(text: string) {
  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))

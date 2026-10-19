@@ -446,11 +446,11 @@ Any planner can make a private sandbox scenario that only they can see, share it
 *Status:* partial.
 
 #### CYCLE-005 — Quarterly reforecasts and version comparison.
-Besides the approved budget and the rolling forecast, finance saves named reforecast versions (for example Q2 reforecast), each frozen like a budget. Reports and variances can compare actual, budget, each reforecast and the current forecast.
+Besides the approved budget and the rolling forecast, finance saves named reforecast versions (for example Q2 reforecast), each frozen like a budget. Reports and variances can compare actual, budget, each reforecast and the current forecast. Finance saves the exact reviewed revision of a working forecast or scenario without changing its source. Names are trimmed and unique without regard to case among saved reforecasts. Each version retains its metadata, model structure, inputs and saved arithmetic through later edits, month closes, deletion of its working source and export/restore. Plan and comparison reports, monthly variances and published review packs use those saved figures. For a closed month, the current forecast includes accepted actuals. Version variance is actual minus version in integer minor units; a period outside a version's horizon has no amount or variance, and differing currencies have no variance.
 
-*Acceptance:* the API journey freezes a Q2 reforecast, closes a month, and reads actual against budget, against the Q2 reforecast and against the current forecast for the same line.
+*Acceptance:* the named `CYCLE-005` API journey freezes Q2 and Q3 reforecasts at their reviewed source revisions, refuses a stale revision and duplicate names, closes a month, and asserts actual against budget, both named reforecasts and the current forecast for the same line. It asserts every captured model and calculation remains unchanged after source edits, live metadata changes and source deletion; frozen edits are refused, and reads and exports retain existing role filtering. Named tests assert report and published-pack Excel formulas, HTML and CSV saved values, differing horizons and currency semantics. The real CLI export/restore journey retains exact snapshot bodies and SHA-256 values and refuses tampered lineage or arithmetic. A `CYCLE-005` browser journey at 1440 and 390 saves versions, edits the working forecast, closes, reads frozen plans and comparisons, and downloads the variance report as finance and a viewer.
 
-*Status:* partial.
+*Status:* done.
 
 #### CYCLE-006 — Long-range plan linked to the operating plan.
 A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headcount, cash). Year one comes from the operating budget, and later years come from annual drivers. A reconciliation shows where the bottom-up budget misses the long-range target.
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 9 | 37 | 40 | 86 |
-| All | 26 | 37 | 40 | 103 |
+| Target and push further | 10 | 36 | 40 | 86 |
+| All | 27 | 36 | 40 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -879,7 +879,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CYCLE-002` | Metric-triggered tasks | target | missing |  | No rules or automatic task creation |
 | `CYCLE-003` | Notifications from discussions and events | target | missing |  | No mention, approval or event notifications by email or chat |
 | `CYCLE-004` | Private and shared scenarios | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | Contributor proposals are visible to their author and finance; private sandboxes for any planner, sharing grants and official-scenario marking are missing |
-| `CYCLE-005` | Quarterly reforecasts and version comparison | target | partial | `src/easel/cycle.ts` `tests/easel.test.mjs` | The approved budget and kept forecasts are frozen; named reforecast versions and multi-version comparison are missing |
+| `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | missing |  | No multi-year strategic plan or target reconciliation |
 | `REPORT-001` | Report builder | target | partial | `src/ui/overview.tsx` `src/easel/views.ts` | Fixed overview, scenario and variance views ship; user-built and saved reports, year-to-date, trailing-twelve-month, prior-year and year-over-year columns, filters, highlighting and scheduled email delivery are missing |
 | `REPORT-002` | Dashboards | target | partial | `src/ui/overview.tsx` `src/ui/chart.tsx` | One fixed overview with a chart ships; configurable KPI dashboards, saved layouts and audience sharing are missing |

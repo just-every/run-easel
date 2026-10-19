@@ -131,8 +131,11 @@ test('actuals commit refuses stale account, department and reviewed metadata map
  assert.equal((await h.kit('actuals', 'commit', { ...h.body, fingerprint: p.fingerprint })).batch.status, 'accepted')
 })
 
-test('AUDIT-001 real rer import preserves the audit trail and validates immutable contents and reference revisions before atomic restore', async t => {
+test('AUDIT-001 CYCLE-005 real rer import preserves the audit trail and validates immutable contents and reference revisions before atomic restore', async t => {
  const h = await plan(t), approved = await h.approve()
+ const source = await h.command('branch', { from: approved.forecast.id, name: 'Working Q2' })
+ await h.command('reforecast-save', { from: source.id, revision: source.revision, name: 'Q2 reforecast' })
+ await h.command('scenario-delete', { id: source.id })
  const p = await h.kit('actuals', 'preview', h.body)
  await h.kit('actuals', 'commit', { ...h.body, fingerprint: p.fingerprint })
  await h.command('close-month', { scenario: approved.forecast.id, month: '2026-07' })

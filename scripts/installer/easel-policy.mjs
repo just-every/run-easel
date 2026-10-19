@@ -3,6 +3,9 @@ import { PortabilityError, sha256 } from '@runeditrun/rer/modules/portability';
 const requireValid = (ok, code) => { if (!ok) throw new PortabilityError(`easel_${code}`, 409); };
 const parse = value => { try { return JSON.parse(value); } catch { throw new PortabilityError('easel_record_json', 409); } };
 const revision = value => Number.isSafeInteger(value) && value > 0;
+const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const text = value => typeof value === 'string' && value.trim().length > 0;
+const canonical = value => JSON.stringify(value, (_, v) => object(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v);
 
 /** Product invariants shared by every Easel restore entry point. Base owns
  * archive checksums, staging and atomic publication; Easel owns its records. */
@@ -36,6 +39,17 @@ export async function validateEaselStaged(staged) {
    requireValid(sc.kind === 'forecast' && kept?.length === 1 && kept[0].month === b.month && b.scenario?.id === sc.id && b.scenario.kind === 'forecast', 'forecast_reference');
    requireValid(revision(b.scenario.revision) && b.scenario.revision < sc.revision && b.scenario.budgetSnapshot === sc.budgetSnapshot && b.month <= sc.actualsThrough && b.calculation && b.inputs && b.keptBy === sn.actor, 'forecast_revision');
    requireValid(activity.some(e => e.action === 'close-month' && e.record === sc.id && e.scenario === sc.id && e.detail.priorForecast === sn.id && e.detail.month === b.month && e.before_revision === b.scenario.revision && e.after_revision === b.scenario.revision + 1 && e.actor === sn.actor), 'forecast_activity');
+  } else if (sn.kind === 'reforecast') {
+   requireValid(sc.kind === 'reforecast' && sc.status === 'frozen' && sc.reforecast?.snapshot === sn.id && text(sc.name) && sn.label === sc.name && canonical(b.scenario) === canonical(sc), 'reforecast_reference');
+   requireValid(revision(b.revision) && sc.revision === b.revision && sc.reforecast.revision === b.revision && sc.branchedFrom?.revision === b.revision && b.source?.revision === b.revision, 'reforecast_revision');
+   requireValid(text(b.source.scenario) && b.source.scenario !== sc.id && text(b.source.name) && sc.branchedFrom.scenario === b.source.scenario && sc.branchedFrom.name === b.source.name, 'reforecast_source');
+   // A saved version outlives deletion of its working source. A source that
+   // remains must still be a valid working plan at or beyond the saved revision.
+   const source = records.get(`scenario:${b.source.scenario}`);
+   requireValid(!source || (['forecast', 'scenario'].includes(source.kind) && source.status === 'working' && revision(source.revision) && source.revision >= b.revision), 'reforecast_source');
+   requireValid(text(sn.actor) && b.savedBy?.email === sn.actor && text(b.savedBy.name) && sc.reforecast.by === sn.actor && sc.createdBy === sn.actor && text(b.savedAt) && sc.reforecast.at === b.savedAt && sc.createdAt === b.savedAt, 'reforecast_attribution');
+   requireValid(object(b.workspace) && Array.isArray(b.lines) && Array.isArray(b.departments) && object(b.inputs) && ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset'].every(k => Array.isArray(b.inputs[k])) && object(b.calculation) && ['months', 'cells', 'profit', 'cash'].every(k => Array.isArray(b.calculation[k])), 'reforecast_model');
+   requireValid(activity.some(e => e.action === 'reforecast-save' && e.record === sc.id && e.scenario === sc.id && e.detail.snapshot === sn.id && e.detail.source === b.source.scenario && e.detail.revision === b.revision && e.before_revision === b.revision && e.after_revision === b.revision && e.actor === sn.actor), 'reforecast_activity');
   } else if (sn.kind === 'pack') {
    const packs = [...records.entries()].filter(([key, p]) => key.startsWith('pack:') && p.snapshot === sn.id).map(([, p]) => p);
    requireValid(packs.length === 1 && packs[0].status === 'published' && packs[0].forecast === sc.id && packs[0].month === b.month && b.forecast?.id === sc.id, 'pack_reference');
@@ -51,6 +65,7 @@ export async function validateEaselStaged(staged) {
  for (const [key, r] of records) {
   if (key.startsWith('scenario:')) {
    if (r.kind === 'budget' && r.status === 'frozen') reference(r.approval?.snapshot, 'approval', r.id);
+   if (r.kind === 'reforecast') reference(r.reforecast?.snapshot, 'reforecast', r.id);
    if (r.kind === 'forecast') {
     reference(r.budgetSnapshot, 'approval', r.parent);
     for (const kept of r.priorForecasts ?? []) requireValid(reference(kept.snapshot, 'forecast', r.id).body.month === kept.month, 'forecast_month');

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
+import { ReforecastComparison } from './reforecast-comparison'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 
 /** Closing months, variance explanations and review packs. */
@@ -50,6 +51,7 @@ export function Review({ state, refresh }: Shared) {
     </>}
    </details>)}
   </section>}
+  {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
   <section className="card">
    <h2>Review packs</h2>
    {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}

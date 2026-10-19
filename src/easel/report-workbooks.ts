@@ -1,4 +1,5 @@
 import { cashHealthSheet } from './cash-health-workbook'
+import { versionComparisonSheet } from './version-comparison-workbook'
 // Spreadsheet projections of the same role-filtered read models as the app.
 import { columnName } from './xlsx'
 import { workbook, type Cell, type Sheet } from './xlsx-write'
@@ -59,7 +60,7 @@ export function varianceWorkbook(view: Data): Uint8Array {
  for (const v of view.rows) { const r = rows.length + 1; rows.push([v.lineName, v.departmentName, v.actual, v.budget, formula(`C${r}-D${r}`, v.variance), v.priorForecast, v.priorForecast === null ? null : formula(`C${r}-F${r}`, v.forecastVariance), v.explanation?.text ?? '', v.citations.map((c: Data) => `${c.file} line ${c.line}`).join('; ')]) }
  const r = rows.length + 1
  rows.push(['Total', '', ...['C', 'D', 'E', 'F', 'G'].map((col, i) => total(Array.from({ length: r - 3 }, (_, n) => n + 3), col, sum(view.rows.map((v: Data) => [v.actual, v.budget, v.variance, v.priorForecast ?? 0, v.forecastVariance ?? 0][i]))))])
- return workbook([{ name: 'Variances', rows }])
+ return workbook([{ name: 'Variances', rows }, ...(view.versions?.length ? [versionComparisonSheet(view)] : [])])
 }
 export function scenarioCsv(view: Data): string {
  const quote = (v: unknown) => { const s = String(v ?? ''); return `"${(/^[=+\-@]/.test(s) ? "'" : '') + s.replace(/"/g, '""')}"` }

@@ -25,6 +25,7 @@ ${row(['Profit', money(b.profit.month?.profit), money(b.profit.budget?.profit), 
 <table><thead><tr><th>Line · department</th><th>Actual</th><th>Budget</th><th>Variance</th><th>Explanation</th><th>Evidence</th></tr></thead><tbody>
 ${b.variances.map((v: Data) => row([`${v.line} · ${v.department}`, money(v.actual), money(v.budget), `${money(v.variance)}${v.favourable === null ? '' : v.favourable ? ' (favourable)' : ' (unfavourable)'}`, v.explanation ? `${v.explanation.text} [${v.explanation.status}${v.explanation.confirmedBy ? ` by ${v.explanation.confirmedBy}` : ''}]` : 'No explanation recorded', v.evidence.join('; ')])).join('')}
 </tbody></table>
+${b.versionComparison ? `<h2>Actual against every version</h2><p>Δ = actual minus version. — means an absent month or, for Δ, differing currencies.</p><table><thead><tr><th>Line · department</th><th>Actual (${esc(b.currency)})</th>${b.versionComparison.versions.map((v: Data) => `<th>${esc(v.name)} (${esc(v.currency)}) · revision ${esc(v.revision)}</th>`).join('')}</tr></thead><tbody>${b.versionComparison.rows.map((r: Data) => row([`${r.lineName} · ${r.departmentName}`, money(r.actual), ...b.versionComparison.versions.map((v: Data) => { const value = r.comparisons.find((c: Data) => c.id === v.id); return `${value.amount === null ? '—' : formatMoney(value.amount, v.currency)} · Δ ${money(value.variance)}` })])).join('')}</tbody></table>` : ''}
 <h2>Cash</h2>
 <table><thead><tr><th>Month</th><th>Forecast closing cash</th><th>Budget closing cash</th></tr></thead><tbody>
 ${b.cash.map((m: Data) => row([monthLabel(m.month), money(m.closing), money(m.budget)])).join('')}
@@ -40,9 +41,13 @@ ${b.sources.map((x: Data) => row([x.file, x.sha256, x.rows, `${x.acceptedBy} at 
 
 export function packCsv(sn: Data): string {
  const b = sn.body
- const lines = [['section', 'line', 'department', 'actual_minor', 'budget_minor', 'variance_minor', 'explanation', 'explanation_status'].join(',')]
- for (const l of b.lines) lines.push(['line', l.line, '', l.actual, l.budget, l.actual - l.budget, '', ''].map(csvCell).join(','))
- for (const v of b.variances) lines.push(['variance', v.line, v.department, v.actual, v.budget, v.variance, v.explanation?.text ?? '', v.explanation?.status ?? ''].map(csvCell).join(','))
- for (const d of b.decisions) lines.push(['decision', d.text, d.owner, '', '', '', d.due, ''].map(csvCell).join(','))
+ const lines = [['section', 'line', 'department', 'actual_minor', 'budget_minor', 'variance_minor', 'explanation', 'explanation_status', 'version_name', 'version_currency', 'version_minor', 'version_variance_minor'].join(',')]
+ for (const l of b.lines) lines.push(['line', l.line, '', l.actual, l.budget, l.actual - l.budget, '', '', '', '', '', ''].map(csvCell).join(','))
+ for (const v of b.variances) lines.push(['variance', v.line, v.department, v.actual, v.budget, v.variance, v.explanation?.text ?? '', v.explanation?.status ?? '', '', '', '', ''].map(csvCell).join(','))
+ for (const d of b.decisions) lines.push(['decision', d.text, d.owner, '', '', '', d.due, '', '', '', '', ''].map(csvCell).join(','))
+ if (b.versionComparison) for (const r of b.versionComparison.rows) for (const v of b.versionComparison.versions) {
+  const value = r.comparisons.find((c: Data) => c.id === v.id)
+  lines.push(['version-comparison', r.lineName, r.departmentName, r.actual, '', '', '', '', v.name, v.currency, value.amount, value.variance].map(csvCell).join(','))
+ }
  return lines.join('\r\n') + '\r\n'
 }

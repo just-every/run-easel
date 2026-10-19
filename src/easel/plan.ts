@@ -6,6 +6,7 @@ import type { Context } from './context'
 import { INPUT_KINDS, inputDepartment, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
 import { cents } from './units'
 import { cashBalance } from './actuals'
+import { frozenModel } from './reforecasts'
 import { all, choice, find, get, integer, optionalText, put, remove, requireThat, text, uid, type Data, type State } from './types'
 
 export function bump(c: Context, scenario: Data, action: string, record: string, detail: Data = {}) {
@@ -18,6 +19,13 @@ export function bump(c: Context, scenario: Data, action: string, record: string,
 /** Copies every input of one scenario into another, keeping each input's origin so changes can be compared. */
 export function copyInputs(s: State, from: string, to: string) {
  for (const kind of INPUT_KINDS) for (const input of scenarioInputs(s, from, kind)) put(s, kind, uid(), { ...input, scenario: to })
+}
+
+/** A frozen version may outlive its source, so branch from its captured inputs. */
+async function copyVersionInputs(c: Context, from: Data, to: string) {
+ if (from.status !== 'frozen') { copyInputs(c.s, from.id, to); return }
+ const m = await frozenModel(c, from)
+ for (const kind of INPUT_KINDS) for (const input of m.inputs[kind] ?? []) put(c.s, kind, uid(), { ...input, scenario: to })
 }
 
 export function clearInputs(s: State, scenario: string) {
@@ -87,7 +95,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash,
    ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
   })
-  copyInputs(s, from.id, id)
+  await copyVersionInputs(c, from, id)
   c.activity.push({ action: op, record: id, scenario: id, after: 1, detail: { from: from.id, fromRevision: from.revision } })
   return get(s, 'scenario', id)
  }
@@ -136,7 +144,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireEditable(s, x, into, null)
   requireThat(Number(b.revision) === into.revision, `${into.name} changed since you reviewed it; review its current revision`, 409)
   clearInputs(s, into.id)
-  copyInputs(s, from.id, into.id)
+  await copyVersionInputs(c, from, into.id)
   bump(c, get(s, 'scenario', into.id), op, into.id, { from: from.id, fromRevision: from.revision, name: from.name })
   return get(s, 'scenario', into.id)
  }
