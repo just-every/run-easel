@@ -10,6 +10,8 @@ export function Settings({ state, refresh }: Shared) {
  return <>
   <section className="card">
    <h2>Plan</h2>
+   <p><a href="/api/easel/export" download>Download open export (ZIP)</a></p>
+   <p className="muted">Table CSVs, scenario Excel workbooks, model JSON, snapshots and original files, with a SHA-256 manifest.</p>
    <Form submit="Save plan settings" onSubmit={run('workspace')}>
     <Field label="Company name" name="name" defaultValue={w.name} />
     <Field label="Reporting currency" name="currency" defaultValue={w.currency} />

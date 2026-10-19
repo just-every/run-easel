@@ -18,6 +18,7 @@ import { actualsWorkbook, activityWorkbook } from './operational-workbooks'
 import { review, variance } from './review'
 import { setup } from './setup'
 import { actor, load, readFence, save, snapshot } from './store'
+import { openExport } from './open-export'
 import { tokenAdmin } from './token-admin'
 import { tokenRate, tokenUse } from './token-auth'
 import { Fault, get, requireThat, type Actor, type Data } from './types'
@@ -79,6 +80,12 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(result as any)
 }
+
+api.get('/api/easel/export', async c => {
+ const ctx = await open(c), bytes = await openExport(ctx)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return new Response(bytes as BodyInit, { headers: { 'content-type': 'application/zip', 'content-disposition': 'attachment; filename="easel-open-export.zip"' } })
+})
 
 api.get('/api/easel/tokens', async c => c.json(await tokenAdmin(await open(c), c.req.raw, c.env, 'list', {})))
 api.post('/api/easel/tokens/:op', async c => {

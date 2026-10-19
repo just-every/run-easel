@@ -96,6 +96,12 @@
       "clauses": [
         "SHEET-004"
       ]
+    },
+    {
+      "id": "open-plan-export",
+      "clauses": [
+        "PORT-001"
+      ]
     }
   ],
   "nonGoals": [

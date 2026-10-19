@@ -179,7 +179,7 @@ one recorded run against the provider's sandbox before acceptance.
 | `MOVE-002` — Move in from Planful | missing | The `MOVE-001` journey with a fixture in Planful's documented export shapes. |
 | `MOVE-003` — Move in from Anaplan, Runway and Pigment | missing | The `MOVE-001` journey with one fixture per product in its documented export shape. |
 | `MOVE-004` — A parallel month against the old tool | missing | With a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off. |
-| `PORT-001` — An export a buyer can open without Easel | partial | Download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's. |
+| `PORT-001` — An export a buyer can open without Easel | done | Download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's. |
 
 ### Anywhere
 

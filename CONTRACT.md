@@ -619,7 +619,7 @@ Besides the `rer export` archive (`EASEL-016`), finance can download the whole p
 
 *Acceptance:* download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's.
 
-*Status:* partial.
+*Status:* done.
 
 ### Anywhere
 
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 5 | 40 | 41 | 86 |
-| All | 22 | 40 | 41 | 103 |
+| Target and push further | 6 | 39 | 41 | 86 |
+| All | 23 | 39 | 41 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -902,7 +902,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `MOVE-002` | Move in from Planful | target | missing |  | No Planful import |
 | `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | missing |  | No Anaplan, Runway or Pigment import |
 | `MOVE-004` | A parallel month against the old tool | target | missing |  | No parallel-month comparison or sign-off |
-| `PORT-001` | An export a buyer can open without Easel | target | partial | `tests/browser.mjs` | The complete `rer export` archive ships; an open per-table CSV, .xlsx and JSON export with a digest manifest is missing |
+| `PORT-001` | An export a buyer can open without Easel | target | done | `src/easel/open-export.ts`, `tests/open-export.test.mjs`, `tests/open-export-browser-journey.mjs` | Finance downloads product and import-journal table CSVs, scenario formula workbooks, model JSON, every immutable snapshot and retained original, with digest manifest; existing credential exclusions preserved |
 | `MOBILE-001` | Review and approve at phone width | target | partial | `tests/browser-journey.mjs` | Actuals move-in, month close and explanation are journeyed at 390 with overflow checks; submission, approval, promotion and dashboards at 390 are not journeyed |
 | `MOBILE-002` | Native iOS and Android apps | target | missing |  | No native apps or push notifications |
 | `HOST-001` | Hosted operation on the buyer's Cloudflare account | target | partial | `tests/browser.mjs` `deploy.json` | `rer deploy --dry-run` runs; a real deployment, scheduled handler, delivered mail and hosted backup and restore are not exercised |

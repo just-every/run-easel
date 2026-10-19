@@ -58,6 +58,9 @@ importers:
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
+      jszip:
+        specifier: 3.10.1
+        version: 3.10.1
       marked:
         specifier: 18.0.14
         version: 18.0.14
@@ -1341,8 +1344,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  jszip@3.10.2:
-    resolution: {integrity: sha512-3l+rb15IOWtUhU0H5MFqES/T6Kh7abYwjosBey/vD6hDt8zoEffkSC5Ws5SGtgVw3gBx2NEbhTeSW1+kWkpyTQ==}
+  jszip@3.10.1:
+    resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
 
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
@@ -3052,7 +3055,7 @@ snapshots:
       archiver: 5.3.2
       dayjs: 1.11.23
       fast-csv: 4.3.6
-      jszip: 3.10.2
+      jszip: 3.10.1
       readable-stream: 3.6.2
       saxes: 5.0.1
       tmp: 0.2.7
@@ -3317,7 +3320,7 @@ snapshots:
 
   json5@2.2.3: {}
 
-  jszip@3.10.2:
+  jszip@3.10.1:
     dependencies:
       lie: 3.3.0
       pako: 1.0.11
