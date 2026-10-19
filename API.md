@@ -194,3 +194,11 @@ coverage rules before its future pipeline source can ship.
 ### FIN-001 linked statements
 
 Scenario reads include `calculation.balanceSheet` and `calculation.cashFlow` in integer currency minor units. These aggregate rows share the P&L horizon and are captured with new approvals and kept versions. `balanceDifference` is assets minus liabilities/equity; `cashDifference` and cash-flow `difference` compare indirect closing cash with direct cash. Each row explains its arithmetic; imbalance causes identify the month and source line without pay detail. Opening equity and other noncash reserves are labelled estimates. Financing inputs remain unavailable. Legacy snapshots remain unchanged and may have no statement arrays. Scenario Excel includes both statement sheets and live subtotal/reconciliation formulas; a department filter omits company-wide statements.
+
+### REPORT-005 department statements
+
+`GET /api/easel/department-statements?month=YYYY-MM` lists authorized statements (omit month for all months); `GET /api/easel/department-statements/:id` reads the captured amounts/source rows plus current open tasks and explanations. Finance reads all; active department contributors read their departments. `GET .../:id/document.xlsx` exports the same scoped data with formulas. Email links open `/app?departmentStatement=:id` and require sign-in.
+
+A successful `close-month` queues statements in its fenced save and dispatches mail afterwards. The configured Base mail transport receives only each department's statement and its recipient address. `department-statement-retry {id}` lets finance retry pending/refused, suppressed or currently blocked recipients after rechecking membership and native-account status. Accepted messages are not resubmitted; uncertain/interrupted outcomes require external reconciliation and are not blindly retried. Provider acceptance is not mailbox delivery. Local development suppresses email.
+
+Pack decisions accept an optional `department`. Finance can use `pack-action-department {pack,decision,department}` to classify an existing action; empty department explicitly unclassifies it. The metadata changes no published snapshot. Statements include only open published actions with an explicit matching department, plus current department metric tasks and outstanding submissions.

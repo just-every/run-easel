@@ -46,6 +46,7 @@ export async function stateView(c: Context) {
   departmentMaps: finance ? all(s, 'department-map') : [],
   batches: finance ? all(s, 'batch').sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : [],
   workbooks: finance ? all(s, 'workbook-import') : [],
+  actionDepartments: finance ? all(s, 'pack-action-department') : [],
   packs: all(s, 'pack').filter(p => finance || p.status === 'published'),
   snapshots,
  }

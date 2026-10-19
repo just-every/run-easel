@@ -162,6 +162,12 @@
       "clauses": [
         "FIN-001"
       ]
+    },
+    {
+      "id": "department-statements",
+      "clauses": [
+        "REPORT-005"
+      ]
     }
   ],
   "nonGoals": [

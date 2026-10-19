@@ -347,7 +347,7 @@ Each position or person carries salary or hourly rate with expected hours, W-2 o
 *Status:* partial.
 
 #### PEOPLE-005 — Compensation access separate from finance.
-Compensation detail (names, salaries, bonus and commission) is a permission of its own. Finance can grant a finance analyst plan access without pay access. Department heads see their department's totals and, only when granted, their own people's detail. Exports, packs, API responses, agent answers and Excel or Sheets pulls apply the same server-side filtering.
+Compensation detail (names, salaries, bonus and commission) is a permission of its own. Finance can grant a finance analyst plan access without pay access. Department heads see their department's totals and, only when granted, their own people's detail. Exports, packs, API responses, agent answers and Excel or Sheets pulls apply the same server-side filtering. Before compensation grants ship, PEOPLE-005 also applies them to REPORT-005 department-statement app reads, workbooks and each recipient's email body before dispatch.
 
 *Acceptance:* through the API and the Excel add-in fake, an analyst without pay access, a department head and a viewer each read the same plan, and none receives a salary they are not granted; a planted salary never appears in their exports.
 
@@ -450,7 +450,7 @@ A linked sheet range (for example a sales team's capacity sheet) is pulled on a 
 ### Planning cycles and collaboration
 
 #### CYCLE-001 — Budget calendar, tasks and reminders.
-Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status (`EASEL-009`) is one kind of task.
+Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status (`EASEL-009`) is one kind of task. Before shipping, CYCLE-001 inherits REPORT-005: its open department tasks appear in that department's monthly email and app statement under the same recipient and detail filtering.
 
 *Acceptance:* with a fake clock and mail and chat fakes, the API journey requests submissions due Friday; a reminder goes out Thursday morning Eastern, the reminder for a submitted department is cancelled, and an overdue department escalates to finance on Monday.
 
@@ -522,11 +522,11 @@ PowerPoint and Word add-ins insert Easel tables, charts and single numbers into 
 *Status:* missing.
 
 #### REPORT-005 — Department budget-owner reporting.
-Each department owner gets a monthly actual-against-budget statement for their department after close. It includes their top variances, the rows behind them, open tasks and explanations to confirm, by email and in the app, and never includes other departments' detail.
+Each department owner gets a monthly actual-against-budget statement for their department after close. It includes their top variances, the rows behind them, open tasks and explanations to confirm, by email and in the app, and never includes other departments' detail. Current owners are all active contributors assigned to that department (ct, 19 October); finance can inspect every statement, while a contributor must still belong to its department on every read/export. A close queues one persisted statement per department and one delivery record per then-active contributor, in the same fenced save. Preparation captures actual/budget values and every accepted source row after close; the app overlays current explanation and open-task states. The email captures that scoped content on its first attempt, lists up to five variances in descending absolute amount, and links to the authenticated app statement. Recipient membership and native account are rechecked before every attempt. A provider acceptance is labelled only as acceptance; local development suppresses email and says so. Refused/rate-limited or unconfigured mail stays pending for explicit finance retry with the same message and delivery key; accepted mail is never resent. An uncertain or interrupted attempt remains visibly unresolved and is never blindly retried. ACCESS-001 inherits future custom ownership/group grants and statement recipient/read filtering before it ships. Current open tasks include department metric tasks, outstanding department submissions and department-tagged published pack actions; CYCLE-001 inherits future generic department tasks. Pack decisions may carry an explicit department; finance can classify an older published action through separate metadata without changing its captured pack. Unclassified actions stay in the company pack with a finance reminder and never enter a department email; no department is inferred from free-text ownership.
 
 *Acceptance:* close a month in the API journey with mail fakes; the engineering contributor receives a statement for Engineering only, and a link opens their variances.
 
-*Status:* partial.
+*Status:* done.
 
 #### REPORT-006 — Scheduled cash alerts.
 Finance sets cash alerts: forecast lowest cash below the floor (`FIN-005`), actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged.
@@ -545,7 +545,7 @@ Operational metrics flow in from Snowflake, BigQuery or Databricks as driver act
 ### Access, audit and governance
 
 #### ACCESS-001 — Groups and per-dimension permissions.
-Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario (`CYCLE-004`) and by capability: compensation (`PEOPLE-005`), connections, model structure, approvals and publishing. Every server route enforces the grants, and an access report shows who can see what.
+Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario (`CYCLE-004`) and by capability: compensation (`PEOPLE-005`), connections, model structure, approvals and publishing. Every server route enforces the grants, and an access report shows who can see what. Before shipping, ACCESS-001 inherits REPORT-005: its ownership and group grants govern department-statement recipients, reads and exports, with recipient access rechecked before delivery.
 
 *Acceptance:* the API journey makes a group with edit on two departments and no pay access, adds a person, and confirms reads, writes and exports respect it; the access report lists it.
 
@@ -841,8 +841,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 16 | 33 | 37 | 86 |
-| All | 33 | 33 | 37 | 103 |
+| Target and push further | 17 | 32 | 37 | 86 |
+| All | 34 | 32 | 37 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -917,7 +917,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `REPORT-002` | Dashboards | target | partial | `src/ui/overview.tsx` `src/ui/chart.tsx` | One fixed overview with a chart ships; configurable KPI dashboards, saved layouts and audience sharing are missing |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |
 | `REPORT-004` | Linked PowerPoint and Word reporting | target | missing |  | No PowerPoint or Word add-ins |
-| `REPORT-005` | Department budget-owner reporting | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Per-department variances with role filtering ship in the app; the scheduled statement by email after close is missing |
+| `REPORT-005` | Department budget-owner reporting | target | done | `src/easel/department-statements.ts`, `tests/department-statements.test.mjs`, `tests/department-statements-browser.mjs` | Scoped close-triggered statements, complete source rows, current tasks/confirmations, explicit pack-action departments, durable honest mail states, finance retry, authenticated app links and formula Excel |
 | `REPORT-006` | Scheduled cash alerts | target | missing |  | No alert rules, schedules, re-alert rules or deliveries |
 | `REPORT-007` | BI and warehouse feeds | target | missing |  | No warehouse inputs or BI dataset endpoint |
 | `ACCESS-001` | Groups and per-dimension permissions | target | partial | `src/easel/access.ts` `tests/easel.test.mjs` | Finance, department-scoped contributor and viewer roles ship; groups, per-dimension and per-capability grants and an access report are missing |

@@ -76,6 +76,16 @@ export async function variance(c: Context, month: string) {
 
 export async function review(c: Context, op: string, b: Data): Promise<Data | undefined> {
  const { s, x } = c
+ if (op === 'pack-action-department') {
+  requireFinance(x)
+  const pack = get(s, 'pack', b.pack)
+  requireThat(pack.decisions.some((d: Data) => d.id === b.decision), 'Action not found', 404)
+  const department = b.department ? get(s, 'department', b.department).id : ''
+  const id = `${pack.id}|${b.decision}`
+  put(s, 'pack-action-department', id, { pack: pack.id, decision: b.decision, department, by: x.actor.email, at: c.now })
+  c.activity.push({ action: op, record: id, detail: { pack: pack.id, decision: b.decision, department } })
+  return get(s, 'pack-action-department', id)
+ }
  if (op === 'explanation' || op === 'explanation-confirm') {
   requireMember(x)
   const month = typeof b.month === 'string' ? b.month : ''
@@ -109,7 +119,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   requireFinance(x)
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.status === 'draft', 'A published pack cannot change; record follow-up on its actions', 409)
-  const decision = { id: uid(), text: text(b.text, 'Decision or action', 2000), owner: typeof b.owner === 'string' ? b.owner.slice(0, 200) : '', due: typeof b.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.due) ? b.due : '', status: 'open' }
+  const decision = { id: uid(), department: b.department ? get(s, 'department', b.department).id : '', text: text(b.text, 'Decision or action', 2000), owner: typeof b.owner === 'string' ? b.owner.slice(0, 200) : '', due: typeof b.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.due) ? b.due : '', status: 'open' }
   put(s, 'pack', pack.id, { ...pack, decisions: [...pack.decisions, decision] })
   c.activity.push({ action: op, record: pack.id, detail: { decision: decision.text } })
   return get(s, 'pack', pack.id)

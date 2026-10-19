@@ -55,7 +55,17 @@ export async function start(root, port, mode = 'dev') {
   origin: `http://127.0.0.1:${port}`,
   // Only the browser consumes this credential; never include it in logs or reports.
   openUrl: output.match(/^RER_OPEN (\S+)/m)?.[1],
-  async close() { if (child.exitCode === null) { const exited = new Promise(r => child.once('exit', r)); process.kill(-child.pid, 'SIGTERM'); await exited } },
+  async close() {
+   const exited = child.exitCode === null ? new Promise(r => child.once('exit', r)) : Promise.resolve()
+   const signal = name => { try { process.kill(-child.pid, name) } catch (error) { if (error.code !== 'ESRCH') throw error } }
+   const alive = () => { try { process.kill(-child.pid, 0); return true } catch (error) { if (error.code === 'ESRCH') return false; throw error } }
+   signal('SIGTERM'); await exited
+   // The CLI may exit before its own Vite/workerd children finish persisting.
+   // Only this spawned process group is ours; never remove its files mid-write.
+   const deadline = Date.now() + 5000
+   while (alive() && Date.now() < deadline) await new Promise(r => setTimeout(r, 50))
+   if (alive()) { signal('SIGKILL'); await new Promise(r => setTimeout(r, 100)) }
+  },
  }
 }
 

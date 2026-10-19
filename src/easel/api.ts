@@ -9,6 +9,9 @@ import { access, requireFinance, requireMember } from './access'
 import { actualCells, actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
+import { departmentStatements, departmentStatementList, departmentStatementView, queueDepartmentStatements } from './department-statements'
+import { dispatchDepartmentStatement } from './department-statement-mail'
+import { departmentStatementWorkbook } from './department-statement-documents'
 import { metricRules, metricTaskList } from './metric-rules'
 import { evaluateMetricTasks, needsMetricRefresh } from './metric-tasks'
 import { longRange, longRangeList, longRangeView } from './long-range'
@@ -120,6 +123,14 @@ api.get('/api/easel/parallel-month/:id', c => read(c, ctx => parallelView(ctx, c
 
 api.get('/api/easel/metric-tasks', c => read(c, metricTaskList))
 
+api.get('/api/easel/department-statements', c => read(c, ctx => departmentStatementList(ctx, c.req.query('month'))))
+api.get('/api/easel/department-statements/:id', c => read(c, ctx => departmentStatementView(ctx, c.req.param('id'))))
+api.get('/api/easel/department-statements/:id/document.xlsx', async c => {
+ const ctx = await open(c), view = await departmentStatementView(ctx, c.req.param('id'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(departmentStatementWorkbook(view), 'easel-department-statement')
+})
+
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
@@ -187,7 +198,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules]
+const commands = [setup, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -200,7 +211,9 @@ api.post('/api/easel/command/:op', async c => {
   const evaluation = await evaluateMetricTasks(ctx)
   if (op === 'metric-refresh') result = evaluation
  }
+ const statementIds = op === 'close-month' ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
+ for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  return c.json(result)
 })
 

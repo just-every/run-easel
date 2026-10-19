@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { ReforecastComparison } from './reforecast-comparison'
 import { ParallelMonth } from './parallel-month'
+import { DepartmentStatements } from './department-statements'
+import { PackActionDepartment } from './pack-action-departments'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 
 /** Closing months, variance explanations and review packs. */
@@ -57,6 +59,7 @@ export function Review({ state, refresh }: Shared) {
    </details>)}
   </section>}
   {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
+  {(me.role === 'finance' || me.role === 'contributor') && closedMonths.includes(month) && <DepartmentStatements state={state} month={month} setMonth={setMonth} refresh={refresh} />}
   {me.role === 'finance' && closedMonths.includes(month) && <ParallelMonth key={month} state={state} month={month} />}
   <section className="card">
    <h2>Review packs</h2>
@@ -64,12 +67,14 @@ export function Review({ state, refresh }: Shared) {
    {packs.map((p: D) => <div key={p.id} className="pack">
     <h3>{p.title} · {p.status}</h3>
     {p.decisions.length > 0 && <ul className="plain">{p.decisions.map((d: D) => <li key={d.id}>{d.text}{d.owner ? ` — ${d.owner}` : ''}{d.due && <>, due <span className="date-token">{d.due}</span></>}{p.progress?.[d.id] ? ` (${p.progress[d.id].status})` : ''}
-     {p.status === 'published' && me.role === 'finance' && p.progress?.[d.id]?.status !== 'done' && <Action kind="quiet" label="Mark done" run={async () => { await command('action-status', { pack: p.id, decision: d.id, status: 'done' }); await refresh() }} />}</li>)}</ul>}
+     {p.status === 'published' && me.role === 'finance' && p.progress?.[d.id]?.status !== 'done' && <Action kind="quiet" label="Mark done" run={async () => { await command('action-status', { pack: p.id, decision: d.id, status: 'done' }); await refresh() }} />}
+     <PackActionDepartment state={state} pack={p} decision={d} refresh={refresh} /></li>)}</ul>}
     {p.status === 'draft' && me.role === 'finance' && <>
      <Form submit="Record decision" onSubmit={async (x, form) => { await command('pack-decision', { pack: p.id, ...x }); form.reset(); await refresh() }}>
       <Field label="Decision or action" name="text" />
       <Field label="Owner" name="owner" required={false} />
       <Field label="Due" name="due" type="date" required={false} />
+      <Field label="Department" name="department" required={false} defaultValue="" options={state.departments.map((d: D) => ({ value: d.id, label: d.name }))} />
      </Form>
      <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id }); await refresh() }} />
     </>}
