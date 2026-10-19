@@ -268,11 +268,11 @@ Planned asset purchases by category depreciate straight-line over a useful life 
 *Status:* done.
 
 #### FIN-005 — Runway, burn and an agreed cash floor.
-Every scenario shows, by month, gross burn (cash paid out), net burn (cash paid out less cash received), months of runway (closing cash divided by the trailing three-month average net burn), the lowest cash month, and the cash-zero date (the first forecast month whose closing cash falls below zero). Finance records an agreed cash floor and runway minimum, which every scenario, proposal and comparison checks and marks where they are crossed.
+Every scenario shows, by month, gross burn (cash paid out), net burn (cash paid out less cash received), months of runway (closing cash divided by the trailing three-month average net burn), the lowest cash month, and the cash-zero date (the first forecast month whose closing cash falls below zero). Finance records an agreed cash floor and runway minimum, which every scenario, proposal and comparison checks and marks where they are crossed. Money is in integer cents. The trailing window includes the current month and up to two preceding available plan months; no unavailable history is invented. Runway is rounded half away from zero once to hundredths of a month from the unrounded average; a negative ratio means cash is already exhausted. Nonpositive average net burn has no finite runway and is labelled “Not burning” for positive cash or “Cash exhausted” otherwise. Minimum checks use the unrounded ratio; equality meets the minimum. The earliest tied month is the lowest-cash month, and cash-zero searches only months after actuals-through. Current finance-agreed thresholds apply to saved and working cash without changing approved snapshots; a currency mismatch is explicitly not assessed.
 
 *Acceptance:* the API and browser journeys set a $500,000 floor, branch a downside that crosses it, and see the crossing month and runway on the scenario, the comparison and the dashboard. Through the API, each month's gross burn, net burn and runway equal values computed by hand from that month's cash in and out, and a scenario whose cash runs out reads its cash-zero date as the first month with closing cash below zero.
 
-*Status:* partial.
+*Status:* done. Acceptance: `tests/cash-health.test.mjs` and `tests/cash-health-browser-journey.mjs` (FIN-005).
 
 #### FIN-006 — US tax estimates in the forecast.
 Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labelled as such, and never filings.
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 8 | 38 | 40 | 86 |
-| All | 25 | 38 | 40 | 103 |
+| Target and push further | 9 | 37 | 40 | 86 |
+| All | 26 | 37 | 40 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -855,7 +855,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `FIN-002` | Working-capital timing | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Collection and payment lags with opening receivables and payables ship; DSO and DPO curves, deferred revenue, prepaids and accruals are missing |
 | `FIN-003` | Debt and financing | target | missing |  | No loans, credit lines, interest, covenants or equity events |
 | `FIN-004` | Capex and depreciation | target | done | `src/easel/assets.ts`, `tests/assets.test.mjs`, `tests/assets-browser-journey.mjs` | Category useful lives, purchased/opening assets, cent-exact depreciation and book values, disposals, non-cash expense lines, explicit cash timing, immutable snapshots and formula exports |
-| `FIN-005` | Runway, burn and an agreed cash floor | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Monthly closing cash per scenario ships; burn, runway, cash-zero date and an agreed floor checked across scenarios are missing |
+| `FIN-005` | Runway, burn and an agreed cash floor | target | done | `tests/cash-health.test.mjs` and `tests/cash-health-browser-journey.mjs` (FIN-005): monthly hand-computed burn/runway, floor and runway crossings, lowest cash, forecast cash-zero, current agreement on immutable cash, proposals/comparisons and Excel; 1440/390 finance and board journeys |  |
 | `FIN-006` | US tax estimates in the forecast | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | On-costs are one flat percentage of salary; US employer taxes with wage bases, income-tax estimates and sales-tax pass-through are missing |
 | `FIN-007` | 13-week cash forecast | target | missing |  | No weekly direct cash view |
 | `PEOPLE-001` | Roster and payroll actuals from Gusto | target | missing |  | No Gusto connector or roster reconciliation |

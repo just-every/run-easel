@@ -1,3 +1,4 @@
+import { CashAgreement, CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { revealHorizontally } from './scroll'
@@ -11,7 +12,7 @@ export const defaultScenario = (scenarios: D[]) => (scenarios.find(s => s.kind =
 const comparisonFor = (scenarios: D[], id: string) => scenarios.filter(s => s.kind === 'scenario' && s.status === 'working' && s.branchedFrom?.scenario === id).at(-1)
 
 /** The plan as a profit and loss by month, with the arithmetic behind any cell one click away. */
-export function Overview({ state }: Shared) {
+export function Overview({ state, refresh }: Shared) {
  const plans = state.scenarios.filter((s: D) => s.kind !== 'proposal' || s.status === 'working')
  const [id, setId] = useState(defaultScenario(plans))
  const [view, setView] = useState<D | null>(null)
@@ -48,6 +49,8 @@ export function Overview({ state }: Shared) {
   {error && <p role="alert" className="error">{error}</p>}
   <div className={trace ? 'overview has-trace' : 'overview'}>
    <div className="overview-main">
+    {!department && view?.cashHealth && <CashHealth health={view.cashHealth} currency={currency} />}
+    {!department && <CashAgreement state={state} refresh={refresh} />}
     {calc && !department && <section className="card">
      <ClosingCashChart ticks months={calc.months} actualsThrough={calc.actualsThrough} currency={currency} series={series}
       label={`Closing cash by month, ${series.map(s => s.name).join(' and ')}${last === undefined ? '' : `; ${money(last, currency)} at ${monthLabel(calc.months.at(-1))}`}.`} />

@@ -114,6 +114,12 @@
       "clauses": [
         "MOBILE-001"
       ]
+    },
+    {
+      "id": "cash-health-constraints",
+      "clauses": [
+        "FIN-005"
+      ]
     }
   ],
   "nonGoals": [

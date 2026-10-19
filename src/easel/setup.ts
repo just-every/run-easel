@@ -2,6 +2,7 @@
 // lines, people and their roles, and how source accounts map to lines.
 import { requireFinance } from './access'
 import type { Context } from './context'
+import { cents, hundredths } from './units'
 import { fiscalYearLabel, month } from './months'
 import { departments, usesDepartment, usesLine, workspace } from './model'
 import { all, choice, find, get, integer, put, remove, requireThat, text, uid, type Data } from './types'
@@ -10,6 +11,14 @@ export const LINE_TYPES = ['revenue', 'cost-of-sales', 'operating-expense'] as c
 
 export function setup(c: Context, op: string, b: Data): Data | undefined {
  const { s, x } = c
+ if (op === 'cash-constraints') {
+  requireFinance(x)
+  const w = workspace(s)
+  const cashAgreement = { floorCents: cents(b.floor, 'Agreed cash floor'), runwayMinimumHundredths: hundredths(b.runwayMinimum, 'Minimum runway'), currency: w.currency, by: x.actor.email, at: c.now }
+  put(s, 'workspace', 'main', { ...w, cashAgreement })
+  c.activity.push({ action: op, record: 'main', detail: { cashAgreement } })
+  return cashAgreement
+ }
  if (op === 'workspace') {
   requireFinance(x)
   const currency = text(b.currency ?? 'AUD', 'Currency').toUpperCase()
@@ -19,7 +28,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   requireThat(Number(planStart.slice(5, 7)) === fiscalYearStart, 'The first plan month must be the first month of a fiscal year')
   const existing = find(s, 'workspace', 'main')
   requireThat(!existing || existing.planStart === planStart || !all(s, 'scenario').length, 'The plan year is fixed once scenarios exist', 409)
-  put(s, 'workspace', 'main', { name: text(b.name, 'Company name'), currency, fiscalYearStart, planStart, horizon: 12 })
+  put(s, 'workspace', 'main', { name: text(b.name, 'Company name'), currency, fiscalYearStart, planStart, horizon: 12, ...(existing?.cashAgreement ? { cashAgreement: existing.cashAgreement } : {}) })
   if (!all(s, 'scenario').some(sc => sc.kind === 'budget')) {
    const id = uid()
    put(s, 'scenario', id, { name: `${fiscalYearLabel(planStart)} budget`, kind: 'budget', status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, actualsThrough: null, cash: { openingCents: 0, basis: 'estimate', note: '', receivablesCents: 0, payablesCents: 0, collectionLag: 1, paymentLag: 1 } })

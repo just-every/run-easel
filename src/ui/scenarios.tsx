@@ -1,3 +1,4 @@
+import { CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
 import { assumptionText } from './assumptions'
 import type { Shared } from './app'
@@ -50,6 +51,8 @@ export function Scenarios({ state, refresh }: Shared) {
     <Table caption={`Profit and closing cash: ${name(a)} → ${name(b)}`} heads={['Month', `Profit ${cmp.left.scenario.name}`, `Profit ${cmp.right.scenario.name}`, 'Difference', `Cash ${cmp.left.scenario.name}`, `Cash ${cmp.right.scenario.name}`, 'Difference']}>
      {cmp.left.profit.map((p: D, i: number) => { const q = cmp.right.profit[i], c = cmp.left.cash[i], d = cmp.right.cash[i]; return <tr key={p.month}><td>{monthLabel(p.month)}</td><td className="num">{money(p.profit, leftCurrency)}</td><td className="num">{money(q.profit, rightCurrency)}</td><td className="num">{money(cmp.currencyComparable ? q.profit - p.profit : null, leftCurrency)}</td><td className="num">{money(c.closing, leftCurrency)}</td><td className="num">{money(d.closing, rightCurrency)}</td><td className="num">{money(cmp.currencyComparable ? d.closing - c.closing : null, leftCurrency)}</td></tr> })}
     </Table>
+    <CashHealth title={`Cash health: ${cmp.left.scenario.name}`} health={cmp.left.cashHealth} currency={leftCurrency} />
+    <CashHealth title={`Cash health: ${cmp.right.scenario.name}`} health={cmp.right.cashHealth} currency={rightCurrency} />
     <h3>Changed assumptions ({cmp.changedInputs.length})</h3>
     <ul className="plain">{cmp.changedInputs.map((c: D, i: number) => <li key={i}>{assumptionText(c, cmp)}</li>)}</ul>
     <h3>Changed cells ({cmp.changedCells.length})</h3>

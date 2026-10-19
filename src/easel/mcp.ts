@@ -61,8 +61,9 @@ async function invoke(c: Context, name: string, b: Data): Promise<Data> {
  if (name === 'compare') return compareView(c, b.a, b.b)
  if (name === 'variance') return variance(c, month(b.month))
  if (name === 'metrics') {
-  const { calculation: calc } = await scenarioView(c, b.scenario)
-  return { currency: calc.currency, months: calc.months, profit: calc.profit, cash: calc.cash, headcount: calc.headcount }
+  const view = await scenarioView(c, b.scenario)
+  const calc = view.calculation
+  return { currency: calc.currency, months: calc.months, profit: calc.profit, cash: calc.cash, headcount: calc.headcount, cashHealth: view.cashHealth }
  }
  if (name === 'proposal-create') await scenarioView(c, b.from)
  if (name === 'comment') await scenarioView(c, b.scenario)

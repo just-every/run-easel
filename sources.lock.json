@@ -91,7 +91,7 @@
   ],
   "files": {
     ".github/workflows/journeys.yml": {
-      "sha256": "c3a90f84b579df70291f6c6ad30cf25b04e414eb6b603db2e0a408fd8502241a",
+      "sha256": "71060adb95abf197bb5a8e8efd3bb054c058ed2102fd8bd6e0035b1aea318ca7",
       "executable": false
     },
     ".github/workflows/run-demo.yml": {
@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "a34dfd2f85f9049edbdc07c33df65051c2f1edaca80761d264f2210eead81862",
+      "sha256": "6dd1a9f19a6fa8c5c266ff11d7749e7e2a6867fe12784854d91e8e1b7c50b7a6",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "d268abd8b984c524cd83a3a73e93c11a9bfc50695ecbc010510707186ea81ed3",
+      "sha256": "74b8aafd8c68ba83b317c6269910e0b6316190520b0c9eb629fb3c3769a4ec70",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "a3aea0dc29ecdcb220272611ae841766831e95a3e5a560c9789e1617bd459ffc",
+      "sha256": "3b732046c2756430109f2701ab085d80684ecb34d8f318d7331bd85cfc00a870",
       "executable": false
     },
     "DEMO.md": {
@@ -459,7 +459,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "f1c90e19ceba1c2472cfceef72d4a1be35d5c6f6b9628e8b1539051f084831e9",
+      "sha256": "2a901534df416b4ec7491929ae549bc1dff70a2a5a890866f89679e8e2ddeace",
       "executable": false
     },
     "SOURCE.md": {
@@ -622,6 +622,14 @@
       "sha256": "cc1f049eb1a4d6879627bacc05c721faa0a3a78a72ab2d375c8b4e1647c32c1c",
       "executable": false
     },
+    "src/easel/cash-health-workbook.ts": {
+      "sha256": "b3bf3210775b6249341540ca3855ddadcafcd5d556db2e5d0f5352aa5c2cdebc",
+      "executable": false
+    },
+    "src/easel/cash-health.ts": {
+      "sha256": "09c15c611ae6da3e79728be6afe43d19b2f066ae80bde2fe62d5f1f406219dfd",
+      "executable": false
+    },
     "src/easel/context.ts": {
       "sha256": "8ea461a3e903f065950398c745df7aa72b87de3346fa295f1db603c8d8199f84",
       "executable": false
@@ -643,7 +651,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "6b9874916ed849014ef1589510fa39d9a7c90303de64302010ea3f6c28711048",
+      "sha256": "d39446102d02744d505a7ae5150b3eaf2db0fcc06b0e0b9464047c2e6c8da086",
       "executable": false
     },
     "src/easel/model.ts": {
@@ -679,7 +687,7 @@
       "executable": false
     },
     "src/easel/report-workbooks.ts": {
-      "sha256": "8b6e71c225c6b0abd0e5aa94be88ddcbbbae119898c0c6070f996c95079a5693",
+      "sha256": "088c169d0b8f7b4d69cf27a1cea1525c04e0a0cc203046feeae4d5b083c7477c",
       "executable": false
     },
     "src/easel/review.ts": {
@@ -691,7 +699,7 @@
       "executable": false
     },
     "src/easel/setup.ts": {
-      "sha256": "49eb945455386824dd3eac40674601ece46ca5f0fbbad4ffd5a48a01c1c45931",
+      "sha256": "d3fc4a80f94e5b8cbdcbdfb621da97e8aad22026d34fc81803d28ff2fd84b711",
       "executable": false
     },
     "src/easel/store.ts": {
@@ -715,7 +723,7 @@
       "executable": false
     },
     "src/easel/views.ts": {
-      "sha256": "89d3c25211b28475b81e0ab9e347aa65266be30dc8be26518041bee5d855aecd",
+      "sha256": "0513aaa7188ea09ed1fafb471b804a0da64240c149fce336a9560a9f12f2ebd5",
       "executable": false
     },
     "src/easel/workbook.ts": {
@@ -2442,6 +2450,10 @@
       "sha256": "033b2b6a5fc1177e30e4a33a0860abdabf29aeb16408266a72b1d3d6ad4001ac",
       "executable": false
     },
+    "src/ui/cash-health.tsx": {
+      "sha256": "2f75c3ad5bf85256cf515635b1e678d2db357b1c56a9c4d3dfd5d54536516365",
+      "executable": false
+    },
     "src/ui/chart.tsx": {
       "sha256": "84a1fd6ee72e899233d3065c67531ee38934bf862d7e31ec7cf999293b88cd91",
       "executable": false
@@ -2455,7 +2467,7 @@
       "executable": false
     },
     "src/ui/overview.tsx": {
-      "sha256": "f6384d86613f416783dcc4cc26837460d607e81fff17f9dd01eea044715d6c7a",
+      "sha256": "05432accae776551aca2b6db2d70f07c18bce0304464a93a9d9ad900169eeb1a",
       "executable": false
     },
     "src/ui/plan.tsx": {
@@ -2471,7 +2483,7 @@
       "executable": false
     },
     "src/ui/scenarios.tsx": {
-      "sha256": "94d4356e00f297fcef533623d67f16a08b6db3dc23b27f7bce26ee2d21355da6",
+      "sha256": "f94c2871e9816635d86ca7699e27e67b80b1d52b47950ac084d385afa6a4a3af",
       "executable": false
     },
     "src/ui/scroll-style.ts": {
@@ -2532,6 +2544,18 @@
     },
     "tests/browser.mjs": {
       "sha256": "4fb85f7da239998e4a304eb5e4b68c91a5a509aa09fe8c773ae3e5d7988e2160",
+      "executable": false
+    },
+    "tests/cash-health-browser-journey.mjs": {
+      "sha256": "889db7013db57ae08976477fb2c1f2e456f041adcedd6997af016533e31190da",
+      "executable": false
+    },
+    "tests/cash-health-browser.mjs": {
+      "sha256": "ef276e7b2a6cb9f261b4f2a2e2564e8c509508ae98f4e91bc0748dd65103ad62",
+      "executable": false
+    },
+    "tests/cash-health.test.mjs": {
+      "sha256": "71c085340ee2875344717f88c4ba3a08c25253a9789f93d778e3d4543c28b057",
       "executable": false
     },
     "tests/easel-worker.ts": {

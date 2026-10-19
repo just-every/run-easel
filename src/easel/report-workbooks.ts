@@ -1,3 +1,4 @@
+import { cashHealthSheet } from './cash-health-workbook'
 // Spreadsheet projections of the same role-filtered read models as the app.
 import { columnName } from './xlsx'
 import { workbook, type Cell, type Sheet } from './xlsx-write'
@@ -33,6 +34,7 @@ export function scenarioSheets(view: Data, prefix = '', department = ''): Sheet[
   const cashRows: Cell[][] = [[`${scenario.name} · ${workspace.currency} minor units`], ['Month', 'Opening', 'Collections', 'Payments', 'Closing']]
   for (const c of calc.cash) { const r = cashRows.length + 1; cashRows.push([c.month, r === 3 ? c.opening : formula(`E${r - 1}`, c.opening), c.collections, c.payments, formula(`B${r}+C${r}-D${r}`, c.closing)]) }
   sheets.push({ name: `${prefix}Cash`, rows: cashRows })
+  if (view.cashHealth) sheets.push(cashHealthSheet(view.cashHealth, calc.cash, workspace.currency, prefix))
  }
  sheets.push({ name: `${prefix}Cells`, rows: [['Amounts in minor units; restricted detail is removed by the server'], ['Month', 'Line', 'Department', 'Amount', 'Basis', 'Sources'], ...cells.map(c => [c.month, lines.find((l: Data) => l.id === c.line)?.name ?? c.line, departments.find((d: Data) => d.id === c.department)?.name ?? '', c.amount, c.basis, c.sources.map((s: Data) => s.trace).join('\n')])] })
  sheets.push({ name: `${prefix}Inputs`, rows: [['Only inputs visible to this reader; money fields ending Cents are minor units'], ['Kind', 'Name', 'Definition'], ...Object.entries(inputs).flatMap(([kind, records]) => (records as Data[]).filter(i => !department || i.department === department).map(i => [kind, i.name ?? i.title ?? '', JSON.stringify(i)]))] })

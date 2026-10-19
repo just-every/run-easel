@@ -1,3 +1,4 @@
+import { cashHealth } from './cash-health'
 // Read models for the UI and for agents. Every view is filtered here, on the
 // server, by the reader's role: individual positions, salaries and the rows
 // and traces behind other departments' numbers never leave for people who
@@ -7,7 +8,7 @@ import { reconciliation } from './actuals'
 import { actorNames } from './actor-names'
 import type { Context } from './context'
 import { calculate, type Calculation } from './engine'
-import { departments, INPUT_KINDS, lines, model, scenarioInputs } from './model'
+import { departments, INPUT_KINDS, lines, model, scenarioInputs, workspace } from './model'
 import { snapshot, snapshotList } from './store'
 import { approvedModel } from './approved'
 import { semanticEqual } from './semantic'
@@ -69,7 +70,7 @@ export async function scenarioView(c: Context, id: string) {
  const frozen = sc.status === 'frozen' ? await approvedModel(c, sc) : null
  const m = frozen ?? model(c.s, id)
  const calc = frozen ? frozen.calculation : calculate(m, sc.actualsThrough ? await c.actuals() : [])
- return { scenario: m.scenario, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
+ return { cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: m.scenario, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }
@@ -95,8 +96,8 @@ export async function compareView(c: Context, a: string, b: string) {
   return [{ line, department, month, before, after, difference: currencyComparable ? after - before : null }]
  }).sort((p, q) => p.month.localeCompare(q.month) || p.line.localeCompare(q.line))
  return {
-  left: { scenario: left.scenario, workspace: left.workspace, lines: left.lines, departments: left.departments, profit: left.calculation.profit, cash: left.calculation.cash },
-  right: { scenario: right.scenario, workspace: right.workspace, lines: right.lines, departments: right.departments, profit: right.calculation.profit, cash: right.calculation.cash },
+  left: { scenario: left.scenario, workspace: left.workspace, lines: left.lines, departments: left.departments, profit: left.calculation.profit, cash: left.calculation.cash, cashHealth: left.cashHealth },
+  right: { scenario: right.scenario, workspace: right.workspace, lines: right.lines, departments: right.departments, profit: right.calculation.profit, cash: right.calculation.cash, cashHealth: right.cashHealth },
   currencyComparable, changedInputs, changedCells,
  }
 }
