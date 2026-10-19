@@ -78,6 +78,12 @@
       "clauses": [
         "API-003"
       ]
+    },
+    {
+      "id": "model-audit-trail",
+      "clauses": [
+        "AUDIT-001"
+      ]
     }
   ],
   "nonGoals": [

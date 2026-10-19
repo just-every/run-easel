@@ -9,6 +9,7 @@ export type Actor = {
  id: string
  email: string
  name: string
+ agent?: { name: string; via: string }
  session: string
  version: number
  /** Base operator role: owner and admin plan as finance. */

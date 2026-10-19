@@ -1,5 +1,14 @@
 /** Activity rows stack into labelled lines on phones instead of scrolling sideways. */
 export const activityStyle = `
+@media(min-width:761px){
+ .activity-log{table-layout:fixed;width:100%}
+ .table-scroll .activity-log :is(th,td){white-space:normal;overflow-wrap:anywhere;min-width:0;max-width:none;vertical-align:top}
+ .table-scroll .activity-log :is(th,td):first-child{width:150px;min-width:150px;max-width:150px}
+ .activity-log :is(th,td):nth-child(2){width:100px}
+ .activity-log :is(th,td):nth-child(3){width:150px}
+ .activity-log :is(th,td):nth-child(4){width:170px}
+ .activity-log :is(th,td):nth-child(5){width:160px}
+}
 @media(max-width:760px){
  .activity-log thead{display:none}
  .activity-log caption{display:block}

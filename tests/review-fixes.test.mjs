@@ -131,7 +131,7 @@ test('actuals commit refuses stale account, department and reviewed metadata map
  assert.equal((await h.kit('actuals', 'commit', { ...h.body, fingerprint: p.fingerprint })).batch.status, 'accepted')
 })
 
-test('real rer import validates immutable contents and reference revisions before atomic restore', async t => {
+test('AUDIT-001 real rer import preserves the audit trail and validates immutable contents and reference revisions before atomic restore', async t => {
  const h = await plan(t), approved = await h.approve()
  const p = await h.kit('actuals', 'preview', h.body)
  await h.kit('actuals', 'commit', { ...h.body, fingerprint: p.fingerprint })

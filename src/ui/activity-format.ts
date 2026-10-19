@@ -24,6 +24,7 @@ export const eventLabel = (action: string) => events[action] ?? 'Other activity'
 export function activityRecord(state: D, row: D) {
  const d = row.detail ?? {}
  const action = row.action as string
+ if (action === 'record-changed') return safeText(d.after?.name ?? d.after?.title ?? d.before?.name ?? d.before?.title) || `${d.kind} values`
  if (action === 'workspace') return state.workspace.name
  if (action === 'department' || action === 'department-delete') return safeText(d.name) || named(state, 'departments', row.record, 'Removed department')
  if (action === 'line' || action === 'line-delete') return safeText(d.name) || named(state, 'lines', row.record, 'Removed planning line')

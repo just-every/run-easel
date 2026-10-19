@@ -3,6 +3,7 @@
 // records into e_records, each under the kit's own destination so the journal
 // can resume, reconcile and undo exactly what that import wrote.
 import type { D1ImportContext, D1Sql, D1TargetAdapter, TargetRow } from '../modules/import-kit/src/d1/index'
+import { importAudit } from './audit-write'
 import { authority } from './store'
 import type { Actor } from './types'
 
@@ -71,7 +72,10 @@ export const targets: D1TargetAdapter = {
 export function kitContext(db: D1Database, a: Actor, destination: string, namespace: string, mappingVersion: string): D1ImportContext {
  return {
   destination, namespace, mappingVersion, reversalPolicy: 'preserve-conflicts',
-  storage: { database: db as any, targets },
+  storage: { database: db as any, targets: { ...targets,
+   write: r => [...importAudit(a, r.destination, r.targetKind, r.targetId, r), ...targets.write(r)],
+   remove: (d, k, id) => [...importAudit(a, d, k, id), ...targets.remove(d, k, id)],
+  } },
   authorization: { principalId: a.id, predicate: () => authority(a, true) },
   batchSize: 100, maxBatches: 2,
  } as D1ImportContext

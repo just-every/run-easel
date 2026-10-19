@@ -125,6 +125,8 @@ export async function restoreFlow(h) {
   assert.equal(result.code, 0, result.log)
   const restored = await inspect()
   assert.deepEqual(restored[2].map(r => [r.id, r.sha256, r.body]).sort(), originalRows.filter(i => i.table === 'e_snapshots').map(i => [i.row.id, i.row.sha256, i.row.body]).sort())
+  // AUDIT-001: export/restore retains every actor, value change and sequence.
+  assert.deepEqual(restored[3], originalRows.filter(i => i.table === 'e_activity').map(i => i.row))
   assert.equal(restored[0].length, originalRows.filter(i => i.table === 'e_records').length)
   assert.equal(restored[1].length, originalRows.filter(i => i.table === 'e_actuals').length)
   await writeArchive(destination, legacy(original))

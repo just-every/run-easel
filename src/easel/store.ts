@@ -1,6 +1,7 @@
 // Loading and saving the editable model. Every save is one D1 batch fenced by
 // the model revision read at load and by the actor's current native session,
 // so a concurrent change or a revoked session writes nothing.
+import { changeEvent, eventStatement } from './audit-write'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { Fault, key, requireThat, type Actor, type Data, type State } from './types'
 
@@ -42,15 +43,19 @@ export async function save(db: D1Database, a: Actor, before: State, after: State
  const q: D1PreparedStatement[] = [guard(' AND (SELECT revision FROM e_meta WHERE id=1)=?').bind(...auth.params, revision)]
  for (const [k, r] of after) {
   if (before.get(k)?.revision === r.revision) continue
+  q.push(eventStatement(db, a, changeEvent(before.get(k), r)))
   q.push(db.prepare('INSERT INTO e_records(destination,kind,id,revision,value) VALUES(?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET revision=excluded.revision,value=excluded.value').bind(r.destination, r.kind, r.id, r.revision, JSON.stringify(r.value)))
  }
- for (const [k, r] of before) if (!after.has(k)) q.push(db.prepare('DELETE FROM e_records WHERE kind=? AND id=?').bind(r.kind, r.id))
+ for (const [k, r] of before) if (!after.has(k)) {
+  q.push(eventStatement(db, a, changeEvent(r, undefined)))
+  q.push(db.prepare('DELETE FROM e_records WHERE kind=? AND id=?').bind(r.kind, r.id))
+ }
  const at = new Date().toISOString()
  for (const s of snapshots) {
   const body = JSON.stringify(s.body)
   q.push(db.prepare('INSERT INTO e_snapshots(id,kind,scenario,label,actor,at,sha256,body) VALUES(?,?,?,?,?,?,?,?)').bind(s.id, s.kind, s.scenario, s.label, a.email, at, await sha256(body), body))
  }
- for (const e of activity) q.push(db.prepare('INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail) VALUES(?,?,?,?,?,?,?,?)').bind(at, a.email, e.action, e.record, e.scenario ?? null, e.before ?? null, e.after ?? null, JSON.stringify(e.detail ?? {})))
+ for (const e of activity) q.push(db.prepare('INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail) VALUES(?,?,?,?,?,?,?,?)').bind(at, a.email, e.action, e.record, e.scenario ?? null, e.before ?? null, e.after ?? null, JSON.stringify({ ...e.detail, authority: { type: a.agent ? 'agent' : 'person', name: a.agent?.name ?? a.name, via: a.agent?.via ?? 'session' } })))
  q.push(guard().bind(...auth.params), db.prepare('DELETE FROM e_guard'))
  try { await db.batch(q) } catch (e) {
   if (String(e).includes('CHECK constraint')) throw new Fault(409, 'The plan or your access changed while you were working; reload and try again')

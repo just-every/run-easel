@@ -115,10 +115,6 @@ export async function actualsView(c: Context) {
  return reconciliation(c.db, c.s)
 }
 
-export async function activityView(c: Context) {
- requireFinance(c.x)
- const { results } = await c.db.prepare('SELECT a.seq, a.at, a.actor, o.display_name AS actorName, a.action, a.record, a.scenario, a.before_revision AS beforeRevision, a.after_revision AS afterRevision, a.detail FROM e_activity a LEFT JOIN oa_operators o ON o.email=a.actor ORDER BY a.seq DESC LIMIT 300').all<any>()
- return results.map(r => ({ ...r, detail: JSON.parse(r.detail) }))
-}
+export { activityView } from './audit'
 
 export const visibleScenarioInputs = (s: State, x: Access, id: string) => Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, id, k).filter(i => visibleInput(x, k, i))]))

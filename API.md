@@ -49,3 +49,9 @@ The rolling window keeps that many future months after the last close. Closed mo
 ## MCP
 
 Agents can use the native-session [MCP endpoint](docs/mcp.md) at `POST /api/easel/mcp` for filtered reads and proposal, comment and explanation tools. Approval, close, publication and promotion stay with people.
+
+## Model audit trail (AUDIT-001)
+
+Finance reads `GET /api/easel/activity` with optional exact `actor` (email), `record` (ID), `scenario` (ID), and inclusive `from` / `to` dates (`YYYY-MM-DD`). Results are newest first, up to 300 rows; pass the last row's `seq` as `before` to read older rows. `GET /api/easel/activity.csv` accepts the same filters and exports all matching rows.
+
+`record-changed` rows hold the record kind, complete before and after values (null for creation/deletion), and native record revisions in `detail.beforeRecordRevision` / `detail.afterRecordRevision`. Semantic events retain scenario revisions in `beforeRevision` / `afterRevision`. `detail.authority` identifies a person or MCP agent and its transport; `actor` always identifies the person whose authority was used. Import and undo changes enter the same append-only trail inside the authorized journal batch. The complete trail survives `rer export` and restore.

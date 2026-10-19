@@ -79,7 +79,7 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
  let id: string | number | null = null
  const reply = (value: Data, status = 200) => Response.json({ jsonrpc: '2.0', id, ...value }, { status, headers })
  try {
-  const person = await actor(request, env)
+  const person = { ...await actor(request, env), agent: { name: 'MCP client', via: 'mcp' } }
   const { state, revision } = await load(env.DB)
   let cached: ReturnType<typeof actualCells> | undefined
   const c: Context = { s: state, x: access(state, person), db: env.DB, now: new Date().toISOString(), activity: [], snapshots: [], actuals: () => (cached ??= actualCells(env.DB, state)) }

@@ -531,7 +531,7 @@ Every change to setup, inputs, formulas, mappings, connections, permissions, sub
 
 *Acceptance:* through the API, make changes as three people, filter the trail by one person and one scenario, export it as CSV, and confirm the database refuses to update or delete a trail row.
 
-*Status:* partial.
+*Status:* done.
 
 #### ERASE-001 — Person erasure.
 Finance can erase a former member's personal data: their name, email and membership details, and, for an employee record from `PEOPLE-*`, their name and identifiers. Planning amounts stay, attributed to a stable pseudonym. Immutable snapshots keep their recorded digest, and every read and export of them shows the pseudonym in place of the erased name. The erasure returns a receipt with counts and time, and the audit trail records it without the erased data. Erasing the last finance member is refused.
@@ -809,8 +809,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 2 | 43 | 41 | 86 |
-| All | 19 | 43 | 41 | 103 |
+| Target and push further | 3 | 42 | 41 | 86 |
+| All | 20 | 42 | 41 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -890,7 +890,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `REPORT-007` | BI and warehouse feeds | target | missing |  | No warehouse inputs or BI dataset endpoint |
 | `ACCESS-001` | Groups and per-dimension permissions | target | partial | `src/easel/access.ts` `tests/easel.test.mjs` | Finance, department-scoped contributor and viewer roles ship; groups, per-dimension and per-capability grants and an access report are missing |
 | `ACCESS-002` | SSO and SCIM | target | missing |  | No SAML, OIDC or SCIM |
-| `AUDIT-001` | Model audit trail | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | An append-only activity log with actor and revisions is shown to finance (last 300 entries); filters, changed values for every record type, CSV export and agent attribution are missing |
+| `AUDIT-001` | Model audit trail | target | done | `src/easel/audit.ts` `src/easel/audit-write.ts` `tests/audit.test.mjs` `tests/restore-flow.mjs` | Atomic before/after values for native and imported records, person or agent attribution, finance filters and complete CSV export; append-only database guards and real CLI restore preserve the trail |
 | `ERASE-001` | Person erasure | target | missing |  | No erasure command, pseudonymised snapshot reads or receipt |
 | `API-001` | Public API with scoped tokens | target | partial | `src/easel/api.ts` `API.md` | The documented HTTP API works with a signed-in person's session; scoped personal and service tokens, expiry and rate limits are missing |
 | `API-002` | Webhooks and automation apps | target | missing |  | No webhooks or published automation apps |

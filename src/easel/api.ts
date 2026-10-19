@@ -4,6 +4,7 @@
 import { Hono, type Context as HonoContext } from 'hono'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { deploymentHealth } from '../base/deployment-health'
+import { activityCsv, activityView as filteredActivity } from './audit'
 import { access, requireFinance } from './access'
 import { actualCells, actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
@@ -66,7 +67,13 @@ api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('
 api.get('/api/easel/snapshot/:id', c => read(c, ctx => snapshotView(ctx, c.req.param('id'))))
 api.get('/api/easel/actuals', c => read(c, actualsView))
 api.get('/api/easel/variance/:month', c => read(c, ctx => variance(ctx, c.req.param('month'))))
-api.get('/api/easel/activity', c => read(c, activityView))
+api.get('/api/easel/activity', c => read(c, ctx => filteredActivity(ctx, c.req.query())))
+api.get('/api/easel/activity.csv', async c => {
+ const ctx = await open(c)
+ const csv = await activityCsv(ctx, c.req.query())
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="easel-activity.csv"' } })
+})
 
 api.get('/api/easel/pack/:id/:format{document\\.(html|csv)}', async c => {
  const ctx = await open(c)
