@@ -18,7 +18,7 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
   res.end(JSON.stringify({ scope: 'utilization:read', from: wrongPeriod ? '2026-02-01' : '2026-01-01', to: '2026-01-31', participantCount: 3, availableSeconds: missing ? null : 1728000, knownAvailableSeconds: missing ? 10000 : 1728000, missingCalendarDays: missing ? 1 : 0, approvedBillableSeconds: billable, asOf: new Date().toISOString(), personName: 'Provider private sentinel' }))
  })
  provider.listen(0, '127.0.0.1'); await once(provider, 'listening'); t.after(() => new Promise(r => provider.close(r)))
- const h = await harness({ bindings: { GAUGE_ORIGIN: `http://127.0.0.1:${provider.address().port}` } }); t.after(() => h.close())
+ const h = await harness({ bindings: { GAUGE_ORIGIN: `HTTP://127.0.0.1:${provider.address().port}/` } }); t.after(() => h.close())
  await h.command('workspace', { name: 'Cardinal Advisory', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const dept = await h.command('department', { name: 'Advisory' }), other = await h.command('department', { name: 'Engineering' })
  const line = await h.command('line', { name: 'Services', type: 'revenue' })

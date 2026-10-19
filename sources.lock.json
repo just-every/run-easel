@@ -723,7 +723,7 @@
       "executable": false
     },
     "src/easel/gauge-connection.ts": {
-      "sha256": "9133810627a1c681fee714165f5b8a08b2f7a9033981070ba72f0b0c31ee8908",
+      "sha256": "8dae7e903f8d88d2b2aaf21b967bfafa8089d21e26758246e3fd5bcc9b8a50f8",
       "executable": false
     },
     "src/easel/gauge-source.ts": {
@@ -2883,7 +2883,7 @@
       "executable": false
     },
     "tests/gauge-utilization.test.mjs": {
-      "sha256": "240f05274143ea8b65149a4eddaa8f669c39346f17dc1ffc57f93a98af3d38df",
+      "sha256": "9976db591c258011b2cdabf93e5ad76d793152aa4f20adf4e2ca0c94084631e0",
       "executable": false
     },
     "tests/grid-browser.mjs": {
