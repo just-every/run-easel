@@ -1,3 +1,4 @@
+import { gaugeCheck } from './gauge-check'
 import { gaugeStatus, gaugeConnection } from './gauge-connection'
 import { gaugeUtilization } from './gauge-utilization'
 import { starterModels } from './starter-models'
@@ -114,8 +115,15 @@ api.post('/api/easel/tokens/:op', async c => {
 
 api.get('/api/easel/connections/gauge', c => read(c, ctx => gaugeStatus(ctx, c.env)))
 api.post('/api/easel/connections/gauge/:op', async c => {
- const ctx = await open(c), extra = await gaugeConnection(ctx, c.env, c.req.param('op'), await body(c))
- await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ const ctx = await open(c), op = c.req.param('op'), input = await body(c)
+ if (op === 'check') {
+  await gaugeCheck(ctx, c.env, input)
+  await commit(ctx)
+ } else {
+  await readFence(ctx.db, ctx.x.actor, ctx.revision)
+  const extra = await gaugeConnection(ctx, c.env, op, input)
+  await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ }
  return c.json(await gaugeStatus(ctx, c.env))
 })
 api.post('/api/easel/gauge/:op', async c => {

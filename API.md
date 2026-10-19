@@ -244,11 +244,14 @@ All following doors require a native finance session and the ordinary origin/ses
 
 - `GET /api/easel/connections/gauge`: masked connection metadata.
 - `POST /api/easel/connections/gauge/connect` `{key}`; `POST .../disconnect` `{}`.
+- `POST /api/easel/connections/gauge/check` `{month}`: explicitly read a calendar-month aggregate and record health, row count, errors and rate limits without importing utilization.
 - `POST /api/easel/gauge/preview` `{scenario,driver,month,scenarioRevision}`: no-write preview of the entire Gauge agency's complete calendar month.
 - `POST /api/easel/gauge/accept` with those same fields plus the reviewed `digest`: refetch, compare and apply once; changed inputs return 409.
 - `POST /api/easel/gauge/undo` `{scenario,driver,scenarioRevision}`: restore the preceding import while its resulting scenario revision is still current.
 
 Gauge supplies participant count, available and approved-billable seconds, inclusive dates and an observation timestamp. Missing capacity blocks import. The selected services driver receives the entire agency aggregate; each scenario/month can map to only one driver. Revenue is approved billable seconds × the reviewed planned hourly rate / 3600, rounded once to cents. Labels explicitly distinguish these operational actuals from ledger revenue; closed ledger values take precedence. Later forecast months keep their entered assumptions. No scheduled refresh is claimed (CONNECT-005).
+
+Disconnect posts the stored key to Gauge `/api/gauge/keys/revoke` at its original configured origin, without following redirects or retrying. The local sealed key is deleted whether Gauge confirms or not. Status and Activity retain the confirmation outcome and HTTP status without the key or provider response body. Unconfirmed revocation shows "Gauge did not confirm revocation; revoke it in Gauge Access". Native finance, origin and model/session fences apply.
 
 ## Contract revenue (REV-004)
 

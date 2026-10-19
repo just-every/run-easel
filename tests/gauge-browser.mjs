@@ -21,6 +21,7 @@ try {
  browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
  let scenario
  for (const width of [1440, 390]) {
+  if (width === 390) provider.token = (await provider.cmd('apikey:create', { label: 'Easel phone utilization read' })).token
   const finance = await session(browser, root, server.origin, 'owner', width), page = finance.page
   try {
    await api(finance.context, server.origin, 'command/workspace', { name: 'Cardinal Growth Partners', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
@@ -36,6 +37,33 @@ try {
    assert.ok(!(await connections.innerText()).includes(provider.token))
    await connections.scrollIntoViewIfNeeded(); await noOverflow(page, `CONNECT-010 connected ${width}`)
    await connections.screenshot({ path: join(evidence, `connected-${width}.png`) })
+   await connections.getByLabel('Gauge read key', { exact: true }).fill(`gauge_util_${'z'.repeat(43)}`)
+   await connections.getByRole('button', { name: 'Replace Gauge key', exact: true }).click()
+   await connections.getByRole('button', { name: 'Replace Gauge key', exact: true }).waitFor()
+   await connections.getByLabel('Connection check month', { exact: true }).fill('2026-01')
+   await connections.getByRole('button', { name: 'Check Gauge connection', exact: true }).click()
+   await connections.getByRole('alert').filter({ hasText: 'Gauge returned HTTP 401' }).waitFor()
+   await connections.screenshot({ path: join(evidence, `failed-check-${width}.png`) })
+   await connections.getByLabel('Gauge read key', { exact: true }).fill(provider.token)
+   await connections.getByRole('button', { name: 'Replace Gauge key', exact: true }).click()
+   await connections.getByRole('alert').filter({ hasText: 'Gauge returned HTTP 401' }).waitFor({ state: 'detached' })
+   await connections.getByLabel('Connection check month', { exact: true }).fill('2026-01')
+   await connections.getByRole('button', { name: 'Check Gauge connection', exact: true }).click()
+   await connections.getByRole('cell', { name: 'Last connection check', exact: true }).waitFor()
+   const health = await api(finance.context, server.origin, 'connections/gauge')
+   assert.equal(health.error, null); assert.equal(health.rateLimit, null); assert.equal(health.rowCount, 1)
+   await connections.screenshot({ path: join(evidence, `checked-${width}.png`) })
+   if (width === 1440) {
+    // Exercise the buyer's actual CLI, while the provider credential is stored.
+    await server.close(); server = undefined
+    await command(root, ['export', '--output', 'exports/gauge-custody.rer'])
+    const archive = await readFile(join(root, 'exports/gauge-custody.rer'), 'utf8')
+    const manifest = JSON.parse(archive.split('\n')[0])
+    assert.ok(!manifest.tables.some(t => t.name === 'e_connection_secrets'))
+    assert.ok(!archive.includes(provider.token), 'CONNECT-010 real rer export excludes the live scoped provider key')
+    server = await start(root, port)
+    await page.reload(); await nav(page, 'Settings')
+   }
    await nav(page, 'Plan'); await page.getByLabel('Scenario', { exact: true }).selectOption(scenario)
    const utilization = card(page, 'Gauge utilization actuals')
    await utilization.getByLabel('Services driver', { exact: true }).selectOption(driver.id)
@@ -64,9 +92,30 @@ try {
    await nav(page, 'Settings')
    await card(page, 'Connections').getByRole('button', { name: 'Disconnect Gauge', exact: true }).click()
    await card(page, 'Connections').getByText('Disconnected', { exact: true }).waitFor()
+   await card(page, 'Connections').getByText(/Gauge confirmed revocation/).waitFor()
+   const revoked = await fetch(provider.origin + '/api/gauge/state?from=2026-01-01&to=2026-01-31', { headers: { authorization: `Bearer ${provider.token}` } })
+   assert.equal(revoked.status, 401, 'CONNECT-010 real Gauge key has no power after Easel disconnect')
    await card(page, 'Connections').screenshot({ path: join(evidence, `disconnected-${width}.png`) })
    await noOverflow(page, `CONNECT-010 disconnected ${width}`)
    console.log(`REV-003 CONNECT-010 ${width}: real Gauge approved time → scoped owner key → sealed Easel connection → exact 120000 cents, no-write preview, native accept/reload/undo/disconnect passed`)
   } finally { await finance.context.close() }
  }
+ provider.token = (await provider.cmd('apikey:create', { label: 'Easel unreachable revocation' })).token
+ const finance = await session(browser, root, server.origin, 'owner', 1440), page = finance.page
+ try {
+  await nav(page, 'Settings')
+  const connections = card(page, 'Connections')
+  await connections.getByLabel('Gauge read key', { exact: true }).fill(provider.token)
+  await connections.getByRole('button', { name: 'Connect Gauge', exact: true }).click()
+  await connections.getByRole('button', { name: 'Disconnect Gauge', exact: true }).waitFor()
+  await provider.close(); provider = undefined
+  await connections.getByRole('button', { name: 'Disconnect Gauge', exact: true }).click()
+  await connections.getByRole('alert').filter({ hasText: 'Gauge did not confirm revocation; revoke it in Gauge Access' }).waitFor()
+  const status = await api(finance.context, server.origin, 'connections/gauge')
+  assert.equal(status.connected, false); assert.equal(status.providerRevocation.status, 'not-confirmed')
+  for (const width of [1440, 390]) {
+   await page.setViewportSize({ width, height: 1000 }); await noOverflow(page, `CONNECT-010 unconfirmed ${width}`)
+   await connections.screenshot({ path: join(evidence, `revocation-unconfirmed-${width}.png`) })
+  }
+ } finally { await finance.context.close() }
 } finally { await browser?.close(); await server?.close(); await provider?.close(); if (!existing) await rm(root, { recursive: true, force: true }) }

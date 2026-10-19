@@ -3,7 +3,8 @@ import { Action, api, Field, Form, Table } from './shared'
 
 type Connection = {
  configured: boolean; connected: boolean; origin: string | null; suffix?: string; owner?: string
- connectedAt?: string; lastRefresh?: string; rowCount?: number
+ connectedAt?: string; lastRefresh?: string; rowCount?: number; lastChecked?: string; checkedMonth?: string
+ providerRevocation?: { status: string; at: string; httpStatus: number | null }
  scope: 'utilization:read'; schedule: 'Manual'; error: string | null; rateLimit: string | null
 }
 
@@ -28,8 +29,11 @@ export function GaugeConnection() {
     {connection.suffix && <tr><td>Stored key</td><td>••••{connection.suffix}</td></tr>}
     {connection.owner && <tr><td>Owner</td><td>{connection.owner}</td></tr>}
     {connection.connectedAt && <tr><td>Connected at</td><td>{connection.connectedAt}</td></tr>}
+    {connection.lastChecked && <tr><td>Last connection check</td><td>{connection.lastChecked}</td></tr>}
+    {connection.checkedMonth && <tr><td>Last checked month</td><td>{connection.checkedMonth}</td></tr>}
     <tr><td>Last successful refresh</td><td>{connection.lastRefresh ?? 'No successful refresh yet'}</td></tr>
     {connection.rowCount !== undefined && <tr><td>Last refresh rows</td><td>{connection.rowCount}</td></tr>}
+    {connection.providerRevocation && <tr><td>Disconnect revocation</td><td>{connection.providerRevocation.status === 'confirmed' ? 'Gauge confirmed revocation' : 'Not confirmed'} · {connection.providerRevocation.at}</td></tr>}
     {connection.rateLimit && <tr><td>Rate limit</td><td>{connection.rateLimit}</td></tr>}
    </Table>
    {connection.error && <p role="alert" className="error">{connection.error}</p>}
@@ -39,8 +43,11 @@ export function GaugeConnection() {
    }}>
     <Field label="Gauge read key" name="key" type="password" hint="Create a utilization:read key in Gauge Access. The connection is verified when you preview an import." />
    </Form>}
+   {connection.connected && <Form submit="Check Gauge connection" onSubmit={async v => { await api('connections/gauge/check', { month: v.month }); await load() }}>
+    <Field label="Connection check month" name="month" type="month" defaultValue={new Date().toISOString().slice(0, 7)} hint="Reads Gauge's aggregate for this month and records connection health. No utilization is imported." />
+   </Form>}
    {connection.connected && <Action label="Disconnect Gauge" kind="danger" run={async () => { await api('connections/gauge/disconnect', {}); await load() }} />}
-   <p className="muted">Disconnect removes the stored key from Easel. The Gauge owner can revoke it in Gauge Access; this bearer key cannot revoke itself.</p>
+   <p className="muted">Disconnect asks Gauge to revoke this key and removes the stored key from Easel even when Gauge cannot confirm revocation.</p>
   </>}
  </section>
 }

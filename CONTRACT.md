@@ -206,11 +206,11 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 #### CONNECT-010 — Connection custody and status.
 Every connector credential (OAuth tokens, API keys, certificates) is stored encrypted, excluded from `rer export`, shown only by masked suffix, and removed on disconnect, which also revokes the token at the provider where the provider supports it. A Connections page lists each source with its scopes, owner, schedule, last refresh, row counts, errors and rate-limit state. Only finance connects, disconnects or changes schedules, and each of those actions enters the audit trail (`AUDIT-001`).
 
-Future connector capabilities inherit these custody, status, finance authority and audit obligations before shipping: CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004, CONNECT-009, CONNECT-011, PEOPLE-001, PEOPLE-002, PEOPLE-003, REV-001, REV-002, SPEND-001, SHEET-001, SHEET-002 and SHEET-005. CONNECT-005 inherits connection schedule changes and their audit trail. Where a future provider's scoped credential supports remote revocation, disconnect performs it; otherwise the UI states the exact owner action still needed and never claims revocation. Gauge's existing read key does not yet support remote revocation and therefore keeps this clause partial until its self-revoke door ships and is used.
+Future connector capabilities inherit these custody, status, finance authority and audit obligations before shipping: CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004, CONNECT-009, CONNECT-011, PEOPLE-001, PEOPLE-002, PEOPLE-003, REV-001, REV-002, SPEND-001, SHEET-001, SHEET-002 and SHEET-005. CONNECT-005 inherits connection schedule changes and their audit trail. Where a future provider's scoped credential supports remote revocation, disconnect performs it; otherwise the UI states the exact owner action still needed and never claims revocation. Gauge supports scoped-key self-revocation: disconnect posts the stored key to `/api/gauge/keys/revoke` at the origin that originally received it, without redirects or automatic retries. The local sealed key is deleted on confirmed, refused and unreachable outcomes. The audit trail and Connections retain the outcome, HTTP status and time without the provider response body or key. An unconfirmed outcome displays "Gauge did not confirm revocation; revoke it in Gauge Access". Credential administration and inspection require the approved native finance session with origin and revision/session fences; API tokens are refused. Explicit month health checks update refresh time, row count, errors and sanitized rate-limit status without importing utilization; import previews remain no-write reads.
 
-*Acceptance:* `tests/gauge-utilization.test.mjs` (CONNECT-010) exercises the current custody slice. Connect and disconnect a provider fake through the API; the archive from `rer export` and the stored rows contain no planted token; a contributor's connect attempt is refused with 403; the audit trail shows both actions.
+*Acceptance:* `tests/gauge-utilization.test.mjs` (CONNECT-010) asserts sealed-at-rest and archive-excluded custody, masked native status, every current scope/owner/schedule/refresh/count/error/rate-limit field, contributor and token refusals, audited connect/check/disconnect, provider confirmation/refusal/redirect/network-failure outcomes and local deletion on every outcome with immutable imported values. `tests/gauge-browser.mjs` (CONNECT-010) connects a real current Gauge, checks status and errors, proves the actual `rer export` excludes its stored key, imports and disconnects at 1440/390, and asserts the real key returns 401 after revocation. The same journey displays the exact unconfirmed warning at both widths after the provider becomes unreachable.
 
-*Status:* partial. Gauge scoped-key custody and native Connections UI ship. Gauge must add a scoped-key self-revoke door; Easel disconnect must call it, delete its sealed key either way, and record an unconfirmed revocation with "Gauge did not confirm revocation; revoke it in Gauge Access" when it fails (ct, 19 October 18:17Z). Complete error/rate-limit inspection remains to prove.
+*Status:* done. Current Gauge custody, status inspection and remote revocation conform to ct’s 19 October 18:17Z and 18:28Z rulings; future connectors and scheduled refresh inherit the obligations above.
 
 ### Flexible model
 
@@ -911,8 +911,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 26 | 27 | 33 | 86 |
-| All | 43 | 27 | 33 | 103 |
+| Target and push further | 27 | 26 | 33 | 86 |
+| All | 44 | 26 | 33 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -943,7 +943,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CONNECT-007` | Balance-sheet actuals and the trial balance | target | partial | `src/easel/actuals.ts` | Only the cash balance account maps to the balance sheet; other balance-sheet balances, a zero-sum trial balance and a forecast balance sheet opened from actuals are missing |
 | `CONNECT-008` | Drill-through to the ledger transaction | target | done | `src/easel/actuals-read.ts`, `src/easel/review.ts`, `tests/drillthrough.test.mjs`, `tests/mapping-rules-browser.mjs` | Every accepted CSV row is drillable under inherited department filtering; future connectors carry provider links and browser assertions before shipping |
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |
-| `CONNECT-010` | Connection custody and status | target | partial | `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Gauge sealed custody/connect/local disconnect ship; provider self-revoke door and complete error/rate-limit inspection remain |
+| `CONNECT-010` | Connection custody and status | target | done | `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Sealed/excluded custody, native masked health inspection, audited remote self-revocation and deletion on every outcome |
 | `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 or 5-4-4 calendars are missing |
 | `MODEL-002` | A rolling forecast that extends itself | target | done | `tests/rolling-forecast.test.mjs` (MODEL-002) |  |
 | `MODEL-003` | Custom dimensions and hierarchies | target | partial | `src/easel/setup.ts` `tests/easel.test.mjs` | Lines and departments are the only dimensions; user-defined dimensions, hierarchies and account roll-ups are missing |

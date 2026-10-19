@@ -6,6 +6,10 @@ import { gaugeKey } from './gauge-connection'
 import { addMonths } from './months'
 import { Fault, requireThat, type Data } from './types'
 
+export class GaugeFailure extends Fault {
+ constructor(message: string, public rateLimit: string | null = null) { super(502, message) }
+}
+
 export async function gaugeSource(c: Context, env: Bindings, month: string) {
  const { origin, key } = await gaugeKey(c, env)
  const from = `${month}-01`, next = `${addMonths(month, 1)}-01`
@@ -15,7 +19,11 @@ export async function gaugeSource(c: Context, env: Bindings, month: string) {
  let response: Response
  try { response = await fetch(url, { headers: { authorization: `Bearer ${key}`, accept: 'application/json' }, redirect: 'manual', signal: AbortSignal.timeout(15000) }) }
  catch { throw new Fault(502, 'Gauge could not be reached; no utilization was imported') }
- requireThat(response.ok, `Gauge returned HTTP ${response.status}; no utilization was imported${response.status === 429 ? '; rate limited, try later' : ''}`, 502)
+ if (!response.ok) {
+  const retry = response.headers.get('retry-after')
+  const rateLimit = response.status === 429 ? (retry && /^\d{1,6}$/.test(retry) ? `Retry after ${Number(retry)} seconds` : 'Rate limited; try later') : null
+  throw new GaugeFailure(`Gauge returned HTTP ${response.status}; no utilization was imported${response.status === 429 ? '; rate limited, try later' : ''}`, rateLimit)
+ }
  requireThat(Number(response.headers.get('content-length') ?? 0) <= 16384, 'Gauge aggregate response is too large', 502)
  const reader = response.body?.getReader(); requireThat(reader, 'Gauge returned an empty response', 502)
  let raw = '', bytes = 0

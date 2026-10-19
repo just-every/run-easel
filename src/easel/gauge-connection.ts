@@ -1,16 +1,11 @@
 import type { Bindings } from '../auth.server'
+import { gaugeOrigin } from './gauge-origin'
+import { revokeGauge, GAUGE_REVOCATION_WARNING } from './gauge-revoke'
 import { requireFinance } from './access'
 import type { Context } from './context'
 import { sealConnection, openConnection } from './connection-seal'
 import { find, put, requireThat, text, type Data } from './types'
 
-export function gaugeOrigin(env: Bindings) {
- requireThat(env.GAUGE_ORIGIN, 'Configure GAUGE_ORIGIN on this installation before connecting Gauge', 503)
- let url: URL
- try { url = new URL(env.GAUGE_ORIGIN) } catch { throw new Error('Invalid installation GAUGE_ORIGIN') }
- requireThat(!url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && (url.protocol === 'https:' || (env.AUTH_LOCAL === 'true' && url.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname))), 'GAUGE_ORIGIN must be an HTTPS origin (HTTP loopback is allowed only locally)', 503)
- return url.origin
-}
 export function connectionAuthority(c: Context) {
  requireFinance(c.x)
  requireThat(!c.x.actor.token, 'Use a signed-in finance session for Gauge connections and imports', 403)
@@ -26,8 +21,9 @@ export async function gaugeConnection(c: Context, env: Bindings, op: string, b: 
  requireThat(op === 'connect' || op === 'disconnect', 'Unknown connection action', 404)
  const prior = find(c.s, 'connection', 'gauge')
  if (op === 'disconnect') {
-  put(c.s, 'connection', 'gauge', { ...prior, connected: false, disconnectedAt: c.now })
-  c.activity.push({ action: 'gauge-disconnected', record: 'gauge', detail: { providerRevocation: 'Revoke the key in Gauge Access; this scoped key cannot administer provider credentials' } })
+  const providerRevocation = await revokeGauge(c, env, prior)
+  put(c.s, 'connection', 'gauge', { ...prior, connected: false, disconnectedAt: c.now, providerRevocation, error: providerRevocation.status === 'confirmed' ? null : GAUGE_REVOCATION_WARNING, rateLimit: null })
+  c.activity.push({ action: 'gauge-disconnected', record: 'gauge', detail: { providerRevocation } })
   return [c.db.prepare('DELETE FROM e_connection_secrets WHERE id=?').bind('gauge')]
  }
  const origin = gaugeOrigin(env), token = text(b.key, 'Gauge scoped utilization key', 200)
