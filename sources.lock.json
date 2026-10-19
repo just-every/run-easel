@@ -603,7 +603,7 @@
       "executable": false
     },
     "src/easel/actuals-read.ts": {
-      "sha256": "7e920c34963860b332b0d5052e4d9900e953d12851a761f2c0ba55fe359c53d1",
+      "sha256": "2fc7d37d69f9317b2727f74fdb4b253748afa87fe26b64048c03e2b172f68da8",
       "executable": false
     },
     "src/easel/actuals.ts": {
@@ -2739,7 +2739,7 @@
       "executable": false
     },
     "tests/dashboards.test.mjs": {
-      "sha256": "81f621dbf55250f8070b3d2fd364bc7e6ddef31af3ebe06c00aa532f5e75bbe6",
+      "sha256": "58248cf63fd26a0e948e09524d264b1200199e2cd99fbb4004132ad1a9846e85",
       "executable": false
     },
     "tests/department-statements-browser.mjs": {

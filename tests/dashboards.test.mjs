@@ -90,8 +90,15 @@ test('REPORT-002 configurable dashboards retain personal layouts, exact aggregat
  assert.ok(missing.rows.every(row => row.closingCash === null && row.runway === null && row.burn === null))
  await h.command('account-map', { account: '400', target: f.revenue.id })
  await h.command('department-map', { source: 'Sales', department: '' })
- await h.get(`/api/easel/dashboards/${forecast.id}`, h.owner, 409)
+ assert.equal((await h.get(`/api/easel/dashboards/${forecast.id}`)).rows[0].revenue, 1000000, 'An explicit No department mapping remains a valid company aggregate')
  await h.command('department-map', { source: 'Sales', department: f.sales.id })
+ const rule = await h.command('account-rule', { match: 'prefix', from: '499', target: f.revenue.id })
+ const ruleSource = { ...actuals, filename: 'rule-source.csv', csv: 'Date,Account,Department,Amount\n2026-01-30,499,Sales,0\n' }
+ const rulePreview = await h.kit('actuals', 'preview', ruleSource)
+ await h.kit('actuals', 'commit', { ...ruleSource, fingerprint: rulePreview.fingerprint })
+ await h.command('account-rule-delete', { id: rule.id })
+ await h.get(`/api/easel/dashboards/${forecast.id}`, h.owner, 409)
+ await h.command('account-rule', { match: 'prefix', from: '499', target: f.revenue.id })
  const bulk = { ...actuals, filename: 'late-adjustments.csv', columns: { ...actuals.columns, reference: 'Reference' }, csv: 'Date,Account,Department,Amount,Reference\n' + Array.from({ length: 201 }, (_, i) => `2026-01-31,400,Sales,-1,adjustment-${i}`).join('\n') }
  const bp = await h.kit('actuals', 'preview', bulk)
  let importing = await h.kit('actuals', 'commit', { ...bulk, fingerprint: bp.fingerprint })

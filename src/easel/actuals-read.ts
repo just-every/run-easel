@@ -12,7 +12,7 @@ async function grouped(db: D1Database) {
 const resolved = (s: State, g: Data) => {
  const mapping = resolveAccount(s, g.account, g.accountType)
  const department = find(s, 'department-map', g.department)
- return { ...mapping, department: department?.department ?? '', blocked: !mapping.target || !department?.department || !find(s, 'department', department.department) }
+ return { ...mapping, department: department?.department ?? '', blocked: !mapping.target || !department || (!!department.department && !find(s, 'department', department.department)) }
 }
 
 /** Only consumed periods must be complete; a later unresolved month does not
