@@ -186,7 +186,7 @@ Finance sets a rolling window (for example always 18 months ahead). Closing a mo
 
 *Acceptance:* with an 18-month window, close two months in the API journey and see the forecast end move by two months, the new months calculated from drivers, and both kept forecasts unchanged.
 
-*Status:* done. Acceptance: `tests/rolling-forecast.test.mjs` (`MODEL-002`).
+*Status:* done. Acceptance: `tests/rolling-forecast.test.mjs` (MODEL-002).
 
 #### MODEL-003 — Custom dimensions and hierarchies.
 Beyond lines and departments, finance defines dimensions (for example entity, region, product, customer segment, project, class or location), each with a hierarchy of members and roll-ups. Inputs, actuals and reports can be cut by any dimension, and source dimensions map onto them (`CONNECT-006`). Lines get a chart-of-accounts hierarchy with subtotals.
@@ -843,7 +843,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |
 | `CONNECT-010` | Connection custody and status | target | missing |  | No connector credential storage, Connections page or token revocation |
 | `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 or 5-4-4 calendars are missing |
-| `MODEL-002` | A rolling forecast that extends itself | target | done | `tests/rolling-forecast.test.mjs` (`MODEL-002`) |  |
+| `MODEL-002` | A rolling forecast that extends itself | target | done | `tests/rolling-forecast.test.mjs` (MODEL-002) |  |
 | `MODEL-003` | Custom dimensions and hierarchies | target | partial | `src/easel/setup.ts` `tests/easel.test.mjs` | Lines and departments are the only dimensions; user-defined dimensions, hierarchies and account roll-ups are missing |
 | `MODEL-004` | User-defined formulas and driver lines | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Fixed driver forms (revenue, positions, expenses, schedules, allocations) calculate exactly with traces; a user formula language with lookups and cycle refusal is missing |
 | `MODEL-005` | Versioned model structure | target | partial | `src/easel/approved.ts` `tests/review-fixes.test.mjs` | Approved snapshots keep saved arithmetic when engine code changes; user-editable structure, structure diffs and moved-cell lists for structure changes are missing |
