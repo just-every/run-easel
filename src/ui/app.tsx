@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Dashboards } from './dashboards'
 import { Activity } from './activity'
 import { Actuals } from './actuals'
 import { Cycle } from './cycle'
@@ -13,6 +14,7 @@ import { addMonths, api, command, Field, Form, type D } from './shared'
 
 const TABS = [
  { id: 'overview', label: 'Overview', roles: ['finance', 'contributor', 'viewer'] },
+ { id: 'dashboards', label: 'Dashboards', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'plan', label: 'Plan', roles: ['finance', 'contributor'] },
  { id: 'actuals', label: 'Actuals', roles: ['finance'] },
  { id: 'cycle', label: 'Budget cycle', roles: ['finance', 'contributor', 'viewer'] },
@@ -48,6 +50,7 @@ export function App() {
   <div className="scroll-frame tab-frame" data-before={strip.edges.before} data-after={strip.edges.after}><nav ref={strip.ref as any} className="tabs" aria-label="Easel" onFocusCapture={e => revealHorizontally(e.target as HTMLElement)}>{tabs.map(t => <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>{t.label}</button>)}</nav>{strip.edges.before && <span className="scroll-cue scroll-cue-before" aria-hidden="true">←</span>}{strip.edges.after && <span className="scroll-cue" aria-hidden="true">→</span>}</div>
   {error && <p role="alert" className="error">{error}</p>}
   {tab === 'overview' && <Overview {...shared} />}
+  {tab === 'dashboards' && <Dashboards {...shared} />}
   {tab === 'plan' && <Plan {...shared} />}
   {tab === 'actuals' && <Actuals {...shared} />}
   {tab === 'cycle' && <Cycle {...shared} />}

@@ -192,6 +192,12 @@
       "clauses": [
         "REV-003"
       ]
+    },
+    {
+      "id": "dashboards",
+      "clauses": [
+        "REPORT-002"
+      ]
     }
   ],
   "nonGoals": [

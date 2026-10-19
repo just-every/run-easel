@@ -380,6 +380,8 @@ Finance connects [Orbit](https://github.com/just-every/run-orbit), HubSpot or Sa
 
 Before pipeline capability ships, REV-001 inherits CYCLE-002: next-quarter pipeline coverage is a rule metric with a finance-set threshold, evaluated on refresh/close to create cited owned/due tasks, with no duplicate while open. Existing task authority, blocking and evidence rules apply.
 
+Before pipeline capability ships, REV-001 also inherits REPORT-002 dashboard pipeline-coverage widgets, with saved layouts, audience filtering and aggregate Excel exports.
+
 *Acceptance:* a HubSpot fake with deals at three stages; the API journey sets probabilities and slippage, reads weighted bookings and revenue traced to deal IDs, moves a deal's close date in the fake, refreshes, and sees the revenue move; one recorded run against a HubSpot developer test account. The same journey against a recorded Salesforce fake of Opportunity, OpportunityLineItem and fiscal-period records: a custom stage whose CRM probability is 60% is overridden by finance to 40%, and weighted bookings use 40% with the trace labeling the override; an opportunity with a one-time setup product and a 12-month subscription product recognizes the first in its close month and the second ratably over 12 months; a close date inside a custom fiscal period lands in that period; one recorded run against a Salesforce Developer Edition org. Two local installations (Orbit and Easel), as in `CONNECT-004`: Easel pulls Orbit's deals, a deal's close date changed in Orbit moves its revenue on Easel's next refresh, and the trace cites the Orbit deal ID.
 
 Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold refresh creates a cited owned/due task, a second unchanged refresh does not duplicate it while open, and live task visibility, owner authority and blocked-source handling hold.
@@ -388,6 +390,8 @@ Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold r
 
 #### REV-002 — Subscription metrics from Stripe Billing and Nectar.
 Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax).
+
+Before subscription imports ship, REV-002 inherits REPORT-002 imported ARR widgets, with saved layouts, audience filtering and aggregate Excel exports.
 
 *Acceptance:* a Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months; the API journey reads an ARR bridge and a cohort table that agree with hand-computed values, and a reconciliation to ledger revenue; one recorded run against Stripe test mode.
 
@@ -506,6 +510,8 @@ A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headco
 #### REPORT-001 — Report builder.
 Finance and permitted members build reports. Rows are lines, dimensions or hierarchies. Columns are months, quarters, years, year-to-date or trailing twelve months, across versions (actual, prior-year actual, budget, each reforecast and the forecast), with variance and year-over-year change in dollars and percent. Filters by any dimension member and conditional highlighting (for example a variance over 10% in red) are available. Reports are saved, shared, and scheduled for email delivery to named people daily, weekly or monthly in the company's time zone. They are always role-filtered on the server, and each recipient of a scheduled report gets the copy they would see if they opened it.
 
+Before saved reports ship, REPORT-001 inherits REPORT-002 dashboard tables/charts over saved reports, with personal layouts, audience filtering and aggregate Excel exports.
+
 *Acceptance:* in the browser at 1440, build a department-by-quarter report of actual against budget with year-to-date, trailing-twelve-month, prior-year actual and year-over-year % columns, a department filter and a highlight rule; save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail. Year-to-date and trailing-twelve-month cells equal the sum of their months, and year-over-year % equals (actual − prior-year actual) ÷ prior-year actual, to the cent. With a mail fake and a fake clock, schedule the report weekly for Monday 8:00 Eastern to finance and a viewer: on Monday each receives one email, and the viewer's copy omits restricted detail.
 
 *Status:* partial.
@@ -513,9 +519,13 @@ Finance and permitted members build reports. Rows are lines, dimensions or hiera
 #### REPORT-002 — Dashboards.
 Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width.
 
-*Acceptance:* in the browser at 1440 and 390, build a dashboard with runway, ARR and headcount tiles, share it with the board persona, and see the same numbers in the API without horizontal overflow.
+Ct approved the current-capability DONE boundary on 19 October (14:21Z). Finance creates and edits its own dashboards over company-visible plans; sandboxes and proposals cannot be sources. A private dashboard is creator-only. Leadership means current finance, board means current viewers, and a named department means its current contributors; the creator retains access while an active member. Every list, read, layout save and Excel download rechecks membership and source access. Sharing grants no input/pay access. A department dashboard fixes its department and shows no invented department cash, burn or runway. Shared definitions and per-person widget order/display use exact reviewed revisions and native session/model fences. A changed shared definition resets the effective layout to that definition until the person saves a new arrangement; it never changes another person's layout. Private dashboards and other people's layout contents are omitted from finance Activity and open export; the owner CLI backup remains whole-installation custody.
 
-*Status:* partial.
+Current metrics are monthly revenue, gross margin (revenue less cost of sales, an amount), planned headcount, net cash burn, closing cash, runway and planned ARR. Money is integer minor units, headcount whole people, runway hundredths of months. Runway uses closing cash divided by the current and up to two preceding months' average net burn, rounded half away from zero; non-burning cash is labeled, exhausted cash is zero runway. ARR is current recurring customer/seat driver revenue × 12, identified by each source rather than the entire revenue line; other forms never count. Closed-month actuals lack subscription classification and have no ARR value. Missing or incomplete actuals are blocked, never zero. Frozen plans use captured inputs and calculations. Tiles show the ending month, charts and tables the full horizon. Aggregate Excel repeats authorization and has live margin, ARR and period-total formulas; flow totals sum months, headcount is the final month. Before shipping, REV-001 inherits dashboard pipeline coverage, REV-002 imported ARR and REPORT-001 saved-report dashboard tables/charts, under the same filtering, sharing, layouts and exports.
+
+*Acceptance:* `tests/dashboards.test.mjs` and `tests/dashboards-browser.mjs` (REPORT-002): at 1440/390 finance creates runway, ARR and headcount tiles, saves and shares with board; rendered numbers equal API metrics. Readers independently reorder/change tile/chart/table displays and reload saved personal layouts. Assert every current metric's hand calculation, subscription-only ARR on mixed revenue lines, closed actual ARR unavailability, immutable frozen values, unavailable department cash, live membership/audience revocation, stale revision refusal, private Activity/open-export filtering and independently evaluated Excel formulas. REV-001 carries the future pipeline coverage widget, REV-002 imported ARR and REPORT-001 saved-report widgets before shipping.
+
+*Status:* done.
 
 #### REPORT-003 — Board pack.
 A board pack template contains statements, KPIs, charts, variance commentary, decisions and appendix tables. It is generated for a closed month or quarter, refreshed until published, and published as an immutable snapshot (as in `EASEL-014`). It exports as PDF, PowerPoint (.pptx) and Excel, and can be saved to [Chest](https://github.com/just-every/run-chest), Google Drive or SharePoint. Refreshing keeps the commentary that people wrote.
@@ -851,8 +861,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 20 | 30 | 36 | 86 |
-| All | 37 | 30 | 36 | 103 |
+| Target and push further | 21 | 29 | 36 | 86 |
+| All | 38 | 29 | 36 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -924,7 +934,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | done | `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs` | Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths |
 | `REPORT-001` | Report builder | target | partial | `src/ui/overview.tsx` `src/easel/views.ts` | Fixed overview, scenario and variance views ship; user-built and saved reports, year-to-date, trailing-twelve-month, prior-year and year-over-year columns, filters, highlighting and scheduled email delivery are missing |
-| `REPORT-002` | Dashboards | target | partial | `src/ui/overview.tsx` `src/ui/chart.tsx` | One fixed overview with a chart ships; configurable KPI dashboards, saved layouts and audience sharing are missing |
+| `REPORT-002` | Dashboards | target | done | `src/easel/dashboards.ts` `tests/dashboards.test.mjs` `tests/dashboards-browser.mjs` |  |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |
 | `REPORT-004` | Linked PowerPoint and Word reporting | target | missing |  | No PowerPoint or Word add-ins |
 | `REPORT-005` | Department budget-owner reporting | target | done | `src/easel/department-statements.ts`, `tests/department-statements.test.mjs`, `tests/department-statements-browser.mjs` | Scoped close-triggered statements, complete source rows, current tasks/confirmations, explicit pack-action departments, durable honest mail states, finance retry, authenticated app links and formula Excel |

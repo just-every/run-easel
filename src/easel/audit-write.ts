@@ -3,6 +3,12 @@ import type { D1Sql, TargetRow } from '../modules/import-kit/src/d1/index'
 import type { Activity } from './store'
 import type { Actor, Row } from './types'
 
+// Layouts are personal presentation preferences, not model assumptions. Keep
+// attribution/revisions without copying private widget arrangements to audit.
+const auditValue = (row?: Row) => row?.kind === 'dashboard-layout'
+ ? { dashboard: row.value.dashboard, owner: row.value.owner, revision: row.value.revision }
+ : row?.value ?? null
+
 export function actorAuthority(actor: Actor) {
  return { type: actor.agent ? 'agent' : 'person', name: actor.agent?.name ?? actor.name, via: actor.token ? 'api-token' : actor.agent?.via ?? 'session', ...(actor.token ? { tokenId: actor.token.id } : {}) }
 }
@@ -10,7 +16,7 @@ export function actorAuthority(actor: Actor) {
 export function changeEvent(before?: Row, after?: Row): Activity {
  const row = after ?? before!
  return { action: 'record-changed', record: row.id, scenario: (after?.value ?? before?.value)?.scenario ?? (row.kind === 'scenario' ? row.id : undefined), detail: {
-  kind: row.kind, before: before?.value ?? null, after: after?.value ?? null,
+  kind: row.kind, before: auditValue(before), after: auditValue(after),
   beforeRecordRevision: before?.revision ?? null, afterRecordRevision: after?.revision ?? null,
  } }
 }

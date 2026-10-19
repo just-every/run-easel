@@ -1,4 +1,5 @@
 // Scenario sharing adds a boundary; it never replaces department/pay authority.
+import { canSeeDashboard } from './dashboard-access'
 import { find, get, requireThat, type Access, type Data, type State } from './types'
 
 export function canSeeScenario(x: Access, sc: Data) {
@@ -20,6 +21,19 @@ export function requireScenarioEdit(x: Access, sc: Data) {
 /** Activity remains append-only; its projection follows today's scenario grant. */
 export function visibleActivity(s: State, x: Access, event: Data): Data | null {
  const visible = (id: string) => { const sc = find(s, 'scenario', id); return !sc || canSeeScenario(x, sc) }
+ if (event.action === 'record-changed' && event.detail.kind === 'dashboard') {
+  const dashboard = find(s, 'dashboard', event.record) ?? event.detail.after ?? event.detail.before
+  if (!dashboard || !canSeeDashboard(s, x, dashboard)) return null
+ }
+ if (event.action === 'record-changed' && event.detail.kind === 'dashboard-layout') {
+  const layout = event.detail.after ?? event.detail.before
+  const dashboard = layout && find(s, 'dashboard', layout.dashboard)
+  if (!layout || layout.owner !== x.actor.email || !dashboard || !canSeeDashboard(s, x, dashboard)) return null
+ }
+ if (event.action.startsWith('dashboard-')) {
+  const dashboard = find(s, 'dashboard', event.record) ?? { ...event.detail, scenario: event.scenario }
+  if (!canSeeDashboard(s, x, dashboard)) return null
+ }
  if (event.scenario && !visible(event.scenario)) return null
  if (event.action !== 'structure-version') return event
  const detail = event.detail

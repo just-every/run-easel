@@ -1,3 +1,5 @@
+import { dashboards, dashboardList, dashboardView } from './dashboards'
+import { dashboardWorkbook } from './dashboard-workbook'
 import { sandboxes } from './sandboxes'
 import { versionStructure } from './structure-versions'
 // Easel's HTTP surface. Every private route resolves the native session,
@@ -134,6 +136,14 @@ api.get('/api/easel/department-statements/:id/document.xlsx', async c => {
  return spreadsheet(departmentStatementWorkbook(view), 'easel-department-statement')
 })
 
+api.get('/api/easel/dashboards', c => read(c, async ctx => dashboardList(ctx)))
+api.get('/api/easel/dashboards/:id', c => read(c, ctx => dashboardView(ctx, c.req.param('id'))))
+api.get('/api/easel/dashboards/:id/document.xlsx', async c => {
+ const ctx = await open(c), view = await dashboardView(ctx, c.req.param('id'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(dashboardWorkbook(view), 'easel-dashboard')
+})
+
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
@@ -201,7 +211,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [setup, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [setup, dashboards, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

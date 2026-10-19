@@ -1,3 +1,4 @@
+import { canSeeDashboard } from './dashboard-access'
 import { canSeeScenario, visibleActivity } from './scenario-access'
 import { readD1ImportOriginals } from '../modules/import-kit/src/d1/index'
 import type { RetainedOriginal } from '../modules/import-kit/src/types'
@@ -76,7 +77,14 @@ export async function openExport(c: Context): Promise<Uint8Array> {
  requireFinance(c.x)
 
  const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
- const visibleRow = (row: Data) => !hidden.has(row.kind === 'scenario' ? row.id : row.value?.scenario)
+ const visibleRow = (row: Data) => {
+  if (row.kind === 'dashboard') return canSeeDashboard(c.s, c.x, row.value)
+  if (row.kind === 'dashboard-layout') {
+   const dashboard = all(c.s, 'dashboard').find(d => d.id === row.value.dashboard)
+   return row.value.owner === c.x.actor.email && !!dashboard && canSeeDashboard(c.s, c.x, dashboard)
+  }
+  return !hidden.has(row.kind === 'scenario' ? row.id : row.value?.scenario)
+ }
  const files: ArchiveFile[] = []
  const tables: Record<string, number> = {}
  const { results: schema } = await c.db.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') ORDER BY name").all<{ name: string; sql: string }>()
