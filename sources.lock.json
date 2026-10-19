@@ -2691,7 +2691,7 @@
       "executable": false
     },
     "src/ui/gauge-connection.tsx": {
-      "sha256": "9ee5b0813ebfe6aa3bae537e695455b901c2a232f957acae1bace94efee84276",
+      "sha256": "a83916b1e4cbc8099cf20665a519373a76c1b6c1fe8ee366f3ff481b95dd4114",
       "executable": false
     },
     "src/ui/gauge-utilization.tsx": {

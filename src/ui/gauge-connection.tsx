@@ -26,7 +26,7 @@ export function GaugeConnection() {
     <tr><td>Origin</td><td>{connection.origin ?? 'Not configured'}</td></tr>
     <tr><td>Read scope</td><td>{connection.scope}</td></tr>
     <tr><td>Schedule</td><td>{connection.schedule}</td></tr>
-    {connection.suffix && <tr><td>Stored key</td><td>••••{connection.suffix}</td></tr>}
+    {connection.suffix && <tr><td>{connection.connected ? 'Stored key' : 'Last key suffix'}</td><td>••••{connection.suffix}</td></tr>}
     {connection.owner && <tr><td>Owner</td><td>{connection.owner}</td></tr>}
     {connection.connectedAt && <tr><td>Connected at</td><td>{connection.connectedAt}</td></tr>}
     {connection.lastChecked && <tr><td>Last connection check</td><td>{connection.lastChecked}</td></tr>}
