@@ -39,6 +39,8 @@ export function Overview({ state }: Shared) {
    <div className="row">
     <ScenarioPicker scenarios={plans} value={id} onChange={v => { setId(v); setTrace(null) }} />
     <label className="inline">Department<select aria-label="Department" value={department} onChange={e => setDepartment(e.target.value)}><option value="">All departments</option>{departments.map((d: D) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+    <a href={`/api/easel/scenario/${id}/document.xlsx${department ? `?department=${encodeURIComponent(department)}` : ''}`} download>Download Excel</a>
+    <a href={`/api/easel/scenario/${id}/document.csv`} download>Download CSV</a>
    </div>
    {sc && <p className="muted">Revision {sc.revision} · {sc.status === 'frozen' ? <>approved by <Person state={state} email={sc.approval?.by} /> at <span className="date-token">{sc.approval?.at?.slice(0, 19).replace('T', ' ')}</span></> : sc.status}{sc.actualsThrough ? ` · actuals through ${monthLabel(sc.actualsThrough)}` : ''}{sc.branchedFrom ? ` · branched from ${sc.branchedFrom.name} at revision ${sc.branchedFrom.revision}` : ''}</p>}
   </div>

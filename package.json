@@ -47,6 +47,7 @@
     "@types/react-dom": "19.2.7",
     "@vitejs/plugin-react": "6.1.1",
     "esbuild": "0.28.1",
+    "exceljs": "4.4.0",
     "marked": "18.0.14",
     "miniflare": "5.20260907.0-alpha",
     "typescript": "5.9.3",

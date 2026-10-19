@@ -20,6 +20,7 @@ export function Review({ state, refresh }: Shared) {
  return <>
   <section className="card">
    <h2>Monthly review</h2>
+   {v && <p><a href={`/api/easel/variance/${month}/document.xlsx`} download>Download variances (Excel)</a></p>}
    {!forecast && <p>The forecast opens when the budget is approved.</p>}
    {forecast && <p className="muted">{forecast.name} · revision {forecast.revision} · actuals through {monthLabel(forecast.actualsThrough)}</p>}
    {forecast && <p className="muted">Forecast through {monthLabel(addMonths(state.workspace.planStart, (forecast.horizon ?? state.workspace.horizon) - 1))}{forecast.rollingWindow ? ` · always ${forecast.rollingWindow} months ahead` : ' · fixed horizon'}. Approved budgets keep their original months.</p>}
@@ -64,7 +65,7 @@ export function Review({ state, refresh }: Shared) {
      </Form>
      <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id }); await refresh() }} />
     </>}
-    {p.status === 'published' && <p>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{p.publishedAt.slice(0, 19).replace('T', ' ')}</span> · <a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a> · <a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a></p>}
+    {p.status === 'published' && <p>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{p.publishedAt.slice(0, 19).replace('T', ' ')}</span> · <a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a> · <a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a> · <a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a></p>}
    </div>)}
    {!packs.length && <p className="muted">No packs for this month yet.</p>}
   </section>

@@ -10,6 +10,7 @@ import { join, resolve } from 'node:path'
 import { command, fresh, freePort, report, start } from './browser-runtime.mjs'
 import { lobbyJourney } from './browser-lobby.mjs'
 import { api, planningJourney, reviewJourney, session } from './browser-journey.mjs'
+import { exportBrowserJourney } from './export-browser-journey.mjs'
 import { assertActorNames, operators, rejectSourceSession, roleNames } from './browser-identity.mjs'
 
 const existing = process.argv.includes('--existing')
@@ -42,6 +43,7 @@ try {
  browser = await launch()
  const journeys = [await lobbyJourney(browser, server, evidence), await planningJourney(browser, root, server.origin, evidence), await reviewJourney(browser, root, server.origin, evidence)]
  let owner = await session(browser, root, server.origin, 'owner', 1440)
+ for (const width of [1440, 390]) { await owner.page.setViewportSize({ width, height: 1000 }); await exportBrowserJourney(owner.page, evidence, width) }
  const sourceState = await api(owner.context, server.origin, 'state')
  const sourceOperators = await operators(owner.context, server.origin)
  assertActorNames(sourceState, sourceOperators)

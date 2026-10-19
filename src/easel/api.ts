@@ -12,6 +12,9 @@ import { cycle } from './cycle'
 import { handleMcp } from './mcp'
 import { packCsv, packHtml } from './pack-documents'
 import { plan } from './plan'
+import { scenarioWorkbook, scenarioCsv, comparisonWorkbook, varianceWorkbook } from './report-workbooks'
+import { packWorkbook } from './pack-workbook'
+import { actualsWorkbook, activityWorkbook } from './operational-workbooks'
 import { review, variance } from './review'
 import { setup } from './setup'
 import { actor, load, readFence, save, snapshot } from './store'
@@ -100,13 +103,54 @@ api.get('/api/easel/activity.csv', async c => {
  return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="easel-activity.csv"' } })
 })
 
-api.get('/api/easel/pack/:id/:format{document\\.(html|csv)}', async c => {
+const spreadsheet = (bytes: Uint8Array, name: string) => new Response(bytes as BodyInit, { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'content-disposition': `attachment; filename="${name}.xlsx"` } })
+api.get('/api/easel/actuals.xlsx', async c => {
+ const ctx = await open(c), bytes = actualsWorkbook(await actualsView(ctx), get(ctx.s, 'workspace', 'main').currency)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(bytes, 'easel-reconciliation')
+})
+api.get('/api/easel/activity.xlsx', async c => {
+ const ctx = await open(c), events: Data[] = [], filters = c.req.query()
+ let before = filters.before
+ do {
+  const rows = await filteredActivity(ctx, { ...filters, before })
+  events.push(...rows)
+  if (rows.length < 300) break
+  before = String(rows.at(-1)!.seq)
+ } while (true)
+ const bytes = activityWorkbook(events)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(bytes, 'easel-activity')
+})
+api.get('/api/easel/scenario/:id/:format{document\\.(xlsx|csv)}', async c => {
+ const ctx = await open(c), view = await scenarioView(ctx, c.req.param('id'))
+ const department = c.req.query('department') ?? ''
+ requireThat(!department || view.departments.some(d => d.id === department), 'Unknown department')
+ const bytes = c.req.param('format') === 'document.csv' ? scenarioCsv(view) : scenarioWorkbook(view, department)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return typeof bytes === 'string' ? new Response(bytes, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="easel-plan.csv"' } }) : spreadsheet(bytes, 'easel-plan')
+})
+api.get('/api/easel/compare.xlsx', async c => {
+ const ctx = await open(c)
+ const left = await scenarioView(ctx, c.req.query('a') ?? ''), right = await scenarioView(ctx, c.req.query('b') ?? '')
+ const bytes = comparisonWorkbook(left, right)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(bytes, 'easel-comparison')
+})
+api.get('/api/easel/variance/:month/document.xlsx', async c => {
+ const ctx = await open(c), bytes = varianceWorkbook(await variance(ctx, c.req.param('month')))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(bytes, 'easel-variance')
+})
+
+api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  const ctx = await open(c)
  requireThat(ctx.x.role, 'Finance has not added you to this plan yet', 403)
  const pack = get(ctx.s, 'pack', c.req.param('id'), 'pack')
  requireThat(pack.status === 'published', 'This pack is not published yet', 409)
  const sn = await snapshot(ctx.db, pack.snapshot)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ if (c.req.param('format') === 'document.xlsx') return spreadsheet(packWorkbook(sn), `easel-review-${pack.month}`)
  const csv = c.req.param('format') === 'document.csv'
  const name = `easel-review-${pack.month}.${csv ? 'csv' : 'html'}`
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })

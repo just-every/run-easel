@@ -402,11 +402,11 @@ Importing an existing Excel or Google Sheets model translates supported formulas
 *Status:* partial.
 
 #### SHEET-004 — Excel exports with formulas.
-Any report, plan or pack exports as .xlsx with live subtotal, total and variance formulas and one sheet per statement, not values only. CSV exports remain. Pay detail follows `PEOPLE-005`.
+Any report, plan or pack exports as .xlsx with live subtotal, total and variance formulas and one sheet per statement, not values only. CSV exports remain. Pay detail follows `PEOPLE-005`. This obligation applies to every report and statement that exists today (scenario/overview P&L and cash, scenario comparisons, monthly variances, published packs, actuals reconciliation and filtered activity), using the same server-filtered views and immutable snapshots as the app. Future report, statement and plan capabilities (`REPORT-001` to `REPORT-007`, `FIN-001` to `FIN-007`, `MODEL-001` to `MODEL-009`) inherit this export obligation before they ship. Workbook amounts are integer minor units, labelled with their currency; differences are actual minus budget or comparison-to minus comparison-from. Unavailable comparison periods or different currencies have no difference value. A department-filtered plan exports that department's P&L and visible inputs, without a company-wide cash statement.
 
 *Acceptance:* download a report as .xlsx through the browser, open it with a spreadsheet library in the test, and assert that subtotal cells hold formulas that evaluate to Easel's totals.
 
-*Status:* partial.
+*Status:* done.
 
 #### SHEET-005 — Scheduled spreadsheet pulls.
 A linked sheet range (for example a sales team's capacity sheet) is pulled on a schedule. Its changes arrive as a previewed proposal for finance with the changed cells listed. A sheet that went missing or changed shape is reported, never read as zeros.
@@ -873,7 +873,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `SHEET-001` | Excel add-in with live formulas | target | partial | `src/easel/workbook.ts` `tests/easel.test.mjs` | One-way .xlsx import with cell and formula provenance ships; an Excel add-in with live functions, on-demand and on-open refresh, direct entry during an open submission and proposal write-back is missing |
 | `SHEET-002` | Google Sheets add-on with live formulas | target | missing |  | No Google Sheets add-on, refresh on open or installable-trigger refresh |
 | `SHEET-003` | Model import that keeps formulas | target | partial | `src/easel/xlsx.ts` `tests/easel.test.mjs` | Cached values import with formula text kept as provenance; formula translation, an untranslated-cell report and total reconciliation are missing |
-| `SHEET-004` | Excel exports with formulas | target | partial | `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Packs download as HTML and CSV; .xlsx exports with live formulas are missing |
+| `SHEET-004` | Excel exports with formulas | target | done | `src/easel/report-workbooks.ts`, `src/easel/pack-workbook.ts`, `tests/spreadsheet-export.test.mjs`, `tests/export-browser-journey.mjs` | Every current plan/report/pack exports XLSX with live subtotal, total and variance formulas; statement sheets, scoped detail, immutable packs and CSV retained |
 | `SHEET-005` | Scheduled spreadsheet pulls | target | missing |  | No linked-range scheduled pulls |
 | `CYCLE-001` | Budget calendar, tasks and reminders | target | partial | `src/easel/cycle.ts` `tests/easel.test.mjs` | Submission requests, states and history ship; a planning calendar, due dates, reminders and escalation are missing |
 | `CYCLE-002` | Metric-triggered tasks | target | missing |  | No rules or automatic task creation |

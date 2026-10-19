@@ -115,7 +115,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "9047c4f2c5506232962bdc7d4b0358034d790ef8791018b3e8a718ff745b87da",
+      "sha256": "69e02aeb4102b459f01daa2d51810e1afd35b4844891f9ba75379bfa0406c09f",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -127,7 +127,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "1407e4fafbf0d5a263669186dd61d6006846bb884393a7c9e2aa09e9bee265d8",
+      "sha256": "857cd28666984900e4a8668046040d86acaed9035f1773e3b740850c52f237da",
       "executable": false
     },
     "base-copies.json": {
@@ -139,7 +139,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "79b8313a380c871bb8cca3560a5954448e084453ecccaf87e847ea0d5038a3bf",
+      "sha256": "732af0dd47bd95f76c4d6298eefd1087628ea49835c5eb5523d0d1d6530ebeba",
       "executable": false
     },
     "DEMO.md": {
@@ -303,11 +303,11 @@
       "executable": false
     },
     "package.json": {
-      "sha256": "dd2aacd785d72203143d9d290666641ee2a7e0e2b370d4c9b286450c7a713491",
+      "sha256": "320d6c43797d05cbf1fdfc5134aa79d94f78ac26d2e4486337a3b844c8fbf0fe",
       "executable": false
     },
     "pnpm-lock.yaml": {
-      "sha256": "970540b792847749bcec8da6282ef891a70e69e3f585a50c612d7448313d8675",
+      "sha256": "09d2a7d5b86f41fc42c272899a379ac681f6a68828963f5020e410c68712f0db",
       "executable": false
     },
     "public/brand/band.svg": {
@@ -455,7 +455,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "3e8760bbf066cc114a23faf368fe44bae8a662521f4ff9528907c9920ff1e421",
+      "sha256": "da86797a74b23a8e5a4a4d09baa5e6069815802bd4b3814e09bfb33f31b9d2e2",
       "executable": false
     },
     "SOURCE.md": {
@@ -595,7 +595,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "5a5b71187c50a2fe9e68942ebe4ecd52a95d77ff0d2043a0ed4488e74888beb1",
+      "sha256": "313025b23b30d963efb9309220ffe54da5bf027e2f375e6fc027f91132da140d",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -642,8 +642,16 @@
       "sha256": "24a79064dc14137adf614f416e9a0b3dce61d55efc41acd054c545fd5e4f67db",
       "executable": false
     },
+    "src/easel/operational-workbooks.ts": {
+      "sha256": "b0bb347fc1b63219aa26975c8f3b59c275832ca5bf80724769fd965730b7e45f",
+      "executable": false
+    },
     "src/easel/pack-documents.ts": {
       "sha256": "dfc458344477679e7527ba1f80f1d647d6de64b92ba8df8480e566a3f0c0afc2",
+      "executable": false
+    },
+    "src/easel/pack-workbook.ts": {
+      "sha256": "e16611a2c0cf25c2d521fc94cbf340817efa50dc8f77b0ae2558abba6c1c8b7d",
       "executable": false
     },
     "src/easel/plan.ts": {
@@ -652,6 +660,10 @@
     },
     "src/easel/ramp.ts": {
       "sha256": "20ebb36ea04375fc1c7800d3fcaaca207921b3eca8dc1ab69704cb9411278165",
+      "executable": false
+    },
+    "src/easel/report-workbooks.ts": {
+      "sha256": "ebb032018432db9ba1213488c54fbf6745efce4daf3c7ecf3c8d9ad1b0231fb4",
       "executable": false
     },
     "src/easel/review.ts": {
@@ -692,6 +704,10 @@
     },
     "src/easel/workbook.ts": {
       "sha256": "06c8e07f463a8de1cb5db460d0c90eb94cbd67f3afa01d9fa35c2af443571bb8",
+      "executable": false
+    },
+    "src/easel/xlsx-write.ts": {
+      "sha256": "d8def7bf0518ed40deea9eff2ab2322f9a7218171a941b49e083c79c679fc03f",
       "executable": false
     },
     "src/easel/xlsx.ts": {
@@ -2391,11 +2407,11 @@
       "executable": false
     },
     "src/ui/activity.tsx": {
-      "sha256": "0643a8f7cfb1f5114e35e9f61f21117a7cd92c845cea88ef86a4cc3de5ff6521",
+      "sha256": "e28e3375a58234d9017d25de898401f06cc4471ee3c11e0050ae12cb00ba7e80",
       "executable": false
     },
     "src/ui/actuals.tsx": {
-      "sha256": "149c6d496f57bfd3c671360b840fc5af70c94fdc5191f60742963e252c4d1bb2",
+      "sha256": "8437a98419d702bf24b4b662fb66d76223d38263ad5c128ca1e58b2775d738b8",
       "executable": false
     },
     "src/ui/app.tsx": {
@@ -2419,7 +2435,7 @@
       "executable": false
     },
     "src/ui/overview.tsx": {
-      "sha256": "ec0b9f8deb4bde367a4427eb5ea77cb5d2dd879ef36553c8d4720122f7d5c4be",
+      "sha256": "be60805adb3cd238c0f5eb960621edc020555724503ef86e9870aaa5ff89e199",
       "executable": false
     },
     "src/ui/plan.tsx": {
@@ -2431,11 +2447,11 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "d22c11345619eaec603dec575b07d5f7017bfa989bab25039544c70eab10119a",
+      "sha256": "71c0db12c852dd5220472d2d6ea66f2a80c6d7c61ec6e6f3c2d292a0d486a928",
       "executable": false
     },
     "src/ui/scenarios.tsx": {
-      "sha256": "892c101d1cb57670363d8df9a44e3e95153dff23e1f5e6dfd1f1b2aced3b5298",
+      "sha256": "94d4356e00f297fcef533623d67f16a08b6db3dc23b27f7bce26ee2d21355da6",
       "executable": false
     },
     "src/ui/scroll-style.ts": {
@@ -2487,7 +2503,7 @@
       "executable": false
     },
     "tests/browser.mjs": {
-      "sha256": "beb7af63bc52bb504b390004cfa8dacc4b5af28bdf66f938904f769a496ace22",
+      "sha256": "7fc04bf5f70993c44f48cfa2eea817245e3dee9636b5360ecef414af1ed7f05f",
       "executable": false
     },
     "tests/easel-worker.ts": {
@@ -2496,6 +2512,14 @@
     },
     "tests/easel.test.mjs": {
       "sha256": "574cfe3f8a3f0b9f97b2eb489cc4e7b23d90591af8001f5f5e8f3fd307011da1",
+      "executable": false
+    },
+    "tests/export-browser-journey.mjs": {
+      "sha256": "a754a0e4059cd0b323403b6f5eb0ab00690437be1710872c11e2fd530d0ab146",
+      "executable": false
+    },
+    "tests/export-fixture.mjs": {
+      "sha256": "e829ad3463db6a17d4b312d3d32b025d06f04e9c38a063869fc384549a4dee5d",
       "executable": false
     },
     "tests/harness.mjs": {
@@ -2520,6 +2544,14 @@
     },
     "tests/runtime.mjs": {
       "sha256": "6240138f90d8d22437cd7cfc8d44b15724fedcdd95e309a5d874d077eb936107",
+      "executable": false
+    },
+    "tests/spreadsheet-export.test.mjs": {
+      "sha256": "793a672131ea35fb0da428197d12030424e9bf2740b54bb3f57512c49196deea",
+      "executable": false
+    },
+    "tests/spreadsheet-proof.mjs": {
+      "sha256": "370197003887aab3f33fcc6cf11a28fdc9d4f1f27b21b35d936b42ad1dba2f1c",
       "executable": false
     },
     "tests/totals.test.mjs": {

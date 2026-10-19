@@ -90,6 +90,12 @@
       "clauses": [
         "API-001"
       ]
+    },
+    {
+      "id": "formula-workbook-exports",
+      "clauses": [
+        "SHEET-004"
+      ]
     }
   ],
   "nonGoals": [

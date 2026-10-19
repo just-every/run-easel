@@ -20,7 +20,7 @@ export function Activity({ state }: { state: D }) {
    <Field label="From date" name="from" type="date" required={false} />
    <Field label="To date" name="to" type="date" required={false} />
   </Form>
-  <p><a href={`/api/easel/activity.csv?${query}`} download>Export filtered activity as CSV</a></p>
+  <p><a href={`/api/easel/activity.csv?${query}`} download>Export filtered activity as CSV</a> · <a href={`/api/easel/activity.xlsx?${query}`} download>Download activity (Excel)</a></p>
   {error && <p role="alert">{error}</p>}
   {!rows ? <p role="status">Loading activity…</p> : <>
   {rows.length === 0 && <p>No activity matches these filters.</p>}

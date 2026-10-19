@@ -43,6 +43,7 @@ export function Scenarios({ state, refresh }: Shared) {
    <div className="row"><ScenarioPicker label="From" scenarios={state.scenarios} value={a} onChange={setA} /><ScenarioPicker label="To" scenarios={state.scenarios} value={b} onChange={setB} /></div>
    {error && <p role="alert" className="error">{error}</p>}
    {cmp && <>
+    <p><a href={`/api/easel/compare.xlsx?a=${a}&b=${b}`} download>Download comparison (Excel)</a></p>
     {cmp.currencyComparable && <ClosingCashChart ticks months={cmp.left.cash.map((c: D) => c.month)} actualsThrough={cmp.left.scenario.actualsThrough} currency={leftCurrency}
      series={[cmp.left, cmp.right].map((side: D) => ({ name: side.scenario.name, values: side.cash.map((c: D) => c.closing) }))}
      label={`Closing cash by month, ${cmp.left.scenario.name} and ${cmp.right.scenario.name}; ${money(cmp.left.cash.at(-1)?.closing, leftCurrency)} and ${money(cmp.right.cash.at(-1)?.closing, rightCurrency)} at ${monthLabel(cmp.left.cash.at(-1)?.month)}.`} />}
