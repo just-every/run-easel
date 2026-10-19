@@ -1,3 +1,4 @@
+import { scenarioAccess } from './scenario-access'
 import { requireFinance } from './access'
 import { approvedModel } from './approved'
 import type { Context } from './context'
@@ -20,7 +21,8 @@ export async function frozenModel(c: Context, scenario: Data): Promise<Model & {
 export async function reforecasts(c: Context, op: string, b: Data): Promise<Data | undefined> {
  if (op !== 'reforecast-save') return undefined
  requireFinance(c.x)
- const from = get(c.s, 'scenario', b.from, 'plan to freeze')
+ const from = scenarioAccess(c.s, c.x, b.from)
+ requireThat(!from.sandbox, 'Submit a private sandbox as a proposal before saving an official version', 409)
  requireThat(from.status === 'working' && ['forecast', 'scenario'].includes(from.kind), 'Save a reforecast from a working forecast or scenario', 409)
  requireThat(Number(b.revision) === from.revision, 'The plan changed after you reviewed it; reload before saving a reforecast', 409)
  const name = text(b.name, 'Reforecast name')

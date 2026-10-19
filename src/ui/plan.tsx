@@ -8,7 +8,7 @@ import { Action, api, command, decimalText, Field, Form, money, monthLabel, opti
 /** The assumptions behind a scenario: drivers, positions, expenses, schedules, allocations and cash timing. */
 export function Plan({ state, refresh }: Shared) {
  const me = state.me
- const editable = state.scenarios.filter((s: D) => s.status === 'working' && (me.role === 'finance' || s.kind === 'budget' || (s.kind === 'proposal' && s.createdBy === me.email)))
+ const editable = state.scenarios.filter((s: D) => s.status === 'working' && ((me.role === 'finance' && (!s.sandbox || s.createdBy === me.email || s.sandbox.grants?.[me.email] === 'edit')) || (s.sandbox && (s.createdBy === me.email || s.sandbox.grants?.[me.email] === 'edit')) || s.kind === 'budget' || (s.kind === 'proposal' && s.createdBy === me.email)))
  const [id, setId] = useState(defaultScenario(editable))
  const [view, setView] = useState<D | null>(null)
  const [editing, setEditing] = useState<D | null>(null)

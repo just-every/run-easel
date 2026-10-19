@@ -1,3 +1,4 @@
+import { visibleActivity } from './scenario-access'
 import { requireFinance } from './access'
 import type { Context } from './context'
 import { requireThat, type Data } from './types'
@@ -25,7 +26,12 @@ export async function activityView(c: Context, filters: AuditFilters = {}): Prom
  }
  const { results } = await c.db.prepare(`SELECT a.seq,a.at,a.actor,o.display_name AS actorName,a.action,a.record,a.scenario,a.before_revision AS beforeRevision,a.after_revision AS afterRevision,a.detail
   FROM e_activity a LEFT JOIN oa_operators o ON o.email=a.actor ${conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''} ORDER BY a.seq DESC LIMIT 300`).bind(...params).all<Data>()
- return results.map(r => ({ ...r, detail: JSON.parse(r.detail) }))
+ const visible = results.map(r => visibleActivity(c.s, c.x, { ...r, detail: JSON.parse(r.detail) })).filter((r): r is Data => r !== null)
+ if (results.length === 300 && visible.length < 300) {
+  const more = await activityView(c, { ...filters, before: String(results.at(-1)!.seq) })
+  return [...visible, ...more].slice(0, 300)
+ }
+ return visible
 }
 
 // Prevent spreadsheet formulas in all user-controlled fields, including names.

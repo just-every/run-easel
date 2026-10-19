@@ -1,6 +1,7 @@
 // Scenario inputs, branching and agent-ready proposals. A proposal is a
 // branch bound to the exact revision of the scenario it would change; finance
 // promotes the exact proposal revision it reviewed, or nothing changes.
+import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 import { requireDepartment, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { INPUT_KINDS, inputDepartment, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
@@ -37,7 +38,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if ((INPUT_KINDS as readonly string[]).includes(op)) {
   requireMember(x)
   const kind = op as InputKind
-  const scenario = get(s, 'scenario', b.scenario)
+  const scenario = scenarioAccess(s, x, b.scenario)
   const prior = b.id ? get(s, kind, b.id) : undefined
   requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
   if (prior) requireEditable(s, x, scenario, inputDepartment(kind, prior))
@@ -53,7 +54,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireMember(x)
   const kind = choice(b.kind, INPUT_KINDS, 'an input kind')
   const input = get(s, kind, b.id)
-  const scenario = get(s, 'scenario', input.scenario)
+  const scenario = scenarioAccess(s, x, input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
   requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
   remove(s, kind, input.id)
@@ -62,7 +63,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'scenario-cash') {
   requireFinance(x)
-  const scenario = get(s, 'scenario', b.scenario)
+  const scenario = scenarioAccess(s, x, b.scenario)
   requireEditable(s, x, scenario, null)
   const basis = choice(b.basis, ['estimate', 'imported'] as const, 'whether opening cash is an estimate or imported')
   const imported = basis === 'imported' ? await cashBalance(c.db, s, workspace(s).planStart) : undefined
@@ -80,10 +81,14 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'branch' || op === 'proposal-create') {
   requireMember(x)
-  const from = get(s, 'scenario', b.from, 'scenario to branch')
+  const from = scenarioAccess(s, x, b.from)
   requireThat(from.kind !== 'proposal', 'Branch from a plan, not from a proposal')
-  if (op === 'branch') requireFinance(x)
+  if (op === 'branch') {
+   if (b.privateSandbox === true) requireThat(x.role === 'finance' || x.role === 'contributor', 'Only planners create sandboxes', 403)
+   else requireFinance(x)
+  }
   else {
+   requireThat(!from.sandbox, 'Use Submit sandbox to propose its reviewed changes', 409)
    requireThat(x.role === 'finance' || x.role === 'contributor', 'Viewers cannot propose changes', 403)
    requireThat(from.status === 'working', 'Proposals change a working scenario; this one is frozen', 409)
   }
@@ -92,6 +97,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   put(s, 'scenario', id, {
    name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
    ...(from.horizon ? { horizon: from.horizon } : {}),
+   ...((b.privateSandbox === true || from.sandbox) ? { sandbox: { grants: {} } } : {}),
    parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash,
    ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
   })
@@ -102,7 +108,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if (op === 'proposal-submit') {
   requireMember(x)
   requireThat(x.role === 'finance' || x.role === 'contributor', 'Only finance and contributors submit proposals', 403)
-  const p = proposal(s, b.id)
+  const p = proposal(s, b.id, x)
   requireThat(p.createdBy === x.actor.email || x.role === 'finance', 'Only the proposer submits a proposal', 403)
   requireProposalScope(s, x, p)
   requireThat(p.proposalStatus === 'draft', 'This proposal was already submitted', 409)
@@ -112,11 +118,12 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'proposal-promote') {
   requireFinance(x)
-  const p = proposal(s, b.id)
+  const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
   const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
   requireThat(reviewed === p.revision, 'The proposal changed after you reviewed it; review its current revision', 409)
-  const target = get(s, 'scenario', p.branchedFrom.scenario)
+  const target = scenarioAccess(s, x, p.branchedFrom.scenario)
+  requireScenarioEdit(x, target)
   requireThat(target.status === 'working', 'The target scenario is frozen', 409)
   requireThat(target.revision === p.branchedFrom.revision, `${target.name} changed since this proposal was made (revision ${p.branchedFrom.revision} → ${target.revision}); make a fresh proposal from its current revision`, 409)
   clearInputs(s, target.id)
@@ -128,7 +135,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'proposal-decline') {
   requireFinance(x)
-  const p = proposal(s, b.id)
+  const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted' || p.proposalStatus === 'draft', 'This proposal is already closed', 409)
   put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'declined', declinedBy: x.actor.email, reason: text(b.reason, 'Reason', 2000) })
   c.activity.push({ action: op, record: p.id, scenario: p.id, detail: { reason: b.reason } })
@@ -138,8 +145,9 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   // Finance replaces a working plan's inputs with another scenario's, for
   // example a budget moved in from a workbook, at the revision it reviewed.
   requireFinance(x)
-  const from = get(s, 'scenario', b.from, 'scenario to adopt')
-  const into = get(s, 'scenario', b.into, 'scenario to replace')
+  const from = scenarioAccess(s, x, b.from)
+  requireThat(!from.sandbox, 'Submit this private sandbox as a proposal before adopting it', 409)
+  const into = scenarioAccess(s, x, b.into)
   requireThat(from.id !== into.id && from.kind !== 'proposal', 'Choose a different scenario to adopt')
   requireEditable(s, x, into, null)
   requireThat(Number(b.revision) === into.revision, `${into.name} changed since you reviewed it; review its current revision`, 409)
@@ -150,7 +158,8 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'scenario-delete') {
   requireFinance(x)
-  const sc = get(s, 'scenario', b.id)
+  const sc = scenarioAccess(s, x, b.id)
+  requireThat(!sc.sandbox, 'Private sandboxes are retained with their sharing history', 409)
   requireThat(sc.kind === 'scenario' || (sc.kind === 'proposal' && sc.status === 'closed'), 'Only branched scenarios and closed proposals can be deleted', 409)
   requireThat(!all(s, 'scenario').some(o => o.parent === sc.id && o.status === 'working'), 'Close or delete the proposals made from this scenario first', 409)
   clearInputs(s, sc.id)
@@ -161,8 +170,8 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  return undefined
 }
 
-function proposal(s: State, id: unknown) {
- const p = get(s, 'scenario', id, 'proposal')
+function proposal(s: State, id: unknown, x: import('./types').Access) {
+ const p = scenarioAccess(s, x, id)
  requireThat(p.kind === 'proposal', 'Not a proposal')
  return p
 }

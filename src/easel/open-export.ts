@@ -1,3 +1,4 @@
+import { canSeeScenario, visibleActivity } from './scenario-access'
 import { readD1ImportOriginals } from '../modules/import-kit/src/d1/index'
 import type { RetainedOriginal } from '../modules/import-kit/src/types'
 import { requireFinance } from './access'
@@ -74,6 +75,8 @@ async function retainedOriginals(c: Context): Promise<RetainedOriginal[]> {
 export async function openExport(c: Context): Promise<Uint8Array> {
  requireFinance(c.x)
 
+ const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
+ const visibleRow = (row: Data) => !hidden.has(row.kind === 'scenario' ? row.id : row.value?.scenario)
  const files: ArchiveFile[] = []
  const tables: Record<string, number> = {}
  const { results: schema } = await c.db.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') ORDER BY name").all<{ name: string; sql: string }>()
@@ -82,18 +85,24 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   const table = definition.name
   const { results: columnRows } = await c.db.prepare(`PRAGMA table_info(${identifier(table)})`).all<{ name: string }>()
   const columns = columnRows.map(column => column.name)
-  const { results } = await c.db.prepare(`SELECT * FROM ${identifier(table)}`).all<Record<string, unknown>>()
+  let { results } = await c.db.prepare(`SELECT * FROM ${identifier(table)}`).all<Record<string, unknown>>()
+  if (table === 'e_records') results = results.filter(row => visibleRow({ ...row, value: JSON.parse(String(row.value)) }))
+  if (table === 'e_snapshots') results = results.filter(row => !hidden.has(String(row.scenario)))
+  if (table === 'e_activity') results = results.flatMap(row => {
+   const event = visibleActivity(c.s, c.x, { ...row, detail: JSON.parse(String(row.detail)) })
+   return event ? [{ ...row, detail: JSON.stringify(event.detail) }] : []
+  })
   tables[table] = results.length
   definitions.push({ ...definition, columns })
   files.push({ name: `tables/${table}.csv`, bytes: csv(columns, results.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, portableCell(value)])))) })
  }
 
- const records = [...c.s.values()]
+ const records = [...c.s.values()].filter(visibleRow)
   .sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
   .map(row => ({ destination: row.destination, kind: row.kind, id: row.id, revision: row.revision, value: row.value }))
  files.push({ name: 'model.json', bytes: json({ workspace: all(c.s, 'workspace')[0], lines: all(c.s, 'line'), departments: all(c.s, 'department'), records, tables: definitions, units: { money: 'integer minor units', counts: 'hundredths', rates: 'basis points' } }) })
 
- const scenarios = all(c.s, 'scenario').sort((a, b) => a.id.localeCompare(b.id))
+ const scenarios = all(c.s, 'scenario').filter(sc => canSeeScenario(c.x, sc)).sort((a, b) => a.id.localeCompare(b.id))
  for (const scenario of scenarios) {
   const view = await scenarioView(c, scenario.id)
   files.push({
@@ -102,7 +111,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   })
  }
 
- const snapshotRows = await snapshotList(c.db)
+ const snapshotRows = (await snapshotList(c.db)).filter(sn => !hidden.has(String(sn.scenario)))
  for (const row of snapshotRows) {
   const snapshot = await readSnapshot(c.db, String(row.id))
   files.push({ name: `snapshots/${safeName(`${snapshot.id}.json`)}`, bytes: json(snapshot) })

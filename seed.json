@@ -180,6 +180,12 @@
       "clauses": [
         "FIN-003"
       ]
+    },
+    {
+      "id": "private-and-shared-scenarios",
+      "clauses": [
+        "CYCLE-004"
+      ]
     }
   ],
   "nonGoals": [

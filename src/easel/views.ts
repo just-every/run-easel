@@ -1,3 +1,4 @@
+import { canSeeScenario, scenarioAccess } from './scenario-access'
 import { aggregateFinancing } from './financing-view'
 import { cashHealth } from './cash-health'
 // Read models for the UI and for agents. Every view is filtered here, on the
@@ -15,11 +16,7 @@ import { frozenModel } from './reforecasts'
 import { semanticEqual } from './semantic'
 import { all, find, get, requireThat, type Access, type Data, type State } from './types'
 
-export function canSeeScenario(x: Access, sc: Data) {
- if (x.role === 'finance') return true
- if (sc.kind === 'proposal') return x.role === 'contributor' && sc.createdBy === x.actor.email
- return x.role !== null
-}
+export { canSeeScenario } from './scenario-access'
 
 export function filterCalculation(x: Access, calc: Calculation): Calculation {
  if (x.role === 'finance') return calc
@@ -35,13 +32,13 @@ export async function stateView(c: Context) {
  const workspace = find(s, 'workspace', 'main') ?? null
  const me = { email: x.actor.email, name: x.actor.name, role: x.role, departments: x.departments }
  if (!x.role) return { me, workspace: null }
- const snapshots = (await snapshotList(c.db)).filter(sn => finance || sn.kind !== 'forecast' || x.role === 'contributor')
+ const snapshots = (await snapshotList(c.db)).filter(sn => (!sn.scenario || canSeeScenario(x, get(s, 'scenario', sn.scenario))) && ( finance || sn.kind !== 'forecast' || x.role === 'contributor'))
  const view = {
   me, workspace, lines: lines(s), departments: departments(s),
   members: finance ? all(s, 'member') : [],
-  scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async sc => sc.status === 'frozen' ? (await frozenModel(c, sc)).scenario : sc)),
+  scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async (sc): Promise<Data> => sc.status === 'frozen' ? { ...(await frozenModel(c, sc)).scenario, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) } : { ...sc, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) })),
   submissions: all(s, 'submission'),
-  comments: all(s, 'comment').filter(cm => finance || x.departments.includes(cm.department)).sort((a, b) => a.at.localeCompare(b.at)),
+  comments: all(s, 'comment').filter(cm => canSeeScenario(x, get(s, 'scenario', cm.scenario)) && (finance || x.departments.includes(cm.department))).sort((a, b) => a.at.localeCompare(b.at)),
   accountMaps: finance ? all(s, 'account-map') : [],
   accountRules: finance ? all(s, 'account-rule') : [],
   departmentMaps: finance ? all(s, 'department-map') : [],
@@ -73,7 +70,7 @@ export async function scenarioView(c: Context, id: string) {
  const frozen = sc.status === 'frozen' ? await frozenModel(c, sc) : null
  const m = frozen ?? model(c.s, id)
  const calc = frozen ? frozen.calculation : calculate(m, sc.actualsThrough ? await c.actuals(sc.actualsThrough) : [])
- return { cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: m.scenario, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
+ return { cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs), calculation: filterCalculation(c.x, calc) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }
@@ -108,6 +105,7 @@ export async function compareView(c: Context, a: string, b: string) {
 export async function snapshotView(c: Context, id: string) {
  requireMember(c.x)
  const sn = await snapshot(c.db, id)
+ if (sn.scenario) scenarioAccess(c.s, c.x, sn.scenario)
  if (sn.kind === 'pack' || c.x.role === 'finance') return sn
  requireThat(sn.kind === 'approval' || sn.kind === 'reforecast' || c.x.role === 'contributor', 'Snapshot not found', 404)
  const body = { ...sn.body, calculation: filterCalculation(c.x, sn.body.calculation), inputs: filterInputs(c.x, sn.body.inputs ?? {}) }

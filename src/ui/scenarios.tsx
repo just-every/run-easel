@@ -1,3 +1,4 @@
+import { Sandboxes, OfficialCases } from './sandboxes'
 import { LongRange } from './long-range'
 import { CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
@@ -11,7 +12,7 @@ import { Action, api, command, Field, Form, money, monthLabel, ScenarioPicker, P
 export function Scenarios({ state, refresh }: Shared) {
  const me = state.me
  const plans = state.scenarios.filter((s: D) => s.kind !== 'proposal')
- const working = state.scenarios.filter((s: D) => s.status === 'working' && s.kind !== 'proposal')
+ const working = state.scenarios.filter((s: D) => s.status === 'working' && s.kind !== 'proposal' && !s.sandbox)
  const [a, setA] = useState(plans.find((s: D) => s.kind === 'forecast')?.id ?? plans[0]?.id ?? '')
  const [b, setB] = useState(plans.find((s: D) => s.kind === 'scenario')?.id ?? plans[1]?.id ?? '')
  const [cmp, setCmp] = useState<D | null>(null)
@@ -26,12 +27,13 @@ export function Scenarios({ state, refresh }: Shared) {
  }
  const proposals = state.scenarios.filter((s: D) => s.kind === 'proposal')
  return <>
+  <Sandboxes state={state} refresh={refresh} go={() => {}} />
   <section className="card">
    <h2>Scenarios</h2>
    <Table caption="Scenarios" heads={['Name', 'Kind', 'Status', 'Revision', 'Made from', '']}>
-    {plans.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{s.kind}</td><td>{s.status === 'frozen' && s.kind === 'budget' ? 'approved' : s.status}</td><td className="num">{s.revision}</td><td>{s.branchedFrom ? `${s.branchedFrom.name} r${s.branchedFrom.revision}` : s.imported ? `${s.imported.file} (${s.imported.sheet})` : '—'}</td><td>
-     {me.role === 'finance' && s.kind === 'scenario' && working.filter((w: D) => w.id !== s.id && w.kind !== 'scenario').map((w: D) => <Action key={w.id} kind="quiet" label={`Use as ${w.name}`} confirm={`Replace every assumption in ${w.name} (revision ${w.revision}) with ${s.name}?`} run={async () => { await command('scenario-adopt', { from: s.id, into: w.id, revision: w.revision }); await refresh() }} />)}
-     {me.role === 'finance' && s.kind === 'scenario' && <Action kind="danger" label="Delete" confirm={`Delete ${s.name}?`} run={async () => { await command('scenario-delete', { id: s.id }); await refresh() }} />}
+    {plans.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{s.sandbox ? 'Private sandbox' : s.kind}{s.official ? ` · Official ${s.official}` : ''}</td><td>{s.status === 'frozen' && s.kind === 'budget' ? 'approved' : s.status}</td><td className="num">{s.revision}</td><td>{s.branchedFrom ? `${s.branchedFrom.name} r${s.branchedFrom.revision}` : s.imported ? `${s.imported.file} (${s.imported.sheet})` : '—'}</td><td>
+     {me.role === 'finance' && !s.sandbox && s.kind === 'scenario' && working.filter((w: D) => w.id !== s.id && w.kind !== 'scenario').map((w: D) => <Action key={w.id} kind="quiet" label={`Use as ${w.name}`} confirm={`Replace every assumption in ${w.name} (revision ${w.revision}) with ${s.name}?`} run={async () => { await command('scenario-adopt', { from: s.id, into: w.id, revision: w.revision }); await refresh() }} />)}
+     {me.role === 'finance' && !s.sandbox && s.kind === 'scenario' && <Action kind="danger" label="Delete" confirm={`Delete ${s.name}?`} run={async () => { await command('scenario-delete', { id: s.id }); await refresh() }} />}
     </td></tr>)}
    </Table>
    {me.role === 'finance' && <Form submit="Branch scenario" onSubmit={async v => { await command('branch', v); await refresh() }}>
@@ -56,6 +58,8 @@ export function Scenarios({ state, refresh }: Shared) {
     <Table caption="Changed cells" heads={['Month', 'Line', 'Department', 'Before', 'After', 'Difference']}>{cmp.changedCells.slice(0, 200).map((c: D) => <tr key={`${c.line}|${c.department}|${c.month}`}><td>{monthLabel(c.month)}</td><td>{comparedName('lines', c.line, 'Deleted planning line')}</td><td>{comparedName('departments', c.department, 'No department')}</td><td className="num">{money(c.before, leftCurrency)}</td><td className="num">{money(c.after, rightCurrency)}</td><td className="num">{money(c.difference, leftCurrency)}</td></tr>)}</Table>
    </>}
   </section>
+
+  <OfficialCases state={state} refresh={refresh} go={() => {}} />
 
   <LongRange state={state} refresh={refresh} />
 

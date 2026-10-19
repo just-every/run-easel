@@ -1,3 +1,4 @@
+import { requireScenarioEdit } from './scenario-access'
 import { validateFinancingInput } from './financing-input'
 // Turning stored records into an engine Model, and validating scenario inputs.
 import { addMonths, month, monthsBetween } from './months'
@@ -103,6 +104,7 @@ export const inputDepartment = (kind: InputKind, value: Data) => (['allocation',
 
 /** Whether this person may change this department's inputs in this scenario right now. */
 export function requireEditable(s: State, x: Access, scenario: Data, dept: string | null) {
+ requireScenarioEdit(x, scenario)
  requireThat(scenario.status === 'working', scenario.status === 'frozen' ? 'This scenario is approved and frozen; branch it to change assumptions' : 'This proposal is closed', 409)
  if (x.role === 'finance') return
  requireThat(x.role === 'contributor', 'Only finance and contributors change plans', 403)
@@ -112,6 +114,7 @@ export function requireEditable(s: State, x: Access, scenario: Data, dept: strin
   requireThat(sub && ['requested', 'returned'].includes(sub.status), sub?.status === 'submitted' ? 'Your submission is with finance; ask them to return it to make changes' : 'Finance has not requested this department\'s submission', 409)
   return
  }
+ if (scenario.sandbox) return
  requireThat(scenario.kind === 'proposal' && scenario.createdBy === x.actor.email, 'Contributors change budgets through submissions and other plans through their own proposals', 403)
 }
 
