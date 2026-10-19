@@ -24,7 +24,7 @@ export function model(s: State, scenarioId: string): Model {
  const w = workspace(s)
  const scenario = get(s, 'scenario', scenarioId)
  return {
-  workspace: { currency: w.currency, planStart: w.planStart, horizon: w.horizon },
+  workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon },
   lines: lines(s), departments: departments(s), scenario,
   inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation') },
  }
@@ -38,9 +38,10 @@ const line = (s: State, id: unknown, types: string[], label: string) => {
 const department = (s: State, id: unknown, label = 'department') => get(s, 'department', id, label).id
 
 /** Months a driver may start: up to two years before the plan through its last month. */
-function planMonth(s: State, v: unknown, label: string) {
+function planMonth(s: State, v: unknown, label: string, scenario: string) {
  const w = workspace(s), m = month(v, label)
- requireThat(monthsBetween(addMonths(w.planStart, -24), m) >= 0 && m <= addMonths(w.planStart, w.horizon - 1), `${label} must be within two years before the plan and no later than its last month`)
+ const horizon = get(s, 'scenario', scenario).horizon ?? w.horizon
+ requireThat(monthsBetween(addMonths(w.planStart, -24), m) >= 0 && m <= addMonths(w.planStart, horizon - 1), `${label} must be within two years before the plan and no later than its last month`)
  return m
 }
 const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
@@ -53,7 +54,7 @@ const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
 /** Validates one input against the model's lines and departments. Returns the stored value. */
 export function validateInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
  if (kind === 'revenue') {
-  const base = { name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month'), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
+  const base = { name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month', scenario), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
   const kindOf = choice(b.kind, ['volume', 'customers'] as const, 'a driver')
   if (kindOf === 'volume') return { ...base, kind: kindOf, startVolume: hundredths(b.startVolume, 'Starting volume'), growthBps: decimal(b.growthPercent ?? '0', 'Monthly growth %', 2, { negative: true, max: 100000n }), rateCents: cents(b.rate, 'Rate per unit') }
   const repDepartment = b.repDepartment ? department(s, b.repDepartment, 'hiring department') : ''
@@ -62,12 +63,12 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
   return { ...base, kind: kindOf, startCustomers: hundredths(b.startCustomers, 'Starting customers'), newPerMonth: hundredths(b.newPerMonth ?? '0', 'New customers per month'), newPerRep, repDepartment, rampMonths: integer(b.rampMonths ?? 1, 'Ramp months', 1, 24), churnBps: percentBps(b.churnPercent ?? '0', 'Monthly churn %'), arpaCents: cents(b.arpa, 'Monthly revenue per customer') }
  }
  if (kind === 'position') {
-  const start = planMonth(s, b.start, 'Start month')
+  const start = planMonth(s, b.start, 'Start month', scenario)
   return { title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
   const kindOf = choice(b.kind, ['recurring', 'one-off'] as const, 'recurring or one-off')
-  const start = planMonth(s, b.start, kindOf === 'one-off' ? 'Month' : 'Start month')
+  const start = planMonth(s, b.start, kindOf === 'one-off' ? 'Month' : 'Start month', scenario)
   return { name: text(b.name, 'Expense name'), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'expense line'), department: department(s, b.department), kind: kindOf, amountCents: cents(b.amount, kindOf === 'one-off' ? 'Amount' : 'Monthly amount', { negative: true }), start, end: kindOf === 'one-off' ? '' : optionalEnd(s, b.end, start, 'End month') }
  }
  if (kind === 'schedule') {

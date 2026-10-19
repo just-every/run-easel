@@ -6,9 +6,9 @@ import { requireDepartment, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { calculate } from './engine'
 import { departments, model, scenarioInputs, workspace, INPUT_KINDS } from './model'
-import { addMonths, fiscalYearLabel, monthLabel } from './months'
+import { addMonths, fiscalYearLabel, monthLabel, monthsBetween } from './months'
 import { bump, copyInputs } from './plan'
-import { all, find, get, put, requireThat, text, uid, type Data } from './types'
+import { all, find, get, put, requireThat, text, uid, integer, type Data } from './types'
 
 export async function cycle(c: Context, op: string, b: Data): Promise<Data | undefined> {
  const { s, x } = c
@@ -82,6 +82,18 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   c.activity.push({ action: 'forecast-opened', record: forecastId, scenario: forecastId, after: 1, detail: { from: budget.id } })
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
  }
+ if (op === 'forecast-window') {
+  requireFinance(x)
+  const forecast = get(s, 'scenario', b.scenario, 'forecast')
+  requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Set the window on the working forecast', 409)
+  requireThat(Number(b.revision) === forecast.revision, 'The forecast changed; reload before changing its window', 409)
+  const rollingWindow = integer(b.months, 'Months ahead', 12, 60)
+  const w = workspace(s)
+  const closed = forecast.actualsThrough ? monthsBetween(w.planStart, forecast.actualsThrough) + 1 : 0
+  put(s, 'scenario', forecast.id, { ...forecast, rollingWindow, horizon: closed + rollingWindow })
+  bump(c, get(s, 'scenario', forecast.id), op, forecast.id, { rollingWindow })
+  return get(s, 'scenario', forecast.id)
+ }
  if (op === 'close-month') {
   requireFinance(x)
   const forecast = get(s, 'scenario', b.scenario, 'forecast')
@@ -89,15 +101,15 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const w = workspace(s)
   const next = forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : w.planStart
   requireThat(b.month === next, `The next month to close is ${monthLabel(next)}`, 409)
-  requireThat(next <= addMonths(w.planStart, w.horizon - 1), 'Every plan month is already closed', 409)
+  requireThat(next <= addMonths(w.planStart, (forecast.horizon ?? w.horizon) - 1), 'Every plan month is already closed', 409)
   const covered = await c.db.prepare('SELECT COUNT(*) AS n FROM e_actuals WHERE period=?').bind(next).first<{ n: number }>()
   requireThat(Number(covered?.n) > 0, `No accepted actuals cover ${monthLabel(next)} yet`, 409)
   const pending = all(s, 'batch').filter(x => x.status === 'importing' || x.status === 'undoing')
   requireThat(!pending.length, 'Finish or undo the import in progress first', 409)
   const priorCalc = calculate(model(s, forecast.id), await c.actuals())
   const snapshotId = uid()
-  c.snapshots.push({ id: snapshotId, kind: 'forecast', scenario: forecast.id, label: `Forecast before closing ${monthLabel(next)}`, body: { scenario: forecast, month: next, calculation: priorCalc, inputs: Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, forecast.id, k)])), keptBy: x.actor.email, at: c.now } })
-  put(s, 'scenario', forecast.id, { ...forecast, actualsThrough: next, priorForecasts: [...(forecast.priorForecasts ?? []), { month: next, snapshot: snapshotId }] })
+  c.snapshots.push({ id: snapshotId, kind: 'forecast', scenario: forecast.id, label: `Forecast before closing ${monthLabel(next)}`, body: { scenario: forecast, workspace: model(s, forecast.id).workspace, month: next, calculation: priorCalc, inputs: Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, forecast.id, k)])), keptBy: x.actor.email, at: c.now } })
+  put(s, 'scenario', forecast.id, { ...forecast, ...(forecast.rollingWindow ? { horizon: monthsBetween(w.planStart, next) + 1 + forecast.rollingWindow } : {}), actualsThrough: next, priorForecasts: [...(forecast.priorForecasts ?? []), { month: next, snapshot: snapshotId }] })
   bump(c, get(s, 'scenario', forecast.id), op, forecast.id, { month: next, priorForecast: snapshotId })
   return get(s, 'scenario', forecast.id)
  }

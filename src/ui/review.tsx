@@ -22,6 +22,10 @@ export function Review({ state, refresh }: Shared) {
    <h2>Monthly review</h2>
    {!forecast && <p>The forecast opens when the budget is approved.</p>}
    {forecast && <p className="muted">{forecast.name} · revision {forecast.revision} · actuals through {monthLabel(forecast.actualsThrough)}</p>}
+   {forecast && <p className="muted">Forecast through {monthLabel(addMonths(state.workspace.planStart, (forecast.horizon ?? state.workspace.horizon) - 1))}{forecast.rollingWindow ? ` · always ${forecast.rollingWindow} months ahead` : ' · fixed horizon'}. Approved budgets keep their original months.</p>}
+   {forecast && me.role === 'finance' && <Form key={`window-${forecast.revision}`} submit="Save rolling window" onSubmit={async values => { await command('forecast-window', { scenario: forecast.id, revision: forecast.revision, months: values.months }); await refresh() }}>
+    <Field label="Months ahead" name="months" defaultValue={String(forecast.rollingWindow ?? 18)} hint="12 to 60 future months. Each close keeps the current forecast, then extends its end by one month using its drivers." />
+   </Form>}
    <div className="row spread">
    {forecast && me.role === 'finance' && <Action label={`Close ${monthLabel(next)}`} confirm={`Replace the plan for ${monthLabel(next)} with accepted actuals? The current forecast is kept first.`} run={async () => { await command('close-month', { scenario: forecast.id, month: next }); setMonth(next); await refresh() }} />}
    {closedMonths.length > 0 && <label className="inline">Month<select aria-label="Month" value={month} onChange={e => setMonth(e.target.value)}>{closedMonths.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}</select></label>}

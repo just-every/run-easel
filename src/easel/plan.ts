@@ -82,6 +82,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const kind = op === 'branch' ? 'scenario' : 'proposal'
   put(s, 'scenario', id, {
    name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
+   ...(from.horizon ? { horizon: from.horizon } : {}),
    parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash,
    ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
   })

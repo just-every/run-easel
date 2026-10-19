@@ -66,6 +66,12 @@
         "EASEL-016",
         "EASEL-017"
       ]
+    },
+    {
+      "id": "rolling-forecast",
+      "clauses": [
+        "MODEL-002"
+      ]
     }
   ],
   "nonGoals": [
