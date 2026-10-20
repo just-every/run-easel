@@ -12,7 +12,7 @@
 /* One dotted connector per explained row, from the variance to its draft's edge, with the arrowhead at its end. */
 .vt-link { position: absolute; left: calc(100% - 16px); top: 50%; width: calc(100% * var(--link) + 12px); border-top: 2.4px dotted var(--magenta); }
 .vt-link::after { content: ""; position: absolute; right: 1px; top: -7.2px; width: 10px; height: 10px; border-right: 2.4px solid var(--magenta); border-top: 2.4px solid var(--magenta); transform: rotate(45deg); }
-.cur-mkt { left: 24%; top: 50px; }
+.cur-mkt { left: 21%; top: 54px; }
 .draft { z-index: 1; align-self: start; padding: 20px 22px 18px; }
 .draft-mkt { grid-column: 3; grid-row: 1 / 4; margin-top: 4px; transform: rotate(-2deg); }
 .draft-eng { grid-column: 3; grid-row: 4 / 6; margin-top: 22px; transform: rotate(1.6deg); }

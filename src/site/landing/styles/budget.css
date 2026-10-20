@@ -35,9 +35,9 @@
 .note-chip { display: flex; align-items: center; gap: 14px; flex: 0 1 auto; max-width: 64%; padding: 14px 18px; border-radius: 10px; background: #fff6c4; font-size: 17px; color: var(--ink); }
 .note-icon { flex: none; width: 22px; height: 26px; border-radius: 4px; background: #f3b81f; box-shadow: inset 0 -6px 0 #e8a710; }
 .plan-foot .cur-priya { position: relative; flex: none; margin-top: 6px; }
-.budget-sticky { width: 172px; padding: 14px 14px 16px; font-size: 24px; transform: rotate(-4deg); }
+.budget-sticky { width: max-content; padding: 14px 16px 16px; font-size: 24px; white-space: nowrap; transform: rotate(-4deg); }
 .sticky-card { display: none; }
-.sticky-row { right: 10px; top: 50%; translate: 0 -50%; width: 150px; font-size: 22px; }
+.sticky-row { right: 10px; top: 50%; translate: 0 -50%; width: max-content; font-size: 22px; white-space: nowrap; }
 .c-sales { display: none; }
 
 .rail { grid-area: rail; display: grid; gap: 22px; margin-top: 30px; }
@@ -135,7 +135,7 @@
  .checklist .dept-row strong { display: block; font-size: 17px; }
  .checklist .dept-row strong::after { content: none; }
  .checklist li.sales .dept-row { padding-right: 122px; }
- .sticky-row { right: 4px; width: 118px; font-size: 17px; padding: 8px 8px 10px; }
+ .sticky-row { right: 4px; font-size: 17px; padding: 8px 10px 10px; }
 }
 @media (max-width: 380px) {
  .plan-scroll { --label: 120px; }

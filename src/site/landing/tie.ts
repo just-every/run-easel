@@ -26,8 +26,11 @@ const rules: [RegExp, string][] = [
 const lastTwo = (inner: string) => inner.replace(/ (?=[^ <>]*(?:<[^>]*>[^ <>]*)*$)/, NB)
 const titles = (html: string) => html.replace(/(<h3[^>]*>)([\s\S]*?)(<\/h3>)|(<span class="h-(?:ink|glow)">)([^<]*)(<\/span>)/g, (_, a, b, c, d, e, f) => a ? a + lastTwo(b) + c : d + lastTwo(e) + f)
 
+// A tag (evidence, hypothesis) never wraps away from the word before it.
+const tags = (html: string) => html.replace(/([\w$.,%)+−-]+)[ \u00a0](<span class="tag [^"]*">[^<]*<\/span>)/g, `<span class="nowrap">$1${NB}$2</span>`)
+
 export function tie(html: string) {
- return titles(html.replace(/ (<span[^>]*>(?:✓|→))|(?<=\w) (<span class="tag )/g, (_, mark, tag) => `${NB}${mark ?? tag}`).split(/(<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>|<code[\s\S]*?<\/code>)/).map(part =>
+ return tags(titles(html.replace(/ (<span[^>]*>(?:✓|→))/g, `${NB}$1`).split(/(<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>|<code[\s\S]*?<\/code>)/).map(part =>
   /^<(style|script|code)/.test(part) ? part : part.replace(/>([^<]+)</g, (_, text: string) => `>${rules.reduce((t, [pattern, to]) => t.replace(pattern, to), text)}<`),
- ).join(''))
+ ).join('')))
 }

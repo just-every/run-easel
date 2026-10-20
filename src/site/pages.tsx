@@ -10,6 +10,7 @@ import { docsLead, docsPages } from './docs/pages'
 import { Landing } from './landing/Landing'
 import { tie } from './landing/tie'
 import { run } from './run'
+import { breaks } from './shell/breaks'
 import './shell/site.css'
 
 const description = 'Free, open source FP&A: Easel connects your ledger, payroll and CRM, forecasts P&L, balance sheet and cash, keeps Excel live and flags any month below your cash floor.'
@@ -43,10 +44,10 @@ export function sitePages({ styles, contract }: SiteContext): SiteBuild {
  return {
   pages: [
    { path: '/', html: tie(document('Easel · Plan the year. Protect the cash.', description, <Landing />, 'landing-body')) },
-   { path: '/run', html: runPageHtml(identity, run, contract) },
+   { path: '/run', html: breaks(tie(runPageHtml(identity, run, contract))) },
    ...(contract ? [{ path: '/contract', html: contractPageHtml(identity, run, contract) }] : []),
-   { path: '/docs', html: document('Docs · Easel', docsLead, <DocsIndex />) },
-   ...docsPages.map(page => ({ path: `/docs/${page.slug}`, html: document(`${page.title} · Easel docs`, page.summary, <DocsArticle slug={page.slug} />) })),
+   { path: '/docs', html: breaks(tie(document('Docs · Easel', docsLead, <DocsIndex />))) },
+   ...docsPages.map(page => ({ path: `/docs/${page.slug}`, html: breaks(tie(document(`${page.title} · Easel docs`, page.summary, <DocsArticle slug={page.slug} />))) })),
    { path: '/404', html: siteNotFoundHtml(identity, run, contract) },
   ],
   assets: ['rer-theme.css', 'fonts', 'brand'],

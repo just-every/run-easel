@@ -951,7 +951,7 @@ Every capability the run site's homepage (run-easel.com, `src/site/landing/`) sh
 | 09 13-week cash | Weekly direct cash from the read-only bank balance, payroll on its run date | `FIN-007`, `CONNECT-009`, `PEOPLE-001` | contract, not yet in code |
 | 09 13-week cash | Each invoice lands when that customer really pays | `FIN-002` (`src/easel/working-capital.ts`) | code |
 | 10 Headcount | Gusto keeps the roster current | `PEOPLE-001` | contract, not yet in code |
-| 10 Headcount | Salaries restricted; pay detail only to the people finance grants | `EASEL-007` (`src/easel/views.ts`), `PEOPLE-005`, `ACCESS-001` | code; partly (separate compensation permission) |
+| 10 Headcount | Salaries restricted; pay detail only to the people finance grants | `EASEL-007` (`src/easel/views.ts`), `PEOPLE-005` (separate compensation permission), `ACCESS-001` | code |
 | 10 Headcount | Headcount plan against the roster | `PEOPLE-006` | partly |
 | 11 October close | Variance against budget with the ledger rows; each department head confirms their own | `EASEL-013` (`src/easel/review.ts`) | code |
 | 11 October close | The agent drafts each variance, citing sources, hypotheses marked | `AGENT-007` | partly |

@@ -18,9 +18,10 @@
 .zoom table { width: 100%; border-collapse: collapse; }
 .zoom-cell th, .zoom-cell td { padding: 14px 12px; border: 1px solid var(--hair); font-size: 16px; font-weight: 450; color: var(--ink); text-align: left; white-space: nowrap; }
 .zoom-cell td { position: relative; text-align: right; }
+.zoom-cell th .dots-in { display: flex; }
 .zoom-cell .picked th, .zoom-cell .picked td { background: var(--pink-soft); border-color: #f8c7dc; }
 .zoom-cell .picked td { font-weight: 650; }
-.cur-cell { left: 22%; top: 58%; }
+.cur-cell { left: -5px; top: 66%; }
 .spark-cell { right: -30px; top: -30px; transform: scaleX(-1); }
 .zoom-rows { grid-column: 3; grid-row: 1; margin-top: 270px; padding: 24px 24px 20px; transform: rotate(.8deg); }
 .spark-rows { right: -18px; top: -38px; transform: scaleX(-1); }
@@ -64,6 +65,7 @@
  .zoom-source h3 { font-size: 22px; }
  .zoom-source .source-head p, .chip { font-size: 15px; }
  .zoom-cell th, .zoom-cell td { padding: 12px 10px; font-size: 15px; white-space: normal; }
+ .zoom-cell th .dots-in { display: block; }
  .cur-cell { bottom: -34px; }
  .bills li { flex-wrap: wrap; font-size: 15px; }
  .bills .dots { flex-basis: 100%; }

@@ -1,4 +1,4 @@
-import { Avatar, Cursor, Heading, Spark } from '../kit'
+import { Avatar, Cursor, Dots, Heading, Spark } from '../kit'
 import '../styles/excel.css'
 
 const CELLS: [col: string, month: string, value: string, was: string][] = [
@@ -38,7 +38,7 @@ export function Excel() {
       <p className="panel-head"><Avatar /><strong>Easel</strong></p>
       <p>refreshed 9:14 am Wed Oct 14</p>
       <p>3 cells changed since Mon 4:10 pm</p>
-      <p>plan access · no pay access</p>
+      <p><Dots>plan access · no pay access</Dots></p>
       <span className="refresh-wrap" aria-hidden="true"><span className="refresh">Refresh</span><Cursor name="Owen" className="cur-refresh" /></span>
      </aside>
     </div>
