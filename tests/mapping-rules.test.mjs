@@ -223,9 +223,127 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
  assert.equal(report.trialBalances[2].difference, 1)
  assert.equal(report.trialBalances[2].balanced, false, 'classification completeness does not mean debit/credit equality')
  assert.equal(report.months[2].balanced, true)
+ const beforeRefusal = await h.get(`/api/easel/scenario/${forecast.id}`)
+ const snapshotsBeforeRefusal = (await h.get('/api/easel/state')).snapshots
+ const refused = await h.command('close-month', { scenario: forecast.id, month: '2026-02' }, h.owner, 409)
+ assert.match(refused.error, /trial balance.*1 minor units/)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${forecast.id}`), beforeRefusal)
+ assert.deepEqual((await h.get('/api/easel/state')).snapshots, snapshotsBeforeRefusal)
  assert.deepEqual(report.trialBalances[1], january, 'later source imbalance preserves earlier trial balances')
  await h.kit('actuals', 'undo', { id: imported.batch.id })
  report = await h.get('/api/easel/actuals')
  assert.equal(report.trialBalances.length, 2)
  assert.deepEqual(report.trialBalances[1], january)
+})
+
+
+test('CONNECT-007 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
+ const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
+ const h = await harness(); t.after(() => h.close())
+ const { revenue, expense } = await seedBalanceActuals(h.command)
+ const dept = await h.command('department', { name: 'Delivery' })
+ await h.command('department-map', { source: '', department: dept.id })
+ const board = await h.person('board-opening@example.test', 'viewer')
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ const payrollLine = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ const depreciation = await h.command('line', { name: 'Depreciation', type: 'operating-expense', nonCash: true })
+ const subscriptions = await h.command('line', { name: 'Subscriptions', type: 'revenue' })
+ const insurance = await h.command('line', { name: 'Insurance', type: 'operating-expense' })
+ const base = { scenario: budget.id, department: dept.id, start: '2026-01' }
+ const prepaid = await h.command('expense', { ...base, line: insurance.id, name: 'Annual insurance', kind: 'prepaid', amount: '1200', paymentMonth: '2025-12', amortizationMonths: '12' })
+ const payroll = await h.command('position', { ...base, start: '2025-12', line: payrollLine.id, title: 'Private operations lead', holder: 'Restricted holder', annualSalary: '12000', payDay: 5, payMonthOffset: 1 })
+ const contract = await h.command('revenue', { ...base, line: subscriptions.id, name: 'Annual subscription', kind: 'contract', start: '2025-12', startDate: '2025-12-01', termMonths: 13, contractValue: '13000', billingCadence: 'annual', dsoDays: 0 })
+ // This annual contract has one future invoice; attribution retains that invoice and its collection date.
+ const category = await h.command('asset-category', { scenario: budget.id, name: 'Equipment', usefulLifeMonths: 60 })
+ const asset = await h.command('asset', { ...base, line: depreciation.id, name: 'Delivery equipment', category: category.originId, kind: 'existing', cost: '24000', remainingLifeMonths: 24 })
+ for (const [account, target] of [['1200', 'bs:prepaid'], ['5100', insurance.id], ['5200', payrollLine.id], ['5300', depreciation.id], ['4100', subscriptions.id]]) await h.command('account-map', { account, target })
+ const rows = [
+ ['2025-12-31','1000','100000'],['2025-12-31','1100','12000'],['2025-12-31','1200','2400'],['2025-12-31','FA-01','18000'],
+ ['2025-12-31','2000','-8000'],['2025-12-31','2100','-3000'],['2025-12-31','2200','-6600'],['2025-12-31','2300','-20000'],['2025-12-31','3000','-94800'],
+ ['2026-01-15','1101','10000'],['2026-01-15','4000','-10000'],['2026-01-20','5000','4000'],['2026-01-20','1000','-4000'],
+ ['2026-01-05','2100','1000'],['2026-01-05','1000','-1000'],['2026-01-31','1200','-200'],['2026-01-31','5100','200'],
+ ['2026-01-31','FA-01','-500'],['2026-01-31','5300','500'],['2026-01-31','2200','600'],['2026-01-31','4100','-600'],['2026-01-31','2100','-1000'],['2026-01-31','5200','1000'],
+ ]
+ const ledger = { filename: 'opening-ledger.csv', dateFormat: 'YYYY-MM-DD', columns: { date: 'Date', account: 'Account', amount: 'Amount' }, csv: 'Date,Account,Amount\n' + rows.map(r => r.join(',')).join('\n') + '\n' }
+ const preview = await h.kit('actuals','preview',ledger)
+ await h.kit('actuals','commit',{...ledger,fingerprint:preview.fingerprint})
+ let b = await h.get(`/api/easel/scenario/${budget.id}`)
+ const { forecast } = await h.command('approve-budget',{scenario:budget.id,revision:b.scenario.revision})
+ const beforeClose = await h.get(`/api/easel/scenario/${forecast.id}`)
+ await h.command('close-month',{scenario:forecast.id,month:'2026-01'})
+ const view = () => h.get(`/api/easel/scenario/${forecast.id}`)
+ let v = await view(), c = v.calculation
+ assert.deepEqual(c.balanceSheet.slice(0,2).map(r => [r.cash,r.receivables,r.prepaid,r.fixedAssets,r.payables,r.accruedLiabilities,r.deferredRevenue,r.debt,r.openingEquity]), [
+ [9500000,2200000,220000,1750000,800000,300000,600000,2000000,9480000],
+ [10000000,1200000,210000,1650000,400000,300000,500000,2000000,9480000],
+ ])
+ assert.equal(c.balanceSheet[0].balanceDifference,0)
+ assert.equal(c.cash[0].opening,10000000); assert.equal(c.cash[0].collections,0); assert.equal(c.cash[0].payments,500000)
+ assert.equal(c.cashFlow[0].difference,0)
+ assert.ok(c.balanceSheet[1].incompleteReasons.some(r => /no reviewed schedule attribution/.test(r)))
+ const allocate = async (target, originId, amount, extra = {}, cookie = h.owner, status = 200) => {
+  const revision = (await view()).scenario.revision
+  return h.command('ledger-allocation',{scenario:forecast.id,revision,month:'2026-01',target,allocations:[{originId,amount,...extra}]},cookie,status)
+ }
+ await allocate('bs:prepaid',prepaid.originId,'2199',{},h.owner,409)
+ await allocate('bs:prepaid',prepaid.originId,'2200',{},board,403)
+ await allocate('bs:deferred-revenue',contract.originId,'6000')
+ assert.deepEqual((await view()).calculation.contracts.invoices, c.contracts.invoices, 'future invoices and receipt dates are retained exactly')
+ // A revised service schedule retains the explicit source association by origin.
+ const futureContract = (await view()).inputs.revenue.find(r=>r.originId===contract.originId)
+ await h.command('revenue',{...base,scenario:forecast.id,id:futureContract.id,line:subscriptions.id,name:'Annual subscription',kind:'contract',start:'2025-12',startDate:'2025-12-01',termMonths:12,contractValue:'12000',billingCadence:'annual',dsoDays:0})
+ await allocate('bs:prepaid',prepaid.originId,'2200')
+ await allocate('bs:accrued-liabilities',payroll.originId,'3000')
+ await allocate('bs:deferred-revenue',contract.originId,'6000')
+ await allocate('bs:fixed-assets',asset.originId,'17500',{remainingLifeMonths:35})
+ v = await view(); c = v.calculation
+ const feb = c.balanceSheet[1]
+ assert.equal(feb.prepaid,200000); assert.equal(feb.accruedLiabilities,100000); assert.equal(feb.fixedAssets,1700000)
+ assert.equal(c.assets.find(r=>r.originId===asset.originId&&r.month==='2026-02').depreciation,50000)
+ const prepaidRows=c.workingCapital.rows.filter(r=>r.originId===prepaid.originId)
+ assert.equal(prepaidRows[1].prepaidExpense,20000); assert.equal(prepaidRows.at(-1).prepaid,0)
+ const pay=c.workingCapital.rows.find(r=>r.originId===payroll.originId&&r.month==='2026-02')
+ assert.equal(pay.accruedPayments,300000); assert.equal(pay.accruedLiabilities,100000)
+ assert.equal(c.contracts.rows.filter(r=>r.month>'2026-01').reduce((n,r)=>n+r.revenue,0),600000)
+ for (const r of [prepaidRows[1],pay,c.assets.find(r=>r.month==='2026-02'),c.contracts.rows.find(r=>r.month==='2026-02')]) assert.match(r.trace,/Imported.*opening.*account/)
+ for (const [i,row] of c.balanceSheet.entries()) {
+  assert.equal(row.balanceDifference,0,`${row.month}: ${row.trace}`)
+  assert.equal(c.cashFlow[i].difference,0,`${row.month}: ${c.cashFlow[i].trace}`)
+  assert.equal(row.incompleteReasons,undefined, row.month)
+ }
+ const branch = await h.command('branch',{from:forecast.id,name:'Imported opening branch'})
+ assert.deepEqual((await h.get(`/api/easel/scenario/${branch.id}`)).calculation,c)
+ const state = await h.get('/api/easel/state')
+ const snapshot = await h.get(`/api/easel/snapshot/${state.snapshots.find(s=>s.kind==='forecast').id}`)
+ assert.deepEqual(snapshot.body.calculation,beforeClose.calculation,'kept pre-close calculation is unchanged by later allocations')
+ const kept=await h.command('reforecast-save',{from:forecast.id,revision:v.scenario.revision,name:'Actual opening review'})
+ const frozen=await h.get(`/api/easel/scenario/${kept.id}`)
+ const viewer=await h.get(`/api/easel/scenario/${forecast.id}`,board)
+ assert.equal(viewer.scenario.ledgerAllocations,undefined)
+ assert.doesNotMatch(JSON.stringify(viewer),/Restricted holder|Private operations lead|opening-ledger.csv|account 2100/)
+ assert.deepEqual(viewer.calculation.balanceSheet,c.balanceSheet)
+ const response=await h.mf.dispatchFetch(h.origin+`/api/easel/scenario/${forecast.id}/document.xlsx`,{headers:{cookie:h.owner}})
+ assert.equal(response.status,200)
+ const book=await readWorkbook(await response.arrayBuffer())
+ for(const name of ['Balance sheet','Indirect cash flow']) {
+  const sheet=book.getWorksheet(name)
+  sheet.eachRow(row=>row.eachCell(cell=>{if(cell.value?.formula)assert.equal(evaluate(sheet,cell.address),cell.result,`${name}!${cell.address}`)}))
+ }
+ const sourceRule=(await h.get('/api/easel/state')).accountRules.find(r=>r.match==='prefix'&&r.from==='FA-')
+ await h.command('account-rule-delete',{id:sourceRule.id})
+ await h.get(`/api/easel/scenario/${forecast.id}`,h.owner,409)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${kept.id}`),frozen)
+ await h.command('account-rule',{match:'prefix',from:'FA-',target:'bs:fixed-assets'})
+ assert.deepEqual((await view()).calculation,c)
+ const correction = { ...ledger, filename:'corrected-opening.csv', csv:'Date,Account,Amount\n2026-01-31,1200,0.01\n2026-01-31,3000,-0.01\n' }
+ const corrected = await h.kit('actuals','preview',correction)
+ await h.kit('actuals','commit',{...correction,fingerprint:corrected.fingerprint})
+ await h.get(`/api/easel/scenario/${forecast.id}`,h.owner,409)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${kept.id}`),frozen)
+ const revision=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===forecast.id).revision
+ await h.command('ledger-allocation',{scenario:forecast.id,revision,month:'2026-01',target:'bs:prepaid',allocations:[{originId:prepaid.originId,amount:'2200.01'}]})
+ const repaired=await view()
+ assert.equal(repaired.calculation.balanceSheet[0].prepaid,220001)
+ assert.equal(repaired.calculation.workingCapital.rows.filter(r=>r.originId===prepaid.originId).at(-1).prepaid,0,'final service month conserves the one-cent correction')
+ assert.ok(repaired.calculation.balanceSheet.every(r=>r.balanceDifference===0))
 })

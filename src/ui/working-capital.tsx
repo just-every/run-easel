@@ -5,7 +5,7 @@ export function WorkingCapital({calculation,currency}:{calculation:D;currency:st
  if(!working)return null
  return <section className="card">
   <h2>Prepaids and accrued liabilities</h2>
-  <p className="muted">Opening balances are estimates from entered payment, service and pay-date assumptions. Prepayments amortize into expense; payroll and bonuses accrue when earned and settle on planned pay dates. No payments are executed.</p>
+  <p className="muted">Reviewed ledger allocations replace corresponding opening estimates from entered payment, service and pay-date assumptions. Prepayments amortize into expense; payroll and bonuses accrue when earned and settle on planned pay dates. No payments are executed.</p>
   <Table caption="Working capital by month" heads={['Month','Prepaid assets','Prepaid expense','Prepayments','Accrued liabilities','Earned payroll and bonus','Pay-date settlements']}>
    {working.months.map((r:D)=><tr key={r.month}><th scope="row">{monthLabel(r.month)}</th>{['prepaid','prepaidExpense','prepaidPayments','accruedLiabilities','accruedExpense','accruedPayments'].map(key=><td className="num" key={key}>{money(r[key],currency)}</td>)}</tr>)}
   </Table>

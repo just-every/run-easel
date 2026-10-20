@@ -3,7 +3,7 @@ import type { ContractCalculation } from './contract-revenue'
 import type { Model, Source } from './engine'
 import { addMonths } from './months'
 import { apportion, formatMoney } from './units'
-import type { Data } from './types'
+import { requireThat, type Data } from './types'
 
 const day = 86400000
 const stamp = (date: string) => Date.parse(`${date}T00:00:00Z`)
@@ -62,7 +62,7 @@ export type WorkingCapitalMonth = { month: string; prepaid: number; accruedLiabi
 export type WorkingCapitalRow = WorkingCapitalMonth & { originId: string; name: string; line: string; department: string; kind: string }
 export type WorkingCapitalCalculation = { opening: { prepaid: number; accruedLiabilities: number }; months: WorkingCapitalMonth[]; rows: WorkingCapitalRow[]; issues: { month: string; line: string; department: string; reason: string }[] }
 type Posting = { input: Data; month: string; expense: number; payment: number; prepaid: boolean; detail: string }
-export function workingCapital(model: Model, months: string[]) {
+export function workingCapital(model: Model, months: string[], allocations: Data[] = []) {
  const postings: Posting[] = [], cash: TimingCash[] = [], before = addMonths(months[0], -1)
  const money = (n: number) => formatMoney(n, model.workspace.currency)
  const post = (input: Data, month: string, expense: number, payment: number, prepaid: boolean, detail: string) => postings.push({ input, month, expense, payment, prepaid, detail })
@@ -94,12 +94,36 @@ export function workingCapital(model: Model, months: string[]) {
    if (p.start <= month && (!p.end || month <= p.end)) payroll(p, month, monthly)
   }
  }
- const expenseRows = () => postings.filter(p => p.expense && p.input.kind && months.includes(p.month)).map(p => ({ input: p.input, month: p.month, source: { kind: 'expense', id: p.input.originId, label: p.input.name, amount: p.expense, trace: p.detail } as Source }))
+ let prepared = false
+ const openingDeltas = new Map<string, { month: string; delta: number; trace: string }>()
+ const prepare = () => {
+  if (prepared) return
+  prepared = true
+  for (const a of allocations.filter(a => ['bs:prepaid', 'bs:accrued-liabilities'].includes(a.target))) {
+   const parts = postings.filter(p => p.input.originId === a.originId)
+   requireThat(parts.length > 0, 'Allocated working-capital schedule no longer exists', 409)
+   const prior = parts.filter(p => p.month <= a.month).reduce((n, p) => n + (p.prepaid ? p.payment - p.expense : p.expense - p.payment), 0)
+   const delta = a.amount - prior
+   openingDeltas.set(a.originId, { month: a.month, delta, trace: a.trace })
+   if (a.target === 'bs:prepaid') {
+    const future = parts.filter(p => p.month > a.month && p.expense > 0)
+    requireThat(future.length > 0, 'Prepaid opening needs remaining service months', 409)
+    const base = Number(BigInt(a.amount) / BigInt(future.length))
+    future.forEach((p, i) => { p.expense = i === future.length - 1 ? a.amount - base * i : base; p.detail += ` ${a.trace} Imported remaining balance amortizes over ${future.length} remaining service months; final month receives the cent remainder.` })
+   } else {
+    const payment = parts.filter(p => p.month > a.month && p.payment > 0).sort((a, b) => a.month.localeCompare(b.month))[0]
+    requireThat(payment && payment.payment + delta >= 0, 'Accrued opening needs a sufficient future scheduled settlement; no pay date is inferred', 409)
+    payment.payment += delta; payment.detail += ` ${a.trace} First entered future settlement replaces its estimated opening-accrual component by the imported amount.`
+   }
+  }
+ }
+ const expenseRows = () => { prepare(); return postings.filter(p => p.expense && p.input.kind && months.includes(p.month)).map(p => ({ input: p.input, month: p.month, source: { kind: 'expense', id: p.input.originId, label: p.input.name, amount: p.expense, trace: p.detail } as Source })) }
  const finish = (): WorkingCapitalCalculation => {
+  prepare()
   cash.length = 0
   for (const p of postings.filter(p => p.payment && p.month >= months[0])) cash.push({ month: p.month, amount: p.payment, collection: false, label: p.input.name ?? p.input.title })
   const inputs = [...new Map(postings.map(p => [p.input.originId, p.input])).values()]
-  const balance = (input: Data, through: string) => postings.filter(p => p.input.originId === input.originId && p.month <= through).reduce((n, p) => n + (p.prepaid ? p.payment - p.expense : p.expense - p.payment), 0)
+  const balance = (input: Data, through: string) => postings.filter(p => p.input.originId === input.originId && p.month <= through).reduce((n, p) => n + (p.prepaid ? p.payment - p.expense : p.expense - p.payment), 0) + (through >= (openingDeltas.get(input.originId)?.month ?? '9999') ? openingDeltas.get(input.originId)!.delta : 0)
   const opening = { prepaid: 0, accruedLiabilities: 0 }
   const rows: WorkingCapitalRow[] = []
   for (const input of inputs) {
@@ -109,13 +133,13 @@ export function workingCapital(model: Model, months: string[]) {
     const parts = postings.filter(p => p.input.originId === input.originId && p.month === month)
     const expense = parts.reduce((n, p) => n + p.expense, 0), payments = parts.reduce((n, p) => n + p.payment, 0), closing = balance(input, month), prior = balance(input, addMonths(month, -1))
     rows.push({ originId: input.originId, name: input.name ?? input.title, line: input.line, department: input.department, kind: input.kind ?? 'payroll', month, prepaid: prepaid ? closing : 0, accruedLiabilities: prepaid ? 0 : closing, prepaidExpense: prepaid ? expense : 0, accruedExpense: prepaid ? 0 : expense, prepaidPayments: prepaid ? payments : 0, accruedPayments: prepaid ? 0 : payments,
-     trace: `${month}: ${input.name ?? input.title}; opening ${money(prior)} ${month === months[0] ? '(estimate from entered payment/service assumptions; not imported balances)' : ''} ${prepaid ? '+ paid − recognized' : '+ earned − settled'} = closing ${money(closing)}; expense ${money(expense)}, payment ${money(payments)}. ${parts.map(p => p.detail).join(' ')}` })
+     trace: `${openingDeltas.get(input.originId)?.trace ?? ''} ${month}: ${input.name ?? input.title}; opening ${money(prior)} ${month === months[0] ? '(estimate from entered payment/service assumptions; not imported balances)' : ''} ${prepaid ? '+ paid − recognized' : '+ earned − settled'} = closing ${money(closing)}; expense ${money(expense)}, payment ${money(payments)}. ${parts.map(p => p.detail).join(' ')}` })
    }
   }
   const totals = months.map(month => {
    const parts = rows.filter(r => r.month === month)
    const fields = ['prepaid', 'accruedLiabilities', 'prepaidExpense', 'accruedExpense', 'prepaidPayments', 'accruedPayments'] as const
-   return { month, ...Object.fromEntries(fields.map(f => [f, parts.reduce((n, r) => n + r[f], 0)])), trace: `${month}: prepaid balance = opening + prepayments − amortization; accrued liabilities = opening + earned payroll/bonus − pay-date settlements. Opening balances are labeled planning estimates from the entered schedules; imported balance-sheet openings belong to CONNECT-007.` } as WorkingCapitalMonth
+   return { month, ...Object.fromEntries(fields.map(f => [f, parts.reduce((n, r) => n + r[f], 0)])), trace: `${month}: prepaid balance = opening + prepayments − amortization; accrued liabilities = opening + earned payroll/bonus − pay-date settlements. Reviewed CONNECT-007 allocations replace schedule opening estimates at the last closed month, with source attribution in each affected row.` } as WorkingCapitalMonth
   })
   return { opening, months: totals, rows, issues: [] }
  }

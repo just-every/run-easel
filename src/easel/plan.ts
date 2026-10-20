@@ -132,7 +132,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
    ...(from.horizon ? { horizon: from.horizon } : {}),
    ...((b.privateSandbox === true || from.sandbox) ? { sandbox: { grants: {} } } : {}),
-   parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash,
+   parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash, ledgerAllocations: from.ledgerAllocations, balanceLedger: from.balanceLedger,
    ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
   })
   await copyVersionInputs(c, from, id)
@@ -162,7 +162,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(target.revision === p.branchedFrom.revision, `${target.name} changed since this proposal was made (revision ${p.branchedFrom.revision} → ${target.revision}); make a fresh proposal from its current revision`, 409)
   clearInputs(s, target.id)
   copyInputs(s, p.id, target.id)
-  put(s, 'scenario', target.id, { ...target, cash: p.cash })
+  put(s, 'scenario', target.id, { ...target, cash: p.cash, ledgerAllocations: p.ledgerAllocations, balanceLedger: p.balanceLedger })
   const after = bump(c, get(s, 'scenario', target.id), 'proposal-promoted', p.id, { proposal: p.id, proposalRevision: p.revision, request: p.request })
   put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'promoted', promotedBy: x.actor.email, promotedAt: c.now, promotedInto: { scenario: target.id, revision: after } })
   return { target: get(s, 'scenario', target.id), proposal: get(s, 'scenario', p.id) }

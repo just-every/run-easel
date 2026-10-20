@@ -78,4 +78,84 @@ try {
    console.log(`CONNECT-007 native finance mapping, journal import, trial balance, source detail, blocked/restored balances and Excel at ${width}`)
   } finally { await context.close() }
  }
+ // Continue through the native close and statement doors on the accepted ledger.
+ const owner = await session(browser, root, server.origin, 'owner', 1440)
+ const cmd = (op, body) => api(owner.context, server.origin, `command/${op}`, body)
+ let state = await api(owner.context, server.origin, 'state')
+ const budget = state.scenarios.find(s => s.kind === 'budget')
+ const department = await cmd('department', { name: 'Delivery' })
+ await cmd('department-map', { source: '', department: department.id })
+ const line = async (name, extras = {}) => cmd('line', { name, type: 'operating-expense', ...extras })
+ const insurance = await line('Insurance'), payroll = await line('Payroll', { payroll: true }), depreciation = await line('Depreciation', { nonCash: true })
+ const common = { scenario: budget.id, department: department.id, start: '2026-01' }
+ const prepaid = await cmd('expense', { ...common, name: 'Annual insurance', line: insurance.id, kind: 'prepaid', amount: '1200', paymentMonth: '2025-12', amortizationMonths: 12 })
+ const salary = await cmd('position', { ...common, start: '2025-12', title: 'Delivery lead', holder: 'Private employee', line: payroll.id, annualSalary: '12000', payDay: 5, payMonthOffset: 1 })
+ const contract = await cmd('revenue', { ...common, name: 'Annual service', line: seed.revenue.id, kind: 'contract', startDate: '2026-01-01', contractValue: '12000', termMonths: 12, billingCadence: 'annual', dsoDays: 0 })
+ const category = await cmd('asset-category', { scenario: budget.id, name: 'Equipment', usefulLifeMonths: 60 })
+ const asset = await cmd('asset', { ...common, name: 'Existing equipment', line: depreciation.id, category: category.originId, kind: 'existing', cost: '24000', remainingLifeMonths: 24 })
+ state = await api(owner.context, server.origin, 'state')
+ await cmd('approve-budget', { scenario: budget.id, revision: state.scenarios.find(s => s.id === budget.id).revision })
+ await owner.page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
+ await owner.page.getByRole('button', { name: 'Close Jan 2026', exact: true }).click()
+ await owner.page.getByRole('button', { name: 'Close Feb 2026', exact: true }).waitFor()
+ await cmd('member', { email: 'board@dev.localhost', name: 'Board', role: 'viewer' })
+ const forecast = (await api(owner.context, server.origin, 'state')).scenarios.find(s => s.kind === 'forecast')
+ for (const width of [1440, 390]) {
+  const reader = await session(browser, root, server.origin, 'owner', width)
+  try {
+   await reader.page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Overview', exact: true }).click()
+   const section = reader.page.locator('section.card').filter({ has: reader.page.getByRole('heading', { name: 'Balance sheet', exact: true }) })
+   const cash = section.getByRole('row').filter({ has: reader.page.getByRole('rowheader', { name: 'Cash', exact: true }) }).getByRole('cell')
+   assert.equal(await cash.first().innerText(), '$96,000.00')
+   await section.getByLabel('Balance sheet reconciliation for Feb 2026: Incomplete', { exact: true }).click()
+   await section.getByRole('region', { name: 'Balance sheet reconciliation details', exact: true }).getByText(/no reviewed schedule attribution/).waitFor()
+   await noOverflow(reader.page, `CONNECT-007 imported opening ${width}`)
+   await reader.page.screenshot({ path: join(evidence, `opening-unallocated-${width}.png`), fullPage: true })
+  } finally { await reader.context.close() }
+ }
+ for (const [target, originId, amount, extra] of [
+  ['bs:prepaid', prepaid.originId, '2400', {}], ['bs:accrued-liabilities', salary.originId, '3000', {}],
+  ['bs:deferred-revenue', contract.originId, '6000', {}], ['bs:fixed-assets', asset.originId, '18000', { remainingLifeMonths: 36 }],
+ ]) {
+  const v = await api(owner.context, server.origin, `scenario/${forecast.id}`)
+  await cmd('ledger-allocation', { scenario: forecast.id, revision: v.scenario.revision, month: '2026-01', target, allocations: [{ originId, amount, ...extra }] })
+ }
+ for (const width of [1440, 390]) for (const as of ['owner', 'board']) {
+  const reader = await session(browser, root, server.origin, as, width)
+  try {
+   await reader.page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Overview', exact: true }).click()
+   const view = await api(reader.context, server.origin, `scenario/${forecast.id}`)
+   for (const [heading, field] of [['Balance sheet', 'balanceSheet'], ['Indirect cash flow', 'cashFlow']]) {
+    const section = reader.page.locator('section.card').filter({ has: reader.page.getByRole('heading', { name: heading, exact: true }) })
+    await section.getByRole('table').waitFor()
+    const row = view.calculation[field][1]
+    assert.equal(field === 'balanceSheet' ? row.balanceDifference : row.difference, 0)
+    await section.getByLabel(`${heading} reconciliation for Feb 2026: Balanced`, { exact: true }).click()
+    const details = await section.getByRole('region', { name: `${heading} reconciliation details`, exact: true }).innerText()
+    assert.ok(details.includes(row.trace))
+    await noOverflow(reader.page, `CONNECT-007 ${heading} ${as} ${width}`)
+    await section.screenshot({ path: join(evidence, `opening-${field}-${as}-${width}.png`) })
+   }
+   const download = reader.page.waitForEvent('download')
+   await reader.page.getByRole('link', { name: 'Download Excel', exact: true }).click()
+   assert.equal(await (await download).failure(), null)
+  } finally { await reader.context.close() }
+ }
+ const bad = { ...balanceSource, filename: 'february-one-cent.csv', csv: 'Date,Account,Type,Amount,Description\n2026-02-01,1000,Bank,0.01,Incomplete source journal\n' }
+ const bp = await api(owner.context, server.origin, 'import/actuals/preview', bad)
+ const imported = await api(owner.context, server.origin, 'import/actuals/commit', { ...bad, fingerprint: bp.fingerprint })
+ for (const width of [1440, 390]) {
+  const reader = await session(browser, root, server.origin, 'owner', width)
+  try {
+   await reader.page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
+   await reader.page.getByRole('button', { name: 'Close Feb 2026', exact: true }).click()
+   await reader.page.getByRole('alert').filter({ hasText: /trial balance.*1 minor units/ }).waitFor()
+   assert.equal((await api(reader.context, server.origin, `scenario/${forecast.id}`)).scenario.actualsThrough, '2026-01')
+   await noOverflow(reader.page, `CONNECT-007 refused close ${width}`)
+   await reader.page.screenshot({ path: join(evidence, `close-refused-${width}.png`), fullPage: true })
+  } finally { await reader.context.close() }
+ }
+ await api(owner.context, server.origin, 'import/actuals/undo', { id: imported.batch.id })
+ await owner.context.close()
+ console.log('CONNECT-007 actual openings, explicit schedule attribution, finance/viewer statements, downloads and one-cent native close refusal at 1440/390')
 } finally { await browser?.close(); await server?.close(); await rm(root, { recursive: true, force: true }) }

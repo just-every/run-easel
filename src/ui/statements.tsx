@@ -22,7 +22,7 @@ const balanceLines: StatementLine[] = [
  ['accruedLiabilities', 'Accrued payroll and bonuses'],
  ['debt', 'Debt'],
  ['liabilities', 'Total liabilities', true],
- ['openingEquity', 'Opening equity (estimate)'],
+ ['openingEquity', 'Opening equity'],
  ['retainedEarnings', 'Retained earnings'],
  ['contributedEquity', 'Contributed equity'],
  ['equity', 'Total equity', true],
@@ -66,7 +66,7 @@ export function Statements({ calculation, currency }: { calculation: D; currency
    </Table>}
   </section>}
   <Statement heading="Balance sheet" caption="Balance sheet by month" calculation={calculation} rows={calculation.balanceSheet} lines={balanceLines} currency={currency} balance>
-   <p className="muted">Opening equity is an estimate from opening assets less opening liabilities. Retained earnings accumulate the plan's net income.</p>
+   <p className="muted">Opening equity uses accepted equity balances after a balance-sheet ledger close; otherwise it is estimated from opening net assets. Retained earnings keep unclosed ledger income and subsequent forecast income.</p>
   </Statement>
   <Statement heading="Indirect cash flow" caption="Indirect cash flow by month" calculation={calculation} rows={calculation.cashFlow} lines={cashFlowLines} currency={currency}>
    <p className="muted">{calculation.financing ? 'Financing includes planned debt draws, principal repayments and equity raises. Interest is an operating cash outflow. These are planning assumptions, never executed payments.' : 'Financing assumptions were not captured in this older snapshot; its saved figures remain unchanged.'}</p>
@@ -100,7 +100,7 @@ function Statement({ heading, caption, calculation, rows, lines, currency, balan
    {check && <div role="region" aria-label={`${heading} reconciliation details`}>
     <h3>Reconciliation, {monthLabel(check.month)}</h3>
     {balance ? <><p>Assets less liabilities and equity: {money(check.balanceDifference, currency)}</p><p>Cash difference: {money(check.cashDifference, currency)}</p></> : <p>Cash difference: {money(check.difference, currency)}</p>}
-    {check.incompleteReasons?.length > 0 && <p role="status">Incomplete: invoice and cash amounts are known planning schedules; actual receipt allocation is unresolved.</p>}
+    {check.incompleteReasons?.length > 0 && <p role="status">Incomplete: accepted balances and entered schedules have unresolved source or timing differences.</p>}
     <p className="trace">{check.trace}</p>
     {check.causes?.length > 0 && <ul>{check.causes.map((cause: string, i: number) => <li key={i}>{cause}</li>)}</ul>}
     <button type="button" className="quiet" onClick={() => setSelected('')}>Close reconciliation</button>

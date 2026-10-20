@@ -44,7 +44,7 @@ export async function sandboxes(c: Context, op: string, b: Data): Promise<Data |
   const targetRevision = b.into ? Number(b.targetRevision) : sc.branchedFrom.revision
   requireThat(target.status === 'working' && !target.sandbox && target.kind !== 'proposal' && target.revision === targetRevision, 'The original working plan changed or is frozen; create a fresh sandbox', 409)
   const id = uid(), request = text(b.request, 'What should change', 2000)
-  put(s, 'scenario', id, { name: sc.name, kind: 'proposal', status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, parent: target.id, branchedFrom: { scenario: target.id, revision: target.revision, name: target.name }, actualsThrough: sc.actualsThrough, cash: sc.cash, ...(sc.horizon ? { horizon: sc.horizon } : {}), request, proposalStatus: 'draft' })
+  put(s, 'scenario', id, { name: sc.name, kind: 'proposal', status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, parent: target.id, branchedFrom: { scenario: target.id, revision: target.revision, name: target.name }, actualsThrough: sc.actualsThrough, cash: sc.cash, ledgerAllocations: sc.ledgerAllocations, balanceLedger: sc.balanceLedger, ...(sc.horizon ? { horizon: sc.horizon } : {}), request, proposalStatus: 'draft' })
   copyInputs(s, sc.id, id)
   c.activity.push({ action: 'proposal-create', record: id, scenario: id, after: 1, detail: { from: target.id, fromRevision: target.revision } })
   await plan(c, 'proposal-submit', { id })

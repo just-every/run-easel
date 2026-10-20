@@ -8,7 +8,7 @@ import { monthLabel } from './months'
 import { find, requireThat, type Data, type State } from './types'
 
 async function grouped(db: D1Database) {
- const { results } = await db.prepare("SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, SUM(amount) AS amount, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),'')").all<any>()
+ const { results } = await db.prepare("SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),'')").all<any>()
  return results.map(r => ({ ...r, amount: Number(r.amount), rows: Number(r.rows), batches: String(r.batches).split(',') }))
 }
 const resolved = (s: State, g: Data) => {

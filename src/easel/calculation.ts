@@ -1,3 +1,4 @@
+import { ledgerContext } from './ledger-context'
 import { actualCells } from './actuals-read'
 import type { Context } from './context'
 import { calculate } from './engine'
@@ -11,5 +12,6 @@ export async function workingCalculation(c: Context, scenario: string, through?:
  await assertHistorySources(c, consumed)
  const close = through ?? m.scenario.actualsThrough ?? undefined
  const actuals = close || consumed.length ? await actualCells(c.db, c.s, close) : []
- return calculate(m, actuals)
+ const ledger = close ? await ledgerContext(c, close, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true) : undefined
+ return calculate(m, actuals, ledger)
 }

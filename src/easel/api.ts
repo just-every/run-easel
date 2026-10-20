@@ -1,3 +1,5 @@
+import { publicLedger } from './ledger-public'
+import { ledgerAllocation } from './ledger-allocation'
 import { workbookDrivers } from './workbook-model'
 import { headcountView } from './headcount'
 import { payrollImport } from './payroll-import'
@@ -108,7 +110,7 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  const ctx = await open(c)
  const result = await view(ctx)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
- return c.json(await erasedView(ctx.db, result) as any)
+ return c.json(publicLedger(await erasedView(ctx.db, result)) as any)
 }
 
 api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
@@ -145,7 +147,7 @@ api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.
 api.post('/api/easel/notifications/preference', async c => {
  const ctx = await open(c), result = await savePreference(ctx, c.env, await body(c))
  await commit(ctx)
- return c.json(await erasedView(ctx.db, result))
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 api.post('/api/easel/notifications/:id/retry', async c => {
  const ctx = await open(c)
@@ -167,7 +169,7 @@ api.post('/api/easel/connections/nook/:op', async c => {
 api.post('/api/easel/gauge/:op', async c => {
  const ctx = await open(c), result = await gaugeUtilization(ctx, c.env, c.req.param('op'), await body(c))
  await commit(ctx)
- return c.json(await erasedView(ctx.db, result))
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 
 api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
@@ -273,7 +275,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -292,7 +294,7 @@ api.post('/api/easel/command/:op', async c => {
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
  await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
- return c.json(await erasedView(ctx.db, result))
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 
 api.post('/api/easel/import/:kit/:op', async c => {
@@ -317,7 +319,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
  await commit(after, structureBefore.state, structureBefore.revision)
  await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)
- return c.json(await erasedView(ctx.db, result))
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 
 api.post('/api/easel/invite', async c => {

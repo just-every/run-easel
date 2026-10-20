@@ -19,7 +19,9 @@ export function balanceActuals(groups: Data[], periods: string[]) {
   const debit = rows.reduce((n, a) => n + Math.max(a.amount, 0), 0)
   const credit = rows.reduce((n, a) => n + Math.max(-a.amount, 0), 0)
   const blocked = rows.some(a => a.blocked)
-  return { period, accounts: rows, debit, credit, difference: debit - credit, balanced: !blocked && debit === credit, blocked,
+  const cashGroups = groups.filter(g => g.period === period && !g.blocked && g.target === 'cash')
+  const cashReceived = cashGroups.reduce((n, g) => n + g.debits, 0), cashPaid = cashGroups.reduce((n, g) => n + g.credits, 0)
+  return { cashReceived, cashPaid, period, accounts: rows, debit, credit, difference: debit - credit, balanced: !blocked && debit === credit, blocked,
    balances: BALANCE_TARGETS.map(t => {
     const sources = rows.filter(a => !a.blocked && a.target === t.value)
     return { target: t.value, label: t.label, amount: blocked ? null : sources.reduce((n, a) => n + a.amount * t.sign, 0), rows: sources.reduce((n, a) => n + a.rows, 0), sources }

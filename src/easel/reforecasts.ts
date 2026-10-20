@@ -35,7 +35,7 @@ export async function reforecasts(c: Context, op: string, b: Data): Promise<Data
  const saved = {
   id, name, kind: 'reforecast', status: 'frozen', revision: from.revision,
   createdBy: c.x.actor.email, createdAt: c.now, parent: from.id, branchedFrom: source,
-  horizon: m.workspace.horizon, actualsThrough: from.actualsThrough ?? null, cash: from.cash,
+  horizon: m.workspace.horizon, actualsThrough: from.actualsThrough ?? null, cash: from.cash, ledgerAllocations: from.ledgerAllocations, balanceLedger: from.balanceLedger,
   reforecast: { snapshot: snapshotId, by: c.x.actor.email, at: c.now, revision: from.revision },
  }
  put(c.s, 'scenario', id, saved)

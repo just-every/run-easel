@@ -2,7 +2,7 @@ import type { Data } from './types'
 import type { Cell, Sheet } from './xlsx-write'
 
 export function balanceActualsSheets(trials: Data[], currency: string): Sheet[] {
- const rows: Cell[][] = [[`Cumulative accepted journal balances; ${currency} minor units; forecast openings remain planning assumptions`], ['Month', 'Account', 'Source type', 'Source department', 'Target', 'Debit', 'Credit', 'Rows', 'Source imports', 'Source periods', 'Mapping status']]
+ const rows: Cell[][] = [[`Cumulative accepted journal balances; ${currency} minor units; closed balances open forecast statements; schedule origins require reviewed allocation`], ['Month', 'Account', 'Source type', 'Source department', 'Target', 'Debit', 'Credit', 'Rows', 'Source imports', 'Source periods', 'Mapping status']]
  const totals: Cell[][] = [[`Trial balance; ${currency} minor units. Zero sum does not establish source completeness.`], ['Month', 'Debit', 'Credit', 'Difference', 'Mapping status']]
  const balances: Cell[][] = [[`Balance-sheet actuals; ${currency} minor units; assets debit-normal, liabilities/equity credit-normal`], ['Month', 'Balance', 'Amount', 'Source rows']]
  for (const t of trials) {

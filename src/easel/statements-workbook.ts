@@ -5,15 +5,18 @@ const formula = (formula: string, value: number): Cell => ({ formula, value })
 
 /** Captured aggregate statements; subtotals and reconciliation stay editable. */
 export function statementSheets(balance: BalanceMonth[], cashFlow: CashFlowMonth[], directCash: { month: string; closing: number }[], currency: string, prefix: string): Sheet[] {
- const balanceRows: Cell[][] = [[`${currency} minor units (100 = 1 currency unit). Opening equity is an estimate from opening net assets, not an imported equity balance.`],
-  ['Month', 'Cash', 'Receivables', 'Capital prepayments', 'Net fixed assets', 'Total assets', 'Operating payables', 'Capital payables', 'Other noncash reserve', 'Total liabilities', 'Opening equity estimate', 'Net income', 'Cumulative net income / retained earnings', 'Total equity', 'Assets less liabilities and equity', 'Trace', 'Reconciliation causes', 'Debt', 'Contributed equity', 'Inventory estimate', 'Deferred revenue', 'Unbilled revenue', 'Completeness', 'Prepaid expenses', 'Accrued liabilities', 'Sales tax payable']]
+ const balanceRows: Cell[][] = [[`${currency} minor units (100 = 1 currency unit). Opening equity uses imported equity when a balance-sheet ledger is closed; otherwise it is estimated from opening net assets.`],
+  ['Month', 'Cash', 'Receivables', 'Capital prepayments', 'Net fixed assets', 'Total assets', 'Operating payables', 'Capital payables', 'Other noncash reserve', 'Total liabilities', 'Opening equity', 'Net income', 'Cumulative net income / retained earnings', 'Total equity', 'Assets less liabilities and equity', 'Trace', 'Reconciliation causes', 'Debt', 'Contributed equity', 'Inventory estimate', 'Deferred revenue', 'Unbilled revenue', 'Completeness', 'Prepaid expenses', 'Accrued liabilities', 'Sales tax payable']]
+ let cumulativeIncome = 0
  for (const b of balance) {
   const r = balanceRows.length + 1
   const income = cashFlow.find(c => c.month === b.month)!.netIncome
+  cumulativeIncome += income
+  const retainedOpening = b.retainedEarnings - cumulativeIncome
   balanceRows.push([b.month, b.cash, b.receivables, b.capitalPrepayments, b.fixedAssets,
    formula(`SUM(B${r}:E${r})+T${r}+V${r}+X${r}`, b.assets), b.payables, b.capitalPayables, b.nonCashReserve,
    formula(`SUM(G${r}:I${r})+R${r}+U${r}+Y${r}+Z${r}`, b.liabilities), b.openingEquity, income,
-   formula(`SUM(L3:L${r})`, b.retainedEarnings), formula(`K${r}+M${r}+S${r}`, b.equity),
+   formula(`SUM(L3:L${r})${retainedOpening < 0 ? '' : '+'}${retainedOpening}`, b.retainedEarnings), formula(`K${r}+M${r}+S${r}`, b.equity),
    formula(`F${r}-J${r}-N${r}`, b.balanceDifference), b.trace, b.causes.join('\n'), b.debt ?? 0, b.contributedEquity ?? 0, b.inventory ?? null, b.deferredRevenue ?? null, b.unbilledRevenue ?? null, b.incompleteReasons?.join('\n') ?? 'Complete planning schedule', b.prepaid ?? null, b.accruedLiabilities ?? null, b.salesTaxPayable ?? 0])
  }
  const cashRows: Cell[][] = [[`${currency} minor units (100 = 1 currency unit). Financing contains captured planned borrowing, principal repayments and equity raises; older snapshots retain their original figures. Differences remain visible; no balancing adjustment is made.`],

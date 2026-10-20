@@ -67,6 +67,7 @@ export async function stateView(c: Context) {
   ...view.packs.flatMap(pack => [pack.createdBy, pack.publishedBy, ...Object.values(pack.progress ?? {}).map((entry: any) => entry.by)]),
   ...view.snapshots.map(sn => sn.actor),
  ]
+ view.scenarios = view.scenarios.map(sc => ({ ...sc, ledgerAllocations: undefined }))
  return { ...view, actorNames: await actorNames(c.db, emails) }
 }
 
@@ -79,7 +80,7 @@ export async function scenarioView(c: Context, id: string) {
  const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
  const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
  const visibleHistory = filterHistory(c.x, actualsHistory)
- return { actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id)), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id)) }
+ return { actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id)), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id)) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }

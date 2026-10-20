@@ -1,3 +1,6 @@
+import { ledgerStatements } from './ledger-statements'
+import { openContracts, scheduleAllocations } from './ledger-schedules'
+import type { LedgerContext } from './ledger-context'
 import { workbookScheduleValues } from './workbook-calculation'
 import { payrollTaxes } from './payroll-taxes'
 import { incomeTaxes, salesTaxes } from './tax-calculation'
@@ -63,7 +66,7 @@ export type Calculation = {
 const active = (p: Data, m: string) => p.start <= m && (!p.end || m <= p.end)
 const monthCount = (count: number) => `${count} ${count === 1 ? 'month' : 'months'}`
 
-export function calculate(model: Model, actuals: ActualCell[] = []): Calculation {
+export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: LedgerContext): Calculation {
  const { workspace, lines, departments, scenario, inputs } = model
  const currency = workspace.currency
  const money = (n: number) => formatMoney(n, currency)
@@ -76,7 +79,8 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
  const warnings: string[] = []
  const cells = new Map<string, Cell>()
  const cash: { month: string; amount: number; collection: boolean; label: string }[] = []
- const working = workingCapital(model, months)
+ const allocations = scheduleAllocations(ledger, actualsThrough)
+ const working = workingCapital(model, months, allocations)
  const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;amount:number}[]=[]
  const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency):null
  const timedInputs = new Map([...inputs.revenue, ...inputs.expense, ...inputs.position].map(i => [i.originId, i]))
@@ -112,6 +116,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
 
  const contracts = contractRevenue(inputs.revenue, months, currency)
  curveContracts(contracts, inputs.revenue, months)
+ openContracts(contracts, allocations)
  for (const row of contracts.rows) add(row.line, row.department, row.month, { kind: 'revenue', id: row.originId, label: row.name, amount: row.revenue, trace: row.trace }, 0, true)
  for (const invoice of contracts.invoices) { const event={ month: invoice.collectionDate.slice(0, 7), amount: invoice.amount, collection: true, label: 'Planned contract invoice collection' };cash.push(event);taxableCollections.push(event) }
  for (const r of inputs.revenue.filter(r => r.kind !== 'contract')) {
@@ -207,7 +212,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   add(debt.line, debt.department, row.month, { kind: 'financing', id: row.originId, label: row.name, amount: row.interest, trace: row.trace }, 0)
  }
 
- const assets = calculateAssets(inputs.asset ?? [], inputs['asset-category'] ?? [], months, actualsThrough, currency)
+ const assets = calculateAssets(inputs.asset ?? [], inputs['asset-category'] ?? [], months, actualsThrough, currency, allocations)
  for (const row of assets) {
   if (row.expense !== 0) add(row.line, row.department, row.month, { kind: 'asset', id: row.originId, label: row.name, amount: row.expense, trace: row.trace }, 0, true)
   if (row.capex) cash.push({ month: row.month, amount: row.capex, collection: false, label: row.name })
@@ -256,7 +261,7 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   const accepted = [...cells.values()].filter(c => c.line === line && c.department === department && c.month === month).reduce((n, c) => n + c.amount, 0)
   const mixed = inputs.schedule.some(s => s.line === line && s.department === department) || inputs.expense.some(e => e.line === line && e.department === department && !['prepaid', 'bonus'].includes(e.kind)) || inputs.position.some(p => p.line === line && p.department === department && !p.payDay)
   if (accepted !== scheduled || mixed) {
-   const reason = `${month}, line ${line}, department ${department}: accepted expense ${money(accepted)} versus working-capital recognition ${money(scheduled)}${mixed ? '; aggregate cell mixes other expense sources' : ''}. Accepted P&L retained; prepaid and payroll/bonus payment schedules remain labeled estimates pending balance-sheet actuals (CONNECT-007). No liability plug or invented settlement is applied.`
+   const reason = `${month}, line ${line}, department ${department}: accepted expense ${money(accepted)} versus working-capital recognition ${money(scheduled)}${mixed ? '; aggregate cell mixes other expense sources' : ''}. Accepted P&L retained; this historical schedule difference is not an inferred settlement. Reviewed CONNECT-007 allocations replace future opening estimates when available. No liability plug or invented settlement is applied.`
    workingCapitalCalculation.issues.push({ month, line, department, reason }); warnings.push(reason)
   }
  }
@@ -345,5 +350,6 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
   lineTotals, profit, cash: cashMonths, headcount, warnings, assets, financing, ...(workingCapitalCalculation.rows.length ? { workingCapital: workingCapitalCalculation } : {}), ...(contracts.rows.length ? { contracts } : {}),
  }
- return { ...result, ...statements(model, result) }
+ const calculated = { ...result, ...statements(model, result) }
+ return ledger ? ledgerStatements(model, calculated, ledger) : calculated
 }
