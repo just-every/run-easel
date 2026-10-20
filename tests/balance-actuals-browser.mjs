@@ -33,7 +33,7 @@ try {
    assert.equal(await page.getByLabel('Rule maps to', { exact: true }).locator('option[value^="bs:"]').count(), 8)
    await shot('settings')
    await tab('Actuals')
-   if (width === 1440) {
+   {
     await page.getByLabel('Actuals file', { exact: true }).setInputFiles({ name: balanceSource.filename, mimeType: 'text/csv', buffer: Buffer.from(balanceSource.csv) })
     await page.getByLabel('Date format', { exact: true }).selectOption('YYYY-MM-DD')
     await page.getByRole('button', { name: 'Preview', exact: true }).click()
@@ -68,6 +68,11 @@ try {
    await tab('Activity')
    await page.getByRole('heading', { name: 'Activity', exact: true }).waitFor()
    await shot('activity')
+   if (width === 1440) {
+    const state = await api(context, server.origin, 'state')
+    const batch = state.batches.find(b => b.file === balanceSource.filename && b.status === 'accepted')
+    await api(context, server.origin, 'import/actuals/undo', { id: batch.id })
+   }
    console.log(`CONNECT-007 native finance mapping, journal import, trial balance, source detail, blocked/restored balances and Excel at ${width}`)
   } finally { await context.close() }
  }
