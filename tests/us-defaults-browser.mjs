@@ -20,6 +20,8 @@ const browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIU
 let server,finance
 const card=(page,name)=>page.locator('section.card').filter({has:page.getByRole('heading',{name,exact:true})})
 const settle=page=>page.waitForLoadState('networkidle')
+// SPA screens fetch after the click; wait for the text to render, then assert it.
+const shows=async(scope,text)=>{await scope.getByText(text).first().waitFor();assert.ok((await scope.innerText()).includes(text),text)}
 const shoot=async(page,name)=>{await settle(page);await noOverflow(page,`US-001 ${name}`);await page.screenshot({path:join(evidence,`${name}.png`),fullPage:false})}
 try {
  const port=await freePort();server=await start(root,port)
@@ -53,9 +55,9 @@ try {
   await page.setViewportSize({width,height:1000})
   for(const name of ['Overview','Dashboards','Plan','Actuals','Budget cycle','Scenarios','Review','Settings','Activity']) {
    await page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name,exact:true}).click();await settle(page)
-   if(name==='Overview')assert.ok((await page.locator('main').innerText()).includes('$'))
-   if(name==='Budget cycle')assert.ok((await page.getByRole('table',{name:'Department submissions',exact:true}).innerText()).includes('02/06/2026'))
-   if(name==='Review')assert.ok((await page.locator('main').innerText()).includes('02/15/2026'))
+   if(name==='Overview')await shows(page.locator('main'),'$')
+   if(name==='Budget cycle')await shows(page.getByRole('table',{name:'Department submissions',exact:true}),'02/06/2026')
+   if(name==='Review')await shows(page.locator('main'),'02/15/2026')
    if(name==='Settings')assert.equal(await page.getByLabel('Company time zone',{exact:true}).inputValue(),'America/New_York')
    if(name==='Review'){await card(page,'Department statements').getByRole('table',{name:'Department statement amounts',exact:true}).waitFor();await shoot(page,`department-statement-${width}`);await card(page,'Review packs').scrollIntoViewIfNeeded()}
    await shoot(page,`${name.toLowerCase().replaceAll(' ','-')}-${width}`)
