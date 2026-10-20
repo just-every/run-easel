@@ -1,5 +1,5 @@
 /* 07 Interlude: the mascot draws the picked plan's 2027 as one line over the floor. */
-.interlude { padding-bottom: 150px !important; }
+.interlude { padding-top: 190px !important; padding-bottom: 150px !important; }
 .interlude-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 36px; align-items: end; }
 .mascot { position: relative; padding-bottom: 6px; }
 .mascot img { display: block; width: 100%; height: auto; }
@@ -37,13 +37,14 @@
  .floor-name { font-size: 14px; left: calc(100% + 14px); }
 }
 @media (max-width: 959px) {
+ .interlude { padding-top: 70px !important; }
  .interlude-grid { grid-template-columns: minmax(0, 1fr); }
  .mascot { width: 200px; margin: 0 auto; }
  .year { margin-top: 170px; }
  .caps .caps-year { display: none; }
 }
 @media (max-width: 759px) {
- .interlude { padding-bottom: 64px !important; }
+ .interlude { padding-top: 40px !important; padding-bottom: 64px !important; }
  .mascot { width: 150px; }
  .spark-m1, .spark-m2 { width: 40px; height: 40px; top: -30px; }
  .year { padding-right: 0; margin-top: 54px; }
