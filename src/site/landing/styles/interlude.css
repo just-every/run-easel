@@ -1,0 +1,62 @@
+/* 07 Interlude: the mascot draws the picked plan's 2027 as one line over the floor. */
+.interlude { padding-bottom: 150px !important; }
+.interlude-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 36px; align-items: end; }
+.mascot { position: relative; padding-bottom: 6px; }
+.mascot img { display: block; width: 100%; height: auto; }
+.spark-m1 { left: -10px; top: -46px; width: 56px; height: 56px; }
+.spark-m2 { right: -10px; top: -46px; width: 56px; height: 56px; transform: scaleX(-1); }
+.year { position: relative; padding-right: 150px; }
+.year-plot { height: 430px; }
+.line-year { stroke: var(--magenta); stroke-width: 5; }
+.floor-dots { position: absolute; left: -2%; right: -2%; height: 14px; transform: translateY(-50%); background: radial-gradient(circle, var(--gold) 5.5px, transparent 6px) 0 50% / 22px 14px repeat-x; }
+.floor-name { position: absolute; left: calc(100% + 22px); transform: translateY(-50%); font-size: 16px; color: var(--muted); white-space: nowrap; }
+.year-dot { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 3px solid #fff; border-radius: 50%; background: var(--magenta); box-shadow: 0 0 0 1px var(--magenta); }
+.year-head { position: absolute; width: 30px; height: 26px; margin-top: -13px; background: var(--magenta); clip-path: polygon(0 0, 100% 50%, 0 100%); transform-origin: 0 50%; transform: rotate(var(--turn-wide)); }
+.spark-head { right: -60px; top: -40px; transform: scaleX(-1); }
+.caps { position: absolute; left: 0; right: 0; margin-top: 22px; height: 20px; font-size: 14px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: #5e616b; }
+.caps li { position: absolute; transform: translateX(-50%); }
+.caps .caps-year { left: -64px; transform: none; color: #a2a5ae; }
+.cap-phone { display: none; }
+.moments { position: absolute; left: 0; right: 150px; top: 0; height: 430px; }
+.moment { position: absolute; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 12px; align-items: start; width: 312px; padding: 14px 18px 16px; }
+.moment p { display: grid; gap: 2px; font-size: 16px; color: var(--ink); }
+.moment .muted { font-size: 14px; }
+.moment strong { font-size: 18px; font-weight: 700; }
+.m-mar { transform: translate(-50%, 84px); }
+.m-mar::before { content: ""; position: absolute; left: calc(50% - 8px); top: -8px; width: 14px; height: 14px; background: #fff; border-left: 1px solid var(--hair); border-top: 1px solid var(--hair); transform: rotate(45deg); }
+.m-may { transform: translate(-50%, calc(-100% - 30px)); }
+.m-dec { transform: translate(-72%, calc(-100% - 46px)); }
+.m-may::after, .m-dec::after { content: ""; position: absolute; left: 50%; top: 100%; height: 30px; border-left: 2.4px dotted var(--magenta); }
+.m-dec::after { left: 72%; height: 46px; }
+
+@media (max-width: 1179px) {
+ .interlude-grid { grid-template-columns: 220px minmax(0, 1fr); gap: 24px; }
+ .year { padding-right: 120px; }
+ .moments { right: 120px; }
+ .moment { width: 236px; }
+ .floor-name { font-size: 14px; left: calc(100% + 14px); }
+}
+@media (max-width: 959px) {
+ .interlude-grid { grid-template-columns: minmax(0, 1fr); }
+ .mascot { width: 200px; margin: 0 auto; }
+ .year { margin-top: 170px; }
+ .caps .caps-year { display: none; }
+}
+@media (max-width: 759px) {
+ .interlude { padding-bottom: 64px !important; }
+ .mascot { width: 150px; }
+ .spark-m1, .spark-m2 { width: 40px; height: 40px; top: -30px; }
+ .year { padding-right: 0; margin-top: 54px; }
+ .year-plot { height: 230px; }
+ .line-year { stroke-width: 4; }
+ .year-head { width: 22px; height: 20px; margin-top: -10px; transform: rotate(var(--turn-phone)); }
+ .spark-head { display: none; }
+ .floor-name { left: auto; right: 0; transform: translateY(-160%); font-size: 13px; }
+ .floor-dots { background-size: 16px 12px; background-image: radial-gradient(circle, var(--gold) 4px, transparent 4.5px); }
+ .caps { font-size: 12px; margin-top: 16px; }
+ .caps .caps-year { display: none; }
+ .cap-wide { display: none; } .cap-phone { display: inline; }
+ .moments { position: static; height: auto; display: grid; gap: 12px; margin-top: 56px; }
+ .moment { position: relative; left: auto !important; top: auto !important; width: auto; transform: none !important; }
+ .moment::before, .moment::after { display: none; }
+}

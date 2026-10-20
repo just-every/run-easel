@@ -901,6 +901,47 @@ Agents keep the plan feasible and honest, not just modeled. Each clause names wh
 
 *Status:* partial.
 
+## Homepage claims
+
+Every capability the run site's homepage (run-easel.com, `src/site/landing/`) shows, by section, with what backs it today. The page shows the product this contract builds toward (owner, 17 Oct 2026); "contract, not yet in code" rows are build priorities. Status follows the [Status](#status) table. The sample company (Tallgrass Software) and its figures are illustrative.
+
+| Section | Claim on the page | Backed by | Today |
+| --- | --- | --- | --- |
+| Hero | Connects your ledger, payroll and CRM | `CONNECT-001`, `PEOPLE-001`, `REV-001`; uploaded ledger CSVs ship (`EASEL-002`, `EASEL-003`, `src/easel/actuals.ts`) | partly |
+| Hero | Forecasts P&L, balance sheet and cash | `FIN-001` (`src/easel/statements.ts`) | code |
+| Hero | Keeps Excel live | `SHEET-001` (one-way workbook move-in ships, `src/easel/workbook.ts`) | partly |
+| Hero | Flags any month below your cash floor; runway and lowest cash | `FIN-005` (`src/easel/cash-health.ts`), `AGENT-001` | code (floor and runway); partly (the agent's exception item) |
+| Hero | HubSpot pipeline weighted by stage; FY2027 headcount from Gusto; 13-week cash | `REV-001`, `PEOPLE-001`, `FIN-007` | contract, not yet in code |
+| Hero, 13 | 100% free, open source, MIT; one-line start | `EASEL-017`, `LICENSE` | code |
+| 02 Actuals | QuickBooks Online, Gusto, HubSpot and Stripe refreshed nightly with visible freshness | `CONNECT-001`, `CONNECT-005`, `PEOPLE-001`, `REV-001`, `REV-002` | contract, not yet in code |
+| 02 Actuals | Ties to the trial balance | `CONNECT-007` | partly |
+| 02 Actuals | New accounts mapped by a range rule | `CONNECT-006` (`src/easel/account-rules.ts`) | code |
+| 02 Actuals | Every cell opens to the rows behind it; open in QuickBooks | `CONNECT-008` (`src/easel/actuals-read.ts`; provider links come with `CONNECT-001`) | partly |
+| 02 Actuals | Month closed, forecast kept, rolling 15 months moves forward | `EASEL-013`, `MODEL-002` | code |
+| 03 The slip | The agent finds the month a source change breaks the floor and traces the cause | `AGENT-001` | partly |
+| 03 The slip | The agent asks the deal owner in Slack and records the answer | `AGENT-003` | contract, not yet in code |
+| 04 Responses | Three least-change responses on adjustable levers | `AGENT-002` | partly |
+| 04 Responses | A person picks; the forecast moves to a new revision | `EASEL-012` (`src/easel/plan.ts`) | code |
+| 04 Responses | Line-of-credit draws and hire-start moves in the forecast | `FIN-003` (`src/easel/financing.ts`), `PEOPLE-004` | code; partly (compensation detail) |
+| 05 Excel | `=EASEL.VALUE` cells refresh in Owen's workbook; plan access without pay | `SHEET-001`, `PEOPLE-005` | partly |
+| 06 Board pack | One pack published once as PDF, PowerPoint and Excel, saved to Google Drive | `REPORT-003`; immutable published packs ship (`EASEL-014`) | partly |
+| 06 Board pack | ARR from Stripe | `REV-002` | contract, not yet in code |
+| 07 Interlude | The picked plan's monthly closing cash over the floor | `FIN-005`, `FIN-001` | code |
+| 08 Budget | Department heads type and paste into the planning grid | `MODEL-008` (`src/easel/grid.ts`) | code |
+| 08 Budget | Requested and submitted department budgets; each sees only their own numbers | `EASEL-009`, `EASEL-007` | code |
+| 08 Budget | Reminders by Slack and email | `CYCLE-001` (`src/easel/calendar-dispatch.ts`) | partly |
+| 09 13-week cash | Weekly direct cash from the read-only bank balance, payroll on its run date | `FIN-007`, `CONNECT-009`, `PEOPLE-001` | contract, not yet in code |
+| 09 13-week cash | Each invoice lands when that customer really pays | `FIN-002` (`src/easel/working-capital.ts`) | code |
+| 10 Headcount | Gusto keeps the roster current | `PEOPLE-001` | contract, not yet in code |
+| 10 Headcount | Salaries restricted; pay detail only to the people finance grants | `EASEL-007` (`src/easel/views.ts`), `PEOPLE-005`, `ACCESS-001` | code; partly (separate compensation permission) |
+| 10 Headcount | Headcount plan against the roster | `PEOPLE-006` | partly |
+| 11 October close | Variance against budget with the ledger rows; each department head confirms their own | `EASEL-013` (`src/easel/review.ts`) | code |
+| 11 October close | The agent drafts each variance, citing sources, hypotheses marked | `AGENT-007` | partly |
+| 11 October close | Forecast extended; department statements emailed | `MODEL-002`, `REPORT-005` (`src/easel/department-statements.ts`) | code |
+| 12 Before the switch | Brings in an Adaptive Planning model; also Planful, Anaplan, Runway and Pigment | `MOVE-001`, `MOVE-002`, `MOVE-003` | contract, not yet in code |
+| 12 Before the switch | Two years of QuickBooks backfilled, each month tied | `CONNECT-001` | contract, not yet in code |
+| 12 Before the switch | A parallel month line by line, differences classified | `MOVE-004` (`tests/parallel-month.test.mjs`) | code |
+
 ## Honest boundaries
 
 Easel is a US-first FP&A product. These are the jobs it deliberately does not do, and how a buyer gets each one done.

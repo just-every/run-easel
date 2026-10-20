@@ -15,3 +15,13 @@ The root document links `/fonts/fonts.css` once and preloads only the primary
 Latin file. Do not import this CSS from a component. Every body-font stack uses
 `--font-body`; controls inherit it. No metric-matched fallback face is declared
 yet: the owner's style pass may add one with the final brand font.
+
+Inter (variable weight 100–900 and optical size) and Caveat (variable weight) are
+self-hosted for the homepage under the SIL Open Font License 1.1, each with its
+license beside it (`inter/LICENSE.txt`, `caveat/LICENSE.txt`). The WOFF2 files
+come from Fontsource's `@fontsource-variable/inter` and
+`@fontsource-variable/caveat` 5.3.0, the same files Chest ships. Inter sets the
+homepage's heavy headings and card text (the browser picks the display cut from
+the font size); Caveat is only for its handwriting, the sticky notes and margin
+notes. Upstream: https://github.com/rsms/inter and
+https://github.com/googlefonts/caveat.

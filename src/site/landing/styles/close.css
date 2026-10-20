@@ -1,0 +1,53 @@
+/* 11 October close: the variance table with two "Drafted by Easel" margin notes on dotted connectors. */
+.vt { position: relative; display: grid; grid-template-columns: minmax(0, 62fr) minmax(0, 5fr) minmax(0, 33fr); grid-template-rows: auto auto auto auto auto; margin-top: 40px; }
+.vt-card { grid-column: 1; grid-row: 1 / 6; }
+.vt-source, .vt-row { grid-column: 1; position: relative; z-index: 1; }
+.vt-source { grid-row: 1; padding: 20px 24px; border-bottom: 1px solid var(--hair); font-size: 14.5px; color: var(--muted); }
+.vt-row { display: grid; grid-template-columns: 28fr 22fr 22fr 30fr; align-items: center; padding: 0 24px; min-height: 92px; border-top: 1px solid var(--hair); font-size: 21px; color: var(--ink); }
+.vt-cols { grid-row: 2; min-height: 66px; border-top: 0; font-size: 17px; color: var(--muted); }
+.vt-mkt { grid-row: 3; } .vt-eng { grid-row: 4; } .vt-sales { grid-row: 5; }
+.vt-row h3 { font-size: 21px; font-weight: 700; }
+.vt-k { display: none; }
+.vt-var .tag { display: table; margin-top: 6px; font-size: 14px; font-weight: 500; }
+.vt-mkt .vt-var::after, .vt-eng .vt-var::after { content: ""; position: absolute; right: -9%; top: 50%; width: 11%; border-top: 2.4px dotted var(--magenta); }
+.cur-mkt { left: 24%; top: 50px; }
+.draft { z-index: 1; align-self: start; padding: 20px 22px 18px; }
+.draft-mkt { grid-column: 3; grid-row: 1 / 4; margin-top: 4px; transform: rotate(-2deg); }
+.draft-eng { grid-column: 3; grid-row: 4 / 6; margin-top: 22px; transform: rotate(1.6deg); }
+.draft::before { content: ""; position: absolute; left: -14px; top: 50%; width: 12px; height: 12px; border-right: 2.4px solid var(--magenta); border-top: 2.4px solid var(--magenta); transform: translateY(-50%) rotate(45deg); }
+.spark-draft { right: -14px; top: -30px; transform: scaleX(-1); }
+.draft p { margin-top: 8px; font-size: 16px; line-height: 1.5; color: var(--ink); }
+.draft .tag { display: inline-block; min-height: 0; margin-left: 4px; padding: 0 9px; font-size: 13px; line-height: 1.5; vertical-align: 1px; }
+.draft-by { margin-top: 0 !important; font-size: 15px !important; color: var(--muted) !important; }
+.confirmed { display: inline-block; margin-top: 14px !important; padding: 8px 16px; border-radius: 999px; background: var(--green-soft); color: var(--green-ink) !important; font-weight: 550; }
+.close-pills { display: flex; flex-wrap: wrap; gap: 18px 22px; margin-top: 40px; }
+.close-pills .pill { font-size: 16.5px; padding: 13px 20px; }
+
+@media (max-width: 1179px) {
+ .vt { grid-template-columns: minmax(0, 60fr) minmax(0, 4fr) minmax(0, 36fr); }
+ .vt-row { font-size: 18px; padding: 0 18px; } .vt-row h3 { font-size: 18px; }
+ .vt-cols { font-size: 15px; }
+ .draft p { font-size: 15px; }
+}
+@media (max-width: 959px) {
+ .vt { grid-template-columns: minmax(0, 1fr); gap: 0; }
+ .vt-card, .vt-cols { display: none; }
+ .vt-source { grid-row: auto; padding: 0 0 16px; border: 0; }
+ .vt-row, .draft { grid-column: 1; grid-row: auto !important; }
+ .vt-row { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 6px; align-items: start; padding: 18px 20px; border: 1px solid var(--hair); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow); margin-top: 16px; }
+ .vt-row h3 { grid-column: 1 / -1; }
+ .vt-k { display: block; font-size: 13px; color: var(--muted); }
+ .vt-mkt .vt-var::after, .vt-eng .vt-var::after { display: none; }
+ .draft { margin: 14px 0 6px 8%; transform: rotate(-.8deg) !important; }
+ .draft::before { left: 30px; top: -12px; transform: rotate(-45deg); }
+ .cur-mkt { left: auto; right: 16px; top: 8px; }
+}
+@media (max-width: 759px) {
+ .vt-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); font-size: 16px; padding: 14px 14px; }
+ .vt-row .vt-var { grid-column: 1 / -1; }
+ .draft { margin-left: 4%; padding: 16px 14px 14px; }
+ .draft p { font-size: 14.5px; }
+ .spark-draft { display: none; }
+ .close-pills { gap: 12px; margin-top: 28px; }
+ .close-pills .pill { font-size: 15px; }
+}

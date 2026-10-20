@@ -1,0 +1,56 @@
+/* 10 Headcount: the Gusto sync bridging Rachel's view (with pay) and Owen's (padlocks), then the department strip. */
+.hc-bridge { position: relative; display: flex; justify-content: center; margin-top: 36px; }
+.gusto { display: flex; align-items: center; gap: 20px; max-width: 680px; padding: 18px 24px; font-size: 17px; line-height: 1.5; color: var(--ink); }
+.people-icon { display: grid; place-items: center; flex: none; width: 58px; height: 58px; border-radius: 50%; background: #eef0f4; margin-right: 4px; }
+.people-icon svg { width: 30px; height: 30px; fill: #6b6f7a; }
+.gusto > span:nth-child(2) { padding-left: 20px; border-left: 1px solid var(--hair-strong); }
+.gusto .check { width: 34px; height: 34px; }
+.hc-bridge .connector { width: 130px; height: 78px; top: 30px; }
+.c-hc-l { right: calc(50% + 340px); }
+.c-hc-r { left: calc(50% + 340px); }
+.hc-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 30px; }
+.hc-panel { padding: 24px 30px 22px; }
+.hc-who { font-size: 18px; color: var(--muted); padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
+.hc-who strong { font-size: 20px; color: var(--ink); }
+.cur-hc { right: 30px; top: 6px; }
+.hc-panel h3 { margin-top: 18px; font-family: var(--display); font-size: 33px; font-weight: 820; letter-spacing: -.03em; color: var(--ink); }
+.hc-panel ul { margin-top: 10px; }
+.hc-panel li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--hair); font-size: 18px; color: var(--ink); }
+.hc-panel .amt { white-space: nowrap; }
+.hc-panel .lock { width: 20px; height: 20px; flex: none; }
+.hc-total { display: flex; justify-content: space-between; gap: 16px; padding-top: 16px; font-size: 20px; color: var(--ink); }
+.hc-strip { margin-top: 34px; padding: 22px 28px 24px; }
+.spark-hc-l { left: -34px; top: -34px; } .spark-hc-r { right: -34px; top: -34px; transform: scaleX(-1); }
+.hc-strip > p { font-size: 20px; color: var(--ink); }
+.hc-strip > p strong { font-family: var(--display); font-weight: 820; letter-spacing: -.02em; }
+.hc-strip ul { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.hc-strip li { display: grid; gap: 4px; justify-items: center; padding: 12px 6px; border: 1px solid var(--hair); border-radius: 10px; text-align: center; font-size: 15px; color: var(--ink); }
+.hc-strip li strong { font-weight: 650; }
+
+@media (max-width: 1179px) {
+ .c-hc-l { right: calc(50% + 300px); } .c-hc-r { left: calc(50% + 300px); }
+ .hc-bridge .connector { width: 90px; }
+ .hc-strip ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+ .gusto { max-width: 600px; }
+}
+@media (max-width: 959px) {
+ .hc-bridge .connector { display: none; }
+ .hc-panels { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 759px) {
+ .gusto { gap: 12px; padding: 14px 16px; font-size: 15px; align-items: flex-start; }
+ .people-icon { width: 42px; height: 42px; } .people-icon svg { width: 22px; height: 22px; }
+ .gusto > span:nth-child(2) { padding-left: 12px; }
+ .gusto .check { width: 26px; height: 26px; }
+ .hc-panel { padding: 18px 16px 16px; }
+ .hc-who { font-size: 15px; } .hc-who strong { font-size: 17px; }
+ .cur-hc { right: 6px; top: -14px; }
+ .hc-panel h3 { font-size: 26px; }
+ .hc-panel li { font-size: 15px; gap: 10px; }
+ .hc-total { font-size: 17px; }
+ .hc-strip { padding: 16px 14px; }
+ .hc-strip > p { font-size: 17px; }
+ .hc-strip ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+ .hc-strip li { font-size: 14px; padding: 10px 4px; }
+ .spark-hc-l, .spark-hc-r { display: none; }
+}

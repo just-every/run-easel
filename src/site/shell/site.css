@@ -11,8 +11,8 @@ a { color: inherit; }
 
 .site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 92px; position: relative; }
 .site-header::after { content: ""; position: absolute; left: 64px; right: 64px; bottom: 0; border-bottom: 1px solid var(--rule); }
-.site-brand { display: inline-flex; align-items: center; gap: 14px; font-size: 30px; line-height: 1; font-weight: 600; letter-spacing: -.02em; text-decoration: none; }
-.site-brand img { width: 36px; height: 36px; }
+.site-brand { display: inline-flex; align-items: center; gap: 14px; font-family: Inter, var(--font); font-size: 36px; line-height: 1; font-weight: 850; letter-spacing: -.045em; text-decoration: none; color: #121010; }
+.site-brand img { width: auto; height: 48px; }
 .site-header nav, .site-footer nav { display: flex; gap: 40px; font-size: 19px; }
 .site-header nav a, .site-footer nav a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
 .site-header nav a:hover, .site-footer nav a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
@@ -28,8 +28,8 @@ a { color: inherit; }
 .site-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-top: 32px; padding-bottom: 40px; position: relative; }
 .site-footer::before { content: ""; position: absolute; left: 64px; right: 64px; top: 0; border-top: 1px solid var(--rule); }
 .site-footer-brand { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
-.site-footer .site-brand { font-size: 24px; }
-.site-footer .site-brand img { width: 28px; height: 28px; }
+.site-footer .site-brand { font-size: 26px; }
+.site-footer .site-brand img { width: auto; height: 34px; }
 .site-footer-line { padding-left: 20px; border-left: 1px solid var(--border); color: var(--muted); font-size: 15px; }
 .site-footer nav { font-size: 15px; gap: 28px; }
 
@@ -39,7 +39,7 @@ a { color: inherit; }
  .site-header { min-height: 72px; }
  .site-header::after, .site-footer::before { left: 20px; right: 20px; }
  .site-brand { font-size: 26px; gap: 10px; }
- .site-brand img { width: 30px; height: 30px; }
+ .site-brand img { width: auto; height: 40px; }
  .site-header nav { gap: 24px; font-size: 17px; }
  .site-header nav a[aria-current=page]::after { bottom: -14px; }
  .btn { min-height: 52px; font-size: 19px; }

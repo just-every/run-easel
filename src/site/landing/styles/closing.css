@@ -1,0 +1,67 @@
+/* 13 Closing: board day. The heading, the actions and the one-line start, then the plan cover over a slim cash line. */
+.closing-copy { display: grid; justify-items: center; text-align: center; }
+.closing-free { margin-top: 22px; font-size: 24px; color: var(--muted); }
+.closing-copy .actions { justify-content: center; margin-top: 28px; }
+.terminal { margin-top: 26px; max-width: 100%; }
+.terminal code { display: inline-block; max-width: 100%; padding: 13px 22px; border: 1px solid var(--hair-strong); border-radius: 10px; background: #f6f6f8; font-family: var(--mono); font-size: 17px; color: var(--ink); }
+.terminal .nowrap { white-space: nowrap; }
+.scene { position: relative; margin-top: 76px; padding: 0 150px 0 0; container-type: inline-size; }
+.cover { position: absolute; left: 0; top: -26px; z-index: 2; width: 26%; padding: 22px 24px; transform: rotate(-4deg); }
+.cover .muted { font-size: 16px; }
+.cover h3 { margin-top: 12px; font-family: var(--display); font-size: 36px; font-weight: 840; letter-spacing: -.04em; color: var(--ink); }
+.cover-meet { font-size: 19px; color: var(--ink); }
+.cover-formats { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.cover-formats span { padding: 6px 12px; border-radius: 8px; background: #f2f3f5; font-size: 15px; color: var(--ink); }
+.slim { position: relative; z-index: 1; margin-left: 20%; padding: 24px 30px 18px calc(9cqi + 24px); }
+.slim figcaption { font-size: 22px; letter-spacing: -.01em; color: var(--ink); }
+.slim figcaption strong { font-weight: 700; }
+.slim-body { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 140px; margin-top: 62px; }
+.slim-plot { height: 150px; }
+.slim-floor { position: absolute; left: 100%; padding-left: 12px; transform: translateY(-115%); font-size: 15px; font-weight: 650; color: var(--red); white-space: nowrap; }
+.slim-stem { position: absolute; top: 0; border-left: 2px dotted var(--magenta); }
+.slim-chip-at { position: absolute; top: -12px; display: flex; align-items: flex-start; gap: 6px; transform: translate(-14%, -100%); }
+.slim-chip-at .cursor { position: relative; }
+.slim-chip { padding: 9px 16px; border: 1px solid var(--hair); border-radius: 10px; background: #fff; box-shadow: var(--shadow); font-size: 16px; color: var(--ink); white-space: nowrap; width: max-content; }
+.cur-slim { top: 4px; }
+.slim-x { grid-column: 1; position: relative; height: 32px; font-size: 15px; color: var(--muted); }
+.slim-x li { position: absolute; top: 10px; transform: translateX(-50%); }
+.peek { position: absolute; right: 0; top: -16px; z-index: 0; width: 170px; }
+.peek img { display: block; width: 100%; height: auto; transform: rotate(6deg); }
+.spark-peek { left: -36px; top: -30px; }
+
+@media (max-width: 1179px) {
+ .scene { padding-right: 110px; }
+ .peek { width: 130px; }
+ .cover { width: 30%; }
+ .slim { margin-left: 24%; }
+ .slim-chip { font-size: 14px; }
+}
+@media (max-width: 959px) {
+ .scene { padding: 0; display: flex; flex-direction: column; }
+ .cover { position: relative; top: auto; width: 70%; transform: rotate(-2.5deg); margin-bottom: -20px; }
+ .slim { margin: 0; padding-left: 30px; }
+ .peek { position: relative; top: auto; align-self: flex-end; width: 110px; margin: -24px 18px 0 0; }
+ .cur-slim { display: none; }
+}
+@media (max-width: 759px) {
+ .closing-free { font-size: 18px; }
+ .closing-copy .actions { flex-direction: column; width: 100%; gap: 10px; }
+ .closing-copy .cta { width: 100%; }
+ .terminal code { font-size: 14px; padding: 12px 14px; }
+ .scene { margin-top: 48px; }
+ .cover { width: 86%; padding: 18px 18px; }
+ .cover h3 { font-size: 30px; }
+ .slim { padding: 18px 14px 12px; }
+ .slim figcaption { font-size: 17px; }
+ .slim-body { margin-top: 84px; }
+ .slim-chip-at { left: 0 !important; right: 0; top: -14px; transform: translateY(-100%); }
+ .slim-chip { width: auto; white-space: normal; font-size: 14px; padding: 8px 12px; }
+ .slim-chip-at .cursor { display: none; }
+ .slim-stem { display: none; }
+ .slim-floor { left: auto; right: 2px; padding: 0; font-size: 12px; transform: translateY(16%); }
+ .slim-body { display: block; }
+ .slim-plot { height: 140px; }
+ .slim-x { font-size: 13px; }
+ .peek { width: 90px; }
+ .spark-peek { display: none; }
+}

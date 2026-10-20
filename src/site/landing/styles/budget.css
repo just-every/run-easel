@@ -1,0 +1,93 @@
+/* 08 FY2027 budget: Engineering's grid over two-thirds, the reminder and the eight-department checklist rail. */
+.budget-layout { position: relative; display: grid; grid-template-columns: minmax(0, 67fr) minmax(0, 30fr); grid-template-areas: "copy rail" "plan rail"; column-gap: 3%; align-items: start; }
+.budget-copy { grid-area: copy; padding-bottom: 34px; }
+.plan { grid-area: plan; padding: 22px 20px 20px; }
+.spark-plan { left: -36px; top: -30px; }
+.plan h3 { font-size: 22px; font-weight: 500; color: var(--ink); padding: 0 4px 14px; }
+.plan h3 strong { font-family: var(--display); font-weight: 820; letter-spacing: -.025em; }
+.swipe { display: none; }
+.plan-scroll { overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; }
+.plan-inner { position: relative; min-width: 790px; }
+.plan-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.plan-grid th, .plan-grid td { height: 40px; padding: 0 5px; border-bottom: 1px solid var(--hair); font-size: 14px; color: var(--ink); text-align: right; white-space: nowrap; }
+.plan-grid thead th { height: 40px; font-weight: 500; color: var(--muted); text-align: center; }
+.plan-grid .item { width: 140px; text-align: left; padding-left: 14px; }
+.plan-grid tbody th { padding-left: 14px; text-align: left; font-weight: 650; }
+.plan-grid td + td, .plan-grid th + td, .plan-grid thead th + th { border-left: 1px solid var(--hair); }
+.plan-grid tbody tr:first-child th, .plan-grid tbody tr:first-child td { border-top: 0; }
+.plan-grid .sub th { padding-left: 38px; font-weight: 450; position: relative; }
+.plan-grid .sub th::before { content: ""; position: absolute; left: 20px; top: -1px; width: 10px; height: 21px; border-left: 1px solid #b9bcc5; border-bottom: 1px solid #b9bcc5; }
+.plan-grid small { display: block; margin-top: 2px; font-size: 12px; font-weight: 450; color: var(--muted); }
+.plan-grid tbody tr:last-child th, .plan-grid tbody tr:last-child td { height: 54px; border-bottom: 0; }
+.plan-grid .flag { background: #fff1a8; position: relative; }
+.plan-grid .flag::after { content: ""; position: absolute; top: 0; right: 0; border-top: 9px solid #e0a400; border-left: 9px solid transparent; }
+.paste-box { position: absolute; left: 2px; right: 2px; top: 41px; height: 120px; border: 2px dashed var(--magenta); border-radius: 8px; pointer-events: none; }
+.paste-tag { position: absolute; left: 44%; top: 41px; z-index: 1; padding: 2px 10px; border-radius: 6px; background: var(--pink-soft); color: var(--magenta); font-size: 13px; font-weight: 650; white-space: nowrap; transform: translateY(-50%); }
+.cur-priya { right: -50px; top: 150px; }
+.note-chip { display: flex; align-items: center; gap: 14px; margin-top: 16px; max-width: 72%; padding: 14px 18px; border-radius: 10px; background: #fff6c4; font-size: 17px; color: var(--ink); }
+.note-icon { flex: none; width: 22px; height: 26px; border-radius: 4px; background: #f3b81f; box-shadow: inset 0 -6px 0 #e8a710; }
+.rail { grid-area: rail; display: grid; gap: 22px; }
+.reminder { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; align-items: center; padding: 20px 22px; }
+.spark-reminder { right: -26px; top: -32px; transform: scaleX(-1); }
+.bell { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #eef0f4; }
+.bell svg { width: 26px; height: 26px; fill: none; stroke: #4f525c; stroke-width: 1.8; stroke-linejoin: round; }
+.reminder p { display: grid; gap: 4px; font-size: 16px; line-height: 1.4; color: var(--text); }
+.reminder strong { font-size: 19px; color: var(--ink); }
+.checklist { padding: 22px 20px 20px; }
+.checklist h3 { font-size: 20px; font-weight: 450; color: var(--muted); padding: 0 6px 12px; }
+.checklist h3 strong { color: var(--ink); font-weight: 760; }
+.checklist ol { border: 1px solid var(--hair); border-radius: 10px; }
+.checklist li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 12px; }
+.checklist li + li { border-top: 1px solid var(--hair); }
+.checklist li .check { width: 26px; height: 26px; }
+.checklist li > p { display: flex; flex-wrap: wrap; align-items: baseline; font-size: 15px; color: var(--text); }
+.checklist li > p strong { font-size: 15px; color: var(--ink); white-space: nowrap; }
+.checklist li .sep { white-space: pre; }
+.checklist li .sep-phone { display: none; }
+.checklist li .date { margin-left: auto; padding-left: 10px; text-align: right; white-space: nowrap; font-size: 14px; }
+.rail-pill { margin-top: 14px; font-size: 16px; }
+.sales-note { position: absolute; right: calc(100% + 64px); bottom: -96px; width: 166px; z-index: 3; }
+.budget-sticky { position: relative; width: 166px; transform: rotate(-4deg); }
+.c-sales { position: absolute; left: calc(100% - 4px); top: -150px; width: 104px; height: 170px; }
+
+@media (max-width: 1179px) {
+ .budget-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "plan" "rail"; }
+ .rail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 30px; align-items: start; }
+ .sales-note { right: auto; left: auto; right: 8px; bottom: auto; top: -14px; position: absolute; width: 150px; }
+ .budget-sticky { width: 150px; font-size: 22px; }
+ .c-sales { display: none; }
+ .checklist li:has(.sales-note) { position: relative; }
+ .checklist li:has(.sales-note) { min-height: 96px; align-items: start; }
+ .checklist li:has(.sales-note) > p { padding-right: 150px; }
+}
+@media (max-width: 759px) {
+ .budget-copy { padding-bottom: 26px; }
+ .plan { padding: 16px 12px 14px; }
+ .plan h3 { font-size: 17px; padding: 0 2px 10px; }
+ .swipe { display: inline; color: var(--muted); }
+ .spark-plan { display: none; }
+ .plan-inner { min-width: 812px; }
+ .plan-grid th, .plan-grid td { font-size: 14px; }
+ .plan-grid .item, .plan-grid tbody th { position: sticky; left: 0; z-index: 2; background: #fff; }
+ .plan-grid .item { width: 116px; }
+ .plan-grid tbody th { white-space: normal; }
+ .paste-tag { left: 140px; }
+ .plan { margin-right: 52px; }
+ .cur-priya { right: -46px; top: 128px; }
+ .note-chip { max-width: none; font-size: 15px; padding: 12px 14px; }
+ .rail { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 22px; }
+ .reminder { grid-template-columns: 40px minmax(0, 1fr); padding: 14px 16px; gap: 12px; }
+ .bell { width: 40px; height: 40px; } .bell svg { width: 20px; height: 20px; }
+ .checklist { padding: 16px 12px 14px; }
+ .checklist li { position: relative; align-items: start; }
+ .checklist li > p strong { font-size: 17px; }
+ .checklist li .sep { display: none; }
+ .checklist li > p { display: block; font-size: 14px; }
+ .checklist li > p strong { display: block; }
+ .checklist li .sep-phone { display: inline; }
+ .checklist li .date { margin: 0; padding: 0; font-size: 14px; }
+ .checklist li:has(.sales-note) { position: relative; }
+ .checklist li:has(.sales-note) > p { padding-right: 112px; }
+ .sales-note { left: auto; right: 4px; top: -6px; width: 118px; }
+ .budget-sticky { width: 118px; font-size: 17px; padding: 8px 8px 10px; }
+}
