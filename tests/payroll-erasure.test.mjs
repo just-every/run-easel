@@ -23,7 +23,7 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  await h.command('member',{email,name:nativeName,role:'contributor',departments:[d.id]})
  const position=await h.command('position',{scenario,line:line.id,department:d.id,title:'Engineer',holder:nativeName,annualSalary:'120000',start:'2026-01'})
  const board=await h.person('board@example.test','viewer')
- const roster={provider:'Justworks',scenario,kind:'roster',asOf:'2026-01-31',filename:'roster.csv',csv:`Employee ID,Name,Department,Title,Employment Type,Salary,Start\n1,${legalName},Engineering,Engineer,W-2,120000,2026-01-12\n2,Unlinked Colleague,Engineering,Analyst,W-2,1,2026-01-01\n`,positionMap:{1:position.originId},memberMap:{1:email}}
+ const roster={provider:'Justworks',scenario,kind:'roster',asOf:'2026-01-31',filename:'roster.csv',csv:`Employee ID,Name,Department,Title,Employment Type,Salary,Start\n1,${legalName},Engineering,Engineer,W-2,120000,2026-01-12\n2,Unlinked Colleague,Engineering,Analyst,W-2,1,2026-01-01\n3,${nativeName},Engineering,Analyst,W-2,1,2026-01-01\n`,positionMap:{1:position.originId},memberMap:{1:email}}
  const accept=async input=>h.kit('payroll','commit',{...input,fingerprint:(await h.kit('payroll','preview',input)).fingerprint})
  await h.kit('payroll','preview',roster,board,403)
  await h.kit('payroll','preview',{...roster,memberMap:{1:'unknown@example.test'}},h.owner,404)
@@ -39,6 +39,7 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  rosterSheet.addRow(['Employee ID','Name','Department','Title','Employment Type','Salary','Start'])
  rosterSheet.addRow([1,legalName,'Engineering','Engineer','W-2',120000,'2026-01-12'])
  rosterSheet.addRow([2,'Unlinked Colleague','Engineering','Analyst','W-2',1,'2026-01-01'])
+ rosterSheet.addRow([3,nativeName,'Engineering','Analyst','W-2',1,'2026-01-01'])
  const rosterBytes=Buffer.from(await rosterBook.xlsx.writeBuffer({useSharedStrings:true}))
  const later=await accept({provider:'Justworks',scenario,kind:'roster',asOf:'2026-02-28',filename:'roster.xlsx',base64:rosterBytes.toString('base64')})
  const approved=await h.command('approve-budget',{scenario,revision:(await h.get(`/api/easel/scenario/${scenario}`)).scenario.revision})
@@ -58,6 +59,7 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  const own=view.roster.filter(r=>r.provider==='Justworks'),untouched=view.roster.filter(r=>r.provider==='Other PEO')
  assert.equal(own.find(r=>r.employeeId===receipt.pseudonym).name,receipt.pseudonym)
  assert.equal(own.find(r=>r.employeeId==='2').salaryCents,100)
+ assert.equal(own.find(r=>r.employeeId==='3').name,nativeName,'A shared native name does not establish an employee association')
  assert.equal(untouched.find(r=>r.employeeId==='1').name,legalName,'Same ID/name never infers another provider association')
  assert.deepEqual(view.reconciliation,before,'All planning/payroll amounts remain identical')
  const history=await h.kit('payroll','status',{id:first.import.id})
@@ -101,7 +103,7 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  // Erasure changes identity only; it cannot turn journal-owned records into edits.
  for(const imp of [later,register,first]) await h.kit('payroll','undo',{id:imp.import.id})
  const undone=await h.get(`/api/easel/payroll/${scenario}`)
- assert.equal(undone.roster.length,2);assert.ok(undone.roster.every(r=>r.provider==='Other PEO'));assert.deepEqual(undone.runs,[])
+ assert.equal(undone.roster.length,3);assert.ok(undone.roster.every(r=>r.provider==='Other PEO'));assert.deepEqual(undone.runs,[])
  // Even after undo, retained originals are still scoped and anonymized.
  const after=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}});assert.equal(after.status,200,await after.clone().text())
  const afterZip=await JSZip.loadAsync(await after.arrayBuffer())
