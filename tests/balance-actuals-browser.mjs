@@ -65,6 +65,9 @@ try {
    await page.locator('summary').filter({ hasText: '2026-01' }).click()
    await page.getByRole('region', { name: 'Balance-sheet balances 2026-01', exact: true }).getByText('$22,000.00', { exact: true }).waitFor()
    await shot('restored')
+   await tab('Activity')
+   await page.getByRole('heading', { name: 'Activity', exact: true }).waitFor()
+   await shot('activity')
    console.log(`CONNECT-007 native finance mapping, journal import, trial balance, source detail, blocked/restored balances and Excel at ${width}`)
   } finally { await context.close() }
  }
