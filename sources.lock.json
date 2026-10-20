@@ -1095,7 +1095,7 @@
       "executable": false
     },
     "src/easel/statements-workbook.ts": {
-      "sha256": "69bd1385e247fb0f9e73df45af6fbdd2b59c038959ee016611efdc7394022814",
+      "sha256": "6c105ba5d793fcfa67c052d42af0c2f1f9a84949f8472d789deaad8517c0e8bf",
       "executable": false
     },
     "src/easel/statements.ts": {
@@ -3155,7 +3155,7 @@
       "executable": false
     },
     "src/ui/statements.tsx": {
-      "sha256": "c63cc8928b74c6e87c4ff2bca21121bc699b2b1da7a05aca4aed6e39467a897e",
+      "sha256": "132c5ba4596d391434ed54f4d6305a1346438e27bfa9d96b6dd881629a6437e4",
       "executable": false
     },
     "src/ui/structure-change.tsx": {

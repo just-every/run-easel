@@ -69,7 +69,7 @@ export function Statements({ calculation, currency }: { calculation: D; currency
    <p className="muted">Opening equity uses accepted equity balances after a balance-sheet ledger close; otherwise it is estimated from opening net assets. Retained earnings keep unclosed ledger income and subsequent forecast income.</p>
   </Statement>
   <Statement heading="Indirect cash flow" caption="Indirect cash flow by month" calculation={calculation} rows={calculation.cashFlow} lines={cashFlowLines} currency={currency}>
-   <p className="muted">{calculation.financing ? 'Financing includes planned debt draws, principal repayments and equity raises. Interest is an operating cash outflow. These are planning assumptions, never executed payments.' : 'Financing assumptions were not captured in this older snapshot; its saved figures remain unchanged.'}</p>
+   <p className="muted">{calculation.financing ? 'Financing uses observed net debt and equity movements in closed ledger months; otherwise it follows entered borrowing, repayment and equity-raise assumptions. Interest is an operating cash outflow. No payments are executed.' : 'Financing assumptions were not captured in this older snapshot; its saved figures remain unchanged.'}</p>
   </Statement>
  </>
 }
