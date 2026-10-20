@@ -46,6 +46,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const scenario = scenarioAccess(s, x, b.scenario)
   const prior = b.id ? get(s, kind, b.id) : undefined
   requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
+  if (prior?.line && get(s, 'line', prior.line).payroll) requirePayDetail(x)
   if (prior) requireEditable(s, x, scenario, inputDepartment(kind, prior))
   const originId = prior?.originId ?? uid()
   const value: Data = { ...validateInput(s, kind, { ...b, originId }, scenario.id), scenario: scenario.id, originId }
