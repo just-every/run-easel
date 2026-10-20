@@ -7,6 +7,7 @@ import { type Calculation } from './engine'
 import { model, workspace } from './model'
 import { validMetricOwner } from './metric-rules'
 import { snapshot } from './store'
+import { notify } from './notify'
 import { Fault, all, put, uid, type Data } from './types'
 import { formatHundredths, formatMoney } from './units'
 
@@ -80,6 +81,7 @@ export async function evaluateMetricTasks(c: Context) {
    const id = uid()
    put(c.s, 'metric-task', id, { name: rule.name, rule: rule.id, ruleRevision: rule.revision, scenario: forecast!.id, department: rule.department, month: hit.month, owner: rule.owner, due: due.toISOString().slice(0, 10), status: 'open', revision: 1, createdAt: c.now, dedup: hit.dedup, evidence: hit.evidence })
    c.activity.push({ action: 'metric-task-created', record: id, scenario: forecast!.id, detail: { rule: rule.id, ruleRevision: rule.revision, month: hit.month, owner: rule.owner, due: due.toISOString().slice(0, 10) } })
+   notify(c, 'metric-task', [rule.owner], { title: `${rule.name} · ${hit.month}`, tab: 'cycle', record: id, department: rule.department })
    created.push(id)
   }
  }

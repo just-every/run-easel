@@ -14,6 +14,10 @@ Under **Planning calendar** on the **Budget cycle** tab, finance adds dated task
 
 Turn on **Send reminders and escalations** to email each owner at 09:00 the day before a task is due, in the company's time zone, and to escalate an open task to finance at 09:00 on the first weekday after it was due. Every send is recorded with its scheduled and actual time. Slack and Microsoft Teams incoming webhooks (set `SLACK_WEBHOOK_URL` and `TEAMS_WEBHOOK_URL` when deploying) and one Nook channel (the owner connects it with a Nook integration token) can also get a generic "Easel planning task reminder" with a sign-in link; task details only go by email. Easel shows when a provider accepted a message, never claims it was read, and lets finance retry a refused send.
 
+## Notifications
+
+Mention someone with `@` and their email in a comment or variance explanation, and Easel notifies them, as long as they can read that department. Returned submissions notify the department's contributors, finance hears when every requested department has submitted, and a triggered metric task notifies its owner. Under **Notifications** each person chooses email for each notification, a daily digest at 08:00 company time, or chat only, which posts a generic notice and a sign-in link to a channel the owner connected. Every notification links to its record.
+
 ## Return or approve
 
 Finance can **Return** a submission with a reason, and the department revises it again. When the numbers are right, finance presses **Approve and freeze revision n**. Easel keeps that exact revision, who approved it and when; the approved numbers are never recalculated, even if a rule changes later.

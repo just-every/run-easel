@@ -31,7 +31,7 @@ export function App() {
  const strip = useScrollEdges()
  const [state, setState] = useState<D | null>(null)
  const [error, setError] = useState('')
- const [tab, setTab] = useState(() => typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('departmentStatement') ? 'review' : new URL(window.location.href).searchParams.has('calendar') ? 'cycle' : 'overview')
+ const [tab, setTab] = useState(() => typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('departmentStatement') ? 'review' : new URL(window.location.href).searchParams.has('calendar') ? 'cycle' : TABS.find(t => t.id === new URL(window.location.href).searchParams.get('tab'))?.id ?? 'overview')
  const refresh = useCallback(async () => { try { setState(await api('state')); setError('') } catch (e) { setError((e as Error).message) } }, [])
  useEffect(() => { void refresh() }, [refresh])
  useEffect(() => {

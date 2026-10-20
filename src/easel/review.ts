@@ -8,6 +8,7 @@ import { aggregateFinancing } from './financing-view'
 import { requireDepartment, requireFinance, requireMember, seesDepartmentDetail } from './access'
 import { rowsFor } from './actuals'
 import { actorNames } from './actor-names'
+import { mentions } from './notify'
 import type { Context } from './context'
 import { type Calculation, type Cell } from './engine'
 import { departments, lines, model, workspace } from './model'
@@ -100,6 +101,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   if (op === 'explanation') {
    requireThat(!prior || prior.status !== 'confirmed' || x.role === 'finance', 'This explanation is confirmed; finance can reopen it', 409)
    put(s, 'explanation', id, { month, line, department, text: text(b.text, 'Explanation', 4000), status: 'draft', writtenBy: x.actor.email, at: c.now })
+   await mentions(c, b.text, department, `Variance explanation · ${month} · ${get(s, 'line', line).name}`, 'review', id)
   } else {
    requireThat(prior, 'Write the explanation first', 409)
    put(s, 'explanation', id, { ...prior, status: 'confirmed', confirmedBy: x.actor.email, confirmedAt: c.now })

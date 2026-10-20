@@ -13,6 +13,7 @@ import type { Context } from './context'
 import { departments, workspace } from './model'
 import { load, save } from './store'
 import { currentTime } from './time'
+import { deliverDigests, planDigests } from './notify-dispatch'
 import { find, get, put, requireThat, type Actor, type Data } from './types'
 
 type Saved = Context & { revision: number; before: Context['s'] }
@@ -98,12 +99,13 @@ export async function runCalendarSchedule(env: Bindings) {
  const open: Open = async () => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } }
  const commit: Commit = async ctx => {
   const changed = [...ctx.s].filter(([k, r]) => ctx.before.get(k)?.revision !== r.revision).map(([, r]) => r.kind)
-  requireThat(changed.every(k => k === 'calendar-delivery') && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records reminder deliveries', 500)
+  requireThat(changed.every(k => ['calendar-delivery', 'notification', 'notification-digest'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records reminder and digest deliveries', 500)
   if (changed.length || ctx.activity.length) await save(db, actor, ctx.before, ctx.s, ctx.revision, ctx.activity)
  }
- const c = await open(), ids = await planCalendar(c, env)
+ const c = await open(), ids = await planCalendar(c, env), digests = planDigests(c)
  await commit(c)
  await deliverCalendar(ids, env, open, commit)
- return { queued: ids.length }
+ await deliverDigests(digests, env, open, commit)
+ return { queued: ids.length + digests.length }
 }
 

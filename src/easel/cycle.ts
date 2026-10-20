@@ -9,6 +9,7 @@ import type { Context } from './context'
 import { departments, model, scenarioInputs, workspace, INPUT_KINDS } from './model'
 import { addMonths, fiscalYearLabel, monthLabel, monthsBetween } from './months'
 import { bump, copyInputs } from './plan'
+import { financeRecipients, mentions, notify } from './notify'
 import { all, find, get, put, requireThat, text, uid, integer, type Data } from './types'
 
 export async function cycle(c: Context, op: string, b: Data): Promise<Data | undefined> {
@@ -38,6 +39,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const id = uid()
   put(s, 'comment', id, { scenario: scenario.id, department: dept.id, author: x.actor.email, authorName: x.actor.name, text: text(b.text, 'Comment', 4000), at: c.now, revision: scenario.revision })
   c.activity.push({ action: op, record: id, scenario: scenario.id, detail: { department: dept.id } })
+  await mentions(c, b.text, dept.id, `Comment on ${scenario.name} · ${dept.name}`, 'cycle', id)
   return get(s, 'comment', id)
  }
  if (op === 'submit') {
@@ -49,6 +51,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   requireThat(scenario.status === 'working', 'The budget is already approved', 409)
   put(s, 'submission', sub.id, { ...sub, status: 'submitted', submittedBy: x.actor.email, submittedAt: c.now, submittedRevision: scenario.revision, note: typeof b.note === 'string' ? b.note.slice(0, 2000) : '', history: [...sub.history, { status: 'submitted', by: x.actor.email, at: c.now, revision: scenario.revision }] })
   c.activity.push({ action: op, record: sub.id, scenario: scenario.id, before: scenario.revision, after: scenario.revision, detail: { department: sub.department } })
+  if (all(s, 'submission').filter(x => x.scenario === scenario.id).every(x => x.status === 'submitted')) notify(c, 'approval-pending', await financeRecipients(c), { title: `${scenario.name}: every requested department has submitted`, tab: 'cycle', record: scenario.id, department: '' })
   return get(s, 'submission', sub.id)
  }
  if (op === 'return-submission') {
@@ -58,6 +61,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const reason = text(b.reason, 'Reason', 2000)
   put(s, 'submission', sub.id, { ...sub, status: 'returned', history: [...sub.history, { status: 'returned', by: x.actor.email, at: c.now, reason }] })
   c.activity.push({ action: op, record: sub.id, scenario: sub.scenario, detail: { department: sub.department, reason } })
+  notify(c, 'returned', all(s, 'member').filter(m => m.active && m.role === 'contributor' && m.departments?.includes(sub.department)).map(m => m.email), { title: `${get(s, 'scenario', sub.scenario).name} · ${get(s, 'department', sub.department).name} submission returned: ${reason}`, tab: 'cycle', record: sub.id, department: sub.department })
   return get(s, 'submission', sub.id)
  }
  if (op === 'approve-budget') {

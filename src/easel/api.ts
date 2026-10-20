@@ -23,6 +23,8 @@ import { cycle } from './cycle'
 import { calendar, calendarView } from './calendar'
 import { channelStatus, nookConnection } from './calendar-channels'
 import { deliverCalendar } from './calendar-dispatch'
+import { deliverNotifications } from './notify-dispatch'
+import { notificationView, savePreference } from './notify'
 import { departmentStatements, departmentStatementList, departmentStatementView, queueDepartmentStatements } from './department-statements'
 import { dispatchDepartmentStatement } from './department-statement-mail'
 import { departmentStatementWorkbook } from './department-statement-documents'
@@ -129,6 +131,22 @@ api.post('/api/easel/connections/gauge/:op', async c => {
   await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
  }
  return c.json(await gaugeStatus(ctx, c.env))
+})
+const newNotifications = (ctx: Awaited<ReturnType<typeof open>>) => [...ctx.s.values()].filter(r => r.kind === 'notification' && !ctx.before.has(`notification:${r.id}`)).map(r => r.id)
+api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.env)))
+api.post('/api/easel/notifications/preference', async c => {
+ const ctx = await open(c), result = await savePreference(ctx, c.env, await body(c))
+ await commit(ctx)
+ return c.json(result)
+})
+api.post('/api/easel/notifications/:id/retry', async c => {
+ const ctx = await open(c)
+ requireFinance(ctx.x)
+ const n = get(ctx.s, 'notification', c.req.param('id'), 'notification')
+ requireThat(n.status === 'pending' && n.attempts > 0, n.status === 'uncertain' ? 'The outcome of this send is unknown; it is never retried automatically or blindly' : 'Only a refused or unconfigured send can be retried', 409)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ await deliverNotifications([n.id], c.env, () => open(c), commit)
+ return c.json(get((await open(c)).s, 'notification', n.id))
 })
 api.get('/api/easel/calendar', c => read(c, ctx => calendarView(ctx, c.env)))
 api.post('/api/easel/connections/nook/:op', async c => {
@@ -264,6 +282,7 @@ api.post('/api/easel/command/:op', async c => {
  await commit(ctx)
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
+ await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
  return c.json(result)
 })
 
@@ -287,6 +306,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  const result = step.record!(after, outcome)
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
  await commit(after, structureBefore.state, structureBefore.revision)
+ await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)
  return c.json(result)
 })
 

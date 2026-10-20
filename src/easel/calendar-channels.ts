@@ -66,19 +66,19 @@ type Outcome = { status: 'accepted' | 'rejected' | 'uncertain'; code?: string }
 const outcome = (r: Response): Outcome => r.status >= 200 && r.status < 300 ? { status: 'accepted' } : { status: 'rejected', code: r.status >= 300 && r.status < 400 ? 'redirect_refused' : `http_${r.status}` }
 
 /** One generic message; `key` is the delivery's idempotency key. */
-export async function sendChat(c: Context, original: Bindings, channel: ChatChannel, key: string): Promise<Outcome> {
+export async function sendChat(c: Context, original: Bindings, channel: ChatChannel, key: string, notice = CHAT_TEXT): Promise<Outcome> {
  const env = runtimeBindings(original), link = `${env.AUTH_ORIGIN}/app`
  let url: URL, init: RequestInit
  if (channel === 'nook') {
   const row = find(c.s, 'connection', 'nook'), sealed = await c.db.prepare('SELECT sealed FROM e_connection_secrets WHERE id=?').bind('nook').first<{ sealed: string }>()
   if (!row?.connected || !sealed) return { status: 'rejected', code: 'nook_not_connected' }
   url = new URL(`/api/conversations/${encodeURIComponent(row.conversation)}/messages`, ownerDestination(row.origin, 'Nook address'))
-  init = { method: 'POST', headers: { authorization: `Bearer ${await openConnection(env.SESSION_SECRET, sealed.sealed, NOOK, 'Nook')}`, 'idempotency-key': key.replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 64), 'content-type': 'application/json' }, body: JSON.stringify({ body: `${CHAT_TEXT}\n${link}` }) }
+  init = { method: 'POST', headers: { authorization: `Bearer ${await openConnection(env.SESSION_SECRET, sealed.sealed, NOOK, 'Nook')}`, 'idempotency-key': key.replace(/[^A-Za-z0-9._:-]/g, '-').slice(0, 64), 'content-type': 'application/json' }, body: JSON.stringify({ body: `${notice}\n${link}` }) }
  } else {
   const w = webhook(env, channel)
   if (!w.url) return { status: 'rejected', code: w.error ? 'webhook_invalid' : 'webhook_not_configured' }
   url = w.url
-  const body = channel === 'slack' ? { text: `${CHAT_TEXT}: <${link}|Sign in to Easel>` } : { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: { type: 'AdaptiveCard', version: '1.4', body: [{ type: 'TextBlock', text: CHAT_TEXT, wrap: true }], actions: [{ type: 'Action.OpenUrl', title: 'Sign in to Easel', url: link }] } }] }
+  const body = channel === 'slack' ? { text: `${notice}: <${link}|Sign in to Easel>` } : { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: { type: 'AdaptiveCard', version: '1.4', body: [{ type: 'TextBlock', text: notice, wrap: true }], actions: [{ type: 'Action.OpenUrl', title: 'Sign in to Easel', url: link }] } }] }
   init = { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
  }
  try { return outcome(await egressFetch(url, init)) }
