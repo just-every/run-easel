@@ -783,7 +783,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/prepare.mjs": {
-      "sha256": "443e11c1ab4be8d24efeefe3cfc40b70fe0f034d7591540262beaeb4521dcb93",
+      "sha256": "a81450032f332efbf810bdb38642ecb552df13dacdb05b5d76ccd51e3de2bf23",
       "executable": false
     },
     "src/easel/erasure-archive/values.mjs": {

@@ -59,6 +59,7 @@ export async function prepareEaselExportTransform(options) {
   const changed = transformer.transform(original ?? row, table === 'ik_jobs' ? row.id : row.job_id);
   for (const [key, value] of Object.entries(changed)) if (!['ik_originals', 'ik_d1_original_chunks'].includes(table) && value && typeof value === 'object' && typeof value.blob === 'string') changed[key] = transformBlob(value, maps);
   const result = replaceDigests(changed, hash => transformed.get(hash) ?? hash);
+  if (table === 'ik_jobs' && result.reversal_policy_hash !== null) result.reversal_policy_hash = digest(canonicalJson([result.id,result.fingerprint,result.reversal_policy,'reversal-policy-v1']));
   if (table === 'e_snapshots' && bodies.has(row.id)) {
    result.body = bodies.get(row.id);
    result.sha256 = digest(result.body);
