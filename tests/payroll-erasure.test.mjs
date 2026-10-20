@@ -98,7 +98,7 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  const undone=await h.get(`/api/easel/payroll/${scenario}`)
  assert.equal(undone.roster.length,2);assert.ok(undone.roster.every(r=>r.provider==='Other PEO'));assert.deepEqual(undone.runs,[])
  // Even after undo, retained originals are still scoped and anonymized.
- const after=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}});assert.equal(after.status,200)
+ const after=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}});assert.equal(after.status,200,await after.clone().text())
  const afterZip=await JSZip.loadAsync(await after.arrayBuffer())
  const afterManifest=JSON.parse(await afterZip.file('manifest.json').async('string'))
  const afterOriginal=afterManifest.originals.find(o=>o.jobId===first.job.id)
