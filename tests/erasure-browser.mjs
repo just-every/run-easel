@@ -38,7 +38,7 @@ try {
  for(const width of [1440,390]) {
   const finance=await session(browser,root,server.origin,'owner',width)
   try {
-   for(const [tab,heading] of [['Cycle','Comments'],['Settings','People'],['Plan','Positions']]) {
+   for(const [tab,heading] of [['Budget cycle','Comments'],['Settings','People'],['Plan','Positions']]) {
     await nav(finance.page,tab)
     if(tab==='Plan') await finance.page.getByLabel('Scenario',{exact:true}).selectOption(approved.forecast.id)
     const scope=card(finance.page,heading)

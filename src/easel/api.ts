@@ -297,7 +297,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  await commit(ctx)
- if (!step.kit) return c.json(step.result)
+ if (!step.kit) return c.json(await erasedView(ctx.db, step.result))
  const structureBefore = await load(ctx.db)
  let outcome: unknown
  try { outcome = await step.kit() } catch (e) {

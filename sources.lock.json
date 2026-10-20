@@ -631,7 +631,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "1d6ff72714a3c2b2892aec7cf395503943059d8255b1f1adea0c8218ad51ed53",
+      "sha256": "ef13ee939eb44b80b03a0354825e775b4c7c82de8c61054a6ed8f66b795a66d7",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -791,7 +791,7 @@
       "executable": false
     },
     "src/easel/erasure.ts": {
-      "sha256": "113ddb04b659d49e1e8c9421b1d3340dbe28907c5af2d1d9df6f0a2da692c0ba",
+      "sha256": "5d0d6c915afc86597928106a3afd08a0c08b0cba0fda55db475d42d89e404162",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -3023,7 +3023,7 @@
       "executable": false
     },
     "tests/erasure-browser.mjs": {
-      "sha256": "371adf88b2c33519430e00a9d557f5dfef63975f8a0ec2615d9ba3f93d833cc6",
+      "sha256": "f84521f7a382ac254b8d2d744ef2bbb614409b3c43612299b2be57140bf5de62",
       "executable": false
     },
     "tests/erasure-portability.test.mjs": {

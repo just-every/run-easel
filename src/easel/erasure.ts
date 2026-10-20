@@ -3,7 +3,7 @@ import { createHmac, randomBytes } from 'node:crypto'
 import { requireFinance } from './access'
 import type { Context } from './context'
 import { type ErasureMap, erasureMatchers, erasedHash, transformErased } from './erasure-map.mjs'
-import { all, find, get, key, put, remove, requireThat, text, uid, type Data } from './types'
+import { get, put, requireThat, text, uid, type Data } from './types'
 
 export async function erasure(c: Context, op: string, b: Data): Promise<Data | undefined> {
  if (op !== 'person-erase') return
