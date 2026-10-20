@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import JSZip from 'jszip'
 import {harness} from './harness.mjs'
 import {formulaWorkbook,formulaSetup} from './formula-import-fixture.mjs'
 
@@ -60,6 +61,15 @@ test('SHEET-003 translated cross-sheet/month arithmetic, SUM, IF, growth and exa
   assert.ok(JSON.stringify(result).includes(receipt.pseudonym))
  }
  assert.equal(erased.calculation.lineTotals[f.revenue.id]['2026-01'],3000000)
+ const archiveResponse=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}})
+ assert.equal(archiveResponse.status,200)
+ const archive=await JSZip.loadAsync(await archiveResponse.arrayBuffer())
+ for(const entry of Object.values(archive.files).filter(f=>!f.dir)) {
+  if(entry.name.endsWith('.xlsx')) {
+   const workbook=await JSZip.loadAsync(await entry.async('nodebuffer'))
+   for(const part of Object.values(workbook.files).filter(f=>!f.dir))assert.doesNotMatch(await part.async('string'),/Former Formula Source|former@example.test/,'Erased identities stay out of source originals and formula workbook exports')
+  } else assert.doesNotMatch(await entry.async('string'),/Former Formula Source|former@example.test/,'Erased identities stay out of portable source graphs and frozen snapshots')
+ }
  const second={...input,filename:'second-model.xlsx'}
  // Same content is one journal identity; complete undo first preserves intentional edits.
  const undo=await h.kit('workbook','undo',{id:imported.import.id})

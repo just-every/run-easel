@@ -3155,7 +3155,7 @@
       "executable": false
     },
     "tests/formula-import.test.mjs": {
-      "sha256": "e71805a246e48c4abe6f25806cbf2541c63a3a15fb3fa39eeed70e85b354eeae",
+      "sha256": "07059b8724de122d4640952b4f41517dd17a1fa94daf30a71dd2e5b0f486f7bc",
       "executable": false
     },
     "tests/gauge-browser.mjs": {
