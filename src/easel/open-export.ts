@@ -1,3 +1,4 @@
+import { payrollExportAccess } from './payroll-export-access'
 import { prepareEaselExportTransform } from './erasure-archive/prepare.mjs'
 import { transformOriginalBytes } from './erasure-archive/originals.mjs'
 import { erasureMaps } from './erasure'
@@ -67,11 +68,11 @@ async function digest(bytes: Uint8Array): Promise<string> {
 
 type ArchiveFile = { name: string; bytes: Uint8Array }
 
-async function retainedOriginals(c: Context): Promise<RetainedOriginal[]> {
+async function retainedOriginals(c: Context, visible:(id:string)=>boolean): Promise<RetainedOriginal[]> {
  const { results } = await c.db.prepare(
   'SELECT DISTINCT j.id, j.destination, j.namespace, j.mapping_version, j.principal_id FROM ik_jobs j JOIN ik_originals o ON o.job_id=j.id ORDER BY j.id',
  ).all<any>()
- const originals = await Promise.all(results.map((job: any) => readD1ImportOriginals(job.id, job.namespace === 'easel-payroll-files' ? payrollJournalContext(c,job.destination,job.mapping_version,job) : journalContext(
+ const originals = await Promise.all(results.filter((job:any)=>visible(job.id)).map((job: any) => readD1ImportOriginals(job.id, job.namespace === 'easel-payroll-files' ? payrollJournalContext(c,job.destination,job.mapping_version,job) : journalContext(
   c.db, c.x.actor, job.destination, job.namespace, { mapping_version: job.mapping_version, principal_id: job.principal_id },
  ))))
  return originals.flat()
@@ -84,6 +85,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
  const maps = await erasureMaps(c.db)
  const prepared = maps.length ? await prepareEaselExportTransform({db:c.db}) : null
 
+ const importAccess = await payrollExportAccess(c)
  const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
  const visibleRow = (row: Data) => {
   if (row.kind === 'dashboard') return canSeeDashboard(c.s, c.x, row.value)
@@ -102,6 +104,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   const { results: columnRows } = await c.db.prepare(`PRAGMA table_info(${identifier(table)})`).all<{ name: string }>()
   const columns = columnRows.map(column => column.name)
   let { results } = await c.db.prepare(`SELECT * FROM ${identifier(table)}`).all<Record<string, unknown>>()
+  results = results.filter(row=>importAccess.row(table,row))
   if (table === 'e_records') results = results.filter(row => visibleRow({ ...row, value: JSON.parse(String(row.value)) }))
   if (table === 'e_snapshots') results = results.filter(row => !hidden.has(String(row.scenario)))
   if (table === 'e_activity') results = results.flatMap(row => {
@@ -134,7 +137,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   files.push({ name: `snapshots/${safeName(`${snapshot.id}.json`)}`, bytes: json(snapshot) })
  }
 
- const originalItems = await retainedOriginals(c)
+ const originalItems = await retainedOriginals(c,importAccess.job)
  const originals = await Promise.all(originalItems.map(async original => {
   const entry: Data = {
    jobId: original.jobId, kind: original.kind, key: original.key, name: original.name,

@@ -338,7 +338,7 @@ roster headcount and monthly register-versus-ledger costs. Missing/blocked ledge
 values are null, differences remain visible, and hourly-versus-salary bases are
 listed for review. Current Pay detail and department grants filter every detail
 row; viewers and analysts without Pay detail receive totals only. Imports and
-original archives require finance and Pay detail. These are HTTP import/read
+original archives require finance and Pay detail; scenario read/edit shares remain binding and private imports stay out of unauthorized open exports. These are HTTP import/read
 doors; no provider connection or browser upload form is claimed.
 
 `POST /api/easel/import/payroll/status`, `resume` and `undo` take `{id}` from the

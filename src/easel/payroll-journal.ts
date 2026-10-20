@@ -5,7 +5,7 @@ import { journalContext, kitContext } from './kit'
 import { all, type Data } from './types'
 const NAMESPACE = 'easel-payroll-files'
 
-export function payrollJournalContext(c: Context, destination: string, mapping: string, job?: {mapping_version:string;principal_id:string}) {
+export function payrollJournalContext(c: Context, destination: string, mapping: string, job?: {mapping_version:string;principal_id:string}, scenario?:string) {
  const ctx = job ? journalContext(c.db,c.x.actor,destination,NAMESPACE,job) : kitContext(c.db,c.x.actor,destination,NAMESPACE,mapping)
  const maps = all(c.s, 'erasure') as (Data & ErasureMap)[]
  ctx.storage.targets.ownedContent = row => {
@@ -21,7 +21,8 @@ export function payrollJournalContext(c: Context, destination: string, mapping: 
  const predicate = ctx.authorization!.predicate!
  ctx.authorization = { ...ctx.authorization!, predicate: (...args) => {
   const auth = predicate(...args) as {sql:string;params:unknown[]}
-  return c.x.actor.baseRole === 'owner' ? auth : { sql: `(${auth.sql}) AND EXISTS(SELECT 1 FROM e_records WHERE kind='pay-grant' AND id=? AND json_extract(value,'$.granted')=1)`, params: [...auth.params,c.x.actor.email] }
+  const guarded = scenario ? {sql:`(${auth.sql}) AND EXISTS(SELECT 1 FROM e_records WHERE kind='scenario' AND id=? AND (json_type(value,'$.sandbox') IS NULL OR json_extract(value,'$.createdBy')=? OR json_extract(value,?)='edit'))`,params:[...auth.params,scenario,c.x.actor.email,`$.sandbox.grants."${c.x.actor.email}"`]} : auth
+  return c.x.actor.baseRole === 'owner' ? guarded : { sql: `(${guarded.sql}) AND EXISTS(SELECT 1 FROM e_records WHERE kind='pay-grant' AND id=? AND json_extract(value,'$.granted')=1)`, params: [...guarded.params,c.x.actor.email] }
  } }
  return ctx
 }

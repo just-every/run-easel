@@ -6,6 +6,7 @@ import type { Context, KitStep } from './context'
 import { base64 } from './kit'
 import { payrollJournalContext } from './payroll-journal'
 import { readPayrollFile } from './payroll-file'
+import { canSeeScenario, requireScenarioEdit } from './scenario-access'
 import { rosterBuckets } from './payroll-reconciliation'
 import { all, choice, find, get, put, requireThat, text, type Data } from './types'
 
@@ -17,8 +18,9 @@ async function preview(c: Context, b: Data) {
  const provider = text(b.provider, 'Payroll provider', 100)
  const kind = choice(b.kind, ['roster','register'] as const, 'file kind')
  const scenario = get(c.s, 'scenario', b.scenario)
+ requireScenarioEdit(c.x, scenario)
  const mappings = all(c.s, 'payroll-file-mapping')
- const saved = mappings.filter(m => m.provider === provider && m.kind === kind && all(c.s, 'payroll-import').some(i => i.destination === m.batch && i.status === 'imported')).sort((a,b) => b.order-a.order)[0]
+ const saved = mappings.filter(m => m.provider === provider && m.kind === kind && all(c.s, 'payroll-import').some(i => i.destination === m.batch && i.status === 'imported' && canSeeScenario(c.x,get(c.s,'scenario',i.scenario)))).sort((a,b) => b.order-a.order)[0]
  const file = await readPayrollFile(b, saved?.config)
  const asOf = kind === 'roster' ? text(b.asOf, 'Roster observation date', 10) : ''
  const observed = new Date(`${asOf}T00:00:00Z`)
@@ -31,7 +33,7 @@ async function preview(c: Context, b: Data) {
  }
  const positionMap: Data = { ...(saved?.positionMap ?? {}), ...(b.positionMap ?? {}) }
  const positions = all(c.s, 'position').filter(p => p.scenario === scenario.id)
- const sourceRows = all(c.s, kind === 'roster' ? 'roster-actual' : 'payroll-run').filter(r => r.provider === provider)
+ const sourceRows = all(c.s, kind === 'roster' ? 'roster-actual' : 'payroll-run').filter(r => r.provider === provider && r.scenario === scenario.id)
  const rows: Data[] = file.rows.map((row: Data) => {
   const department = departmentMap[row.department] ?? all(c.s,'department').find(d => d.name === row.department)?.id
   requireThat(department && find(c.s, 'department', department), `Map department ${row.department} first`, 409)
@@ -46,8 +48,8 @@ async function preview(c: Context, b: Data) {
  const destination = `payroll:${sha256(canonicalJson([provider,kind,scenario.id,asOf,file.sha])).slice(0,24)}`
  const id = destination.slice(8)
  const config = { config: file.config, departmentMap, positionMap, memberMap, line: kind === 'register' ? rows[0]?.line : null }
- const ctx = payrollJournalContext(c, destination, `payroll-v1:${sha256(canonicalJson({ config, rows, positions, departments: all(c.s,'department') })).slice(0,24)}`)
- const mappingPayload = { ...config, provider, kind, batch: destination, order: Math.max(0,...mappings.map(m => m.order)) + 1 }
+ const ctx = payrollJournalContext(c, destination, `payroll-v1:${sha256(canonicalJson({ config, rows, positions, departments: all(c.s,'department') })).slice(0,24)}`, undefined, scenario.id)
+ const mappingPayload = { ...config, provider, kind, scenario:scenario.id, batch: destination, order: Math.max(0,...mappings.map(m => m.order)) + 1 }
  const source: SourceBundle = { diagnostics: [], artifacts: [{ name: file.file, sha256: file.sha, size: file.bytes.length, original: { status: 'available', base64: base64(file.bytes) } }], records: [{ namespace: NAMESPACE, kind: 'mapping', sourceId: 'mapping', payload: mappingPayload, payloadHash: sha256(canonicalJson(mappingPayload)), artifactHash: file.sha, location: { artifact: file.file, pointer: 'column-mapping' } }, ...rows.map((r: Data) => ({ namespace: NAMESPACE, kind, sourceId: String(r.row), payload: r, payloadHash: sha256(canonicalJson(r)), artifactHash: file.sha, location: { artifact: file.file, row: r.row } }))] }
  const mapping: ImportMapping = { version: ctx.mappingVersion, map: record => record.kind === 'mapping' ? { effects: [{ targetKind: 'payroll-file-mapping', targetId: `${id}:mapping`, value: record.payload }] } : ({ effects: [{ targetKind: kind === 'roster' ? 'roster-actual' : 'payroll-run', targetId: `${id}:${record.sourceId}`, value: { ...record.payload as Data, batch: destination, file: file.file } }] }) }
  const plan = await planD1Import(source, mapping, ctx)
@@ -63,7 +65,7 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
   requireThat(!prior || ['undone','failed'].includes(prior.status), 'This file is already imported', 409)
   const attempt = (prior?.attempt ?? 0)+1
   put(c.s,'payroll-import',p.id,{ destination:p.destination, file:p.file, sha256:p.sha256, provider:p.provider, kind:p.kind, scenario:p.scenario, asOf:p.asOf, rows:p.rows.length, status:'importing', attempt, createdBy:c.x.actor.email, createdAt:c.now })
-  c.activity.push({ action:'payroll-import-started',record:p.id,detail:{kind:p.kind,rows:p.rows.length} })
+  c.activity.push({ action:'payroll-import-started',record:p.id,scenario:p.scenario,detail:{kind:p.kind,rows:p.rows.length} })
   return { result:{}, kit:async()=>{
    const job=await createD1ImportJob(p.plan,{...p.ctx,reviewedFingerprint:p.fingerprint,operationKey:`${p.fingerprint}:${attempt}`})
    return applyD1ImportBatches(job.id,p.ctx)
@@ -75,9 +77,11 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
  if (['resume','undo','status'].includes(op)) {
   requireFinance(c.x); requirePayDetail(c.x)
   const imp=get(c.s,'payroll-import',b.id)
+  if (op === 'status') requireThat(canSeeScenario(c.x,get(c.s,'scenario',imp.scenario)), 'Scenario not found',404)
+  else requireScenarioEdit(c.x,get(c.s,'scenario',imp.scenario))
   const job=await c.db.prepare('SELECT id,state,mapping_version,principal_id FROM ik_jobs WHERE destination=? AND namespace=? ORDER BY rowid DESC LIMIT 1').bind(imp.destination,NAMESPACE).first<any>()
   requireThat(job,'This import has no journal yet; preview and import again',409)
-  const ctx=payrollJournalContext(c,imp.destination,job.mapping_version,job)
+  const ctx=payrollJournalContext(c,imp.destination,job.mapping_version,job,imp.scenario)
   if(op==='status')return {result:{import:imp,job:await readD1ImportJob(job.id,ctx),undo:['undone','undoing'].includes(job.state)?await readD1ImportUndoReport(job.id,ctx):null}}
   if(op==='resume') {requireThat(imp.status==='importing','This import is not waiting to continue',409);return {result:{},kit:()=>resumeD1Import(job.id,ctx),record:(after,result)=>finish(after,imp.id,result)}}
   requireThat(['imported','undoing'].includes(imp.status),'Only a completed import can be undone',409)
@@ -85,7 +89,7 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
   return {result:{},kit:async()=>({job:await undoD1Import(job.id,ctx),report:await readD1ImportUndoReport(job.id,ctx)}),record:(after,result)=>{
    const current=get(after.s,'payroll-import',imp.id)
    put(after.s,'payroll-import',imp.id,{...current,status:result.job.state==='undone'?'undone':'undoing',undoneBy:after.x.actor.email,undoneAt:after.now})
-   after.activity.push({action:'payroll-undone',record:imp.id,detail:{state:result.job.state}})
+   after.activity.push({action:'payroll-undone',record:imp.id,scenario:imp.scenario,detail:{state:result.job.state}})
    return {import:get(after.s,'payroll-import',imp.id),...result}
   }}
  }
@@ -94,6 +98,6 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
 function finish(c: Context,id:string,job:Data) {
  const imp=get(c.s,'payroll-import',id)
  put(c.s,'payroll-import',id,{...imp,status:job.state==='completed'?'imported':'importing'})
- c.activity.push({action:'payroll-import-progress',record:id,detail:{state:job.state}})
+ c.activity.push({action:'payroll-import-progress',record:id,scenario:imp.scenario,detail:{state:job.state}})
  return {import:get(c.s,'payroll-import',id),job:{id:job.id,state:job.state,checkpoint:job.checkpoint,total:job.total}}
 }

@@ -125,6 +125,29 @@ test('PEOPLE-007 CSV roster and XLSX payroll register keep provider mappings, re
  assert.equal((await query()).roster.length,0)
  await h.kit('payroll','preview',next,h.owner,400) // its custom mapping was undone too
  await h.kit('payroll','preview',following,h.owner,400)
+ // Scenario shares also govern the new file door, including saved mappings.
+ const privateFinance=await h.person('private@example.test','finance')
+ const privateScenario=await h.command('sandbox-create',{from:scenario,name:'Confidential payroll'},privateFinance)
+ const privateFile={...roster,provider:'Private PEO',scenario:privateScenario.id,asOf:'2026-05-31'}
+ await h.kit('payroll','preview',privateFile,h.owner,404)
+ const share=async mode=>h.command('scenario-share',{scenario:privateScenario.id,email:'owner@example.test',mode,revision:(await h.get(`/api/easel/scenario/${privateScenario.id}`,privateFinance)).scenario.revision},privateFinance)
+ await share('read');await h.kit('payroll','preview',privateFile,h.owner,403)
+ await share('edit')
+ const privatePreview=await h.kit('payroll','preview',privateFile)
+ const privateImport=await h.kit('payroll','commit',{...privateFile,fingerprint:privatePreview.fingerprint})
+ await share('remove')
+ await h.kit('payroll','status',{id:privateImport.import.id},h.owner,404)
+ await h.kit('payroll','undo',{id:privateImport.import.id},h.owner,404)
+ await h.get(`/api/easel/payroll/${privateScenario.id}`,h.owner,404)
+ const privateCopy={...privateFile,scenario,asOf:'2026-06-30'};delete privateCopy.columns
+ await h.kit('payroll','preview',privateCopy,h.owner,400)
+ const privateArchiveResponse=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}})
+ assert.equal(privateArchiveResponse.status,200)
+ const privateArchive=await JSZip.loadAsync(await privateArchiveResponse.arrayBuffer())
+ const privateManifest=JSON.parse(await privateArchive.file('manifest.json').async('string'))
+ assert.ok(!privateManifest.originals.some(o=>o.jobId===privateImport.job.id))
+ for(const file of Object.values(privateArchive.files).filter(f=>!f.dir&&!f.name.endsWith('.xlsx')))assert.ok(!(await file.async('string')).includes('Private PEO'),'Hidden scenario imports stay out of every archive table and original')
+ await h.kit('payroll','undo',{id:privateImport.import.id},privateFinance)
  // Journal continuation remains explicit, with no partially-final payroll totals.
  const bulk={kind:'register',provider:'Bulkpay',scenario,line:payroll.id,filename:'bulk-register.csv',csv:'Employee ID,Department,Pay Date,Gross Wages,Employer Taxes,Benefits,Fees\n'+Array.from({length:205},(_,i)=>`E${i},Engineering,2026-04-15,1,0,0,0`).join('\n')+'\n'}
  const bulkPreview=await h.kit('payroll','preview',bulk)
