@@ -951,7 +951,7 @@
       "executable": false
     },
     "src/easel/ledger-statements.ts": {
-      "sha256": "0cb87487ed5f4772972d1a4913ed02e53cc95330890d41f34ac1ec939107ba55",
+      "sha256": "68f92a0a09754b36939fd2f7649ba4055b51bbd7067084f3102d52b5e7b9f83e",
       "executable": false
     },
     "src/easel/long-range-workbook.ts": {
@@ -3199,7 +3199,7 @@
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
-      "sha256": "ccf8e244a1d357babc5fdd2bc763cba689acc172217acf1347d941b452409c13",
+      "sha256": "12b7142f9be921d8c4db48e1632f51269a696d3a3dadb7c00d9d539bb1866e6c",
       "executable": false
     },
     "tests/balance-actuals-fixture.mjs": {

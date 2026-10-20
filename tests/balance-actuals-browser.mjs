@@ -133,7 +133,7 @@ try {
     assert.equal(field === 'balanceSheet' ? row.balanceDifference : row.difference, 0)
     await section.getByLabel(`${heading} reconciliation for Feb 2026: Balanced`, { exact: true }).click()
     const details = await section.getByRole('region', { name: `${heading} reconciliation details`, exact: true }).innerText()
-    assert.ok(details.includes(row.trace))
+    assert.ok(details.includes(row.trace), JSON.stringify({ heading, details, trace: row.trace }))
     await noOverflow(reader.page, `CONNECT-007 ${heading} ${as} ${width}`)
     await section.screenshot({ path: join(evidence, `opening-${field}-${as}-${width}.png`) })
    }
