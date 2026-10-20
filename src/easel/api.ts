@@ -16,7 +16,7 @@ import { Hono, type Context as HonoContext } from 'hono'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { deploymentHealth } from '../base/deployment-health'
 import { activityCsv, activityView as filteredActivity } from './audit'
-import { access, requireFinance, requireMember } from './access'
+import { access, requireFinance, requireMember, requirePayDetail } from './access'
 import { actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
@@ -178,7 +178,7 @@ api.get('/api/easel/parallel-month/template/:file', async c => {
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="parallel-month.csv"' } })
 })
-api.get('/api/easel/parallel-month/:id', c => read(c, ctx => parallelView(ctx, c.req.param('id'))))
+api.get('/api/easel/parallel-month/:id', c => read(c, ctx => { requirePayDetail(ctx.x); return parallelView(ctx, c.req.param('id')) }))
 
 api.get('/api/easel/metric-tasks', c => read(c, metricTaskList))
 
@@ -271,6 +271,7 @@ api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
  const b = await body(c)
  const op = c.req.param('op')
+ if (op.startsWith('parallel-')) requirePayDetail(ctx.x)
  let result: Data | undefined
  for (const command of commands) { result = await command(ctx, op, b); if (result !== undefined) break }
  requireThat(result !== undefined, 'Unknown action', 404)
@@ -290,6 +291,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
  requireThat(kit === 'actuals' || kit === 'workbook', 'Unknown move-in kit', 404)
  const ctx = await open(c)
+ requirePayDetail(ctx.x)
  const b = await body(c, kit === 'workbook' ? 8_000_000 : 3_000_000)
  const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)

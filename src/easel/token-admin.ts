@@ -7,7 +7,7 @@ import { choice, Fault, integer, requireThat, text, type Data } from './types'
 
 // Select metadata explicitly: this query must never expose a bearer or hash.
 const metadataColumns = `t.id,t.label,t.kind,t.scope,t.issuing_role AS issuingRole,
- t.departments,t.created_at AS createdAt,c.expires_at AS expiresAt,c.revoked_at AS revokedAt`
+ t.departments,t.pay_detail AS payDetail,t.created_at AS createdAt,c.expires_at AS expiresAt,c.revoked_at AS revokedAt`
 const metadataFrom = 'FROM e_api_tokens t JOIN oa_credentials c ON c.id=t.id'
 const metadata = (row: Data): Data => ({ ...row, departments: JSON.parse(row.departments) })
 
@@ -72,11 +72,11 @@ export async function tokenAdmin(c: Context, request: Request, env: Bindings, op
    : error.code)
   throw error
  }
- const details = { id: minted.id, label, kind, scope, issuingRole: c.x.role, departments: [...c.x.departments], createdAt: c.now, expiresAt: minted.expiresAt, revokedAt: null }
+ const details = { id: minted.id, label, kind, scope, issuingRole: c.x.role, departments: [...c.x.departments], payDetail: c.x.payDetail === true, createdAt: c.now, expiresAt: minted.expiresAt, revokedAt: null }
  try {
   await write(c, [
-   c.db.prepare('INSERT INTO e_api_tokens(id,label,kind,scope,issuing_role,departments,created_at) VALUES(?,?,?,?,?,?,?)')
-    .bind(minted.id, label, kind, scope, c.x.role, JSON.stringify(details.departments), c.now),
+   c.db.prepare('INSERT INTO e_api_tokens(id,label,kind,scope,issuing_role,departments,created_at,pay_detail) VALUES(?,?,?,?,?,?,?,?)')
+    .bind(minted.id, label, kind, scope, c.x.role, JSON.stringify(details.departments), c.now, details.payDetail ? 1 : 0),
    c.db.prepare(`INSERT INTO e_activity(at,actor,action,record,scenario,before_revision,after_revision,detail)
     VALUES(?,?,'token-issued',?,NULL,NULL,NULL,?)`)
     .bind(c.now, actor.email, minted.id, JSON.stringify({ ...details, authority: { type: 'person', name: actor.name, via: 'session' } })),

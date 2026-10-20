@@ -2,7 +2,7 @@ import { canSeeDashboard } from './dashboard-access'
 import { canSeeScenario, visibleActivity } from './scenario-access'
 import { readD1ImportOriginals } from '../modules/import-kit/src/d1/index'
 import type { RetainedOriginal } from '../modules/import-kit/src/types'
-import { requireFinance } from './access'
+import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
 import { journalContext } from './kit'
 import { scenarioWorkbook } from './report-workbooks'
@@ -75,6 +75,7 @@ async function retainedOriginals(c: Context): Promise<RetainedOriginal[]> {
 /** Build a complete finance-only portability archive from one loaded context. */
 export async function openExport(c: Context): Promise<Uint8Array> {
  requireFinance(c.x)
+ requirePayDetail(c.x)
 
  const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
  const visibleRow = (row: Data) => {

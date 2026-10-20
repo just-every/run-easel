@@ -5,7 +5,7 @@ import { aggregateFinancing } from './financing-view'
 // each difference. Drafts state what the evidence shows and mark anything
 // else as an unconfirmed hypothesis; the department confirms the business
 // explanation and finance publishes the pack.
-import { requireDepartment, requireFinance, requireMember, seesDepartmentDetail } from './access'
+import { requireDepartment, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail } from './access'
 import { rowsFor } from './actuals'
 import { actorNames } from './actor-names'
 import { mentions } from './notify'
@@ -54,7 +54,8 @@ export async function variance(c: Context, month: string) {
   const l = lineById.get(line), d = deptById.get(department)
   const v = a - bud
   const revenue = l?.type === 'revenue'
-  const detail = seesDepartmentDetail(c.x, department)
+  const payroll = l?.payroll === true || (planned.get(k)?.sources ?? []).some(source => source.kind === 'position')
+  const detail = seesDepartmentDetail(c.x, department) && (!payroll || seesPayDetail(c.x, department))
   const citations = detail ? (await rowsFor(c.db, s, month, line, department)) : []
   const planSources = detail ? (planned.get(k)?.sources ?? []).map(x => x.trace) : []
   // A budgeted item in the neighbouring month that matches the difference
@@ -70,7 +71,7 @@ export async function variance(c: Context, month: string) {
    ...hypotheses,
   ].filter(Boolean).join(' ')
   const saved = find(s, 'explanation', `${month}|${k}`)
-  rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation: saved ?? null, comparisons })
+  rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, payroll, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation: !payroll || seesPayDetail(c.x, department) ? saved ?? null : null, comparisons })
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))
  const names = await actorNames(c.db, [budget.body.approvedBy?.email, ...rows.flatMap(row => [row.explanation?.writtenBy, row.explanation?.confirmedBy])])
@@ -157,7 +158,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
    assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),
    cash: forecastCalc.cash.map(m => ({ ...(m.incompleteReasons ? { incompleteReasons: m.incompleteReasons } : {}), month: m.month, closing: m.closing, budget: budget.body.calculation.cash.find((b: Data) => b.month === m.month)?.closing ?? null })),
    // Pack readers include viewers: individual pay detail never enters the pack.
-   variances: v.rows.map(r => ({ line: r.lineName, department: r.departmentName, actual: r.actual, budget: r.budget, priorForecast: r.priorForecast, variance: r.variance, favourable: r.favourable, explanation: r.explanation ? { text: r.explanation.text, status: r.explanation.status, confirmedBy: r.explanation.confirmedBy ?? null } : null, evidence: [...lines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
+   variances: v.rows.map(r => ({ line: r.lineName, department: r.departmentName, actual: r.actual, budget: r.budget, priorForecast: r.priorForecast, variance: r.variance, favourable: r.favourable, explanation: !r.payroll && r.explanation ? { text: r.explanation.text, status: r.explanation.status, confirmedBy: r.explanation.confirmedBy ?? null } : null, evidence: [...lines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
    sources: batches, decisions: pack.decisions, publishedBy: { email: x.actor.email, name: x.actor.name }, publishedAt: c.now,
   } })
   put(s, 'pack', pack.id, { ...pack, status: 'published', snapshot: snapshotId, publishedBy: x.actor.email, publishedAt: c.now })

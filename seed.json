@@ -216,6 +216,12 @@
       "clauses": [
         "REV-004"
       ]
+    },
+    {
+      "id": "compensation-access",
+      "clauses": [
+        "PEOPLE-005"
+      ]
     }
   ],
   "nonGoals": [

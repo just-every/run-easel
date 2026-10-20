@@ -53,6 +53,7 @@ export function Plan({ state, refresh }: Shared) {
 
   <section className="card">
    <h2>Positions</h2>
+   {me.payDetail ? <>
    <p className="muted">On-costs are your own assumption (for example employer benefits and payroll taxes); Easel does not calculate payroll.</p>
    <Table caption="Positions" heads={['Title', 'Person', 'Department', 'From', 'To', 'Salary a year', 'On-costs', '']}>
     {(inputs.position ?? []).map((p: D) => <tr key={p.id}><td>{p.title}</td><td>{p.holder || 'To be hired'}</td><td>{deptName(p.department)}</td><td>{monthLabel(p.start)}</td><td>{p.end ? monthLabel(p.end) : '—'}</td><td className="num">{money(p.annualSalaryCents, currency)}</td><td className="num">{decimalText(p.onCostBps)}%</td><td><Action label="Edit" kind="quiet" run={async () => edit('position', p)} /><Action label="Remove" kind="danger" run={() => remove('position', p.id)} /></td></tr>)}
@@ -68,6 +69,7 @@ export function Plan({ state, refresh }: Shared) {
     <PayrollFields row={p} />
     <Field label="On-costs %" name="onCostPercent" defaultValue={p ? decimalText(p.onCostBps) : '12.00'} />
    </Form> })()}
+   </> : <p className="muted">Individual positions and pay require a pay-detail grant from the owner. Payroll totals remain available in Overview.</p>}
   </section>
 
   <section className="card">

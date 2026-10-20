@@ -1,5 +1,5 @@
 import { visibleActivity } from './scenario-access'
-import { requireFinance } from './access'
+import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
 import { requireThat, type Data } from './types'
 
@@ -7,6 +7,7 @@ export type AuditFilters = { actor?: string; record?: string; scenario?: string;
 
 export async function activityView(c: Context, filters: AuditFilters = {}): Promise<Data[]> {
  requireFinance(c.x)
+ requirePayDetail(c.x)
  const conditions: string[] = [], params: (string | number)[] = []
  for (const field of ['actor', 'record', 'scenario', 'action'] as const) if (filters[field]) {
   requireThat(filters[field]!.length <= 320, 'Filter is too long')

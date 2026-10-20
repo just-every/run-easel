@@ -85,6 +85,15 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   c.activity.push({ action: op, record: l.id, detail: { name: l.name } })
   return { removed: l.id }
  }
+ if (op === 'pay-detail') {
+  requireThat(x.actor.baseRole === 'owner' && !x.actor.token && !x.actor.agent, 'Only the signed-in owner grants Pay detail', 403)
+  const member = get(s, 'member', text(b.email, 'Email').toLowerCase())
+  requireThat(member.active && member.role !== 'viewer', 'Pay detail requires an active planner', 409)
+  requireThat(typeof b.granted === 'boolean', 'Choose whether Pay detail is granted')
+  put(s, 'pay-grant', member.email, { granted: b.granted, by: x.actor.email, at: c.now })
+  c.activity.push({ action: op, record: member.email, detail: { granted: b.granted } })
+  return { email: member.email, granted: b.granted }
+ }
  if (op === 'member') {
   requireFinance(x)
   const email = text(b.email, 'Email').toLowerCase()

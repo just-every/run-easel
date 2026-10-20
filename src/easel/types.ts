@@ -9,7 +9,7 @@ export type Actor = {
  id: string
  email: string
  name: string
- token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; write: boolean }
+ token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; payDetail: boolean; write: boolean }
  agent?: { name: string; via: string }
  /** The cron scheduler acting for the owner/admin who configured it. */
  scheduler?: { operator: string; email: string }
@@ -19,7 +19,7 @@ export type Actor = {
  baseRole: 'owner' | 'admin' | 'member'
 }
 /** What the actor may do in this installation, resolved from Base role and Easel membership. */
-export type Access = { actor: Actor; role: Role | null; departments: string[] }
+export type Access = { actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean }
 
 export class Fault extends Error {
  constructor(public status: number, message: string) { super(message) }

@@ -12,8 +12,10 @@ export function Settings({ state, refresh }: Shared) {
  return <>
   <section className="card">
    <h2>Plan</h2>
-   <p><a href="/api/easel/export" download>Download open export (ZIP)</a></p>
-   <p className="muted">Table CSVs, scenario Excel workbooks, model JSON, snapshots and original files, with a SHA-256 manifest.</p>
+   {state.me.payDetail ? <>
+    <p><a href="/api/easel/export" download>Download open export (ZIP)</a></p>
+    <p className="muted">Table CSVs, scenario Excel workbooks, model JSON, snapshots and original files, with a SHA-256 manifest.</p>
+   </> : <p className="muted">The complete open export includes individual pay detail. Ask the owner for a pay-detail grant to download this archive.</p>}
    <Form submit="Save plan settings" onSubmit={async v => { await command('workspace', v); await refresh() }}>
     <Field label="Company name" name="name" defaultValue={w.name} />
     <Field label="Reporting currency" name="currency" defaultValue={w.currency} />
@@ -44,8 +46,16 @@ export function Settings({ state, refresh }: Shared) {
   </section>
   <section className="card">
    <h2>People</h2>
-   <p className="muted">Finance plans everything. Contributors revise and submit their own departments and see only their own people's pay. Viewers read reports and published packs.</p>
-   <Table caption="People" heads={['Name', 'Email', 'Role', 'Departments', 'Active', '']}>{state.members.map((m: D) => <tr key={m.id}><td>{m.name}</td><td>{m.email}</td><td>{m.role}</td><td>{m.departments.map(deptName).join(', ') || '—'}</td><td>{m.active ? 'Yes' : 'No'}</td><td><Action kind="quiet" label="Send sign-in invitation" run={async () => { await api('invite', { email: m.email }) }} /></td></tr>)}</Table>
+   <p className="muted">Finance plans across departments. Contributors revise and submit their own departments. Pay detail is separate: only the owner can grant it, and a contributor's grant covers only their own departments. Viewers read reports and published packs without individual pay detail. Adding a person does not grant pay access.</p>
+   <p className="muted">The owner always has pay access. Finance and administrator access alone do not include it.</p>
+   <Table caption="People" heads={['Name', 'Email', 'Role', 'Departments', 'Active', 'Pay detail', '']}>{state.members.map((m: D) => <tr key={m.id}>
+    <td>{m.name}</td><td>{m.email}</td><td>{m.role}</td><td>{m.departments.map(deptName).join(', ') || '—'}</td><td>{m.active ? 'Yes' : 'No'}</td>
+    <td>{m.role === 'viewer' ? 'Unavailable for viewers' : m.payDetail ? 'Granted' : 'Not granted'}</td>
+    <td>
+     <Action kind="quiet" label="Send sign-in invitation" run={async () => { await api('invite', { email: m.email }) }} />
+     {state.me.owner && m.role !== 'viewer' && <Action kind={m.payDetail ? 'danger' : 'quiet'} label={m.payDetail ? 'Revoke pay detail' : 'Grant pay detail'} run={async () => { await command('pay-detail', { email: m.email, granted: !m.payDetail }); await refresh() }} />}
+    </td>
+   </tr>)}</Table>
    <Form submit="Add person" onSubmit={run('member')}>
     <Field label="Name" name="name" />
     <Field label="Email" name="email" type="email" />

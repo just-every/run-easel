@@ -6,7 +6,7 @@ import { assertHistorySources } from './history-sources'
 import { referenceMonths, historySchedule } from './history-schedules'
 import { range } from './months'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
-import { requireDepartment, requireFinance, requireMember } from './access'
+import { requireDepartment, requirePayDetail, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { INPUT_KINDS, inputDepartment, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
 import { cents } from './units'
@@ -42,6 +42,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if ((INPUT_KINDS as readonly string[]).includes(op)) {
   requireMember(x)
   const kind = op as InputKind
+  if (kind === 'position' || b.line && get(s, 'line', b.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, b.scenario)
   const prior = b.id ? get(s, kind, b.id) : undefined
   requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
@@ -73,6 +74,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireMember(x)
   const kind = choice(b.kind, INPUT_KINDS, 'an input kind')
   const input = get(s, kind, b.id)
+  if (kind === 'position' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
   requireThat(kind !== 'revenue' || !all(s, 'expense').some(e => e.scenario === scenario.id && e.revenueOrigin === input.originId), 'Remove linked acquisition or inventory costs before deleting this revenue driver', 409)
@@ -211,6 +213,7 @@ function requireProposalScope(s: State, x: import('./types').Access, p: Data) {
   for (const origin of new Set([...before.keys(), ...after.keys()])) {
    const a = before.get(origin), b = after.get(origin)
    if (a && b && value(a) === value(b)) continue
+   if (kind === 'position' || [a, b].some(row => row?.line && get(s, 'line', row.line).payroll)) requirePayDetail(x)
    requireThat(kind !== 'allocation', 'Only finance can propose allocation changes', 403)
    for (const row of [a, b]) if (row) requireDepartment(x, inputDepartment(kind, row)!)
   }

@@ -1,4 +1,4 @@
-import { requireMember } from './access'
+import { requireMember, requirePayDetail } from './access'
 import { workingCalculation } from './calculation'
 import type { Context } from './context'
 import { gridAmounts } from './grid-math'
@@ -25,6 +25,7 @@ export async function grid(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(history.afterRevision === sc.revision, 'The scenario changed since its last grid save', 409)
   for (const row of history.before) {
    const current = get(c.s, 'schedule', row.id)
+   if (get(c.s, 'line', current.line).payroll) requirePayDetail(c.x)
    requireEditable(c.s, c.x, sc, current.department)
    requireEditable(c.s, c.x, sc, row.department)
   }
@@ -42,6 +43,7 @@ export async function grid(c: Context, op: string, b: Data): Promise<Data | unde
    requireThat(cell && typeof cell === 'object', 'Choose a cell')
    requireThat(!seen.has(cellKey(cell)), 'A cell appears twice'); seen.add(cellKey(cell))
    const row = get(c.s, 'schedule', cell.schedule)
+   if (get(c.s, 'line', row.line).payroll) requirePayDetail(c.x)
    requireThat(row.scenario === sc.id, 'This row belongs to another scenario')
    requireEditable(c.s, c.x, sc, row.department)
    requireThat(calc.months.includes(cell.month), 'The month is outside this plan')

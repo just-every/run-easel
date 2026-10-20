@@ -56,8 +56,9 @@ export async function harness(options = {}) {
   const kit = async (name, op, body, cookie = owner, status = 200) => expect(await send(`/api/easel/import/${name}/${op}`, body, cookie), status, `${name} ${op}`)
   const get = async (path, cookie = owner, status = 200) => expect(await send(path, undefined, cookie), status, path)
   /** Adds a person to the plan, invites them through Base, and signs them in from the provider’s invitation link. */
-  const person = async (email, role, departments = []) => {
+  const person = async (email, role, departments = [], payDetail = true) => {
    await command('member', { email, name: email.split('@')[0], role, departments })
+   if (payDetail && role !== 'viewer') await command('pay-detail', { email, granted: true })
    await expect(await send('/api/easel/invite', { email }, owner), 200, `invite ${email}`)
    const message = messages.find(m => m.to.includes(email))
    assert.ok(message, `invitation mail for ${email}`)
