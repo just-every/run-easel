@@ -642,6 +642,22 @@
       "sha256": "3474ab6e346de342cc53f8d995a33f819801a82b98f92b083c611b7a455914a8",
       "executable": false
     },
+    "src/easel/calendar-channels.ts": {
+      "sha256": "c621d9308c30f1b9c721bd00cd4ed78c00b0eda5fd6bf91000208de3f9f474f3",
+      "executable": false
+    },
+    "src/easel/calendar-dispatch.ts": {
+      "sha256": "220404cf8b546f80a98fd75440193807a30c41b5a9d285424264efcf78e5f980",
+      "executable": false
+    },
+    "src/easel/calendar-time.ts": {
+      "sha256": "4c98ac85c5195c3bbb0f37c0256320ad83034d54931910a335485cd02afd0981",
+      "executable": false
+    },
+    "src/easel/calendar.ts": {
+      "sha256": "b0be985efac8db4fdba0178a927cb3c355ad23db64ae5fa99c9d1c80ae8915fe",
+      "executable": false
+    },
     "src/easel/cash-health-workbook.ts": {
       "sha256": "7b909b48be00a1d4054510fb903425802e6a9c1ed292d9a020e0a77599553cf3",
       "executable": false
@@ -712,6 +728,10 @@
     },
     "src/easel/department-statements.ts": {
       "sha256": "c2e38100502d59671ae17467cbfd8c40102df99ed9cbecfad7685a02b342590e",
+      "executable": false
+    },
+    "src/easel/egress.ts": {
+      "sha256": "99b93a56f02dc5d61a2c0820e4e9f5cc06a8e8831bffd20ef2dcdff7eb946a0c",
       "executable": false
     },
     "src/easel/engine.ts": {
@@ -2678,6 +2698,10 @@
       "sha256": "c30de560b68286bc63187638b17a292cb4e139cca27849dfebf22b7ae2e5f097",
       "executable": false
     },
+    "src/ui/calendar.tsx": {
+      "sha256": "dfda4bc376a700615192d3299dd4c3b74779616d45229f0f8f39d13db08d8eff",
+      "executable": false
+    },
     "src/ui/cash-health.tsx": {
       "sha256": "911bf12e140011f227890848a37712008523d628f3a93164306708dbcf1c920b",
       "executable": false
@@ -2860,6 +2884,14 @@
     },
     "tests/browser.mjs": {
       "sha256": "4fb85f7da239998e4a304eb5e4b68c91a5a509aa09fe8c773ae3e5d7988e2160",
+      "executable": false
+    },
+    "tests/calendar-browser.mjs": {
+      "sha256": "8bfa2f9d125634b308917820df94155290e68a87bbe395fbf1df7bb61d441cfb",
+      "executable": false
+    },
+    "tests/calendar.test.mjs": {
+      "sha256": "6df028268ef64d166d50e4ec3314e12a1301c30a12d50bb223aa304061303a79",
       "executable": false
     },
     "tests/cash-health-browser-journey.mjs": {
