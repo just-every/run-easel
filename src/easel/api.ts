@@ -1,3 +1,5 @@
+import { payrollImport } from './payroll-import'
+import { payrollView } from './payroll-reconciliation'
 import { erasure, erasedView } from './erasure'
 import { currentTime } from './time'
 import { gaugeCheck } from './gauge-check'
@@ -106,6 +108,8 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(await erasedView(ctx.db, result) as any)
 }
+
+api.get('/api/easel/payroll/:scenario', c => read(c, ctx => payrollView(ctx, c.req.param('scenario'))))
 
 api.get('/api/easel/export', async c => {
  const ctx = await open(c), bytes = await openExport(ctx)
@@ -290,11 +294,11 @@ api.post('/api/easel/command/:op', async c => {
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll', 'Unknown move-in kit', 404)
  const ctx = await open(c)
  requirePayDetail(ctx.x)
- const b = await body(c, kit === 'workbook' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : workbookCommand)(ctx, c.req.param('op'), b)
+ const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
+ const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  await commit(ctx)
  if (!step.kit) return c.json(await erasedView(ctx.db, step.result))

@@ -3,6 +3,7 @@ import { canonicalJson, PortabilityError } from '@runeditrun/rer/modules/portabi
 import { easelPolicy, validateEaselStaged } from './policy.mjs';
 import { prepareOriginals, transformBlob } from './originals.mjs';
 import { archiveValueTransformer } from './values.mjs';
+import { payrollOriginalScopes } from '../payroll-erasure.mjs';
 import { prepareJournals } from './journals.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -29,7 +30,8 @@ function replaceDigests(value, resolve) {
  * This factory supplies the installation's value-free erasure map to its policy. */
 export async function prepareEaselExportTransform(options) {
  const { db } = options;
- const maps = (await db.prepare("SELECT value FROM e_records WHERE kind='erasure' ORDER BY id").all()).results.map(r => JSON.parse(r.value));
+ const receipts = (await db.prepare("SELECT value FROM e_records WHERE kind='erasure' ORDER BY id").all()).results.map(r => JSON.parse(r.value));
+ const maps = payrollOriginalScopes(receipts, (await rows(db, 'e_records')).map(r=>({...r,value:JSON.parse(r.value)})), await rows(db, 'ik_jobs'));
  const snapshots = await rows(db, 'e_snapshots');
  // A transform must never turn an already damaged source into a valid archive.
  await validateEaselStaged({ read: table => rows(db, table) });
@@ -54,7 +56,7 @@ export async function prepareEaselExportTransform(options) {
  const policy = { ...easelPolicy, exportRow(table, row) {
   if (!maps.length) return row;
   const original = originalTransforms.row(table, row) ?? journals.row(table, row);
-  const changed = transformer.transform(original ?? row);
+  const changed = transformer.transform(original ?? row, table === 'ik_jobs' ? row.id : row.job_id);
   for (const [key, value] of Object.entries(changed)) if (!['ik_originals', 'ik_d1_original_chunks'].includes(table) && value && typeof value === 'object' && typeof value.blob === 'string') changed[key] = transformBlob(value, maps);
   const result = replaceDigests(changed, hash => transformed.get(hash) ?? hash);
   if (table === 'e_snapshots' && bodies.has(row.id)) {

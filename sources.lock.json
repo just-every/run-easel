@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "a91a984793a839867ce9bf0b3e50826bf41a8400d512e2c15d0da1e648512db6",
+      "sha256": "c79eb704af1e96f638177713ca87790991ac58ca9af563b18e306792975c8aac",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "05483cd8a2e1f2747b9cf6c44df98e55911985da1a57c1c4346e6d542249a761",
+      "sha256": "ee1d129c1cd925381a66d2e3dbfd2a464ca018d1f197ae774e7996ddd237ba35",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "ffe0339a77309f0a7fbe2cd98cb2ffb5c7faf47c7fa1a52a04f039b45755ae29",
+      "sha256": "78d054898ef44d664d29db51b3da03c325a607cc8b96c5bc2eac241f62493a85",
       "executable": false
     },
     "DEMO.md": {
@@ -483,7 +483,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "db2aa709d39f068ada53bf8a72bba74fbb00020532f42672890309179b4b03d2",
+      "sha256": "b88626127b956f8e2349fbb23b90ab4233a0b65d3a28ac30799e81e49f6d7884",
       "executable": false
     },
     "SOURCE.md": {
@@ -631,7 +631,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "ef13ee939eb44b80b03a0354825e775b4c7c82de8c61054a6ed8f66b795a66d7",
+      "sha256": "8fe357a8c288571498ee0f37f7bda53f014c9cf7070e11bf51d9ab2dde45a2ff",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -755,15 +755,15 @@
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
-      "sha256": "3ea2035e95e35e43e07e3fd0a5a6eaf7bcb21c78125ba3d1807d9857eba1fa0d",
+      "sha256": "d208bb5604ffdbb0e2665d4f09c2b8d25c95b10b6877a6eac281724dd62cc2c4",
       "executable": false
     },
     "src/easel/erasure-archive/originals.d.mts": {
-      "sha256": "9a7bfb180a031d6934384877da39dc74a47df8b1f022880cfa509751ab49f76d",
+      "sha256": "4b65ee3244b293fae2bb683364e452038e70c91cb50b73c51f033c8b0e185058",
       "executable": false
     },
     "src/easel/erasure-archive/originals.mjs": {
-      "sha256": "569f616c4a7137f7593bb6a08809e816354b0e79919681334b378f0da2209209",
+      "sha256": "1ba95aa0f01a75d3cc4078e1bbcfc2c1888853bba5d68393f37ff7f969986ea8",
       "executable": false
     },
     "src/easel/erasure-archive/policy.mjs": {
@@ -775,23 +775,23 @@
       "executable": false
     },
     "src/easel/erasure-archive/prepare.mjs": {
-      "sha256": "fe3028624d657ab3b6204a8a226e71d4ddbf79deb6035fc4b07437171f557cc8",
+      "sha256": "443e11c1ab4be8d24efeefe3cfc40b70fe0f034d7591540262beaeb4521dcb93",
       "executable": false
     },
     "src/easel/erasure-archive/values.mjs": {
-      "sha256": "5719fc10bd0cf41db3283e8e4861049c67fae2f8bc6bef5b1eda4413a11efbae",
+      "sha256": "4199c7b7ceb7576da8de62219f998478a013fa43a4280cdb351eca64f4f7db9b",
       "executable": false
     },
     "src/easel/erasure-map.d.mts": {
-      "sha256": "e7803bde5e63c89901c13cb1bc531aa52eacf4570446d1a5ab0fd6f0505ae599",
+      "sha256": "9c43c4ba9b6bc2bb40c4a0dacff8e013de5e470fd5440164e9e72d29679cee84",
       "executable": false
     },
     "src/easel/erasure-map.mjs": {
-      "sha256": "8ec71346665feb646e8855466a9604c7f7440268a5df2c7fdd284eda6ec2dda3",
+      "sha256": "27e1f4cd7acbeb5206f2c42ebe5b89ab6334a85fe596c96e4473d4f87c5b1aeb",
       "executable": false
     },
     "src/easel/erasure.ts": {
-      "sha256": "5d0d6c915afc86597928106a3afd08a0c08b0cba0fda55db475d42d89e404162",
+      "sha256": "5b670625e4ad12b0e981c6ae6e59dd92c2164957192cc4f55f51c6103bebee9d",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -903,7 +903,7 @@
       "executable": false
     },
     "src/easel/open-export.ts": {
-      "sha256": "0425c7faad381277ca407213afd33c747c62712053cba85cc8bbc2b852e37d7e",
+      "sha256": "6d975c8325e076fe1af1305dd163190860187481f919e8703c417017714bf61d",
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {

@@ -15,7 +15,7 @@ export async function prepareJournals(db, transformer) {
  const replacements = new Map(), jobs = new Map();
  const reads = await Promise.all(Object.entries(layouts).map(async ([table, columns]) => ({ table, columns, rows: (await db.prepare(`SELECT * FROM ${table}`).all()).results })));
  const sourceJobs = (await db.prepare('SELECT * FROM ik_jobs').all()).results;
- for (const job of sourceJobs) jobs.set(job.id, { ...job, plan_json: transformer.transform(job.plan_json) });
+ for (const job of sourceJobs) jobs.set(job.id, { ...job, plan_json: transformer.transform(job.plan_json,job.id) });
  for (const { table, columns, rows } of reads) {
   const groups = new Map();
   for (const row of rows) {
@@ -28,7 +28,7 @@ export async function prepareJournals(db, transformer) {
    const source = parts.map(row => row.body).join('');
    let parsed;
    try { parsed = JSON.parse(source); } catch {}
-   const body = parsed === undefined ? transformer.transform(source) : canonicalJson(transformer.transform(parsed));
+   const body = parsed === undefined ? transformer.transform(source,parts[0].job_id) : canonicalJson(transformer.transform(parsed,parts[0].job_id));
    if (body === source) continue;
    transformer.digests.set(digest(source), digest(body));
    let offset = 0;

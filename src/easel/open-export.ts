@@ -146,7 +146,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
    const filename = safeName(transformErased(original.name, maps))
    const prefix = (await digest(encoder.encode(original.key))).slice(0, 12)
    const path = `originals/${safeName(original.jobId)}/${original.kind}/${prefix}-${filename}`
-   const exported = maps.length ? await transformOriginalBytes(bytes, maps) : bytes
+   const exported = maps.length ? await transformOriginalBytes(bytes, maps, original.jobId) : bytes
    files.push({ name: path, bytes: exported })
    if (maps.length) { entry.sourceSha256 = original.sha256; entry.sha256 = await digest(exported); entry.size = exported.length }
    entry.path = path

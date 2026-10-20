@@ -228,6 +228,12 @@
       "clauses": [
         "ERASE-001"
       ]
+    },
+    {
+      "id": "payroll-file-import",
+      "clauses": [
+        "PEOPLE-007"
+      ]
     }
   ],
   "nonGoals": [

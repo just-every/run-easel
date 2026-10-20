@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import JSZip from 'jszip/dist/jszip.min.js';
 import { PortabilityError } from '@runeditrun/rer/modules/portability';
+import { transformPayrollOriginal } from './payroll-originals.mjs';
 import { transformErased } from '../erasure-map.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -31,8 +32,9 @@ export function transformBlob(value, maps) {
  const bytes = Buffer.from(value.blob, 'base64');
  return encoded(textBytes(bytes, maps) ?? ensureOpaqueSafe(bytes, maps));
 }
-export async function transformOriginalBytes(input, maps) {
- const bytes = Buffer.from(input);
+export async function transformOriginalBytes(input, maps, jobId) {
+ const scoped = await transformPayrollOriginal(input, maps, jobId);
+ const bytes = Buffer.from(scoped);
  if (!maps.length) return bytes;
  const text = textBytes(bytes, maps);
  if (text) return text;
@@ -56,7 +58,11 @@ export async function transformOriginalBytes(input, maps) {
 
 export async function prepareOriginals(db, maps) {
  const [originals, chunks] = await Promise.all(['ik_originals', 'ik_d1_original_chunks'].map(async table => (await db.prepare(`SELECT * FROM ${table}`).all()).results));
- const replacements = new Map(), digests = new Map(), base64 = new Map(), metadata = [];
+ const replacements = new Map(), digests = new Map(), base64 = new Map(), metadata = [], byJob = new Map();
+ const allDigests = new Map(), allBase64 = new Map();
+ const jobs = (await db.prepare('SELECT id,destination FROM ik_jobs').all()).results;
+ const jobForDestination = new Map(jobs.map(j=>[j.destination,j.id]));
+ const collect = (map,key,value) => map.set(key,new Set([...(map.get(key) ?? []),value]));
  const groups = new Map();
  for (const row of chunks) {
   const id = key(row);
@@ -69,10 +75,14 @@ export async function prepareOriginals(db, maps) {
   const source = row.bytes !== null ? bytesOf(row.bytes) : parts.length ? textual ? Buffer.from(parts.map(p => p.bytes).join(''), 'base64') : Buffer.concat(parts.map(p => bytesOf(p.bytes))) : null;
   if (source === null) continue;
   if (source.length !== row.size || digest(source) !== row.sha256) throw new PortabilityError('easel_original_digest', 409);
-  const exported = await transformOriginalBytes(source, maps), sha256 = digest(exported);
+  const exported = await transformOriginalBytes(source, maps, row.job_id), sha256 = digest(exported);
+  const local = byJob.get(row.job_id) ?? {digests:new Map(),base64:new Map()};
+  byJob.set(row.job_id, local);
+  local.digests.set(row.sha256,sha256);
+  local.base64.set(source.toString('base64'),Buffer.from(exported).toString('base64'));
+  collect(allDigests,row.sha256,sha256);
+  collect(allBase64,source.toString('base64'),Buffer.from(exported).toString('base64'));
   if (sha256 === row.sha256) continue;
-  digests.set(row.sha256, sha256);
-  base64.set(source.toString('base64'), Buffer.from(exported).toString('base64'));
   metadata.push({ originalSha256: row.sha256, exportedSha256: sha256 });
   replacements.set(`ik_originals:${id}`, { ...row, sha256, size: exported.length, bytes: row.bytes === null ? null : encoded(exported) });
   // Keep the archive's row inventory and ordering, including empty tail chunks.
@@ -84,8 +94,10 @@ export async function prepareOriginals(db, maps) {
    offset = end;
   });
  }
+ for (const [key,values] of allDigests) if(values.size===1) digests.set(key,[...values][0]);
+ for (const [key,values] of allBase64) if(values.size===1) base64.set(key,[...values][0]);
  return {
-  digests, base64, metadata,
+  digests, base64, metadata, byJob, jobForDestination,
   row: (table, row) => replacements.get(`${table}:${key(row)}${table === 'ik_d1_original_chunks' ? ':' + row.ordinal : ''}`),
  };
 }

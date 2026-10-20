@@ -309,3 +309,41 @@ pass-through, remitted after the entered month lag, with no revenue effect.
 Closed P&L retains accepted amounts and frozen scenarios retain captured tax
 arithmetic. Every personal wage/trace follows current Pay detail and department
 grants. These are estimates; no filing, taxability determination or payment occurs.
+
+## Roster and payroll-register files (PEOPLE-007)
+
+Finance with Pay detail can call `POST /api/easel/import/payroll/preview`, then
+`commit` with the returned `fingerprint`. The HTTP import door accepts `provider`,
+`scenario`, `kind` (`roster` or `register`), `filename`, and either `csv` text or
+`base64` XLSX bytes; XLSX also accepts `sheet`. Roster files require an ISO `asOf`
+observation date. Column choices and the date format are saved per provider/kind.
+
+`columns` maps the following field names to source headings:
+
+- Roster: `employeeId`, `name`, `department`, `title`, `employmentType` (`W-2` or
+  `1099`), `salary` and/or `hourlyRate`, `start`, optional `termination`.
+- Register: `employeeId`, `department`, `payDate`, `grossWages`, `employerTaxes`,
+  `benefits`, `fees`. `line` selects a payroll-classified ledger line.
+
+Canonical headings such as Employee ID, Name, Department, Salary, Start, Pay Date
+and Gross Wages work on the first file without a column map. `departmentMap`
+maps source labels to existing department IDs; an exact department name also
+resolves. `positionMap` explicitly maps source employee IDs to planned position
+`originId` values. Finance may set `memberMap` from source employee IDs to existing Easel member emails; this is the authoritative erasure association for that provider, including linked planned holders. No identity is inferred from names. `dateFormat` is
+`YYYY-MM-DD` (default), `MM/DD/YYYY` or `DD/MM/YYYY`; Excel numeric dates are UTC
+serial days. Decimal money must be nonnegative and exact to cents.
+
+Read `GET /api/easel/payroll/:scenario` for four reconciliation buckets, latest
+roster headcount and monthly register-versus-ledger costs. Missing/blocked ledger
+values are null, differences remain visible, and hourly-versus-salary bases are
+listed for review. Current Pay detail and department grants filter every detail
+row; viewers and analysts without Pay detail receive totals only. Imports and
+original archives require finance and Pay detail. These are HTTP import/read
+doors; no provider connection or browser upload form is claimed.
+
+`POST /api/easel/import/payroll/status`, `resume` and `undo` take `{id}` from the
+commit result's `import.id`. Multi-batch imports require explicit continuation.
+Undo removes that import's observations without changing plans, ledger rows or
+other imports; that import's saved mapping is removed and the previous mapping applies. Replacing an existing employee
+observation/pay run requires undoing its earlier import first. Original bytes
+travel through the existing import journal and complete owner export.

@@ -5,6 +5,22 @@ export const erasedHash = value => createHash('sha256').update(String(value).nor
 export function erasureMatchers(values) {
  return [...new Set(values.filter(value => typeof value === 'string' && value.trim()))].map(value => ({ length: value.length, sha256: erasedHash(value) }))
 }
+/** Transform only explicitly associated provider fields and mapping keys. */
+export function transformPayrollIdentity(item, maps) {
+ if (!item || Array.isArray(item) || typeof item !== 'object') return item
+ let result = item
+ for (const map of maps) for (const scope of map.payrollScopes ?? []) {
+  if (typeof item.originId === 'string' && 'holder' in item && (scope.positionHashes ?? []).includes(erasedHash(item.originId))) result = {...result,holder:map.pseudonym}
+  if (typeof item.provider !== 'string' || erasedHash(item.provider) !== scope.providerHash) continue
+  if (typeof item.employeeId === 'string' && erasedHash(item.employeeId) === scope.employeeHash) {
+   result = { ...result, employeeId:map.pseudonym, ...('name' in item ? {name:map.pseudonym} : {}) }
+  }
+  for (const field of ['positionMap', 'memberMap']) if (item[field] && typeof item[field] === 'object') {
+   result = { ...result, [field]:Object.fromEntries(Object.entries(result[field]).map(([key,value]) => erasedHash(key) === scope.employeeHash ? [map.pseudonym, field === 'memberMap' ? map.pseudonym : value] : [key,value])) }
+  }
+ }
+ return result
+}
 export function transformErased(value, maps) {
  const matchers = maps.flatMap(map => (map.matchers ?? []).map(matcher => ({ ...matcher, pseudonym: map.pseudonym }))).sort((a, b) => b.length - a.length)
  const string = raw => {
@@ -22,8 +38,8 @@ export function transformErased(value, maps) {
    return string(item)
   }
   if (Array.isArray(item)) return item.map(visit)
-  if (item && typeof item === 'object') return Object.fromEntries(Object.entries(item).map(([key, child]) => [string(key), visit(child)]))
+  if (item && typeof item === 'object') return Object.fromEntries(Object.entries(transformPayrollIdentity(item, maps)).map(([key, child]) => [string(key), visit(child)]))
   return item
  }
- return matchers.length ? visit(value) : value
+ return maps.length ? visit(value) : value
 }
