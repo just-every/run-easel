@@ -39,7 +39,7 @@
 .c-strip { left: 3px; bottom: 7px; width: 72px; height: 96px; }
 .strip-sticky { left: 70px; bottom: 66px; width: max-content; padding: 14px 18px 16px; transform: rotate(-6deg); }
 
-@media (max-width: 1179px) { .strip-body { margin-top: 60px; } }
+@media (max-width: 1179px) { .strip-body { margin-top: 74px; } }
 @media (max-width: 959px) {
  .strip-body { margin-top: 88px; }
  .options { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin-left: auto; margin-right: auto; gap: 22px; }
