@@ -14,7 +14,7 @@
 /* The grid: a label column, then twelve months; --show is how many whole months the scroller keeps in view. The
    table stops 4 px short of the right edge so the dashed box encloses Dec with the same room as every month. */
 .plan-scroll { --label: 150px; --show: 12; overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; }
-.plan-inner { position: relative; padding-right: 4px; min-width: calc(var(--label) + 4px + 12 * (100% - var(--label) - 4px) / var(--show)); }
+.plan-inner { --fit: 4px; position: relative; padding-right: 4px; min-width: calc(var(--label) + 4px + 12 * (100% - var(--label) - var(--fit)) / var(--show)); }
 .plan-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .plan-grid th, .plan-grid td { height: 40px; padding: 0 5px; border-bottom: 1px solid var(--hair); font-size: 14px; color: var(--ink); text-align: right; white-space: nowrap; }
 .plan-grid thead th { font-weight: 500; color: var(--muted); text-align: center; }
@@ -96,6 +96,7 @@
  .paste-tag { left: calc(var(--label) + 10px); }
  .paste-box { z-index: 3; }
  .plan-scroll { --show: 11; }
+ .plan-inner { --fit: 0px; }
 }
 @container plan (max-width: 804.98px) { .plan-scroll { --show: 10; } }
 @container plan (max-width: 745.98px) { .plan-scroll { --show: 9; } }

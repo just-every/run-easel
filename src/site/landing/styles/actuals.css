@@ -37,7 +37,8 @@
 .c-two { left: calc(63% + 2px); top: 180px; }
 
 @media (max-width: 1339px) {
- .fresh { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); justify-items: center; }
+ .fresh { justify-content: center; }
+ .fresh li { padding: 0 18px; white-space: nowrap; }
  .fresh li + li { border: 0; }
  .zoom { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
  .zoom > * { grid-column: 1 !important; grid-row: auto !important; }

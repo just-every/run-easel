@@ -41,10 +41,12 @@ body.landing-body { background: #fff; }
 /* Facts joined by "·": each fact is one box, and the separator in front of a fact that starts a line falls in the
    clipped margin, so no line starts or ends on a separator. Left-aligned text only. */
 .dots { display: block; overflow: hidden; }
-.dots-in { display: block; margin-left: -.85em; }
+.dots { --sep: .85em; }
+.kicker .dots { --sep: 1.4em; }
+.dots-in { display: block; margin-left: calc(-1 * var(--sep)); }
 .fact { white-space: nowrap; }
-.fact::before { content: "·"; display: inline-block; width: .85em; text-align: center; }
-.fact > span { display: inline-block; max-width: calc(100% - .85em); white-space: normal; vertical-align: top; }
+.fact::before { content: "·"; display: inline-block; width: var(--sep); text-align: center; }
+.fact > span { display: inline-block; max-width: calc(100% - var(--sep)); white-space: normal; vertical-align: top; }
 .line { display: block; }
 .nowrap { white-space: nowrap; }
 /* A centered run (a centered heading's eyebrow) sits on one line, or one fact per line where it cannot. */

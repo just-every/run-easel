@@ -61,7 +61,14 @@
 @media (max-width: 1279px) {
  .xl-formula code { white-space: normal; }
  .xl-grid th, .xl-grid td { font-size: 16px; padding: 0 10px; }
- .xl-grid thead th:nth-child(2) { width: 176px; }
+ .xl-grid .values td { font-size: 16px; }
+ /* The panel goes under the sheet; the Q1 cell keeps its formula tip under the total so all five columns fit. */
+ .xl-inner, .xl-grid { min-width: 640px; }
+ .xl-grid thead th:nth-child(2) { width: 152px; }
+ .xl-grid thead th:nth-child(6) { width: 132px; }
+ .xl-grid .values > * { height: 62px; }
+ .sum-tip { display: block; width: fit-content; margin: 2px 0 0; font-size: 12px; }
+ .sum-note { right: 14px; }
  .xl-main { grid-template-columns: minmax(0, 1fr); }
  .xl-panel { border-left: 0; border-top: 1px solid var(--hair); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 22px 22px 18px; }
  .panel-head { grid-column: 1 / -1; margin-bottom: 4px; }
