@@ -1,5 +1,5 @@
 // Roster and payroll-register files use the same reviewed import journal as GL
-// and workbook imports. Provider mappings survive undo; imported observations do not.
+// and workbook imports. Mapping choices and observations share the journal.
 import { applyD1ImportBatches, canonicalJson, createD1ImportJob, planD1Import, readD1ImportJob, readD1ImportUndoReport, resumeD1Import, sha256, undoD1Import, type ImportMapping, type SourceBundle } from '../modules/import-kit/src/d1/index'
 import { requireFinance, requirePayDetail } from './access'
 import type { Context, KitStep } from './context'
@@ -16,7 +16,8 @@ async function preview(c: Context, b: Data) {
  const provider = text(b.provider, 'Payroll provider', 100)
  const kind = choice(b.kind, ['roster','register'] as const, 'file kind')
  const scenario = get(c.s, 'scenario', b.scenario)
- const saved = find(c.s, 'payroll-mapping', `${provider}|${kind}`)
+ const mappings = all(c.s, 'payroll-file-mapping')
+ const saved = mappings.filter(m => m.provider === provider && m.kind === kind && all(c.s, 'payroll-import').some(i => i.destination === m.batch && i.status === 'imported')).sort((a,b) => b.order-a.order)[0]
  const file = await readPayrollFile(b, saved?.config)
  const asOf = kind === 'roster' ? text(b.asOf, 'Roster observation date', 10) : ''
  const observed = new Date(`${asOf}T00:00:00Z`)
@@ -40,8 +41,9 @@ async function preview(c: Context, b: Data) {
  const id = destination.slice(8)
  const config = { config: file.config, departmentMap, positionMap, line: kind === 'register' ? rows[0]?.line : null }
  const ctx = payContext(c, destination, `payroll-v1:${sha256(canonicalJson({ config, rows, positions, departments: all(c.s,'department') })).slice(0,24)}`)
- const source: SourceBundle = { diagnostics: [], artifacts: [{ name: file.file, sha256: file.sha, size: file.bytes.length, original: { status: 'available', base64: base64(file.bytes) } }], records: rows.map((r: Data) => ({ namespace: NAMESPACE, kind, sourceId: String(r.row), payload: r, payloadHash: sha256(canonicalJson(r)), artifactHash: file.sha, location: { artifact: file.file, row: r.row } })) }
- const mapping: ImportMapping = { version: ctx.mappingVersion, map: record => ({ effects: [{ targetKind: kind === 'roster' ? 'roster-actual' : 'payroll-run', targetId: `${id}:${record.sourceId}`, value: { ...record.payload as Data, batch: destination, file: file.file } }] }) }
+ const mappingPayload = { ...config, provider, kind, batch: destination, order: Math.max(0,...mappings.map(m => m.order)) + 1 }
+ const source: SourceBundle = { diagnostics: [], artifacts: [{ name: file.file, sha256: file.sha, size: file.bytes.length, original: { status: 'available', base64: base64(file.bytes) } }], records: [{ namespace: NAMESPACE, kind: 'mapping', sourceId: 'mapping', payload: mappingPayload, payloadHash: sha256(canonicalJson(mappingPayload)), artifactHash: file.sha, location: { artifact: file.file, pointer: 'column-mapping' } }, ...rows.map((r: Data) => ({ namespace: NAMESPACE, kind, sourceId: String(r.row), payload: r, payloadHash: sha256(canonicalJson(r)), artifactHash: file.sha, location: { artifact: file.file, row: r.row } }))] }
+ const mapping: ImportMapping = { version: ctx.mappingVersion, map: record => record.kind === 'mapping' ? { effects: [{ targetKind: 'payroll-file-mapping', targetId: `${id}:mapping`, value: record.payload }] } : ({ effects: [{ targetKind: kind === 'roster' ? 'roster-actual' : 'payroll-run', targetId: `${id}:${record.sourceId}`, value: { ...record.payload as Data, batch: destination, file: file.file } }] }) }
  const plan = await planD1Import(source, mapping, ctx)
  return { id, destination, file: file.file, sha256: file.sha, provider, kind, scenario: scenario.id, asOf, rows, config, fingerprint: plan.fingerprint, counts: plan.counts, ...(kind === 'roster' ? { reconciliation: rosterBuckets(c.s, scenario.id, rows) } : { totalCents: rows.reduce((n: number,r: Data) => n+r.totalCents,0) }), ctx, plan }
 }
@@ -55,8 +57,6 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
   requireThat(!prior || ['undone','failed'].includes(prior.status), 'This file is already imported', 409)
   const attempt = (prior?.attempt ?? 0)+1
   put(c.s,'payroll-import',p.id,{ destination:p.destination, file:p.file, sha256:p.sha256, provider:p.provider, kind:p.kind, scenario:p.scenario, asOf:p.asOf, rows:p.rows.length, status:'importing', attempt, createdBy:c.x.actor.email, createdAt:c.now })
-  // Saved mapping is an explicit finance choice; undo removes observations, not this choice.
-  put(c.s,'payroll-mapping',`${p.provider}|${p.kind}`,p.config)
   c.activity.push({ action:'payroll-import-started',record:p.id,detail:{kind:p.kind,rows:p.rows.length} })
   return { result:{}, kit:async()=>{
    const job=await createD1ImportJob(p.plan,{...p.ctx,reviewedFingerprint:p.fingerprint,operationKey:`${p.fingerprint}:${attempt}`})

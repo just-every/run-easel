@@ -123,5 +123,21 @@ test('PEOPLE-007 CSV roster and XLSX payroll register keep provider mappings, re
  assert.equal(status.job.state,'undone')
  await h.kit('payroll','undo',{id:accepted.import.id})
  assert.equal((await query()).roster.length,0)
+ await h.kit('payroll','preview',next,h.owner,400) // its custom mapping was undone too
+ await h.kit('payroll','preview',following,h.owner,400)
+ // Journal continuation remains explicit, with no partially-final payroll totals.
+ const bulk={kind:'register',provider:'Bulkpay',scenario,line:payroll.id,filename:'bulk-register.csv',csv:'Employee ID,Department,Pay Date,Gross Wages,Employer Taxes,Benefits,Fees\n'+Array.from({length:205},(_,i)=>`E${i},Engineering,2026-04-15,1,0,0,0`).join('\n')+'\n'}
+ const bulkPreview=await h.kit('payroll','preview',bulk)
+ let bulkResult=await h.kit('payroll','commit',{...bulk,fingerprint:bulkPreview.fingerprint})
+ assert.equal(bulkResult.import.status,'importing');assert.deepEqual((await query()).runs,[])
+ for(let i=0;bulkResult.import.status==='importing'&&i<50;i++) {
+  const checkpoint=bulkResult.job.checkpoint
+  bulkResult=await h.kit('payroll','resume',{id:bulkResult.import.id})
+  assert.ok(bulkResult.job.checkpoint>checkpoint,'Each explicit continuation must advance')
+ }
+ assert.equal(bulkResult.import.status,'imported');assert.equal((await query()).runs.length,205)
+ let undone=await h.kit('payroll','undo',{id:bulkResult.import.id})
+ for(let i=0;undone.import.status==='undoing'&&i<50;i++)undone=await h.kit('payroll','undo',{id:bulkResult.import.id})
+ assert.equal(undone.import.status,'undone');assert.deepEqual((await query()).runs,[])
  assert.ok((await h.get('/api/easel/activity')).some(a=>a.action==='payroll-undone'))
 })

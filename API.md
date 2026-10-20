@@ -305,6 +305,6 @@ doors; no provider connection or browser upload form is claimed.
 `POST /api/easel/import/payroll/status`, `resume` and `undo` take `{id}` from the
 commit result's `import.id`. Multi-batch imports require explicit continuation.
 Undo removes that import's observations without changing plans, ledger rows or
-other imports; saved mapping choices remain. Replacing an existing employee
+other imports; that import's saved mapping is removed and the previous mapping applies. Replacing an existing employee
 observation/pay run requires undoing its earlier import first. Original bytes
 travel through the existing import journal and complete owner export.
