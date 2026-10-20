@@ -1,7 +1,7 @@
 // Installation-level commands: the planning calendar, departments, planning
 // lines, people and their roles, and how source accounts map to lines.
 import { accountRules } from './account-rules'
-import { requireFinance } from './access'
+import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
 import { cents, hundredths } from './units'
 import { fiscalYearLabel, month } from './months'
@@ -68,9 +68,11 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   const prior = b.id ? get(s, 'line', id) : undefined
   const type = choice(b.type, LINE_TYPES, 'a line type')
   requireThat(!prior || prior.type === type || !usesLine(s, id), 'This line is in use; its type cannot change', 409)
+  const checked = (v: unknown) => v === true || v === 'on' || v === 'true'
+  requireThat(!all(s,'tax-policy').some(p=>p.line===id) || (type==='operating-expense'&&!checked(b.nonCash)&&!checked(b.payroll)), 'A tax-policy line in use must remain a cash, non-payroll operating expense line',409)
   const name = text(b.name, 'Line name')
   requireThat(!all(s, 'line').some(l => l.id !== id && l.name.toLowerCase() === name.toLowerCase()), 'A line with this name exists')
-  const checked = (v: unknown) => v === true || v === 'on' || v === 'true'
+  if (prior?.payroll && !checked(b.payroll)) requirePayDetail(x)
   requireThat(!(checked(b.nonCash) && checked(b.payroll)), 'A payroll line cannot be non-cash')
   requireThat(!all(s, 'debt').some(debt => debt.line === id) || (type !== 'revenue' && !checked(b.nonCash) && !checked(b.payroll)), 'An interest line in use must remain a cash, non-payroll expense line', 409)
   put(s, 'line', id, { name, type, nonCash: type !== 'revenue' && (b.nonCash === true || b.nonCash === 'on' || b.nonCash === 'true'), payroll: type !== 'revenue' && (b.payroll === true || b.payroll === 'on' || b.payroll === 'true'), order: prior?.order ?? all(s, 'line').length })
@@ -84,6 +86,15 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   remove(s, 'line', l.id)
   c.activity.push({ action: op, record: l.id, detail: { name: l.name } })
   return { removed: l.id }
+ }
+ if (op === 'pay-detail') {
+  requireThat(x.actor.baseRole === 'owner' && !x.actor.token && !x.actor.agent, 'Only the signed-in owner grants Pay detail', 403)
+  const member = get(s, 'member', text(b.email, 'Email').toLowerCase())
+  requireThat(member.active && member.role !== 'viewer', 'Pay detail requires an active planner', 409)
+  requireThat(typeof b.granted === 'boolean', 'Choose whether Pay detail is granted')
+  put(s, 'pay-grant', member.email, { granted: b.granted, by: x.actor.email, at: c.now })
+  c.activity.push({ action: op, record: member.email, detail: { granted: b.granted } })
+  return { email: member.email, granted: b.granted }
  }
  if (op === 'member') {
   requireFinance(x)

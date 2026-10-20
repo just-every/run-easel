@@ -266,3 +266,92 @@ Revenue accepts `collectionMethod: "dso"` with integer `dsoDays`, or `"curve"` w
 Vendor expenses accept `paymentMethod: "dpo"` plus `dpoDays`, or `"terms"` plus `paymentTermDays`, after the assumed month-end invoice. `expense` kind `prepaid` accepts total `amount`, `amortizationMonths` and optional `paymentMonth` (at/before service `start`). Kind `bonus` accepts the quarterly total `amount` and first `payMonth`; it accrues over each three-month quarter and settles at that month end, repeating every three months. Both use floor ordinary installments and put the cent remainder in the last installment.
 
 A position's optional `payDay` (1–31, clamped to month end) and `payMonthOffset` (0–3) accrue its salary and entered on-costs until the planned pay date. These fields also work through the existing MCP proposal tools, where days and month counts are strings. Prior-horizon service and earned/pay schedules establish labeled estimated opening prepaid/accrued balances. These are planning assumptions, never executed payments or imported balance-sheet actuals. Reads, immutable captures and Excel exports retain the existing department/pay filtering.
+
+Pay detail (PEOPLE-005) is separate from plan access. The signed-in owner uses `POST /api/easel/command/pay-detail` with `{ "email": "analyst@example.com", "granted": true }` (or false). Contributors are limited to their current departments; viewers cannot receive the grant. Tokens keep their issuance ceiling and recheck the live grant. Complete archives and Activity require pay access; filtered scenario/workbook reads retain totals.
+
+Person erasure (ERASE-001): deactivate the former planning member with `member` (`active: false`), then a native finance session posts `person-erase` with `{ "email": "former@example.com" }`. The response contains the anonymous receipt id, pseudonym, changed-record counts and time. The installation owner and last finance member are protected; agents and API tokens cannot erase people. Existing sessions and credentials are revoked atomically. Snapshot reads keep their recorded digest while mapping personal attribution; native exports declare the transform and original/exported digests.
+
+## US tax planning estimates (FIN-006)
+
+Finance enables one `tax-policy` input in a working scenario with
+`POST /api/easel/command/tax-policy` (or the same MCP proposal tool). Supply
+`scenario`, a dedicated cash/non-payroll operating-expense `line`, `department`,
+`sutaPercent`, `sutaBase` and `stateIncomePercent`. Save its returned `id` when
+editing; delete through `input-delete`. This is the HTTP configuration door;
+the existing Plan form edits a position's `employmentType` (`W-2` or `1099`) and
+optional `taxYtdWages`, and Overview displays the resulting expense/statements.
+
+Optional finance assumptions and their 2026 defaults:
+
+| Input | Default |
+| --- | --- |
+| `year` | 2026 (effective assumption year) |
+| `socialSecurityPercent`, `socialSecurityBase` | 6.2, 184500 |
+| `medicarePercent` | 1.45, uncapped; no employer Additional Medicare share |
+| `futaPercent`, `futaBase` | 6, 7000 (gross, no inferred credit) |
+| `federalIncomePercent` | 21 (ordinary corporate planning rate) |
+| `openingLoss`, `lossOffsetPercent` | 0, 80 |
+| `salesTaxPercent`, `salesTaxRemitLagMonths` | 0, 1 |
+
+SUTA and state income values require explicit finance entry, including explicit
+zero where appropriate. Rates/bases remain the stated assumption year's values
+in later plan years until revised. Annual wage caps reset January; continuing
+W-2 positions in a partial first year need explicit prior YTD wages. Each monthly
+component is the change in its rounded cumulative liability; 1099 employer taxes
+are zero. Taxes add separately to owner-supplied salary on-costs.
+
+`scenario/:id` returns `calculation.taxes`: effective-year label, filtered
+`payrollRows`, aggregate `payrollTotals`, `incomeRows` with losses/taxable profit,
+and `sales` collection/remittance/payable rows. Income tax uses accounting profit
+as an approximation, carries losses within the entered allowance, and plans
+payment in the recognition month. Sales tax is a uniform cash-collection
+pass-through, remitted after the entered month lag, with no revenue effect.
+Closed P&L retains accepted amounts and frozen scenarios retain captured tax
+arithmetic. Every personal wage/trace follows current Pay detail and department
+grants. These are estimates; no filing, taxability determination or payment occurs.
+
+## Roster and payroll-register files (PEOPLE-007)
+
+Finance with Pay detail can call `POST /api/easel/import/payroll/preview`, then
+`commit` with the returned `fingerprint`. The HTTP import door accepts `provider`,
+`scenario`, `kind` (`roster` or `register`), `filename`, and either `csv` text or
+`base64` XLSX bytes; XLSX also accepts `sheet`. Roster files require an ISO `asOf`
+observation date. Column choices and the date format are saved per provider/kind.
+
+`columns` maps the following field names to source headings:
+
+- Roster: `employeeId`, `name`, `department`, `title`, `employmentType` (`W-2` or
+  `1099`), `salary` and/or `hourlyRate`, `start`, optional `termination`.
+- Register: `employeeId`, `department`, `payDate`, `grossWages`, `employerTaxes`,
+  `benefits`, `fees`. `line` selects a payroll-classified ledger line.
+
+Canonical headings such as Employee ID, Name, Department, Salary, Start, Pay Date
+and Gross Wages work on the first file without a column map. `departmentMap`
+maps source labels to existing department IDs; an exact department name also
+resolves. `positionMap` explicitly maps source employee IDs to planned position
+`originId` values. Finance may set `memberMap` from source employee IDs to existing Easel member emails; this is the authoritative erasure association for that provider, including linked planned holders. No identity is inferred from names. `dateFormat` is
+`YYYY-MM-DD` (default), `MM/DD/YYYY` or `DD/MM/YYYY`; Excel numeric dates are UTC
+serial days. Decimal money must be nonnegative and exact to cents.
+
+Read `GET /api/easel/payroll/:scenario` for four reconciliation buckets, latest
+roster headcount and monthly register-versus-ledger costs. Missing/blocked ledger
+values are null, differences remain visible, and hourly-versus-salary bases are
+listed for review. Current Pay detail and department grants filter every detail
+row; viewers and analysts without Pay detail receive totals only. Imports and
+original archives require finance and Pay detail; scenario read/edit shares remain binding and private imports stay out of unauthorized open exports. These are HTTP import/read
+doors; no provider connection or browser upload form is claimed.
+
+`POST /api/easel/import/payroll/status`, `resume` and `undo` take `{id}` from the
+commit result's `import.id`. Multi-batch imports require explicit continuation.
+Undo removes that import's observations without changing plans, ledger rows or
+other imports; that import's saved mapping is removed and the previous mapping applies. Replacing an existing employee
+observation/pay run requires undoing its earlier import first. Original bytes
+travel through the existing import journal and complete owner export.
+
+### Headcount plan against actual (PEOPLE-006)
+
+`GET /api/easel/headcount/:scenario` reads monthly department plan/actual headcount, hires, departures, payroll cents, explicit backfill counts and expected attrition in hundredths of a person. `observations` names each reviewed provider/date; missing actuals are `null`. `history` and `positions` require the reader's live Pay detail grant for that department; aggregates use the existing scenario read grant. `command/position` accepts optional `plannedStartDate` (ISO day in its `start` month), `backfillOrigin` (an earlier same-department position origin), and `attritionPercent` (monthly probability, displayed only). Day slippage is actual minus the planned date retained by roster acceptance; month-only plans return `null`. This door reads reviewed files, not a connected provider pull.
+
+### Imported workbook drivers (SHEET-003)
+
+`POST /api/easel/command/workbook-driver` accepts `{scenario,id,revision,cell,value}`. `id` identifies the finance/Pay detail reader's `inputs["workbook-model"]` record, `cell` is its source key (for example `Assumptions!B2`), `revision` is the reviewed scenario revision, and `value` is an exact source-unit decimal string with at most eight places. Only numeric non-formula assumptions outside the mapped plan rows can be changed here; mapped constant cells use the grid. Formula results recalculate without replacing the retained source graph; saved versions stay frozen. Workbook preview also returns `formulaReport`, `formulaReconciliation` and `workbookTotals`. Commit refuses missing or mismatched supported totals or formula caches.

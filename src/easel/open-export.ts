@@ -1,9 +1,15 @@
+import { payrollExportAccess } from './payroll-export-access'
+import { prepareEaselExportTransform } from './erasure-archive/prepare.mjs'
+import { transformOriginalBytes } from './erasure-archive/originals.mjs'
+import { erasureMaps } from './erasure'
+import { transformErased } from './erasure-map.mjs'
 import { canSeeDashboard } from './dashboard-access'
 import { canSeeScenario, visibleActivity } from './scenario-access'
 import { readD1ImportOriginals } from '../modules/import-kit/src/d1/index'
 import type { RetainedOriginal } from '../modules/import-kit/src/types'
-import { requireFinance } from './access'
+import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
+import { payrollJournalContext } from './payroll-journal'
 import { journalContext } from './kit'
 import { scenarioWorkbook } from './report-workbooks'
 import { snapshotList, snapshot as readSnapshot } from './store'
@@ -13,7 +19,7 @@ import { scenarioView } from './views'
 
 const encoder = new TextEncoder()
 // Product and import-journal tables; credentials follow the existing backup policy.
-const credentialTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets'])
+const credentialTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key'])
 const identifier = (name: string) => `"${name.replaceAll('"', '""')}"`
 function portableCell(value: unknown): unknown {
  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value) || Array.isArray(value)) {
@@ -62,20 +68,24 @@ async function digest(bytes: Uint8Array): Promise<string> {
 
 type ArchiveFile = { name: string; bytes: Uint8Array }
 
-async function retainedOriginals(c: Context): Promise<RetainedOriginal[]> {
+async function retainedOriginals(c: Context, visible:(id:string)=>boolean): Promise<(RetainedOriginal & {payroll:boolean})[]> {
  const { results } = await c.db.prepare(
   'SELECT DISTINCT j.id, j.destination, j.namespace, j.mapping_version, j.principal_id FROM ik_jobs j JOIN ik_originals o ON o.job_id=j.id ORDER BY j.id',
  ).all<any>()
- const originals = await Promise.all(results.map((job: any) => readD1ImportOriginals(job.id, journalContext(
+ const originals = await Promise.all(results.filter((job:any)=>visible(job.id)).map((job: any) => readD1ImportOriginals(job.id, job.namespace === 'easel-payroll-files' ? payrollJournalContext(c,job.destination,job.mapping_version,job) : journalContext(
   c.db, c.x.actor, job.destination, job.namespace, { mapping_version: job.mapping_version, principal_id: job.principal_id },
- ))))
+ )).then(rows=>rows.map(row=>({...row,payroll:job.namespace === 'easel-payroll-files'})))))
  return originals.flat()
 }
 
 /** Build a complete finance-only portability archive from one loaded context. */
 export async function openExport(c: Context): Promise<Uint8Array> {
  requireFinance(c.x)
+ requirePayDetail(c.x)
+ const maps = await erasureMaps(c.db)
+ const prepared = maps.length ? await prepareEaselExportTransform({db:c.db}) : null
 
+ const importAccess = await payrollExportAccess(c)
  const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
  const visibleRow = (row: Data) => {
   if (row.kind === 'dashboard') return canSeeDashboard(c.s, c.x, row.value)
@@ -94,12 +104,14 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   const { results: columnRows } = await c.db.prepare(`PRAGMA table_info(${identifier(table)})`).all<{ name: string }>()
   const columns = columnRows.map(column => column.name)
   let { results } = await c.db.prepare(`SELECT * FROM ${identifier(table)}`).all<Record<string, unknown>>()
+  results = results.filter(row=>importAccess.row(table,row))
   if (table === 'e_records') results = results.filter(row => visibleRow({ ...row, value: JSON.parse(String(row.value)) }))
   if (table === 'e_snapshots') results = results.filter(row => !hidden.has(String(row.scenario)))
   if (table === 'e_activity') results = results.flatMap(row => {
    const event = visibleActivity(c.s, c.x, { ...row, detail: JSON.parse(String(row.detail)) })
    return event ? [{ ...row, detail: JSON.stringify(event.detail) }] : []
   })
+  results = prepared ? results.map(row=>prepared.policy.exportRow(table,row)) : results
   tables[table] = results.length
   definitions.push({ ...definition, columns })
   files.push({ name: `tables/${table}.csv`, bytes: csv(columns, results.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, portableCell(value)])))) })
@@ -108,7 +120,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
  const records = [...c.s.values()].filter(visibleRow)
   .sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
   .map(row => ({ destination: row.destination, kind: row.kind, id: row.id, revision: row.revision, value: row.value }))
- files.push({ name: 'model.json', bytes: json({ workspace: all(c.s, 'workspace')[0], lines: all(c.s, 'line'), departments: all(c.s, 'department'), records, tables: definitions, units: { money: 'integer minor units', counts: 'hundredths', rates: 'basis points' } }) })
+ files.push({ name: 'model.json', bytes: json({ workspace: all(c.s, 'workspace')[0], lines: all(c.s, 'line'), departments: all(c.s, 'department'), records: transformErased(records, maps), tables: definitions, units: { money: 'integer minor units', counts: 'hundredths', rates: 'basis points' } }) })
 
  const scenarios = all(c.s, 'scenario').filter(sc => canSeeScenario(c.x, sc)).sort((a, b) => a.id.localeCompare(b.id))
  for (const scenario of scenarios) {
@@ -125,7 +137,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   files.push({ name: `snapshots/${safeName(`${snapshot.id}.json`)}`, bytes: json(snapshot) })
  }
 
- const originalItems = await retainedOriginals(c)
+ const originalItems = await retainedOriginals(c,importAccess.job)
  const originals = await Promise.all(originalItems.map(async original => {
   const entry: Data = {
    jobId: original.jobId, kind: original.kind, key: original.key, name: original.name,
@@ -135,17 +147,20 @@ export async function openExport(c: Context): Promise<Uint8Array> {
    const raw = atob(original.original.base64)
    const bytes = new Uint8Array(raw.length)
    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i)
-   const filename = safeName(original.name)
+   const filename = safeName(transformErased(original.name, maps))
    const prefix = (await digest(encoder.encode(original.key))).slice(0, 12)
    const path = `originals/${safeName(original.jobId)}/${original.kind}/${prefix}-${filename}`
-   files.push({ name: path, bytes })
+   const exported = maps.length ? await transformOriginalBytes(bytes, maps, original.jobId, original.payroll) : bytes
+   files.push({ name: path, bytes: exported })
+   if (maps.length) { entry.sourceSha256 = original.sha256; entry.sha256 = await digest(exported); entry.size = exported.length }
    entry.path = path
   }
-  return entry
+  return transformErased(entry, maps)
  }))
 
  const manifest = {
   format: 'easel-open-export-v1',
+  transforms: maps.length ? [{ id:'easel-person-erasure-v1',receiptIds:maps.map(map=>map.receiptId) }] : [],
   createdAt: c.now,
   inventory: {
    tables,

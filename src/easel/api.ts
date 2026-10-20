@@ -1,3 +1,8 @@
+import { workbookDrivers } from './workbook-model'
+import { headcountView } from './headcount'
+import { payrollImport } from './payroll-import'
+import { payrollView } from './payroll-reconciliation'
+import { erasure, erasedView } from './erasure'
 import { currentTime } from './time'
 import { gaugeCheck } from './gauge-check'
 import { gaugeStatus, gaugeConnection } from './gauge-connection'
@@ -16,7 +21,7 @@ import { Hono, type Context as HonoContext } from 'hono'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { deploymentHealth } from '../base/deployment-health'
 import { activityCsv, activityView as filteredActivity } from './audit'
-import { access, requireFinance, requireMember } from './access'
+import { access, requireFinance, requireMember, requirePayDetail } from './access'
 import { actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
@@ -47,7 +52,7 @@ import { openExport } from './open-export'
 import { tokenAdmin } from './token-admin'
 import { tokenRate, tokenUse } from './token-auth'
 import { Fault, get, requireThat, type Actor, type Data } from './types'
-import { actualsView, compareView, scenarioView, snapshotView, stateView } from './views'
+import { actualsView, compareView, scenarioView, snapshotView, stateView, paySafePack } from './views'
 import { workbookCommand } from './workbook'
 
 type Env = { Bindings: Bindings; Variables: { apiActor: Actor } }
@@ -88,7 +93,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
 async function commit(ctx: Awaited<ReturnType<typeof open>>, structureBefore = ctx.before, structureRevision = ctx.revision) {
  const changed = ctx.activity.length > 0 || ctx.snapshots.length > 0 || [...ctx.s].some(([k, r]) => ctx.before.get(k)?.revision !== r.revision) || [...ctx.before.keys()].some(k => !ctx.s.has(k))
  if (changed) await versionStructure(ctx, structureBefore, structureRevision)
- if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance')
+ if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance', ctx.extra ?? [])
  else await readFence(ctx.db, ctx.x.actor, ctx.revision)
 }
 
@@ -103,8 +108,11 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  const ctx = await open(c)
  const result = await view(ctx)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
- return c.json(result as any)
+ return c.json(await erasedView(ctx.db, result) as any)
 }
+
+api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
+api.get('/api/easel/payroll/:scenario', c => read(c, ctx => payrollView(ctx, c.req.param('scenario'))))
 
 api.get('/api/easel/export', async c => {
  const ctx = await open(c), bytes = await openExport(ctx)
@@ -137,7 +145,7 @@ api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.
 api.post('/api/easel/notifications/preference', async c => {
  const ctx = await open(c), result = await savePreference(ctx, c.env, await body(c))
  await commit(ctx)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 api.post('/api/easel/notifications/:id/retry', async c => {
  const ctx = await open(c)
@@ -159,7 +167,7 @@ api.post('/api/easel/connections/nook/:op', async c => {
 api.post('/api/easel/gauge/:op', async c => {
  const ctx = await open(c), result = await gaugeUtilization(ctx, c.env, c.req.param('op'), await body(c))
  await commit(ctx)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 
 api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
@@ -178,7 +186,7 @@ api.get('/api/easel/parallel-month/template/:file', async c => {
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="parallel-month.csv"' } })
 })
-api.get('/api/easel/parallel-month/:id', c => read(c, ctx => parallelView(ctx, c.req.param('id'))))
+api.get('/api/easel/parallel-month/:id', c => read(c, ctx => { requirePayDetail(ctx.x); return parallelView(ctx, c.req.param('id')) }))
 
 api.get('/api/easel/metric-tasks', c => read(c, metricTaskList))
 
@@ -257,7 +265,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  requireThat(ctx.x.role, 'Finance has not added you to this plan yet', 403)
  const pack = get(ctx.s, 'pack', c.req.param('id'), 'pack')
  requireThat(pack.status === 'published', 'This pack is not published yet', 409)
- const sn = await snapshot(ctx.db, pack.snapshot)
+ const sn = paySafePack(await snapshot(ctx.db, pack.snapshot))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  if (c.req.param('format') === 'document.xlsx') return spreadsheet(packWorkbook(sn), `easel-review-${pack.month}`)
  const csv = c.req.param('format') === 'document.csv'
@@ -265,12 +273,13 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
  const b = await body(c)
  const op = c.req.param('op')
+ if (op.startsWith('parallel-')) requirePayDetail(ctx.x)
  let result: Data | undefined
  for (const command of commands) { result = await command(ctx, op, b); if (result !== undefined) break }
  requireThat(result !== undefined, 'Unknown action', 404)
@@ -283,18 +292,19 @@ api.post('/api/easel/command/:op', async c => {
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
  await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll', 'Unknown move-in kit', 404)
  const ctx = await open(c)
- const b = await body(c, kit === 'workbook' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : workbookCommand)(ctx, c.req.param('op'), b)
+ requirePayDetail(ctx.x)
+ const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
+ const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  await commit(ctx)
- if (!step.kit) return c.json(step.result)
+ if (!step.kit) return c.json(await erasedView(ctx.db, step.result))
  const structureBefore = await load(ctx.db)
  let outcome: unknown
  try { outcome = await step.kit() } catch (e) {
@@ -307,7 +317,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
  await commit(after, structureBefore.state, structureBefore.revision)
  await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 
 api.post('/api/easel/invite', async c => {

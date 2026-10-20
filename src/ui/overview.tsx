@@ -1,3 +1,4 @@
+import { Headcount } from './headcount'
 import { useDate } from './shared'
 import { ActualHistoryOverlay } from './history'
 import { FinancingSchedule } from './financing'
@@ -81,6 +82,7 @@ export function Overview({ state, refresh }: Shared) {
     </section>}
     {calc && !department && <FinancingSchedule calculation={calc} currency={currency} />}
     {calc && !department && <Statements calculation={calc} currency={currency} />}
+    {view && <Headcount scenario={id} state={state} department={department} />}
     {view && <ActualHistoryOverlay view={view} department={department} />}
     {calc && <AssetSchedule calculation={{ ...calc, assets: (calc.assets ?? []).filter((a: D) => !department || a.department === department) }} currency={currency} />}
    </div>

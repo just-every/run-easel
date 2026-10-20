@@ -18,6 +18,7 @@ const balanceLines: StatementLine[] = [
  ['capitalPayables', 'Capital payables'],
  ['nonCashReserve', 'Non-cash reserve'],
  ['deferredRevenue', 'Deferred revenue'],
+ ['salesTaxPayable', 'Sales tax payable'],
  ['accruedLiabilities', 'Accrued payroll and bonuses'],
  ['debt', 'Debt'],
  ['liabilities', 'Total liabilities', true],
@@ -32,6 +33,7 @@ const cashFlowLines: StatementLine[] = [
  ['netIncome', 'Net income'],
  ['nonCashExpense', 'Non-cash expense'],
  ['prepaidChange', 'Prepaid expense change'],
+ ['salesTaxPayableChange', 'Sales tax payable change'],
  ['accruedLiabilitiesChange', 'Accrued liability change'],
  ['receivablesChange', 'Receivables change'],
  ['inventoryChange', 'Inventory change'],
@@ -51,6 +53,7 @@ const cashFlowLines: StatementLine[] = [
 export function Statements({ calculation, currency }: { calculation: D; currency: string }) {
  const displayDate = useDate()
  return <>
+  {calculation.taxes && <p className="notice">{calculation.taxes.label}. Employer taxes are separate from owner-supplied on-costs. Income tax approximates taxable income from accounting profit; sales tax is a cash pass-through.</p>}
   <WorkingCapital calculation={calculation} currency={currency} />
   {calculation.contracts && <section className="card">
    <h2>Bookings, billings, revenue and collections</h2>

@@ -14,7 +14,7 @@ Your posted accounting stays in your accounting system. Easel keeps the assumpti
 
 ## What Easel does not do
 
-Easel does not post journals, calculate payroll, tax or statutory statements, consolidate entities, convert currencies or evaluate spreadsheet formulas. On-costs and tax assumptions are your inputs, and Easel labels them as yours.
+Easel does not post journals, calculate payroll, tax or statutory statements, consolidate entities, convert currencies or run spreadsheet macros. On-costs and tax assumptions are your inputs, and Easel labels them as yours.
 
 ## Where to go next
 

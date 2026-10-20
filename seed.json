@@ -216,13 +216,43 @@
       "clauses": [
         "REV-004"
       ]
+    },
+    {
+      "id": "compensation-access",
+      "clauses": [
+        "PEOPLE-005"
+      ]
+    },
+    {
+      "id": "person-erasure",
+      "clauses": [
+        "ERASE-001"
+      ]
+    },
+    {
+      "id": "payroll-file-import",
+      "clauses": [
+        "PEOPLE-007"
+      ]
+    },
+    {
+      "id": "headcount-plan-actual",
+      "clauses": [
+        "PEOPLE-006"
+      ]
+    },
+    {
+      "id": "formula-model-import",
+      "clauses": [
+        "SHEET-003"
+      ]
     }
   ],
   "nonGoals": [
     "Multi-entity consolidation or currency conversion",
     "Posting journals or correcting the ledger",
     "Payroll, tax or statutory statement calculation",
-    "Evaluating spreadsheet formulas or macros",
+    "Executing spreadsheet macros",
     "Model-supplied arithmetic"
   ],
   "externals": [

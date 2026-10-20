@@ -4,17 +4,17 @@
 import { find, requireThat, type Access, type Actor, type Data, type State } from './types'
 
 function currentAccess(s: State, a: Actor): Access {
- if (a.baseRole === 'owner' || a.baseRole === 'admin') return { actor: a, role: 'finance', departments: [] }
+ if (a.baseRole === 'owner' || a.baseRole === 'admin') return { actor: a, role: 'finance', departments: [], payDetail: a.baseRole === 'owner' || find(s, 'pay-grant', a.email)?.granted === true }
  const m = find(s, 'member', a.email)
- if (!m || !m.active || m.role === 'finance') return { actor: a, role: null, departments: [] }
- return { actor: a, role: m.role, departments: m.role === 'contributor' ? m.departments ?? [] : [] }
+ if (!m || !m.active || m.role === 'finance') return { actor: a, role: null, departments: [], payDetail: false }
+ return { actor: a, role: m.role, departments: m.role === 'contributor' ? m.departments ?? [] : [], payDetail: m.role === 'contributor' && find(s, 'pay-grant', a.email)?.granted === true }
 }
 
 export function access(s: State, a: Actor): Access {
  const current = currentAccess(s, a)
  if (!a.token) return current
- if (current.role !== a.token.role) return { ...current, role: null, departments: [] }
- return { ...current, departments: current.departments.filter(id => a.token!.departments.includes(id)) }
+ if (current.role !== a.token.role) return { ...current, role: null, departments: [], payDetail: false }
+ return { ...current, payDetail: current.payDetail === true && a.token.payDetail, departments: current.departments.filter(id => a.token!.departments.includes(id)) }
 }
 
 export function requireMember(x: Access) {
@@ -35,7 +35,12 @@ export const seesDepartmentDetail = (x: Access, department: string) =>
 
 /** Individual positions and salaries are private to finance and the department's own contributors. */
 export function visibleInput(x: Access, kind: string, input: Data) {
+ if (kind === 'workbook-model') return x.role === 'finance' && x.payDetail === true
+ if (kind === 'position' && !seesPayDetail(x, input.department)) return false
  if (x.role === 'finance') return true
- if (x.role !== 'contributor' || kind === 'debt' || kind === 'equity') return false
+ if (x.role !== 'contributor' || kind === 'debt' || kind === 'equity' || kind === 'tax-policy') return false
  return x.departments.includes(input.department)
 }
+
+export const seesPayDetail = (x: Access, department: string) => x.payDetail === true && seesDepartmentDetail(x, department)
+export function requirePayDetail(x: Access) { requireThat(x.payDetail === true, 'Pay detail permission is required for this complete record or export', 403) }

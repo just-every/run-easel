@@ -6,7 +6,7 @@ import { promisify } from 'node:util'
 import { execFile, spawn } from 'node:child_process'
 import { cp, mkdir, mkdtemp, readdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { tmpdir, loadavg, platform } from 'node:os'
+import { tmpdir } from 'node:os'
 import { createServer } from 'node:net'
 
 const source = resolve(new URL('..', import.meta.url).pathname)
@@ -41,12 +41,6 @@ export async function command(root, args, { expected = 0 } = {}) {
 }
 
 export async function start(root, port, mode = 'dev') {
- // Setup can finish after another lane consumes the shared Mac's headroom.
- // Wait before the single server launch; do not override rer's capacity guard.
- if (platform() === 'darwin' && loadavg()[0] > 36) {
-  console.log('Waiting for shared-machine load <=36 before starting the local server')
-  while (loadavg()[0] > 36) await new Promise(resolve => setTimeout(resolve, 15000))
- }
  const child = spawn(process.execPath, __rerTestEntryArgs([__rerTestEntry, mode, '--port', String(port)]), { cwd: root, env: env(), detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
  let output = ''
  for (const stream of [child.stdout, child.stderr]) stream.on('data', c => { output += c })

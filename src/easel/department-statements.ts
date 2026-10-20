@@ -1,5 +1,5 @@
 // Monthly department statements are scoped before they are stored or mailed.
-import { requireFinance, requireMember } from './access'
+import { requireFinance, requireMember, seesPayDetail } from './access'
 import type { Context } from './context'
 import { departments, workspace } from './model'
 import { monthLabel } from './months'
@@ -23,21 +23,31 @@ export function queueDepartmentStatements(c: Context, month: string) {
 const canRead = (c: Context, s: Data) => c.x.role === 'finance' || c.x.role === 'contributor' && c.x.departments.includes(s.department)
 
 export function statementWork(c: Context, s: Data): Data {
- const rows = (s.rows ?? []).map((r: Data) => ({ ...r, explanation: find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`) ?? null }))
+ const rows = (s.rows ?? []).map((r: Data) => {
+  const explanation = find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`) ?? null
+  const restricted = (r.payroll || find(c.s, 'line', r.line)?.payroll) && !seesPayDetail(c.x, s.department)
+  return { ...r, citations: restricted ? [] : r.citations, explanation: restricted ? null : explanation }
+ })
  const metricTasks = all(c.s, 'metric-task').filter(t => t.department === s.department && t.status === 'open').map(t => ({ id: t.id, name: t.name, owner: t.owner, due: t.due, revision: t.revision, evidence: { summary: t.evidence.summary } }))
  const submissions = all(c.s, 'submission').filter(t => t.department === s.department && ['requested', 'returned'].includes(t.status)).map(t => ({ id: t.id, name: `Submit department budget · ${s.departmentName}`, owner: 'Department contributors', due: t.due, evidence: { summary: `Submission ${t.status}; requested ${t.requestedAt}.` } }))
  const actions = all(c.s, 'pack').filter(p => p.status === 'published').flatMap(p => p.decisions.filter((d: Data) => p.progress?.[d.id]?.status !== 'done' && (find(c.s, 'pack-action-department', `${p.id}|${d.id}`)?.department ?? d.department ?? '') === s.department).map((d: Data) => ({ id: `${p.id}|${d.id}`, name: d.text, owner: d.owner, due: d.due, evidence: { summary: `Published action in ${p.title}.` } })))
  const calendarTasks = all(c.s, 'calendar-task').filter(t => t.department === s.department && t.status === 'open').map(t => ({ id: t.id, name: t.name, owner: t.owner, due: t.due, evidence: { summary: `Planning calendar task; due ${t.due}.` } }))
  const tasks = [...metricTasks, ...submissions, ...calendarTasks, ...actions]
- const toConfirm = rows.filter((r: Data) => r.explanation?.status !== 'confirmed' && (r.variance !== 0 || r.explanation))
+ const toConfirm = rows.filter((r: Data) => {
+  const explanation = find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`)
+  return explanation?.status !== 'confirmed' && (r.variance !== 0 || explanation)
+ })
  return { ...s, rows, topVariances: [...rows].sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance)).slice(0, 5), tasks, toConfirm }
 }
 
 export async function captureDepartmentStatement(c: Context, id: string) {
+ requireFinance(c.x)
  const statement = get(c.s, 'department-statement', id)
  if (statement.rows !== null) return statement
- const v = await variance(c, statement.month)
- const rows = v.rows.filter(r => r.department === statement.department).map(r => ({ key: r.key, line: r.line, lineName: r.lineName, actual: r.actual, budget: r.budget, variance: r.variance, citations: r.citations }))
+ // Capture complete evidence internally even when the finance operator cannot
+ // read pay. App reads, workbooks and each mail recipient apply their own grant.
+ const v = await variance({ ...c, x: { ...c.x, payDetail: true } }, statement.month)
+ const rows = v.rows.filter(r => r.department === statement.department).map(r => ({ key: r.key, line: r.line, lineName: r.lineName, payroll: r.payroll || find(c.s, 'line', r.line)?.payroll === true, actual: r.actual, budget: r.budget, variance: r.variance, citations: r.citations }))
  const captured = { ...statement, rows, capturedAt: c.now }
  put(c.s, 'department-statement', id, captured)
  c.activity.push({ action: 'department-statement-captured', record: id, detail: { month: statement.month, department: statement.department, rows: rows.length } })

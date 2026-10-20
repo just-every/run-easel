@@ -6,7 +6,7 @@ import { assertHistorySources } from './history-sources'
 import { referenceMonths, historySchedule } from './history-schedules'
 import { range } from './months'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
-import { requireDepartment, requireFinance, requireMember } from './access'
+import { requireDepartment, requirePayDetail, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { INPUT_KINDS, inputDepartment, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
 import { cents } from './units'
@@ -42,9 +42,13 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if ((INPUT_KINDS as readonly string[]).includes(op)) {
   requireMember(x)
   const kind = op as InputKind
+  if(kind==='tax-policy' || kind==='workbook-model') requireFinance(x)
+  if(kind==='workbook-model') requirePayDetail(x)
+  if (kind === 'position' || b.line && get(s, 'line', b.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, b.scenario)
   const prior = b.id ? get(s, kind, b.id) : undefined
   requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
+  if (prior?.line && get(s, 'line', prior.line).payroll) requirePayDetail(x)
   if (prior) requireEditable(s, x, scenario, inputDepartment(kind, prior))
   const originId = prior?.originId ?? uid()
   const value: Data = { ...validateInput(s, kind, { ...b, originId }, scenario.id), scenario: scenario.id, originId }
@@ -54,6 +58,11 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    Object.assign(value, { gaugeActuals: prior.gaugeActuals, gaugeUndo: null })
   }
   if (kind === 'schedule' && b.scenarioRevision !== undefined) requireThat(Number(b.scenarioRevision) === scenario.revision, 'The plan changed; reload before saving the grid', 409)
+  if (kind === 'schedule' && prior?.workbookOrigin) {
+   requireThat(!value.history && value.line===prior.line && value.department===prior.department,'Keep workbook rows on their reviewed line and department',409)
+   for (const month of Object.keys(prior.provenance?.formulas ?? {})) requireThat(value.values[month]===prior.values[month],'Edit the source driver instead of a workbook formula cell',409)
+   Object.assign(value,{workbookOrigin:prior.workbookOrigin,workbookCells:prior.workbookCells,provenance:prior.provenance})
+  }
   if (kind === 'schedule' && prior && !value.history) {
    for (const [m, parts] of Object.entries(prior.subrows ?? {})) requireThat(!(parts as Data[]).length || value.values[m] === prior.values[m], 'Edit split cells through the planning grid', 409)
    Object.assign(value, { notes: prior.notes ?? {}, subrows: prior.subrows ?? {}, gridRevisions: prior.gridRevisions ?? {} })
@@ -72,11 +81,16 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if (op === 'input-delete') {
   requireMember(x)
   const kind = choice(b.kind, INPUT_KINDS, 'an input kind')
+  if(kind==='tax-policy' || kind==='workbook-model') requireFinance(x)
+  if(kind==='workbook-model') requirePayDetail(x)
   const input = get(s, kind, b.id)
+  if (kind === 'position' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
   requireThat(kind !== 'revenue' || !all(s, 'expense').some(e => e.scenario === scenario.id && e.revenueOrigin === input.originId), 'Remove linked acquisition or inventory costs before deleting this revenue driver', 409)
   requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
+  if (kind === 'position') requireThat(!all(s,'position').some(p => p.scenario === scenario.id && p.backfillOrigin === input.originId), 'Remove the backfill link before deleting this position',409)
+  if(kind==='workbook-model') requireThat(!all(s,'schedule').some(row=>row.scenario===scenario.id&&row.workbookOrigin===input.originId),'Remove linked workbook schedules before deleting the source graph',409)
   remove(s, kind, input.id)
   bump(c, scenario, `${kind}-removed`, input.id, { name: input.name ?? input.title })
   return { removed: input.id }
@@ -211,6 +225,7 @@ function requireProposalScope(s: State, x: import('./types').Access, p: Data) {
   for (const origin of new Set([...before.keys(), ...after.keys()])) {
    const a = before.get(origin), b = after.get(origin)
    if (a && b && value(a) === value(b)) continue
+   if (kind === 'position' || [a, b].some(row => row?.line && get(s, 'line', row.line).payroll)) requirePayDetail(x)
    requireThat(kind !== 'allocation', 'Only finance can propose allocation changes', 403)
    for (const row of [a, b]) if (row) requireDepartment(x, inputDepartment(kind, row)!)
   }

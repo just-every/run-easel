@@ -1,6 +1,7 @@
 // Loading and saving the editable model. Every save is one D1 batch fenced by
 // the model revision read at load and by the actor's current native session,
 // so a concurrent change or a revoked session writes nothing.
+import { erasedView } from './erasure'
 import { actorAuthority, changeEvent, eventStatement } from './audit-write'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { tokenActor, tokenAuthority } from './token-auth'
@@ -79,10 +80,10 @@ export async function readFence(db: D1Database, a: Actor, revision: number) {
 export async function snapshot(db: D1Database, id: string) {
  const row = await db.prepare('SELECT * FROM e_snapshots WHERE id=?').bind(id).first<any>()
  requireThat(row, 'Snapshot not found', 404)
- return { id: row.id, kind: row.kind, scenario: row.scenario, label: row.label, actor: row.actor, at: row.at, sha256: row.sha256, body: JSON.parse(row.body) }
+ return erasedView(db, { id: row.id, kind: row.kind, scenario: row.scenario, label: row.label, actor: row.actor, at: row.at, sha256: row.sha256, body: JSON.parse(row.body) })
 }
 
 export async function snapshotList(db: D1Database) {
  const { results } = await db.prepare('SELECT id,kind,scenario,label,actor,at,sha256 FROM e_snapshots ORDER BY at, id').all()
- return results as Data[]
+ return erasedView(db, results as Data[])
 }

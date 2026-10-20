@@ -1,3 +1,4 @@
+import { erasedView } from './erasure'
 import { versionStructure } from './structure-versions'
 // Stateless Streamable HTTP: JSON responses, native identity, and a closed
 // tool list. No command supplied by a client is dispatched directly.
@@ -36,13 +37,14 @@ const tools = [
  tool('proposal-create', 'Create your proposal from a visible working scenario.', ['from', 'name', 'request']),
  tool('proposal-submit', 'Submit your proposal for finance review; never promote it.', ['id'], ['summary']),
  tool('revenue', 'Add or edit a revenue driver in your working proposal: volume, customers, seats, usage, services, milestones, backlog or contract. Contract requires startDate (YYYY-MM-DD in start month), contractValue, termMonths (1–120), billingCadence (monthly/quarterly/annual upfront) and dsoDays (0–365 exact days). Services assumes all active department positions are billable. Optional collectionMethod is lag, dso or curve; collectionCurve installments carry days and percent, summing to 100%. Noncontract invoice dates are month end. Amounts and percentages are decimal strings.', ['scenario', 'name', 'kind', 'line', 'department', 'start'], ['collectionMethod', 'collectionCurve', 'id', 'startDate', 'contractValue', 'termMonths', 'billingCadence', 'dsoDays', 'collectionLag', 'startVolume', 'growthPercent', 'rate', 'startCustomers', 'newPerMonth', 'newPerRep', 'repDepartment', 'rampMonths', 'churnPercent', 'arpa', 'startSeats', 'expansionPercent', 'price', 'startUsage', 'unitPrice', 'monthlyHours', 'utilizationPercent', 'hourlyRate', 'milestones', 'openingBacklog', 'monthlyAdditions', 'burnPercent']),
- tool('position', 'Add or edit a position in your working proposal. Optional payDay (1–31, clamped) and payMonthOffset (0–3) accrue earned payroll until its entered pay date.', ['scenario', 'title', 'department', 'line', 'start', 'annualSalary'], ['id', 'holder', 'end', 'onCostPercent', 'payDay', 'payMonthOffset']),
+ tool('position', 'Add or edit a position in your working proposal. Optional payDay (1–31, clamped) and payMonthOffset (0–3) accrue earned payroll until its entered pay date.', ['scenario', 'title', 'department', 'line', 'start', 'annualSalary'], ['id', 'holder', 'end', 'onCostPercent', 'payDay', 'payMonthOffset','employmentType','taxYtdWages']),
  tool('expense', 'Add or edit an expense in your working proposal: recurring or one-off requires amount; acquisition requires revenueOrigin and cac; inventory requires revenueOrigin, unitCost and inventoryDays. Linked revenue must be in the same department. Prepaid requires total amount, amortizationMonths and optional paymentMonth at or before service start; bonus requires quarterly amount and first payMonth. Optional paymentMethod dpo/terms uses dpoDays/paymentTermDays after invoice month end. Monetary values and whole days/month counts are strings.', ['scenario', 'name', 'line', 'department', 'kind', 'start'], ['paymentMethod','dpoDays','paymentTermDays','amortizationMonths','paymentMonth','payMonth','id', 'end', 'amount', 'revenueOrigin', 'cac', 'unitCost', 'inventoryDays']),
  tool('schedule', 'Add or edit entered monthly amounts or an actuals-reference schedule in your working proposal; source months must be complete.', ['scenario', 'name', 'line', 'department'], ['values', 'history', 'id']),
  tool('asset-category', 'Finance: add or edit an asset category in your own working proposal.', ['scenario', 'name', 'usefulLifeMonths'], ['id']),
  tool('asset', 'Add or edit an asset in your own working proposal, within your departments.', ['scenario', 'name', 'category', 'department', 'line', 'kind', 'cost', 'start'], ['id', 'paymentMonth', 'openingAccumulated', 'remainingLifeMonths', 'disposalMonth', 'disposalProceeds']),
  tool('allocation', 'Finance: add or edit allocation rules in your own working proposal.', ['scenario', 'name', 'sourceDepartment', 'basis', 'targets'], ['id']),
  tool('debt', 'Finance: plan borrowing and repayment in your own draft proposal; never execute a payment.', ['scenario','name','debtKind','line','department','maturity'], ['id','start','opening','limit','rateKind','annualRate','baseName','baseRates','spreadPercent','draws','repayments','amortization','amortizationStart','termMonths','covenants']),
+ tool('tax-policy', 'Finance: configure US tax planning estimates in your own draft proposal, with explicit state/employer assumptions; never file or pay taxes.', ['scenario','line','department','sutaPercent','sutaBase','stateIncomePercent'], ['id','name','year','socialSecurityPercent','socialSecurityBase','medicarePercent','futaPercent','futaBase','federalIncomePercent','openingLoss','lossOffsetPercent','salesTaxPercent','salesTaxRemitLagMonths']),
  tool('equity', 'Finance: plan an equity raise in your own draft proposal.', ['scenario','name','month','amount'], ['id']),
  tool('input-delete', 'Remove an input from your own working proposal.', ['kind', 'id']),
  tool('comment', 'Comment on a visible scenario within your department authority.', ['scenario', 'department', 'text']),
@@ -131,7 +133,7 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
   if (!matches(params.arguments ?? {}, selected.inputSchema)) return reply({ error: { code: -32602, message: 'Arguments do not match the tool input schema' } })
   try {
    const before = new Map(state)
-   const result = await invoke(c, params.name, params.arguments ?? {})
+   const result = await erasedView(c.db, await invoke(c, params.name, params.arguments ?? {}))
    if (c.activity.length || c.snapshots.length) await versionStructure(c, before, revision)
    if (c.activity.length || c.snapshots.length) await save(env.DB, person, before, state, revision, c.activity, c.snapshots, c.x.role === 'finance')
    else await readFence(env.DB, person, revision)

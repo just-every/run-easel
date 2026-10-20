@@ -1,3 +1,5 @@
+import { headcountInput } from './headcount-input'
+import { taxInput, positionTaxInput } from './tax-input'
 import { collectionInput, paymentInput, payrollInput, workingExpenseInput } from './working-capital-input'
 import { commercialInput } from './commercial-input'
 import { validateHistoryInput } from './history-input'
@@ -11,7 +13,7 @@ import { cents, decimal, hundredths, percentBps } from './units'
 import { all, choice, find, get, integer, optionalText, requireThat, text, type Access, type Data, type State } from './types'
 import type { Line, Model } from './engine'
 
-export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity'] as const
+export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity', 'tax-policy', 'workbook-model'] as const
 export type InputKind = typeof INPUT_KINDS[number]
 
 export function workspace(s: State) {
@@ -33,7 +35,7 @@ export function model(s: State, scenarioId: string): Model {
  return {
   workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon },
   lines: lines(s), departments: departments(s), scenario,
-  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity') },
+  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
 }
 
@@ -60,6 +62,9 @@ const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
 
 /** Validates one input against the model's lines and departments. Returns the stored value. */
 export function validateInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
+ if (kind === 'workbook-model') { requireThat(false, 'Workbook source graphs are created through the reviewed import door',409) }
+ if (kind === 'tax-policy') return taxInput(s,b,scenario)
+ if(b.line)requireThat(!all(s,'tax-policy').some(p=>p.scenario===scenario&&p.line===b.line),'This line is reserved for the income-tax estimate',409)
  if (kind === 'debt' || kind === 'equity') return validateFinancingInput(s, kind, b, scenario)
  if (kind === 'asset-category' || kind === 'asset') return validateAssetInput(s, kind, b, scenario)
  if (kind === 'revenue') {
@@ -78,8 +83,10 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  }
  if (kind === 'position') {
   const start = planMonth(s, b.start, 'Start month', scenario)
+  const policy=all(s,'tax-policy').find(p=>p.scenario===scenario)
+  if(policy && workspace(s).planStart.slice(5)!=='01' && start<workspace(s).planStart && b.employmentType!=='1099') requireThat(b.taxYtdWages!==undefined && b.taxYtdWages!=='','Enter prior year-to-date wages for a continuing W-2 position',409)
   if (b.payDay !== undefined && b.payDay !== '') requireThat(!get(s, 'line', b.line).nonCash, 'Accrued payroll requires a cash salary line')
-  return { ...payrollInput(b), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
+  return { ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
   const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory', 'prepaid', 'bonus'] as const, 'an expense kind')
@@ -123,7 +130,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
 }
 
 /** The department an input belongs to, for contributor scope. Allocations belong to finance. */
-export const inputDepartment = (kind: InputKind, value: Data) => (['allocation', 'asset-category', 'debt', 'equity'].includes(kind)) ? null : value.department as string
+export const inputDepartment = (kind: InputKind, value: Data) => (['allocation', 'asset-category', 'debt', 'equity', 'tax-policy'].includes(kind)) ? null : value.department as string
 
 /** Whether this person may change this department's inputs in this scenario right now. */
 export function requireEditable(s: State, x: Access, scenario: Data, dept: string | null) {
