@@ -11,6 +11,8 @@ export type Actor = {
  name: string
  token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; write: boolean }
  agent?: { name: string; via: string }
+ /** The cron scheduler acting for the owner/admin who configured it. */
+ scheduler?: { operator: string; email: string }
  session: string
  version: number
  /** Base operator role: owner and admin plan as finance. */

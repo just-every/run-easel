@@ -20,6 +20,9 @@ import { access, requireFinance, requireMember } from './access'
 import { actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { cycle } from './cycle'
+import { calendar, calendarView } from './calendar'
+import { channelStatus, nookConnection } from './calendar-channels'
+import { deliverCalendar } from './calendar-dispatch'
 import { departmentStatements, departmentStatementList, departmentStatementView, queueDepartmentStatements } from './department-statements'
 import { dispatchDepartmentStatement } from './department-statement-mail'
 import { departmentStatementWorkbook } from './department-statement-documents'
@@ -126,6 +129,14 @@ api.post('/api/easel/connections/gauge/:op', async c => {
   await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
  }
  return c.json(await gaugeStatus(ctx, c.env))
+})
+api.get('/api/easel/calendar', c => read(c, ctx => calendarView(ctx, c.env)))
+api.post('/api/easel/connections/nook/:op', async c => {
+ const ctx = await open(c), input = await body(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const extra = await nookConnection(ctx, c.env, c.req.param('op'), input)
+ await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ return c.json((await channelStatus(ctx, c.env)).nook)
 })
 api.post('/api/easel/gauge/:op', async c => {
  const ctx = await open(c), result = await gaugeUtilization(ctx, c.env, c.req.param('op'), await body(c))
@@ -236,7 +247,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -252,6 +263,7 @@ api.post('/api/easel/command/:op', async c => {
  const statementIds = op === 'close-month' && !result.alternativeBudget ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
+ if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
  return c.json(result)
 })
 

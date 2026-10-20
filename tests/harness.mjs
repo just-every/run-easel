@@ -31,7 +31,7 @@ export async function harness(options = {}) {
  const mf = new Miniflare({
   ...convertV4MiniflareOptions({
    host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],
-   d1Databases: { DB: 'easel' },
+   d1Databases: { DB: 'easel' }, ...(options.outbound ? { outboundService: options.outbound } : {}),
    serviceBindings: { ...options.serviceBindings, TEST_CLOCK: async () => new Response(options.now?.() ?? new Date().toISOString()), TEST_MAIL: async request => { const message = await request.json(); messages.push(message); return options.mailResponse ? options.mailResponse(message, request) : Response.json({ id: crypto.randomUUID() }) } },
    bindings: { ...options.bindings, AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'synthetic-local-test-bootstrap-token-0123456789', MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>' },
   }),

@@ -27,7 +27,8 @@ export function statementWork(c: Context, s: Data): Data {
  const metricTasks = all(c.s, 'metric-task').filter(t => t.department === s.department && t.status === 'open').map(t => ({ id: t.id, name: t.name, owner: t.owner, due: t.due, revision: t.revision, evidence: { summary: t.evidence.summary } }))
  const submissions = all(c.s, 'submission').filter(t => t.department === s.department && ['requested', 'returned'].includes(t.status)).map(t => ({ id: t.id, name: `Submit department budget · ${s.departmentName}`, owner: 'Department contributors', due: t.due, evidence: { summary: `Submission ${t.status}; requested ${t.requestedAt}.` } }))
  const actions = all(c.s, 'pack').filter(p => p.status === 'published').flatMap(p => p.decisions.filter((d: Data) => p.progress?.[d.id]?.status !== 'done' && (find(c.s, 'pack-action-department', `${p.id}|${d.id}`)?.department ?? d.department ?? '') === s.department).map((d: Data) => ({ id: `${p.id}|${d.id}`, name: d.text, owner: d.owner, due: d.due, evidence: { summary: `Published action in ${p.title}.` } })))
- const tasks = [...metricTasks, ...submissions, ...actions]
+ const calendarTasks = all(c.s, 'calendar-task').filter(t => t.department === s.department && t.status === 'open').map(t => ({ id: t.id, name: t.name, owner: t.owner, due: t.due, evidence: { summary: `Planning calendar task; due ${t.due}.` } }))
+ const tasks = [...metricTasks, ...submissions, ...calendarTasks, ...actions]
  const toConfirm = rows.filter((r: Data) => r.explanation?.status !== 'confirmed' && (r.variance !== 0 || r.explanation))
  return { ...s, rows, topVariances: [...rows].sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance)).slice(0, 5), tasks, toConfirm }
 }

@@ -47,6 +47,10 @@ jobs:
         run: node tests/metric-tasks-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/metric-tasks
+      - name: CYCLE-001 planning calendar at desktop and phone widths
+        run: node tests/calendar-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/calendar
       - name: FIN-001 linked statements at desktop and phone widths
         run: node tests/statements-browser.mjs
         env:

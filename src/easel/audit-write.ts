@@ -10,6 +10,7 @@ const auditValue = (row?: Row) => row?.kind === 'dashboard-layout'
  : row?.value ?? null
 
 export function actorAuthority(actor: Actor) {
+ if (actor.scheduler) return { type: 'scheduler', name: 'scheduler:calendar', via: 'schedule', attributedTo: actor.scheduler.email }
  return { type: actor.agent ? 'agent' : 'person', name: actor.agent?.name ?? actor.name, via: actor.token ? 'api-token' : actor.agent?.via ?? 'session', ...(actor.token ? { tokenId: actor.token.id } : {}) }
 }
 

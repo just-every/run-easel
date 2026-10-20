@@ -9,15 +9,17 @@ async function key(secret: string) {
 }
 const encode = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
 const decode = (text: string) => Uint8Array.from(atob(text), c => c.charCodeAt(0))
-const aad = new TextEncoder().encode('easel:gauge:utilization:read:v1')
-export async function sealConnection(secret: string, token: string) {
+const GAUGE = 'easel:gauge:utilization:read:v1'
+export async function sealConnection(secret: string, token: string, purpose = GAUGE) {
+ const aad = new TextEncoder().encode(purpose)
  const iv = crypto.getRandomValues(new Uint8Array(12))
  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, await key(secret), new TextEncoder().encode(token))
  return `${encode(iv)}.${encode(new Uint8Array(ciphertext))}`
 }
-export async function openConnection(secret: string, sealed: string) {
+export async function openConnection(secret: string, sealed: string, purpose = GAUGE, provider = 'Gauge') {
+ const aad = new TextEncoder().encode(purpose)
  try {
   const [iv, data] = sealed.split('.')
   return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode(iv), additionalData: aad }, await key(secret), decode(data)))
- } catch { throw new Error('Gauge credential could not be opened; reconnect in Connections') }
+ } catch { throw new Error(`${provider} credential could not be opened; reconnect in Connections`) }
 }

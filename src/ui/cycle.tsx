@@ -2,6 +2,7 @@ import { useDate } from './shared'
 import { useState } from 'react'
 import type { Shared } from './app'
 import { MetricTasks } from './metric-tasks'
+import { PlanningCalendar } from './calendar'
 import { Action, command, Field, Form, monthLabel, Person, Table, type D } from './shared'
 
 /** Department submissions for the working budget, then approval. */
@@ -46,6 +47,7 @@ export function Cycle({ state, refresh }: Shared) {
    </Form>}
   </section>
   {budget.status === 'frozen' && <section className="card"><h2>After approval</h2>{budget.alternativeBudget ? <p>This alternative budget opened its own forecast, available in Plan and Overview. The operating budget, monthly review and metric rules are unchanged.</p> : <p>The operating forecast opened from this approved budget. Close months with actuals under Review; prior forecasts are kept at each close.</p>}</section>}
+  {me.role !== 'viewer' && <PlanningCalendar state={state} />}
   {me.role !== 'viewer' && <MetricTasks state={state} />}
  </>
 }

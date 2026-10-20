@@ -20,6 +20,7 @@ export async function actor(request: Request, original: Bindings): Promise<Actor
 /** SQL that is true only while the actor's session and operator are still current. */
 export function authority(a: Actor, finance = false) {
  if (a.token) return tokenAuthority(a, finance)
+ if (a.scheduler) return { sql: "EXISTS(SELECT 1 FROM oa_operators o WHERE o.id=? AND o.status='active' AND o.role IN ('owner','admin'))", params: [a.scheduler.operator] }
  return {
   sql: `EXISTS(SELECT 1 FROM oa_sessions se JOIN oa_operators o ON o.id=se.operator_id WHERE se.id=? AND o.id=? AND o.version=se.operator_version AND o.version=? AND o.role=? AND o.status='active' AND se.revoked_at IS NULL AND se.expires_at>unixepoch()*1000${finance ? " AND o.role IN ('owner','admin')" : ''})`,
   params: [a.session, a.id, a.version, a.baseRole],
