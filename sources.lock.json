@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "2f4694e66eb65e2f31039a3040affdf100fd694b07b62979f8dba7ec9ec22f41",
+      "sha256": "69e82dd57f6a7bc87c97d7770bef9cefd5f39b4a82d05fee5f617b8fe5e63a1f",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "51797480ab9fd73ff3fd426edb14928985918fe2412585cf8cef8fb6f29a3d75",
+      "sha256": "f551e798a8752e8afb38332271f8790c6e3b6e84689aaf50fe1c4b0b462e6ff1",
       "executable": false
     },
     "DEMO.md": {
@@ -2847,7 +2847,7 @@
       "executable": false
     },
     "src/ui/actuals.tsx": {
-      "sha256": "eef4542dae048555609d6ec557513dcedb151ca59e06c266b38b1ec078d7cec0",
+      "sha256": "fed05ff9b3ca42bd8c8b04dd800e708286238a57fffc60b9d7bef37cf78551cf",
       "executable": false
     },
     "src/ui/app.tsx": {
@@ -2863,7 +2863,7 @@
       "executable": false
     },
     "src/ui/balance-actuals.tsx": {
-      "sha256": "66ec82eee4e919592e8791323a1f523550f0ca9e745ea961c018a66bc496d29c",
+      "sha256": "e77a9e1d070e280668df2b7d9836ac1b4f21d8d097c1cb269ae50152393e3881",
       "executable": false
     },
     "src/ui/calendar.tsx": {

@@ -42,7 +42,7 @@ export function Actuals({ state, refresh }: Shared) {
    </Table>
    {reconciliation.unmapped.length > 0 && <p role="alert">Unmapped accounts: {reconciliation.unmapped.map((u: D) => `${u.period}: ${u.account} (${u.rows} rows; ${u.reason})`).join(', ')}</p>}
   </section>}
-  {reconciliation && <BalanceActuals trials={reconciliation.trialBalances} currency={currency} />}
+  {reconciliation && <BalanceActuals trials={reconciliation.trialBalances} currency={currency} lines={state.lines} batches={state.batches} />}
   <WorkbookImport state={state} refresh={refresh} />
  </>
 }

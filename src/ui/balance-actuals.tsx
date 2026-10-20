@@ -1,6 +1,7 @@
+import { balanceTarget } from '../easel/balance-targets'
 import { money, Table, type D } from './shared'
 
-export function BalanceActuals({ trials, currency }: { trials: D[]; currency: string }) {
+export function BalanceActuals({ trials, currency, lines, batches }: { trials: D[]; currency: string; lines: D[]; batches: D[] }) {
  if (!trials.length) return null
  return <section className="card">
   <h2>Balance-sheet actuals and trial balance</h2>
@@ -9,7 +10,7 @@ export function BalanceActuals({ trials, currency }: { trials: D[]; currency: st
   {trials.map(t => <details key={t.period}>
    <summary>{t.period} · {t.blocked ? 'Blocked: unresolved mappings' : t.balanced ? 'Trial balance reconciled' : `Trial balance difference ${money(t.difference, currency)}`}</summary>
    <Table caption={`Trial balance ${t.period}`} heads={['Account', 'Source type', 'Source department', 'Target', 'Debit', 'Credit', 'Rows', 'Source imports']}>
-    {t.accounts.map((a: D, i: number) => <tr key={i}><td>{a.account}</td><td>{a.accountType || '—'}</td><td>{a.department}</td><td>{a.blocked ? 'Unresolved mapping' : a.target}</td><td className="num">{money(Math.max(a.amount, 0), currency)}</td><td className="num">{money(Math.max(-a.amount, 0), currency)}</td><td>{a.rows}</td><td>{a.batches.join(', ')}</td></tr>)}
+    {t.accounts.map((a: D, i: number) => <tr key={i}><td>{a.account}</td><td>{a.accountType || '—'}</td><td>{a.department}</td><td>{a.blocked ? 'Unresolved mapping' : balanceTarget(a.target)?.label ?? (a.target === 'excluded' ? 'Excluded' : lines.find(l => l.id === a.target)?.name ?? 'Planning line')}</td><td className="num">{money(Math.max(a.amount, 0), currency)}</td><td className="num">{money(Math.max(-a.amount, 0), currency)}</td><td>{a.rows}</td><td>{a.batches.map((id: string) => batches.find(b => b.destination === id)?.file ?? 'Source import').join(', ')}</td></tr>)}
     <tr><th colSpan={4}>Total</th><td className="num">{money(t.debit, currency)}</td><td className="num">{money(t.credit, currency)}</td><td colSpan={2}>Difference {money(t.difference, currency)}</td></tr>
    </Table>
    <Table caption={`Balance-sheet balances ${t.period}`} heads={['Balance', 'Amount', 'Source rows']}>
