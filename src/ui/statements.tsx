@@ -1,3 +1,4 @@
+import { WorkingCapital } from './working-capital'
 import { useDate } from './shared'
 import { useState, type ReactNode } from 'react'
 import { money, monthLabel, Table, type D } from './shared'
@@ -9,6 +10,7 @@ const balanceLines: StatementLine[] = [
  ['receivables', 'Receivables'],
  ['unbilledRevenue', 'Unbilled contract revenue'],
  ['inventory', 'Inventory (estimate)'],
+ ['prepaid', 'Prepaid expenses'],
  ['capitalPrepayments', 'Capital prepayments'],
  ['fixedAssets', 'Fixed assets, net'],
  ['assets', 'Total assets', true],
@@ -16,6 +18,7 @@ const balanceLines: StatementLine[] = [
  ['capitalPayables', 'Capital payables'],
  ['nonCashReserve', 'Non-cash reserve'],
  ['deferredRevenue', 'Deferred revenue'],
+ ['accruedLiabilities', 'Accrued payroll and bonuses'],
  ['debt', 'Debt'],
  ['liabilities', 'Total liabilities', true],
  ['openingEquity', 'Opening equity (estimate)'],
@@ -28,6 +31,8 @@ const cashFlowLines: StatementLine[] = [
  ['opening', 'Opening cash'],
  ['netIncome', 'Net income'],
  ['nonCashExpense', 'Non-cash expense'],
+ ['prepaidChange', 'Prepaid expense change'],
+ ['accruedLiabilitiesChange', 'Accrued liability change'],
  ['receivablesChange', 'Receivables change'],
  ['inventoryChange', 'Inventory change'],
  ['payablesChange', 'Payables change'],
@@ -46,6 +51,7 @@ const cashFlowLines: StatementLine[] = [
 export function Statements({ calculation, currency }: { calculation: D; currency: string }) {
  const displayDate = useDate()
  return <>
+  <WorkingCapital calculation={calculation} currency={currency} />
   {calculation.contracts && <section className="card">
    <h2>Bookings, billings, revenue and collections</h2>
    <p className="muted">Bookings record contract value at start. Upfront invoices create receivables and deferred revenue; recognition releases deferred revenue as service is earned. Collections use invoice date plus exact DSO days.</p>

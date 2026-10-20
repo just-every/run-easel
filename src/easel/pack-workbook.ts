@@ -1,3 +1,4 @@
+import { workingCapitalSheet } from './working-capital-workbook'
 import { contractSheets } from './contract-workbook'
 import { statementSheets } from './statements-workbook'
 import { financingSheets } from './financing-workbook'
@@ -112,6 +113,7 @@ export function packWorkbook(sn: Data): Uint8Array {
   { name: 'Sources', rows: sources },
   { name: 'Metadata', rows: metadata },
  ]
+ if (b.workingCapital) sheets.push(workingCapitalSheet(b.workingCapital, b.currency))
  if (b.contracts) sheets.push(...contractSheets(b.contracts, b.currency, ''))
  if (b.balanceSheet && b.cashFlow) sheets.push(...statementSheets(b.balanceSheet, b.cashFlow, b.cash, b.currency, ''))
  if (b.financing) sheets.push(...financingSheets(b.financing, b.currency))

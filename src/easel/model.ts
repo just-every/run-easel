@@ -1,3 +1,4 @@
+import { collectionInput, paymentInput, payrollInput, workingExpenseInput } from './working-capital-input'
 import { commercialInput } from './commercial-input'
 import { validateHistoryInput } from './history-input'
 import { libraryRevenueInput } from './revenue-input'
@@ -62,7 +63,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  if (kind === 'debt' || kind === 'equity') return validateFinancingInput(s, kind, b, scenario)
  if (kind === 'asset-category' || kind === 'asset') return validateAssetInput(s, kind, b, scenario)
  if (kind === 'revenue') {
-  const base = { name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month', scenario), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
+  const base = { ...collectionInput(b), name: text(b.name, 'Revenue model name'), line: line(s, b.line, ['revenue'], 'revenue line'), department: department(s, b.department), start: planMonth(s, b.start, 'Start month', scenario), collectionLag: integer(b.collectionLag ?? 0, 'Collection timing (months)', 0, 3) }
   for (const cost of all(s, 'expense').filter(e => e.scenario === scenario && e.revenueOrigin === b.originId && b.originId)) {
    requireThat(cost.department === base.department && b.kind === (cost.kind === 'inventory' ? 'volume' : 'customers'), 'Update or remove linked costs before changing this revenue driver kind or department', 409)
   }
@@ -77,12 +78,19 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  }
  if (kind === 'position') {
   const start = planMonth(s, b.start, 'Start month', scenario)
-  return { title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
+  if (b.payDay !== undefined && b.payDay !== '') requireThat(!get(s, 'line', b.line).nonCash, 'Accrued payroll requires a cash salary line')
+  return { ...payrollInput(b), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
-  const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory'] as const, 'an expense kind')
+  const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory', 'prepaid', 'bonus'] as const, 'an expense kind')
   const start = planMonth(s, b.start, kindOf === 'one-off' ? 'Month' : 'Start month', scenario)
   const base = { name: text(b.name, 'Expense name'), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'expense line'), department: department(s, b.department), start, end: kindOf === 'recurring' ? optionalEnd(s, b.end, start, 'End month') : '' }
+  const l = get(s, 'line', base.line)
+  if (['prepaid', 'bonus'].includes(kindOf)) requireThat(!l.nonCash && (kindOf !== 'prepaid' || !l.payroll), 'Prepaids and bonuses require a cash expense line; prepaids cannot use payroll lines')
+  if ((b.paymentMethod && b.paymentMethod !== 'lag') || b.dpoDays !== undefined || b.paymentTermDays !== undefined) requireThat(!l.nonCash && !l.payroll && !['prepaid', 'bonus'].includes(kindOf), 'Vendor timing requires a cash, non-payroll vendor expense')
+  const working = workingExpenseInput(b, base)
+  if (working) return working
+  Object.assign(base, paymentInput(b))
   const linked = commercialInput(s, b, scenario, base)
   if (linked) return linked
   return { ...base, kind: kindOf, amountCents: cents(b.amount, kindOf === 'one-off' ? 'Amount' : 'Monthly amount', { negative: true }) }

@@ -150,6 +150,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
    budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
    lines: lineRows, profit: { month: forecastCalc.profit.find(p => p.month === pack.month), budget: budget.body.calculation.profit.find((p: Data) => p.month === pack.month) },
    ...(forecastCalc.contracts ? { contracts: { ...forecastCalc.contracts, rows: [], invoices: [] }, balanceSheet: forecastCalc.balanceSheet, cashFlow: forecastCalc.cashFlow } : {}),
+   ...(forecastCalc.workingCapital ? { workingCapital: { ...forecastCalc.workingCapital, rows: [], issues: [] } } : {}),
    ...(forecastCalc.financing ? { financing: aggregateFinancing(forecastCalc.financing) } : {}),
    assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),
    cash: forecastCalc.cash.map(m => ({ ...(m.incompleteReasons ? { incompleteReasons: m.incompleteReasons } : {}), month: m.month, closing: m.closing, budget: budget.body.calculation.cash.find((b: Data) => b.month === m.month)?.closing ?? null })),

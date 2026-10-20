@@ -79,6 +79,10 @@ jobs:
         run: perl -e 'setpgrp(0,0); exec @ARGV' -- node tests/us-defaults-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/us-defaults
+      - name: FIN-002 working capital at desktop and phone widths
+        run: perl -e 'setpgrp(0,0); exec @ARGV' -- node tests/working-capital-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/working-capital
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1,3 +1,4 @@
+import { CollectionSummary, ExpenseForm, PayrollFields } from './working-capital-inputs'
 import { CommercialExpenseForm, CommercialExpenseSummary } from './commercial-costs'
 import { GaugeUtilization } from './gauge-utilization'
 import { HistoryInputs } from './history'
@@ -43,7 +44,7 @@ export function Plan({ state, refresh }: Shared) {
   <section className="card">
    <h2>Revenue drivers</h2>
    <Table caption="Revenue models" heads={['Name', 'Driver', 'Line', 'Department', 'From', '']}>
-    {(inputs.revenue ?? []).map((r: D) => <tr key={r.id}><td>{r.name}</td><td><RevenueSummary row={r} currency={currency} /></td><td>{lineName(r.line)}</td><td>{deptName(r.department)}</td><td>{monthLabel(r.start)}</td><td><Action label="Edit" kind="quiet" run={async () => edit('revenue', r)} /><Action label="Remove" kind="danger" run={() => remove('revenue', r.id)} /></td></tr>)}
+    {(inputs.revenue ?? []).map((r: D) => <tr key={r.id}><td>{r.name}</td><td><RevenueSummary row={r} currency={currency} /><CollectionSummary row={r} /></td><td>{lineName(r.line)}</td><td>{deptName(r.department)}</td><td>{monthLabel(r.start)}</td><td><Action label="Edit" kind="quiet" run={async () => edit('revenue', r)} /><Action label="Remove" kind="danger" run={() => remove('revenue', r.id)} /></td></tr>)}
    </Table>
    <RevenueForm key={form('revenue')?.id ?? `new-revenue-${round}`} row={form('revenue')} lines={revenueLines} depts={depts} allDepts={options(state.departments)} onSave={b => save('revenue', b)} />
   </section>
@@ -52,7 +53,7 @@ export function Plan({ state, refresh }: Shared) {
 
   <section className="card">
    <h2>Positions</h2>
-   <p className="muted">On-costs are your own assumption (for example superannuation and payroll tax); Easel does not calculate payroll.</p>
+   <p className="muted">On-costs are your own assumption (for example employer benefits and payroll taxes); Easel does not calculate payroll.</p>
    <Table caption="Positions" heads={['Title', 'Person', 'Department', 'From', 'To', 'Salary a year', 'On-costs', '']}>
     {(inputs.position ?? []).map((p: D) => <tr key={p.id}><td>{p.title}</td><td>{p.holder || 'To be hired'}</td><td>{deptName(p.department)}</td><td>{monthLabel(p.start)}</td><td>{p.end ? monthLabel(p.end) : '—'}</td><td className="num">{money(p.annualSalaryCents, currency)}</td><td className="num">{decimalText(p.onCostBps)}%</td><td><Action label="Edit" kind="quiet" run={async () => edit('position', p)} /><Action label="Remove" kind="danger" run={() => remove('position', p.id)} /></td></tr>)}
    </Table>
@@ -64,6 +65,7 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Start month" name="start" type="month" defaultValue={p?.start} />
     <Field label="End month" name="end" type="month" required={false} defaultValue={p?.end} />
     <Field label="Annual salary" name="annualSalary" defaultValue={decimalText(p?.annualSalaryCents)} />
+    <PayrollFields row={p} />
     <Field label="On-costs %" name="onCostPercent" defaultValue={p ? decimalText(p.onCostBps) : '12.00'} />
    </Form> })()}
   </section>
@@ -73,15 +75,7 @@ export function Plan({ state, refresh }: Shared) {
    <Table caption="Expenses" heads={['Name', 'Line', 'Department', 'Kind', 'Amount', 'From', 'To', '']}>
     {(inputs.expense ?? []).map((e: D) => <tr key={e.id}><td>{e.name}</td><td>{lineName(e.line)}</td><td>{deptName(e.department)}</td><td>{e.kind}</td><td className="num">{['acquisition', 'inventory'].includes(e.kind) ? <CommercialExpenseSummary row={e} currency={currency} /> : money(e.amountCents, currency)}</td><td>{monthLabel(e.start)}</td><td>{e.end ? monthLabel(e.end) : '—'}</td><td><Action label="Edit" kind="quiet" run={async () => edit('expense', e)} /><Action label="Remove" kind="danger" run={() => remove('expense', e.id)} /></td></tr>)}
    </Table>
-   {(() => { const e = form('expense'); if (e && ['acquisition', 'inventory'].includes(e.kind)) return <CommercialExpenseForm row={e} view={view!} currency={currency} save={save} />; return <Form key={e?.id ?? `new-expense-${round}`} submit={e ? 'Save expense' : 'Add expense'} onSubmit={v => save('expense', { ...v, id: e?.id })}>
-    <Field label="Expense name" name="name" defaultValue={e?.name} />
-    <Field label="Expense line" name="line" options={costLines} defaultValue={e?.line} />
-    <Field label="Department" name="department" options={depts} defaultValue={e?.department} />
-    <Field label="Kind" name="kind" options={[{ value: 'recurring', label: 'Recurring monthly' }, { value: 'one-off', label: 'One-off' }]} defaultValue={e?.kind ?? 'recurring'} />
-    <Field label="Amount" name="amount" defaultValue={decimalText(e?.amountCents)} hint="Monthly amount, or the one-off amount" />
-    <Field label="Start month" name="start" type="month" defaultValue={e?.start} hint="For a one-off, the month it falls in" />
-    <Field label="End month" name="end" type="month" required={false} defaultValue={e?.end} />
-   </Form> })()}
+   {(() => { const e = form('expense'); return e && ['acquisition', 'inventory'].includes(e.kind) ? <CommercialExpenseForm row={e} view={view!} currency={currency} save={save} /> : <ExpenseForm key={e?.id ?? `new-expense-${round}`} row={e} lines={costLines} depts={depts} onSave={v => save('expense', v)} /> })()}
   </section>
 
   {(inputs.schedule ?? []).length > 0 && <section className="card">
@@ -123,7 +117,7 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Opening receivables" name="receivables" defaultValue={decimalText(sc.cash.receivablesCents)} hint="Collected in the first plan month" />
     <Field label="Opening payables" name="payables" defaultValue={decimalText(sc.cash.payablesCents)} hint="Paid in the first plan month" />
     <Field label="Revenue collected after (months)" name="collectionLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(sc.cash.collectionLag)} />
-    <Field label="Costs paid after (months)" name="paymentLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(sc.cash.paymentLag)} hint="Payroll is paid in its month" />
+    <Field label="Costs paid after (months)" name="paymentLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(sc.cash.paymentLag)} hint="Payroll uses its entered pay date, or its earned month when no date is set." />
     <Field label="Note" name="note" required={false} defaultValue={sc.cash.note} />
    </Form>
   </section>}

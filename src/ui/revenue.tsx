@@ -1,3 +1,4 @@
+import { CollectionFields, collectionPayload } from './working-capital-inputs'
 import { useState } from 'react'
 import { decimalText, Field, Form, money, type D, type Option } from './shared'
 
@@ -24,20 +25,19 @@ export function RevenueForm({ row, lines, depts, allDepts, onSave }: { row: D | 
  const value = (key: string, fallback?: string) => row?.[key] === undefined ? fallback : decimalText(row[key])
  return <Form submit={row ? 'Save revenue model' : 'Add revenue model'} onSubmit={v => {
   const milestones = kind === 'milestones' ? Array.from({ length: milestoneCount }, (_, i) => ({ name: v[`milestoneName${i}`], month: v[`milestoneMonth${i}`], amount: v[`milestoneAmount${i}`] })) : undefined
-  return onSave({ ...v, id: row?.id, kind, ...(milestones ? { milestones } : {}) })
+  return onSave({ ...v, ...collectionPayload(v), id: row?.id, kind, ...(milestones ? { milestones } : {}) })
  }}>
   <label className="wide-select">Driver<select aria-label="Driver" value={kind} onChange={e => setKind(e.target.value)}>{revenueForms.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
   <Field label="Revenue model name" name="name" defaultValue={row?.name} />
   <Field label="Revenue line" name="line" options={lines} defaultValue={row?.line} />
   <Field label="Department" name="department" options={depts} defaultValue={row?.department} />
   <Field label="Start month" name="start" type="month" defaultValue={row?.start} />
-  {kind !== 'contract' && <Field label="Collected after (months)" name="collectionLag" options={[0, 1, 2, 3].map(n => ({ value: String(n), label: String(n) }))} defaultValue={String(row?.collectionLag ?? 1)} />}
+  <CollectionFields key={kind} row={row} contract={kind === 'contract'} />
   {kind === 'contract' && <>
    <Field label="Contract start date" name="startDate" type="date" defaultValue={row?.startDate} hint="Use a date in the start month. Service runs from this date to its anniversary after the term." />
    <Field label="Total contract value" name="contractValue" defaultValue={value('contractValueCents')} />
    <Field label="Contract term (months)" name="termMonths" type="number" defaultValue={String(row?.termMonths ?? 12)} />
    <Field label="Upfront billing cadence" name="billingCadence" options={['monthly', 'quarterly', 'annual'].map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} defaultValue={row?.billingCadence ?? 'annual'} />
-   <Field label="DSO (days)" name="dsoDays" type="number" defaultValue={String(row?.dsoDays ?? 30)} hint="Collect each invoice this many calendar days after its invoice date (0–365)." />
    <p className="muted wide">Bookings record the whole contract at start. Revenue is earned in equal service-month installments, with the final cent remainder in the last installment. Mid-month service is split by actual days; anniversaries clamp to month end. Billing occurs upfront for each interval, including a final short interval.</p>
   </>}
   {kind === 'volume' && <>
