@@ -3015,7 +3015,7 @@
       "executable": false
     },
     "tests/erasure-browser.mjs": {
-      "sha256": "f977cce1b4a95baeca11d10551478914e8542a2a9c487bab853001e0e216982a",
+      "sha256": "507675a1a58cb7c3d23b45e2fa0c35c6fba840c9e9742cbd421e0c8b1e0de891",
       "executable": false
     },
     "tests/erasure-portability.test.mjs": {
@@ -3131,7 +3131,7 @@
       "executable": false
     },
     "tests/open-export.test.mjs": {
-      "sha256": "935cb085cbcc263392b4d5e990d3dd5b19396bdbb96e6c5c5defb7e7873fbbfc",
+      "sha256": "88c15858828b2bddef3453dda00dff4f90e0b43066abe3fe0e7ebf401141fd3d",
       "executable": false
     },
     "tests/parallel-month-browser.mjs": {

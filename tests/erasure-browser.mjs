@@ -1,12 +1,12 @@
 // ERASE-001 public API action, followed by real finance screens at desktop and phone width.
 import assert from 'node:assert/strict'
 import { fileRecords } from '@runeditrun/rer/modules/portability/files'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rm } from 'node:fs/promises'
 import { resolve,join } from 'node:path'
-import { command, freePort, start } from './browser-runtime.mjs'
+import { command, fresh, freePort, start } from './browser-runtime.mjs'
 import { api, session,noOverflow } from './browser-journey.mjs'
 const {chromium}=await import(process.env.EASEL_PLAYWRIGHT_MODULE??'@playwright/test')
-const root=process.cwd(),evidence=resolve(process.env.EASEL_EVIDENCE??'.cache/erasure')
+const root=await fresh(),evidence=resolve(process.env.EASEL_EVIDENCE??'.cache/erasure')
 await mkdir(evidence,{recursive:true})
 let server,browser
 const nav=(page,name)=>page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name,exact:true}).click()
@@ -16,6 +16,7 @@ try {
  server=await start(root,port);browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
  const owner=await session(browser,root,server.origin,'owner',1440)
  const cmd=(op,b)=>api(owner.context,server.origin,`command/${op}`,b)
+ await cmd('workspace',{name:'Harbour Analytics',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
  const initial=await api(owner.context,server.origin,'state')
  const dept=await cmd('department',{name:'Customer success'})
  const line=await cmd('line',{name:'Success payroll',type:'operating-expense',payroll:true})
@@ -62,4 +63,4 @@ try {
    console.log(`ERASE-001 ${width}: submitted/commented member pseudonym, anonymous frozen plan, people removed, unchanged digests and revoked session passed`)
   }finally{await finance.context.close()}
  }
-}finally{await browser?.close();await server?.close()}
+}finally{await browser?.close();await server?.close();await rm(root,{recursive:true,force:true})}
