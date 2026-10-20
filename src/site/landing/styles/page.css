@@ -20,8 +20,8 @@ body.landing-body { background: #fff; }
 :where(.landing) :where(ol, ul) { list-style: none; }
 .landing a { color: inherit; }
 .wrap { width: 100%; max-width: calc(var(--wrap) + 2 * var(--gutter)); margin: 0 auto; padding: 0 var(--gutter); }
-.landing section { position: relative; padding: 104px 0; }
-.landing section + section { padding-top: 40px; }
+.landing section { position: relative; padding: 76px 0; }
+.landing section + section { padding-top: 24px; }
 
 /* Headings: one face and one scale for every section; the second line takes the gradient. */
 .heading { max-width: 1100px; }

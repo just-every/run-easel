@@ -1,5 +1,5 @@
 /* 07 Interlude: the mascot draws the picked plan's 2027 as one line over the floor. */
-.interlude { padding-top: 190px !important; padding-bottom: 150px !important; }
+.interlude { padding-top: 170px !important; padding-bottom: 130px !important; }
 .interlude-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 36px; align-items: end; }
 .mascot { position: relative; padding-bottom: 6px; }
 .mascot img { display: block; width: 100%; height: auto; }
