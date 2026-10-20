@@ -1,10 +1,10 @@
 // Roster and payroll-register files use the same reviewed import journal as GL
 // and workbook imports. Mapping choices and observations share the journal.
 import { applyD1ImportBatches, canonicalJson, createD1ImportJob, planD1Import, readD1ImportJob, readD1ImportUndoReport, resumeD1Import, sha256, undoD1Import, type ImportMapping, type SourceBundle } from '../modules/import-kit/src/d1/index'
-import { transformErased, type ErasureMap } from './erasure-map.mjs'
 import { requireFinance, requirePayDetail } from './access'
 import type { Context, KitStep } from './context'
-import { base64, journalContext, kitContext } from './kit'
+import { base64 } from './kit'
+import { payrollJournalContext } from './payroll-journal'
 import { readPayrollFile } from './payroll-file'
 import { rosterBuckets } from './payroll-reconciliation'
 import { all, choice, find, get, put, requireThat, text, type Data } from './types'
@@ -46,7 +46,7 @@ async function preview(c: Context, b: Data) {
  const destination = `payroll:${sha256(canonicalJson([provider,kind,scenario.id,asOf,file.sha])).slice(0,24)}`
  const id = destination.slice(8)
  const config = { config: file.config, departmentMap, positionMap, memberMap, line: kind === 'register' ? rows[0]?.line : null }
- const ctx = payContext(c, destination, `payroll-v1:${sha256(canonicalJson({ config, rows, positions, departments: all(c.s,'department') })).slice(0,24)}`)
+ const ctx = payrollJournalContext(c, destination, `payroll-v1:${sha256(canonicalJson({ config, rows, positions, departments: all(c.s,'department') })).slice(0,24)}`)
  const mappingPayload = { ...config, provider, kind, batch: destination, order: Math.max(0,...mappings.map(m => m.order)) + 1 }
  const source: SourceBundle = { diagnostics: [], artifacts: [{ name: file.file, sha256: file.sha, size: file.bytes.length, original: { status: 'available', base64: base64(file.bytes) } }], records: [{ namespace: NAMESPACE, kind: 'mapping', sourceId: 'mapping', payload: mappingPayload, payloadHash: sha256(canonicalJson(mappingPayload)), artifactHash: file.sha, location: { artifact: file.file, pointer: 'column-mapping' } }, ...rows.map((r: Data) => ({ namespace: NAMESPACE, kind, sourceId: String(r.row), payload: r, payloadHash: sha256(canonicalJson(r)), artifactHash: file.sha, location: { artifact: file.file, row: r.row } }))] }
  const mapping: ImportMapping = { version: ctx.mappingVersion, map: record => record.kind === 'mapping' ? { effects: [{ targetKind: 'payroll-file-mapping', targetId: `${id}:mapping`, value: record.payload }] } : ({ effects: [{ targetKind: kind === 'roster' ? 'roster-actual' : 'payroll-run', targetId: `${id}:${record.sourceId}`, value: { ...record.payload as Data, batch: destination, file: file.file } }] }) }
@@ -77,7 +77,7 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
   const imp=get(c.s,'payroll-import',b.id)
   const job=await c.db.prepare('SELECT id,state,mapping_version,principal_id FROM ik_jobs WHERE destination=? AND namespace=? ORDER BY rowid DESC LIMIT 1').bind(imp.destination,NAMESPACE).first<any>()
   requireThat(job,'This import has no journal yet; preview and import again',409)
-  const ctx=payContext(c,imp.destination,job.mapping_version,job)
+  const ctx=payrollJournalContext(c,imp.destination,job.mapping_version,job)
   if(op==='status')return {result:{import:imp,job:await readD1ImportJob(job.id,ctx),undo:['undone','undoing'].includes(job.state)?await readD1ImportUndoReport(job.id,ctx):null}}
   if(op==='resume') {requireThat(imp.status==='importing','This import is not waiting to continue',409);return {result:{},kit:()=>resumeD1Import(job.id,ctx),record:(after,result)=>finish(after,imp.id,result)}}
   requireThat(['imported','undoing'].includes(imp.status),'Only a completed import can be undone',409)
@@ -90,26 +90,6 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
   }}
  }
  return undefined
-}
-function payContext(c: Context, destination: string, mapping: string, job?: {mapping_version:string;principal_id:string}) {
- const ctx = job ? journalContext(c.db,c.x.actor,destination,NAMESPACE,job) : kitContext(c.db,c.x.actor,destination,NAMESPACE,mapping)
- const maps = all(c.s, 'erasure') as (Data & ErasureMap)[]
- ctx.storage.targets.ownedContent = row => {
-  // Erasure is the only permitted ownership-preserving revision change.
-  // A later edit has an unknown revision and remains a conflict on undo.
-  let revision = row.revision
-  for (const map of [...maps].reverse()) {
-   const redaction = (map.redactions ?? []).find((r:Data)=>r.kind===row.targetKind && r.id===row.targetId && r.to===revision)
-   if (redaction) revision = redaction.from
-  }
-  return {revision, value:transformErased(row.value,maps), attachment:row.attachment ?? null}
- }
- const predicate = ctx.authorization!.predicate!
- ctx.authorization = { ...ctx.authorization!, predicate: (...args) => {
-  const auth = predicate(...args) as {sql:string;params:unknown[]}
-  return c.x.actor.baseRole === 'owner' ? auth : { sql: `(${auth.sql}) AND EXISTS(SELECT 1 FROM e_records WHERE kind='pay-grant' AND id=? AND json_extract(value,'$.granted')=1)`, params: [...auth.params,c.x.actor.email] }
- } }
- return ctx
 }
 function finish(c: Context,id:string,job:Data) {
  const imp=get(c.s,'payroll-import',id)
