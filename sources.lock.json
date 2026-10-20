@@ -2867,7 +2867,7 @@
       "executable": false
     },
     "src/site/landing/styles/actuals.css": {
-      "sha256": "6630f04510a21bc998f368b3c0d983514f556af6d444d9964139d74f4f947a76",
+      "sha256": "6ca4a07741d740b3c971097a1b1c35748501318e4fc04246fdd2effa4edb0ee7",
       "executable": false
     },
     "src/site/landing/styles/boardpack.css": {
@@ -2911,7 +2911,7 @@
       "executable": false
     },
     "src/site/landing/styles/responses.css": {
-      "sha256": "0c6b5f245cfe584fa59c855c7ee7eabbb325f4634a77429d4abfc7938ef07a59",
+      "sha256": "48284aef3d618ca5ed8273995ba211385276feb634f4b22310883280b97ae3f6",
       "executable": false
     },
     "src/site/landing/styles/slip.css": {
@@ -2935,7 +2935,7 @@
       "executable": false
     },
     "src/site/shell/breaks.ts": {
-      "sha256": "2947ed14b7e8e86506ddf2b5096277992854ac954f02e3a410d2a59681797598",
+      "sha256": "b2a4f3ccfabc324f6f992dd6d61c46d113dd89f1fdfdd0ab80b48ee39181b1c8",
       "executable": false
     },
     "src/site/shell/site.css": {

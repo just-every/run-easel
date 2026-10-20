@@ -72,3 +72,13 @@
  .bills .dots { flex-basis: 100%; }
  .zoom-pill { margin-top: 28px; }
 }
+@media (max-width: 420px) {
+ /* Each P&L line on its own row, its amount under it, so "Cloud hosting · Engineering" keeps one line. */
+ .zoom-cell tr { display: grid; grid-template-columns: minmax(0, 1fr); border: 1px solid var(--hair); }
+ .zoom-cell tr + tr { border-top: 0; }
+ .zoom-cell th, .zoom-cell td { border: 0; }
+ .zoom-cell th { padding-bottom: 2px; }
+ .zoom-cell td { padding-top: 2px; }
+ .zoom-cell .picked { background: var(--pink-soft); border-color: #f8c7dc; }
+ .cur-cell { left: 34%; top: 30%; }
+}
