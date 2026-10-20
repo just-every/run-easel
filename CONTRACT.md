@@ -664,7 +664,7 @@ Finance can erase a former member's personal data: their name, email and members
 
 *Acceptance:* through the API, erase a contributor who submitted and commented; their name is absent from live views, pack downloads and `rer export`, their submissions show the pseudonym, the snapshot digest is unchanged, and the receipt and audit row exist.
 
-*Status:* missing.
+*Status:* done.
 
 #### API-001 — Public API with scoped tokens.
 The HTTP API (`API.md`) is available to integrations through personal and service tokens with read or write scopes, the issuing person's role and an expiry. Requests are rate-limited, every write is fenced by revision as today, and token use enters the audit trail.
@@ -937,8 +937,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 30 | 24 | 32 | 86 |
-| All | 47 | 24 | 32 | 103 |
+| Target and push further | 31 | 24 | 31 | 86 |
+| All | 48 | 24 | 31 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1019,7 +1019,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `ACCESS-001` | Groups and per-dimension permissions | target | partial | `src/easel/access.ts` `tests/easel.test.mjs` | Finance, department-scoped contributor and viewer roles ship; groups, per-dimension and per-capability grants and an access report are missing |
 | `ACCESS-002` | SSO and SCIM | target | missing |  | No SAML, OIDC or SCIM |
 | `AUDIT-001` | Model audit trail | target | done | `src/easel/audit.ts` `src/easel/audit-write.ts` `tests/audit.test.mjs` `tests/restore-flow.mjs` | Atomic before/after values for native and imported records, person or agent attribution, finance filters and complete CSV export; append-only database guards and real CLI restore preserve the trail |
-| `ERASE-001` | Person erasure | target | missing |  | No erasure command, pseudonymized snapshot reads or receipt |
+| `ERASE-001` | Person erasure | target | done | `tests/erasure.test.mjs` `tests/erasure-portability.test.mjs` `tests/erasure-browser.mjs` | — |
 | `API-001` | Public API with scoped tokens | target | done | `src/easel/token-admin.ts` `src/easel/token-auth.ts` `tests/api-tokens.test.mjs` `API.md` | Personal and named service bearers use Base credentials, read/write scopes, expiry, revocation, issuer role and department ceilings, durable rate limits, atomic write fences and token-use audit events; credentials stay out of exports |
 | `API-002` | Webhooks and automation apps | target | missing |  | No webhooks or published automation apps |
 | `API-003` | MCP endpoint for outside agents | target | done | `tests/mcp.test.mjs` (API-003) |  |
