@@ -108,4 +108,24 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  const afterManifest=JSON.parse(await afterZip.file('manifest.json').async('string'))
  const afterOriginal=afterManifest.originals.find(o=>o.jobId===first.job.id)
  assert.ok(!(await afterZip.file(afterOriginal.path).async('string')).includes(legalName))
+ // A mapping undone before the member leaves remains in retained provenance.
+ const retiredEmail='retired@example.test',retiredName='Retained Legalname'
+ await h.person(retiredEmail,'contributor',[d.id])
+ const retiredFile={...roster,provider:'Retained PEO',memberMap:{1:retiredEmail},positionMap:{},csv:roster.csv.replace(legalName,retiredName)}
+ const retired=await accept(retiredFile)
+ await h.kit('payroll','undo',{id:retired.import.id})
+ await h.command('member',{email:retiredEmail,name:'retired',role:'contributor',departments:[d.id],active:false})
+ const retiredReceipt=await h.command('person-erase',{email:retiredEmail})
+ const retiredExport=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}});assert.equal(retiredExport.status,200,await retiredExport.clone().text())
+ const retiredZip=await JSZip.loadAsync(await retiredExport.arrayBuffer())
+ const retiredManifest=JSON.parse(await retiredZip.file('manifest.json').async('string'))
+ const retainedOriginal=retiredManifest.originals.find(o=>o.jobId===retired.job.id)
+ const retainedText=await retiredZip.file(retainedOriginal.path).async('string')
+ assert.ok(!retainedText.includes(retiredName));assert.ok(retainedText.includes(retiredReceipt.pseudonym))
+ const finalPath=join(dir,'undone-erased.rer')
+ await exportArchive(await createEaselExportService({db:h.db}),finalPath,[])
+ const finalDestination=await harness();t.after(()=>finalDestination.close())
+ await importArchive(await createPortability({db:finalDestination.db,policy:easelPolicy}),finalPath,[])
+ for(const imp of [later,register,first,retired])assert.equal((await finalDestination.kit('payroll','status',{id:imp.import.id})).job.state,'undone')
+
 })

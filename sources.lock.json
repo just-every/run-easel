@@ -783,7 +783,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/prepare.mjs": {
-      "sha256": "a81450032f332efbf810bdb38642ecb552df13dacdb05b5d76ccd51e3de2bf23",
+      "sha256": "ad6300c03fa09a2c51814e7bbdadc83154572cee907611b3639a2782bca250f8",
       "executable": false
     },
     "src/easel/erasure-archive/values.mjs": {
@@ -799,7 +799,7 @@
       "executable": false
     },
     "src/easel/erasure.ts": {
-      "sha256": "5b670625e4ad12b0e981c6ae6e59dd92c2164957192cc4f55f51c6103bebee9d",
+      "sha256": "a20e14b631d3149917fa36c570f8ede3de1353eeb41d03dd3bbb03eeb705301f",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -931,11 +931,11 @@
       "executable": false
     },
     "src/easel/payroll-erasure.d.mts": {
-      "sha256": "11f6c59832113b9f5d4c51e0312de5c66f8ec77300cd33a382ce145768336823",
+      "sha256": "9acb8b1ef87ce57e912ad33d189aae23f4a76739733777bdf1f2ce11206bb692",
       "executable": false
     },
     "src/easel/payroll-erasure.mjs": {
-      "sha256": "afac75801aa5de3eb951e1381cd07ce46f328c24f7cb734cc028ce1fa034d7fb",
+      "sha256": "af6b44ecb6960564b27d4bdc8bfdb01426da0e155949c90ab12af7aa88be0193",
       "executable": false
     },
     "src/easel/payroll-export-access.ts": {
@@ -947,11 +947,11 @@
       "executable": false
     },
     "src/easel/payroll-import.ts": {
-      "sha256": "db7616e9b5fd56072fcfb680ab18a4d9582569b55d348825f074416bc4078164",
+      "sha256": "29d75d039c1859a7a723f3d77c937175ae84ac779bcabc98bf8983abf94007ed",
       "executable": false
     },
     "src/easel/payroll-journal.ts": {
-      "sha256": "52c14dfa4bd0c1a25e85a79a1cec6e9315582a56b7b353527b2b08f62a166e4f",
+      "sha256": "adb5718277de2eb30ae85b283df44195b874cf5812b5b74ad6170028f60d6b43",
       "executable": false
     },
     "src/easel/payroll-reconciliation.ts": {
@@ -3203,7 +3203,7 @@
       "executable": false
     },
     "tests/payroll-erasure.test.mjs": {
-      "sha256": "b46a236d47ee0fbe514d43a7be038af3cc3c942a3430a384f5011d977bf7970b",
+      "sha256": "6de3bedb5cedb41d2ec66241ee14b14a99444753268ec72f6359f46249e377f7",
       "executable": false
     },
     "tests/payroll-files-browser.mjs": {

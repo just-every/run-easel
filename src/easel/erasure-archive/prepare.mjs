@@ -3,7 +3,7 @@ import { canonicalJson, PortabilityError } from '@runeditrun/rer/modules/portabi
 import { easelPolicy, validateEaselStaged } from './policy.mjs';
 import { prepareOriginals, transformBlob } from './originals.mjs';
 import { archiveValueTransformer } from './values.mjs';
-import { payrollOriginalScopes } from '../payroll-erasure.mjs';
+import { payrollOriginalScopes, payrollIdentityHistory } from '../payroll-erasure.mjs';
 import { prepareJournals } from './journals.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -31,7 +31,7 @@ function replaceDigests(value, resolve) {
 export async function prepareEaselExportTransform(options) {
  const { db } = options;
  const receipts = (await db.prepare("SELECT value FROM e_records WHERE kind='erasure' ORDER BY id").all()).results.map(r => JSON.parse(r.value));
- const maps = payrollOriginalScopes(receipts, (await rows(db, 'e_records')).map(r=>({...r,value:JSON.parse(r.value)})), await rows(db, 'ik_jobs'));
+ const maps = payrollOriginalScopes(receipts, await payrollIdentityHistory(db,(await rows(db, 'e_records')).map(r=>({...r,value:JSON.parse(r.value)}))), await rows(db, 'ik_jobs'));
  const snapshots = await rows(db, 'e_snapshots');
  // A transform must never turn an already damaged source into a valid archive.
  await validateEaselStaged({ read: table => rows(db, table) });

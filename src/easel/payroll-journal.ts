@@ -7,7 +7,8 @@ const NAMESPACE = 'easel-payroll-files'
 
 export function payrollJournalContext(c: Context, destination: string, mapping: string, job?: {mapping_version:string;principal_id:string}, scenario?:string) {
  const ctx = job ? journalContext(c.db,c.x.actor,destination,NAMESPACE,job) : kitContext(c.db,c.x.actor,destination,NAMESPACE,mapping)
- const maps = all(c.s, 'erasure') as (Data & ErasureMap)[]
+ const imp = all(c.s,'payroll-import').find(i=>i.destination===destination)
+ const maps = all(c.s, 'erasure').filter(m=>!imp || !['undoing','undone'].includes(imp.status) || (imp.undoErasureReceipts ?? []).includes(m.id)) as (Data & ErasureMap)[]
  ctx.storage.targets.ownedContent = row => {
   // Erasure is the only permitted ownership-preserving revision change.
   // A later edit has an unknown revision and remains a conflict on undo.

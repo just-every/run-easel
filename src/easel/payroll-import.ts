@@ -85,7 +85,7 @@ export async function payrollImport(c: Context, op: string, b: Data): Promise<Ki
   if(op==='status')return {result:{import:imp,job:await readD1ImportJob(job.id,ctx),undo:['undone','undoing'].includes(job.state)?await readD1ImportUndoReport(job.id,ctx):null}}
   if(op==='resume') {requireThat(imp.status==='importing','This import is not waiting to continue',409);return {result:{},kit:()=>resumeD1Import(job.id,ctx),record:(after,result)=>finish(after,imp.id,result)}}
   requireThat(['imported','undoing'].includes(imp.status),'Only a completed import can be undone',409)
-  put(c.s,'payroll-import',imp.id,{...imp,status:'undoing'})
+  put(c.s,'payroll-import',imp.id,{...imp,status:'undoing',undoErasureReceipts:imp.undoErasureReceipts ?? all(c.s,'erasure').map(m=>m.id)})
   return {result:{},kit:async()=>({job:await undoD1Import(job.id,ctx),report:await readD1ImportUndoReport(job.id,ctx)}),record:(after,result)=>{
    const current=get(after.s,'payroll-import',imp.id)
    put(after.s,'payroll-import',imp.id,{...current,status:result.job.state==='undone'?'undone':'undoing',undoneBy:after.x.actor.email,undoneAt:after.now})
