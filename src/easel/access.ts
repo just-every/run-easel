@@ -37,7 +37,7 @@ export const seesDepartmentDetail = (x: Access, department: string) =>
 export function visibleInput(x: Access, kind: string, input: Data) {
  if (kind === 'position' && !seesPayDetail(x, input.department)) return false
  if (x.role === 'finance') return true
- if (x.role !== 'contributor' || kind === 'debt' || kind === 'equity') return false
+ if (x.role !== 'contributor' || kind === 'debt' || kind === 'equity' || kind === 'tax-policy') return false
  return x.departments.includes(input.department)
 }
 

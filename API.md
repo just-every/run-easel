@@ -270,3 +270,42 @@ A position's optional `payDay` (1–31, clamped to month end) and `payMonthOffse
 Pay detail (PEOPLE-005) is separate from plan access. The signed-in owner uses `POST /api/easel/command/pay-detail` with `{ "email": "analyst@example.com", "granted": true }` (or false). Contributors are limited to their current departments; viewers cannot receive the grant. Tokens keep their issuance ceiling and recheck the live grant. Complete archives and Activity require pay access; filtered scenario/workbook reads retain totals.
 
 Person erasure (ERASE-001): deactivate the former planning member with `member` (`active: false`), then a native finance session posts `person-erase` with `{ "email": "former@example.com" }`. The response contains the anonymous receipt id, pseudonym, changed-record counts and time. The installation owner and last finance member are protected; agents and API tokens cannot erase people. Existing sessions and credentials are revoked atomically. Snapshot reads keep their recorded digest while mapping personal attribution; native exports declare the transform and original/exported digests.
+
+## US tax planning estimates (FIN-006)
+
+Finance enables one `tax-policy` input in a working scenario with
+`POST /api/easel/command/tax-policy` (or the same MCP proposal tool). Supply
+`scenario`, a dedicated cash/non-payroll operating-expense `line`, `department`,
+`sutaPercent`, `sutaBase` and `stateIncomePercent`. Save its returned `id` when
+editing; delete through `input-delete`. This is the HTTP configuration door;
+the existing Plan form edits a position's `employmentType` (`W-2` or `1099`) and
+optional `taxYtdWages`, and Overview displays the resulting expense/statements.
+
+Optional finance assumptions and their 2026 defaults:
+
+| Input | Default |
+| --- | --- |
+| `year` | 2026 (effective assumption year) |
+| `socialSecurityPercent`, `socialSecurityBase` | 6.2, 184500 |
+| `medicarePercent` | 1.45, uncapped; no employer Additional Medicare share |
+| `futaPercent`, `futaBase` | 6, 7000 (gross, no inferred credit) |
+| `federalIncomePercent` | 21 (ordinary corporate planning rate) |
+| `openingLoss`, `lossOffsetPercent` | 0, 80 |
+| `salesTaxPercent`, `salesTaxRemitLagMonths` | 0, 1 |
+
+SUTA and state income values require explicit finance entry, including explicit
+zero where appropriate. Rates/bases remain the stated assumption year's values
+in later plan years until revised. Annual wage caps reset January; continuing
+W-2 positions in a partial first year need explicit prior YTD wages. Each monthly
+component is the change in its rounded cumulative liability; 1099 employer taxes
+are zero. Taxes add separately to owner-supplied salary on-costs.
+
+`scenario/:id` returns `calculation.taxes`: effective-year label, filtered
+`payrollRows`, aggregate `payrollTotals`, `incomeRows` with losses/taxable profit,
+and `sales` collection/remittance/payable rows. Income tax uses accounting profit
+as an approximation, carries losses within the entered allowance, and plans
+payment in the recognition month. Sales tax is a uniform cash-collection
+pass-through, remitted after the entered month lag, with no revenue effect.
+Closed P&L retains accepted amounts and frozen scenarios retain captured tax
+arithmetic. Every personal wage/trace follows current Pay detail and department
+grants. These are estimates; no filing, taxability determination or payment occurs.

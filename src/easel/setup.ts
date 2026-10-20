@@ -68,9 +68,10 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   const prior = b.id ? get(s, 'line', id) : undefined
   const type = choice(b.type, LINE_TYPES, 'a line type')
   requireThat(!prior || prior.type === type || !usesLine(s, id), 'This line is in use; its type cannot change', 409)
+  const checked = (v: unknown) => v === true || v === 'on' || v === 'true'
+  requireThat(!all(s,'tax-policy').some(p=>p.line===id) || (type==='operating-expense'&&!checked(b.nonCash)&&!checked(b.payroll)), 'A tax-policy line in use must remain a cash, non-payroll operating expense line',409)
   const name = text(b.name, 'Line name')
   requireThat(!all(s, 'line').some(l => l.id !== id && l.name.toLowerCase() === name.toLowerCase()), 'A line with this name exists')
-  const checked = (v: unknown) => v === true || v === 'on' || v === 'true'
   if (prior?.payroll && !checked(b.payroll)) requirePayDetail(x)
   requireThat(!(checked(b.nonCash) && checked(b.payroll)), 'A payroll line cannot be non-cash')
   requireThat(!all(s, 'debt').some(debt => debt.line === id) || (type !== 'revenue' && !checked(b.nonCash) && !checked(b.payroll)), 'An interest line in use must remain a cash, non-payroll expense line', 409)

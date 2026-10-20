@@ -42,6 +42,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if ((INPUT_KINDS as readonly string[]).includes(op)) {
   requireMember(x)
   const kind = op as InputKind
+  if(kind==='tax-policy') requireFinance(x)
   if (kind === 'position' || b.line && get(s, 'line', b.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, b.scenario)
   const prior = b.id ? get(s, kind, b.id) : undefined
@@ -74,6 +75,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  if (op === 'input-delete') {
   requireMember(x)
   const kind = choice(b.kind, INPUT_KINDS, 'an input kind')
+  if(kind==='tax-policy') requireFinance(x)
   const input = get(s, kind, b.id)
   if (kind === 'position' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, input.scenario)
