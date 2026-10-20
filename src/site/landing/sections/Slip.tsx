@@ -1,4 +1,4 @@
-import { Avatar, Check, Heading, Spark, Sticky } from '../kit'
+import { Avatar, Check, Dots, Heading, Spark, Sticky } from '../kit'
 import '../styles/slip.css'
 
 /** 03: the page's one failure. Ridgeway's close date moves; the agent finds the month it breaks, traces it and asks. */
@@ -13,22 +13,21 @@ export function Slip() {
      <div className="decision-head">
       <Check tone="red" />
       <div>
-       <h3 id="decision-title">Cash floor broken · Mar 2027</h3>
+       <h3 id="decision-title"><Dots>Cash floor broken · Mar 2027</Dots></h3>
        <p className="muted">opened Tue Oct 13, 2:04 am</p>
       </div>
       <span className="tag tag-red">exception</span>
      </div>
      <p className="decision-low">Lowest cash $1,910,000</p>
-     <p className="decision-short">floor $2,000,000 · short $90,000</p>
-     <p className="decision-shift"><span><strong className="ok">Before:</strong> lowest $2,097,000 · Jun 2027 <span className="ok">✓</span></span><span className="shift-arrow" aria-hidden="true">→</span><span className="after"><strong>After:</strong> $1,910,000 · Mar 2027</span></p>
+     <p className="decision-short"><Dots>floor $2,000,000 · short $90,000</Dots></p>
+     <p className="decision-shift"><span className="before"><Dots><strong className="ok">Before:</strong> lowest $2,097,000 · Jun 2027 <span className="ok">✓</span></Dots></span><span className="shift-arrow" aria-hidden="true">→</span><span className="after"><Dots><strong>After:</strong> $1,910,000 · Mar 2027</Dots><i className="after-link" aria-hidden="true" /></span></p>
      <dl>
-      <div><dt>Cause, traced</dt><dd>HubSpot deal 18842 · Ridgeway Logistics · $310,000 annual upfront · Contract sent (90%) · close Fri Dec 18 → Fri Mar 19 · changed by Marcus Hale, Mon Oct 12, 4:47 pm</dd></div>
-      <div><dt>Effect</dt><dd>Weighted cash $279,000 moves from Jan to May · revenue $23,250 a month moves from Jan to Apr</dd></div>
+      <div><dt>Cause, traced</dt><dd><Dots>HubSpot deal 18842 · Ridgeway Logistics · $310,000 annual upfront · Contract sent (90%) · close Fri Dec 18 → Fri Mar 19 · changed by Marcus Hale, Mon Oct 12, 4:47 pm</Dots></dd></div>
+      <div><dt>Effect</dt><dd><Dots>Weighted cash $279,000 moves from Jan to May · revenue $23,250 a month moves from Jan to Apr</Dots></dd></div>
      </dl>
-     <p className="decision-foot">Plan unchanged · rev 212 · owner: Rachel Kim</p>
+     <p className="decision-foot"><Dots>Plan unchanged · rev 212 · owner: Rachel Kim</Dots></p>
      <Sticky className="slip-sticky">Caught 5 months out!</Sticky>
     </article>
-    <svg className="connector c-slip" viewBox="0 0 100 60" aria-hidden="true"><path d="M2 54C40 56 70 40 92 12" /><path className="head" d="M83 12 93 10 92 20" /></svg>
     <article className="card thread" aria-labelledby="thread-title">
      <h3 id="thread-title"><span aria-hidden="true">#</span> finance-forecast</h3>
      <ol>
@@ -52,7 +51,7 @@ export function Slip() {
        <Avatar />
        <div>
         <p className="who"><strong>Easel</strong> · 9:06 am</p>
-        <p className="recorded">Recorded: close Fri Mar 19 · source Marcus Hale, Slack, 9:06 am <span className="ok">✓</span></p>
+        <p className="recorded"><Dots>Recorded: close Fri Mar 19 · source Marcus Hale, Slack, 9:06 am <span className="ok">✓</span></Dots></p>
        </div>
       </li>
      </ol>

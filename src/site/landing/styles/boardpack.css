@@ -1,14 +1,14 @@
 /* 06 Board pack: the PDF cover, the PowerPoint slide and the Excel Decisions sheet fanned like a hand of cards. */
 .pack-grid { display: grid; grid-template-columns: minmax(0, 54fr) minmax(0, 46fr); gap: 4%; align-items: center; }
-.fan { position: relative; height: 900px; }
+.fan { position: relative; height: 912px; }
 .doc { position: absolute; padding: 22px 26px; }
 .doc .tag { font-size: 13px; }
 .doc h3 { font-family: var(--display); font-weight: 830; letter-spacing: -.035em; color: var(--ink); }
-.doc-pdf { left: 6%; top: 40px; width: 70%; height: 420px; transform: rotate(-2.4deg); }
+.doc-pdf { left: 6%; top: 24px; width: 70%; height: 420px; transform: rotate(-2.4deg); }
 .doc-co { margin-top: 18px; font-size: 26px; color: var(--ink); letter-spacing: -.01em; }
 .doc-pdf h3 { margin-top: 4px; font-size: 42px; line-height: 1.05; }
 .doc-pdf .muted { margin-top: 8px; font-size: 19px; }
-.doc-ppt { left: 15%; top: 250px; width: 72%; transform: rotate(-1deg); }
+.doc-ppt { left: 15%; top: 232px; width: 72%; transform: rotate(-1deg); }
 .doc-ppt h3 { margin-top: 14px; font-size: 34px; }
 .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 0; }
 .kpis div { padding: 12px 14px; border: 1px solid var(--hair); border-radius: 8px; }
@@ -16,10 +16,13 @@
 .kpis dd { margin: 4px 0 0; font-family: var(--display); font-size: 29px; font-weight: 820; letter-spacing: -.03em; color: var(--ink); }
 .kpis dd.ok-soft { margin-top: 2px; font-family: var(--sans); font-size: 16px; font-weight: 500; letter-spacing: 0; color: var(--green); }
 .cur-ppt { right: -10px; top: 26px; }
-.doc-xls { left: 0; top: 590px; width: 92%; transform: rotate(-1.6deg); }
+.doc-xls { left: 0; top: 624px; width: 92%; transform: rotate(-1.6deg); }
 .sheet-tabs { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--hair); font-size: 17px; color: var(--muted); }
 .sheet-tabs .on { color: var(--ink); font-weight: 650; box-shadow: 0 3px 0 var(--green); }
-.decision-line { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--hair); background: repeating-linear-gradient(90deg, transparent 0 24%, var(--hair) 24% calc(24% + 1px)); font-size: 18px; line-height: 1.5; color: var(--ink); }
+/* The Decisions sheet: empty cell rows above and below one merged row, so no cell border runs through the text. */
+.sheet-grid { margin-top: 14px; border: 1px solid var(--hair); }
+.sheet-row { display: block; height: 16px; background: repeating-linear-gradient(90deg, transparent 0 24%, var(--hair) 24% calc(24% + 1px)); }
+.decision-line { padding: 10px 14px; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); font-size: 18px; line-height: 1.5; color: var(--ink); }
 .folder { position: absolute; left: 32%; bottom: 0; display: flex; align-items: center; gap: 14px; padding: 14px 22px; font-size: 17px; color: var(--ink); }
 .folder svg { width: 26px; height: 26px; fill: #6b6f7a; }
 .spark-fan-a { left: -6px; top: 0; } .spark-fan-b { right: 4%; top: 236px; } .spark-fan-c { left: -24px; top: 560px; }
@@ -27,6 +30,7 @@
 .pack-copy .pill { margin-top: 30px; }
 .pack-sticky { right: 4px; bottom: 0; transform: rotate(-8deg); }
 
+@media (max-width: 1339px) { .fan { height: 944px; } }
 @media (max-width: 1179px) {
  .pack-grid { grid-template-columns: minmax(0, 1fr); gap: 48px; }
  .pack-copy { order: -1; padding-bottom: 0; padding-right: 200px; }
@@ -47,7 +51,8 @@
  .kpis dt, .kpis dd.ok-soft { font-size: 14px; }
  .cur-ppt { right: 4px; top: 10px; }
  .sheet-tabs { font-size: 14px; gap: 6px 14px; }
- .decision-line { font-size: 15px; background: none; }
+ .decision-line { font-size: 15px; }
+ .sheet-row { height: 10px; }
  .folder { align-self: flex-start; font-size: 15px; }
  .fan .spark { display: none; }
 }

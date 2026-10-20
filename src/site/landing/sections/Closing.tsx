@@ -1,4 +1,4 @@
-import { Cursor, Heading, Mascot, Spark } from '../kit'
+import { Cursor, Dots, Heading, Mascot, Spark } from '../kit'
 import { at, Plot, type Scale } from '../plot'
 import { BOARD_2027, FLOOR, YEAR_2027 } from '../records'
 import { Actions } from './Hero'
@@ -26,12 +26,12 @@ export function Closing() {
      <p className="muted">published Wed Nov 18, 5:10 pm</p>
     </article>
     <figure className="card slim">
-     <figcaption><strong>Monthly cash · Jan – Dec 2027 · board forecast</strong></figcaption>
+     <figcaption><strong><Dots>Monthly cash · Jan – Dec 2027 · board forecast</Dots></strong></figcaption>
      <div className="slim-body" role="img" aria-label="Board forecast closing cash, Jan to Dec 2027: lowest $2,039,100 in March, above the $2,000,000 floor, ending December at $2,494,350.">
       <Plot scale={board} floor={FLOOR} className="slim-plot" lines={[{ values: BOARD_2027, className: 'line-picked', dots: true }]}>
        <span className="slim-floor" style={{ top: at(board, 0, FLOOR).top }} aria-hidden="true">$2,000,000 floor</span>
        <i className="slim-stem" style={{ left: at(board, MAR, 0).left, height: at(board, MAR, BOARD_2027[MAR]).top }} aria-hidden="true" />
-       <span className="slim-chip-at" style={{ left: at(board, MAR, 0).left }}><p className="slim-chip">Lowest cash $2,039,100 · Mar 2027 · floor $2,000,000 <span className="ok">✓</span></p><Cursor name="Rachel" className="cur-slim" /></span>
+       <span className="slim-chip-at" style={{ left: at(board, MAR, 0).left }}><p className="slim-chip"><Dots>Lowest cash $2,039,100 · Mar 2027 · floor $2,000,000 <span className="ok">✓</span></Dots></p><Cursor name="Rachel" className="cur-slim" /></span>
       </Plot>
       <ol className="slim-x" aria-hidden="true">{YEAR_2027.map((m, i) => <li key={i} style={{ left: at(board, i, 0).left }}>{m[0]}</li>)}</ol>
      </div>

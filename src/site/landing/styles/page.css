@@ -9,7 +9,7 @@
  --display: Inter, system-ui, sans-serif; --sans: Inter, system-ui, sans-serif; --hand: Caveat, cursive; --mono: 'IBM Plex Mono', ui-monospace, monospace;
  --radius: 14px; --shadow: 0 1px 2px rgba(18, 16, 16, .05), 0 14px 32px -16px rgba(18, 16, 16, .22);
  --wrap: 1312px; --gutter: 64px;
- font-family: var(--sans); font-feature-settings: 'tnum' 1, 'cv11' 1; color: var(--text); background: #fff;
+ font-family: var(--sans); font-feature-settings: 'cv11' 1; font-variant-numeric: normal; color: var(--text); background: #fff;
  background-image: linear-gradient(#f1f1f4 1px, transparent 1px), linear-gradient(90deg, #f1f1f4 1px, transparent 1px);
  background-size: 56px 56px; background-position: center top;
  overflow-x: clip;
@@ -34,6 +34,22 @@ body.landing-body { background: #fff; }
 .h-glow { background: var(--glow); -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: .08em; margin-bottom: -.08em; }
 .lede { margin-top: 22px; max-width: 60ch; font-size: 23px; line-height: 1.42; color: var(--text); text-wrap-style: pretty; }
 .center .lede { margin-left: auto; margin-right: auto; max-width: 62ch; }
+
+/* Tabular figures only where numbers stand in columns or on axes; headings and words keep Inter's own hyphens. */
+.tnum, .plan-grid td, .xl-grid td, .zoom-cell td, .ledger .amt, .vt-row p, .hc-panel .amt, .hc-total, .kpis dd, .mc-y, .mc-x, .strip-y, .wk-y, .wk-delta, .wk-value, .slim-x { font-variant-numeric: tabular-nums; }
+
+/* Facts joined by "·": each fact is one box, and the separator in front of a fact that starts a line falls in the
+   clipped margin, so no line starts or ends on a separator. Left-aligned text only. */
+.dots { display: block; overflow: hidden; }
+.dots-in { display: block; margin-left: -.85em; }
+.fact { white-space: nowrap; }
+.fact::before { content: "·"; display: inline-block; width: .85em; text-align: center; }
+.fact > span { display: inline-block; max-width: calc(100% - .85em); white-space: normal; vertical-align: top; }
+.line { display: block; }
+.nowrap { white-space: nowrap; }
+/* A centered run (a centered heading's eyebrow) sits on one line, or one fact per line where it cannot. */
+.center .kicker .dots-in { margin-left: 0; }
+.center .kicker .fact:first-child::before { content: none; }
 
 /* Cards and their parts. */
 .card { position: relative; background: #fff; border: 1px solid var(--hair); border-radius: var(--radius); box-shadow: var(--shadow); }
@@ -108,6 +124,8 @@ body.landing-body { background: #fff; }
  .landing section { padding: 64px 0; }
  .landing section + section { padding-top: 28px; }
  .kicker { font-size: 13px; letter-spacing: .16em; }
+ .center .kicker .fact { display: block; }
+ .center .kicker .fact::before { content: none; }
  .landing h2 { margin-top: 14px; font-size: 40px; line-height: 1.02; letter-spacing: -.045em; }
  .lede { margin-top: 16px; font-size: 18px; }
  .pill { font-size: 16px; padding: 12px 16px; gap: 12px; }

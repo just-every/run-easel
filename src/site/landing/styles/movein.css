@@ -1,8 +1,10 @@
 /* 12 Before the switch: Adaptive Planning's August beside Easel's, 62 of 64 lines to the cent. */
 .mi-chips { display: grid; justify-items: center; gap: 14px; margin-top: 30px; }
-.mi-count { max-width: 880px; padding: 14px 24px; text-align: center; font-size: 17px; color: var(--ink); }
-.mi-mapped { margin-top: 6px; font-size: 14px; color: var(--muted); }
-.mi-qbo { max-width: 980px; padding: 12px 24px; text-align: center; font-size: 17px; color: var(--ink); }
+.movein { container: movein / inline-size; }
+.mi-count { max-width: 100%; padding: 14px 24px; font-size: 17px; color: var(--ink); }
+.mi-mapped { margin-top: 6px; font-size: 13.5px; color: var(--muted); }
+.mi-qbo { max-width: 100%; padding: 12px 24px; font-size: 17px; color: var(--ink); }
+.mi-count .dots, .mi-qbo .dots { text-align: left; }
 .ledgers { display: grid; grid-template-columns: minmax(0, 1fr) 270px minmax(0, 1fr); margin-top: 40px; align-items: start; }
 .ledger { padding: 0 0 8px; }
 .ledger h3 { padding: 22px 24px 16px; font-family: var(--display); font-size: 26px; font-weight: 820; letter-spacing: -.03em; color: var(--ink); border-bottom: 1px solid var(--hair); }
@@ -19,15 +21,24 @@
 .ledger-easel { grid-column: 3; }
 .mi-foot { position: relative; display: grid; justify-items: center; gap: 14px; margin-top: 44px; }
 .signoff { padding: 14px 30px; border-radius: 999px; font-size: 18px; }
+.signoff .dots { text-align: left; }
 .cur-signoff { left: calc(50% + 328px); top: 22px; }
 .spark-mi-l { left: calc(50% - 440px); top: 0; } .spark-mi-r { right: calc(50% - 440px); top: 0; transform: scaleX(-1); }
 .mi-also { font-size: 15px; color: var(--muted); }
 
+/* The full wrap: wider ledgers, each difference on one line laid across the gap, Easel's row starting after it. */
+@container movein (min-width: 1440px) {
+ .ledgers { grid-template-columns: minmax(0, 1fr) 190px minmax(0, 1fr); }
+ .match { max-width: 172px; margin-top: 120px; }
+ .diff { right: auto; left: -45px; width: max-content; transform: translate(-50%, -50%); padding: 6px 12px; font-size: 12.5px; white-space: nowrap; }
+ .ledger-easel li.differs { padding-left: 196px; background: linear-gradient(90deg, transparent 176px, var(--amber-soft) 176px); }
+ .ledger-easel li.differs::before { right: auto; left: -250px; width: 440px; }
+}
 @media (max-width: 1179px) {
- .ledgers { grid-template-columns: minmax(0, 1fr) 230px minmax(0, 1fr); }
- .diff { width: 200px; font-size: 13px; }
- .ledger-easel li.differs::before { width: 230px; }
- .ledger li { font-size: 15px; padding: 0 14px; gap: 10px; }
+ .ledgers { grid-template-columns: minmax(0, 1fr) 210px minmax(0, 1fr); }
+ .diff { width: 186px; font-size: 13px; }
+ .ledger-easel li.differs::before { width: 210px; }
+ .ledger li { font-size: 14.5px; padding: 0 14px; gap: 10px; }
  .ledger h3 { font-size: 22px; padding: 18px 16px 14px; }
  .match { max-width: 150px; }
  .cur-signoff, .spark-mi-l, .spark-mi-r { display: none; }

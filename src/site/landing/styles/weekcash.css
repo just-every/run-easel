@@ -6,14 +6,14 @@
 .spark-weeks-h { left: -50px; top: 20px; }
 .wk { --ch: 300px; --below: 56px; --axis: 66px; margin-top: 42px; padding: 28px 32px 30px; }
 .wk-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px 28px; }
-.wk-title { font-size: 17px; color: var(--muted); }
+.wk-title { flex: 1 1 auto; font-size: 17px; color: var(--muted); }
 .wk-title strong { font-family: var(--display); font-size: 23px; font-weight: 820; letter-spacing: -.025em; color: var(--ink); }
 .sw { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .sw::before { content: ""; width: 16px; height: 16px; border-radius: 4px; background: var(--green); }
 .sw-out::before { background: var(--pink-soft); border: 1.5px solid var(--magenta); }
 .sw-pay::before { width: 10px; height: 10px; border-radius: 50%; background: var(--magenta); }
-.wk-chart { position: relative; margin-top: 18px; padding-top: 116px; padding-left: var(--axis); }
-.wk-y { position: absolute; left: 0; bottom: 0; top: 116px; width: var(--axis); font-size: 15px; color: var(--muted); }
+.wk-chart { position: relative; margin-top: 16px; padding-top: 26px; padding-left: var(--axis); }
+.wk-y { position: absolute; left: 0; bottom: 0; top: 26px; width: var(--axis); font-size: 15px; color: var(--muted); }
 .wk-y li { position: absolute; left: 0; bottom: calc(var(--below) + var(--at) * var(--ch)); transform: translateY(50%); }
 .wk-y .floor { color: var(--red); font-weight: 650; }
 .wk-of { position: absolute; left: 0; bottom: 30px; font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -35,9 +35,10 @@
 .wk-pin::after { content: ""; position: absolute; left: calc(50% - 6px); top: calc(100% - 4px); width: 12px; height: 12px; border-radius: 50%; background: var(--magenta); border: 2px solid #fff; box-sizing: border-box; }
 .wk-pin { margin-bottom: 0; }
 .wk-pin > span, .wk-pin > small { position: relative; }
-.wk-tip { position: absolute; left: calc(var(--axis) + (100% - var(--axis)) * 3.15 / 13); top: 0; display: grid; gap: 4px; padding: 11px 16px; border-radius: 10px; background: #15161c; color: #fff; font-size: 15px; box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .5); white-space: nowrap; }
+/* Owen's tooltip sits just over the bars, starting right of Nov 9's "Fri Nov 13" pin. */
+.wk-tip { position: absolute; left: calc(var(--axis) + (100% - var(--axis)) * 3.5 / 13 + 46px); top: 0; display: grid; gap: 4px; padding: 11px 16px; border-radius: 10px; background: #15161c; color: #fff; font-size: 15px; box-shadow: 0 10px 24px -10px rgba(0, 0, 0, .5); white-space: nowrap; }
 .wk-tip span { color: #c9cbd3; font-size: 14px; }
-.cur-nov9 { left: calc(var(--axis) + (100% - var(--axis)) * 3.45 / 13); top: calc(116px + var(--ch) * .52); }
+.cur-nov9 { left: calc(var(--axis) + (100% - var(--axis)) * 3.45 / 13); top: calc(26px + var(--ch) * .52); }
 .wk-matter, .wk-moved { display: none; }
 .wk-stems { display: block; width: calc(100% - var(--axis)); height: 64px; margin: 4px 0 0 var(--axis); overflow: visible; }
 .wk-stems path { fill: none; stroke: var(--magenta); stroke-width: 2.2; stroke-dasharray: 2 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }

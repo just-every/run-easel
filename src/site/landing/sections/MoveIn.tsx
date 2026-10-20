@@ -1,4 +1,4 @@
-import { Check, Cursor, Heading, Spark } from '../kit'
+import { Check, Cursor, Dots, Heading, Spark } from '../kit'
 import '../styles/movein.css'
 
 const LINES: [line: string, adaptive: string, easel: string, kind?: string, note?: string][] = [
@@ -6,15 +6,15 @@ const LINES: [line: string, adaptive: string, easel: string, kind?: string, note
  ['Services revenue', '$27,400', '$27,400'],
  ['Salaries and wages', '$1,021,400', '$1,021,400'],
  ['Payroll taxes', '$78,140', '$78,140'],
- ['Software subscriptions', '$38,920', '$43,130', 'mapping', "account 6150 sat in Adaptive's Other G&A · +$4,210"],
+ ['Software subscriptions', '$38,920', '$43,130', 'mapping', "account 6150 sat in Adaptive's Other G&A\u00a0·\u00a0+$4,210"],
  ['Cloud hosting', '$94,180', '$94,180'],
- ['Deferred revenue release', '$118,400', '$105,800', 'timing', 'booked Aug in Adaptive, Sep in the ledger · −$12,600'],
+ ['Deferred revenue release', '$118,400', '$105,800', 'timing', 'booked Aug in Adaptive, Sep in the ledger\u00a0·\u00a0−$12,600'],
  ['Rent', '$36,500', '$36,500'],
 ]
 
 function Ledger({ name, side }: { name: string; side: 'adaptive' | 'easel' }) {
  return <article className={`card ledger ledger-${side}`} aria-labelledby={`ledger-${side}`}>
-  <h3 id={`ledger-${side}`}>{name} · August 2026</h3>
+  <h3 id={`ledger-${side}`}><Dots>{name} · August 2026</Dots></h3>
   <ul>
    {LINES.map(([line, adaptive, easel, kind, note]) => <li key={line} className={note ? 'differs' : undefined}>
     <span>{line}</span><span className="amt">{side === 'adaptive' ? adaptive : easel}</span>
@@ -34,21 +34,21 @@ export function MoveIn() {
    </div>
    <div className="mi-chips">
     <div className="card mi-count">
-     <p><strong>From Adaptive Planning</strong> · 286 accounts · 142 positions · totals reconcile <span className="ok">✓</span> · 3 items to map</p>
-     <p className="mi-mapped">mapped Fri Oct 2, 10:15 am: Commission % formula → kept as values · 'Laptop refresh' column → expense schedule · Board access → viewers</p>
+     <p><Dots><strong>From Adaptive Planning</strong> · 286 accounts · 142 positions · totals reconcile <span className="ok">✓</span> · 3 items to map</Dots></p>
+     <p className="mi-mapped"><Dots>mapped Fri Oct 2, 10:15 am: Commission % formula → kept as values · 'Laptop refresh' column → expense schedule · Board{'\u00a0'}access → viewers</Dots></p>
     </div>
-    <p className="card mi-qbo"><strong>QuickBooks Online connected</strong> Thu Oct 1, 2:30 pm · 24 months backfilled, Sep 2024 – Aug 2026 · each tied to its trial balance <span className="ok">✓</span></p>
+    <p className="card mi-qbo"><Dots><strong>QuickBooks Online connected</strong> Thu Oct 1, 2:30 pm · 24 months backfilled, Sep 2024 – Aug 2026 · each tied to its trial balance <span className="ok">✓</span></Dots></p>
    </div>
    <div className="ledgers">
     <Ledger name="Adaptive Planning" side="adaptive" />
-    <p className="match">62 of 64 match to the cent</p>
+    <p className="match">62 of 64 match to the{'\u00a0'}cent</p>
     <Ledger name="Easel" side="easel" />
    </div>
    <div className="mi-foot">
     <Spark className="spark-mi-l" /><Spark className="spark-mi-r" />
-    <p className="pill pill-green signoff"><span><strong>Signed off by Rachel Kim</strong> · Fri Oct 2, 4:30 pm · first close in Easel Mon Oct 5</span></p>
+    <p className="pill pill-green signoff"><Dots><strong>Signed off by Rachel Kim</strong> · Fri Oct 2, 4:30 pm · first close in Easel Mon Oct 5</Dots></p>
     <Cursor name="Rachel" className="cur-signoff" />
-    <p className="mi-also">Also moves in from Planful, Anaplan, Runway and Pigment.</p>
+    <p className="mi-also">Also moves in from Planful, Anaplan, Runway and{'\u00a0'}Pigment.</p>
    </div>
   </div>
  </section>

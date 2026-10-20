@@ -1,4 +1,4 @@
-import { Check, Cursor, Heading, Lock, Spark } from '../kit'
+import { Check, Cursor, Dots, Heading, Lock, Spark } from '../kit'
 import { DEPARTMENTS } from '../records'
 import '../styles/headcount.css'
 
@@ -11,11 +11,11 @@ const ROWS: [role: string, start: string, pay: string][] = [
 
 function Panel({ who, role, access, pay }: { who: string; role: string; access: string; pay: boolean }) {
  return <article className="card hc-panel" aria-label={`${who}'s view`}>
-  <p className="hc-who"><strong>{who}</strong> · {role} · {access}</p>
+  <p className="hc-who"><Dots><strong>{who}</strong> · {role} · {access}</Dots></p>
   <Cursor name={who} className="cur-hc" />
   <h3>Sales · 22 → 30</h3>
   <ul>
-   {ROWS.map(([name, start, amount]) => <li key={name}><span>{name}{start ? <> · {start}</> : null}</span>{pay ? <span className="amt">{amount}</span> : <Lock />}</li>)}
+   {ROWS.map(([name, start, amount]) => <li key={name}><Dots>{name}{start ? ` · ${start}` : null}</Dots>{pay ? <span className="amt">{amount}</span> : <Lock />}</li>)}
   </ul>
   <p className="hc-total"><strong>Sales FY2027</strong><strong>$4,620,000</strong></p>
  </article>
@@ -32,7 +32,7 @@ export function Headcount() {
    <div className="hc-bridge">
     <p className="card gusto">
      <span className="people-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2" /><circle cx="16.5" cy="9" r="2.6" /><path d="M3 19c0-3.4 2.7-5.6 6-5.6s6 2.2 6 5.6zM14.6 13.7c3.4-.6 6.4 1.2 6.4 4.8h-4.6" /></svg></span>
-     <span><strong>Gusto</strong> · 142 people · 142 matched · 0 unplanned · 2 salaries changed Oct 1 · synced 6:00 am Tue Oct 20</span>
+     <span className="gusto-text"><Dots><strong>Gusto</strong> · 142 people · 142 matched · 0 unplanned · 2 salaries changed Oct 1 · synced 6:00 am Tue Oct 20</Dots></span>
      <Check label="synced" />
     </p>
     <svg className="connector c-hc-l" viewBox="0 0 100 60" aria-hidden="true"><path d="M96 8C50 4 20 20 14 52" /><path className="head" d="M7 44 14 54 21 44" /></svg>
@@ -44,7 +44,7 @@ export function Headcount() {
    </div>
    <article className="card hc-strip">
     <Spark className="spark-hc-l" /><Spark className="spark-hc-r" />
-    <p><strong>FY2027 headcount</strong> <strong className="hc-n">142 → 168</strong> · Gusto roster synced · salaries restricted</p>
+    <p><Dots><strong>FY2027 headcount</strong> <strong className="hc-n">142 → 168</strong> · Gusto roster synced · salaries restricted</Dots></p>
     <ul>{DEPARTMENTS.map(([name, now, planned]) => <li key={name}><strong>{name}</strong><span>{now} → {planned}</span></li>)}</ul>
    </article>
   </div>

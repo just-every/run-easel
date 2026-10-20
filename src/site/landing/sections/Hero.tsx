@@ -1,4 +1,4 @@
-import { Check, Cursor, Lock, Spark, Sticky } from '../kit'
+import { Check, Cursor, Dots, Lock, Spark, Sticky } from '../kit'
 import { at, Plot, type Scale } from '../plot'
 import { DEPARTMENTS, FLOOR, MONTHS, OLD_FORECAST, PICKED, PIPELINE, WEEKS, short } from '../records'
 import '../styles/hero.css'
@@ -18,7 +18,7 @@ const MAR = 5, MAY = 7
 function MonthlyCash() {
  return <figure className="mc">
   <figcaption className="mc-head">
-   <span className="mc-title"><strong>Monthly cash</strong> · Oct 2026 – Dec 2027</span>
+   <Dots className="mc-title"><strong>Monthly cash</strong> · Oct 2026 – Dec 2027</Dots>
    <span className="legend"><span className="key key-picked">Picked plan</span><span className="key key-old">Old forecast</span></span>
   </figcaption>
   <div className="mc-body" role="img" aria-label="Closing cash by month, Oct 2026 to Dec 2027. The old forecast falls to $1,910,000 in Mar 2027, below the $2,000,000 floor; the picked plan's lowest month is $2,022,500 in Mar 2027.">
@@ -49,17 +49,17 @@ export function Hero() {
    <div className="hero-copy">
     <h1 id="hero-title"><span className="h-ink">Plan the year.</span> <span className="h-glow">Protect the cash.</span></h1>
     <p className="hero-sub">Easel connects your ledger, payroll and CRM, forecasts P&amp;L, balance sheet and cash, keeps Excel live and flags any month below your cash floor.</p>
-    <p className="hero-alt">100% free, open source alternative to <strong>Workday Adaptive Planning</strong>, <strong>Planful</strong> and <strong>Anaplan</strong></p>
+    <p className="hero-alt">100% free, open source alternative to <strong>Workday Adaptive Planning</strong>, <strong>Planful</strong> and{'\u00a0'}<strong>Anaplan</strong></p>
     <Actions />
    </div>
    <div className="hero-stage">
+    <div className="hero-top">
     <article className="card h-exception" aria-label="Exception">
      <Spark className="spark-ex" />
-     <span className="tag tag-red">exception</span>
      <ol className="chain">
-      <li><Check tone="red" /><p>Lowest cash $1,910,000 · Mar 2027 · below $2,000,000 floor · Ridgeway Logistics slipped Dec → Mar · Tue Oct 13</p></li>
-      <li><span className="chain-step" aria-hidden="true">↓</span><p>3 responses · Option 2: 3 sales hires Feb → May · lowest cash $2,022,500 <span className="ok">✓</span></p></li>
-      <li><Check /><p>Rachel picked Option 2 · Wed Oct 14</p></li>
+      <li><Check tone="red" /><p><Dots aside={<span className="tag tag-red">exception</span>}>Lowest cash $1,910,000 · Mar 2027 · below $2,000,000 floor · Ridgeway Logistics slipped Dec → Mar · Tue Oct 13</Dots></p></li>
+      <li><span className="chain-step" aria-hidden="true">↓</span><p><Dots>3 responses · Option 2: 3 sales hires Feb → May · lowest cash $2,022,500 <span className="ok">✓</span></Dots></p></li>
+      <li><Check /><p><Dots>Rachel picked Option 2 · Wed Oct 14</Dots></p></li>
      </ol>
      <Cursor name="Rachel" className="cur-ex" />
     </article>
@@ -67,32 +67,33 @@ export function Hero() {
      <Spark className="spark-run" />
      <p className="card-label">Runway</p>
      <p className="big">31 months</p>
-     <p className="muted">lowest cash $2,022,500 · floor $2,000,000 <span className="ok">✓</span></p>
+     <p className="muted"><Dots>lowest cash $2,022,500 · floor $2,000,000 <span className="ok">✓</span></Dots></p>
      <Check label="floor kept" />
     </article>
+    </div>
     <article className="card h-cash">
      <MonthlyCash />
      <Sticky className="h-sticky">FY27 plan to the board Nov 19!</Sticky>
     </article>
     <article className="card h-mini h-pipe">
      <Spark className="spark-pipe" />
-     <p className="mini-title"><strong>HubSpot</strong> · Q1 2027</p>
-     <p className="mini-line">$2.4M open · weighted $860,000 · probability by stage</p>
+     <p className="mini-title"><Dots><strong>HubSpot</strong> · Q1 2027</Dots></p>
+     <p className="mini-line"><Dots>$2.4M open · weighted $860,000 · probability by stage</Dots></p>
      <ol className="stage-bars" aria-label="Weighted pipeline by stage">
       {PIPELINE.map(s => <li key={s.stage} style={{ ['--h' as string]: `${(s.open * s.probability / maxWeighted) * 100}%` }}><i /><span>{s.probability}%</span></li>)}
      </ol>
     </article>
     <article className="card h-mini h-heads">
      <p className="mini-title"><strong>FY2027 headcount</strong></p>
-     <p className="mini-line">142 → 168 · Gusto roster synced · salaries restricted <Lock /></p>
+     <p className="mini-line"><Dots>142 → 168 · Gusto roster synced · salaries restricted <Lock /></Dots></p>
      <ol className="people" aria-label="Each figure is 12 people: 142 now, 26 planned hires">
       {Array.from({ length: Math.round(HEADS_PLANNED / 12) }, (_, i) => <li key={i} className={i < Math.round(HEADS_NOW / 12) ? undefined : 'hire'} />)}
      </ol>
     </article>
     <article className="card h-mini h-weeks">
      <Spark className="spark-weeks" />
-     <p className="mini-title"><strong>13-week cash</strong> · week of Mon Oct 19</p>
-     <p className="mini-line">$2.45M · payroll Fri Oct 30</p>
+     <p className="mini-title"><Dots><strong>13-week cash</strong> · week of Mon Oct 19</Dots></p>
+     <p className="mini-line"><Dots>$2.45M · payroll Fri Oct 30</Dots></p>
      <ol className="week-bars" aria-label="Closing cash for each of the 13 weeks, highest the week of Oct 19 and $2.23M the week of Jan 11">
       {WEEKS.map(w => <li key={w.week} className={w.payroll ? 'pay' : undefined} style={{ ['--h' as string]: `${((w.close - minClose) / (maxClose - minClose)) * 100}%` }} />)}
      </ol>

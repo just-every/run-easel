@@ -1,93 +1,145 @@
-/* 08 FY2027 budget: Engineering's grid over two-thirds, the reminder and the eight-department checklist rail. */
-.budget-layout { position: relative; display: grid; grid-template-columns: minmax(0, 67fr) minmax(0, 30fr); grid-template-areas: "copy rail" "plan rail"; column-gap: 3%; align-items: start; }
+/* 08 FY2027 budget: Engineering's grid over two-thirds, the reminder and the eight-department checklist rail. The
+   grid sits beside the rail only where all twelve months fit (the full 1312 px wrap); narrower, the rail goes under
+   it, and where the months no longer fit the grid scrolls with a frozen label column and whole months in view. */
+.budget { container: budget / inline-size; }
+.budget-layout { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "plan" "rail"; }
 .budget-copy { grid-area: copy; padding-bottom: 34px; }
-.plan { grid-area: plan; padding: 22px 20px 20px; }
+.plan { grid-area: plan; container: plan / inline-size; padding: 20px 18px 18px; }
 .spark-plan { left: -36px; top: -30px; }
 .plan h3 { font-size: 22px; font-weight: 500; color: var(--ink); padding: 0 4px 14px; }
 .plan h3 strong { font-family: var(--display); font-weight: 820; letter-spacing: -.025em; }
-.swipe { display: none; }
-.plan-scroll { overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; }
-.plan-inner { position: relative; min-width: 790px; }
+.swipe, .swipe-note { display: none; }
+.swipe { margin-top: 2px; font-size: 15px; color: var(--muted); }
+
+/* The grid: a label column, then twelve months; --show is how many whole months the scroller keeps in view. The
+   table stops 4 px short of the right edge so the dashed box encloses Dec with the same room as every month. */
+.plan-scroll { --label: 150px; --show: 12; overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; }
+.plan-inner { position: relative; padding-right: 4px; min-width: calc(var(--label) + 4px + 12 * (100% - var(--label) - 4px) / var(--show)); }
 .plan-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .plan-grid th, .plan-grid td { height: 40px; padding: 0 5px; border-bottom: 1px solid var(--hair); font-size: 14px; color: var(--ink); text-align: right; white-space: nowrap; }
-.plan-grid thead th { height: 40px; font-weight: 500; color: var(--muted); text-align: center; }
-.plan-grid .item { width: 140px; text-align: left; padding-left: 14px; }
+.plan-grid thead th { font-weight: 500; color: var(--muted); text-align: center; }
+.plan-grid .item { width: var(--label); text-align: left; padding-left: 14px; }
 .plan-grid tbody th { padding-left: 14px; text-align: left; font-weight: 650; }
 .plan-grid td + td, .plan-grid th + td, .plan-grid thead th + th { border-left: 1px solid var(--hair); }
-.plan-grid tbody tr:first-child th, .plan-grid tbody tr:first-child td { border-top: 0; }
 .plan-grid .sub th { padding-left: 38px; font-weight: 450; position: relative; }
 .plan-grid .sub th::before { content: ""; position: absolute; left: 20px; top: -1px; width: 10px; height: 21px; border-left: 1px solid #b9bcc5; border-bottom: 1px solid #b9bcc5; }
-.plan-grid small { display: block; margin-top: 2px; font-size: 12px; font-weight: 450; color: var(--muted); }
+.plan-grid small { display: block; margin-top: 2px; white-space: normal; font-size: 12px; font-weight: 450; color: var(--muted); }
 .plan-grid tbody tr:last-child th, .plan-grid tbody tr:last-child td { height: 54px; border-bottom: 0; }
 .plan-grid .flag { background: #fff1a8; position: relative; }
 .plan-grid .flag::after { content: ""; position: absolute; top: 0; right: 0; border-top: 9px solid #e0a400; border-left: 9px solid transparent; }
-.paste-box { position: absolute; left: 2px; right: 2px; top: 41px; height: 120px; border: 2px dashed var(--magenta); border-radius: 8px; pointer-events: none; }
-.paste-tag { position: absolute; left: 44%; top: 41px; z-index: 1; padding: 2px 10px; border-radius: 6px; background: var(--pink-soft); color: var(--magenta); font-size: 13px; font-weight: 650; white-space: nowrap; transform: translateY(-50%); }
-.cur-priya { right: -50px; top: 150px; }
-.note-chip { display: flex; align-items: center; gap: 14px; margin-top: 16px; max-width: 72%; padding: 14px 18px; border-radius: 10px; background: #fff6c4; font-size: 17px; color: var(--ink); }
+.paste-box { position: absolute; left: 1px; right: 0; top: 41px; height: 120px; border: 2px dashed var(--magenta); border-radius: 8px; pointer-events: none; }
+.paste-tag { position: absolute; left: 44%; top: 41px; z-index: 4; padding: 2px 10px; border-radius: 6px; background: var(--pink-soft); color: var(--magenta); font-size: 13px; font-weight: 650; white-space: nowrap; transform: translateY(-50%); }
+
+/* Under the grid: the Jul note, Priya's cursor in the space beside it (never on a figure), and the sticky. */
+.plan-foot { position: relative; display: flex; align-items: flex-start; gap: 18px; margin-top: 16px; }
+.note-chip { display: flex; align-items: center; gap: 14px; flex: 0 1 auto; max-width: 64%; padding: 14px 18px; border-radius: 10px; background: #fff6c4; font-size: 17px; color: var(--ink); }
 .note-icon { flex: none; width: 22px; height: 26px; border-radius: 4px; background: #f3b81f; box-shadow: inset 0 -6px 0 #e8a710; }
-.rail { grid-area: rail; display: grid; gap: 22px; }
-.reminder { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; align-items: center; padding: 20px 22px; }
+.plan-foot .cur-priya { position: relative; flex: none; margin-top: 6px; }
+.budget-sticky { width: 172px; padding: 14px 14px 16px; font-size: 24px; transform: rotate(-4deg); }
+.sticky-card { display: none; }
+.sticky-row { right: 10px; top: 50%; translate: 0 -50%; width: 150px; font-size: 22px; }
+.c-sales { display: none; }
+
+.rail { grid-area: rail; display: grid; gap: 22px; margin-top: 30px; }
+.reminder { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; align-items: center; padding: 18px 22px; }
 .spark-reminder { right: -26px; top: -32px; transform: scaleX(-1); }
 .bell { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #eef0f4; }
 .bell svg { width: 26px; height: 26px; fill: none; stroke: #4f525c; stroke-width: 1.8; stroke-linejoin: round; }
 .reminder p { display: grid; gap: 4px; font-size: 16px; line-height: 1.4; color: var(--text); }
 .reminder strong { font-size: 19px; color: var(--ink); }
-.checklist { padding: 22px 20px 20px; }
+.checklist { padding: 20px 20px 18px; }
 .checklist h3 { font-size: 20px; font-weight: 450; color: var(--muted); padding: 0 6px 12px; }
 .checklist h3 strong { color: var(--ink); font-weight: 760; }
 .checklist ol { border: 1px solid var(--hair); border-radius: 10px; }
-.checklist li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 12px; }
+.checklist li { position: relative; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 12px; }
 .checklist li + li { border-top: 1px solid var(--hair); }
 .checklist li .check { width: 26px; height: 26px; }
-.checklist li > p { display: flex; flex-wrap: wrap; align-items: baseline; font-size: 15px; color: var(--text); }
-.checklist li > p strong { font-size: 15px; color: var(--ink); white-space: nowrap; }
-.checklist li .sep { white-space: pre; }
-.checklist li .sep-phone { display: none; }
-.checklist li .date { margin-left: auto; padding-left: 10px; text-align: right; white-space: nowrap; font-size: 14px; }
+/* One line per department where the rail is wide: name · head · date. */
+.checklist .dept-row { display: flex; align-items: baseline; gap: .3em; font-size: 15px; line-height: 1.35; color: var(--text); white-space: nowrap; }
+.checklist .dept-row strong { color: var(--ink); }
+.checklist .dept-row strong::after { content: "\00a0·"; font-weight: 400; color: var(--text); }
+.checklist .who { flex: 1 1 auto; }
+.checklist li.sales .dept-row { padding-right: 170px; }
 .rail-pill { margin-top: 14px; font-size: 16px; }
-.sales-note { position: absolute; right: calc(100% + 64px); bottom: -96px; width: 166px; z-index: 3; }
-.budget-sticky { position: relative; width: 166px; transform: rotate(-4deg); }
-.c-sales { position: absolute; left: calc(100% - 4px); top: -150px; width: 104px; height: 170px; }
+.rail-pill > span { flex: 1 1 auto; min-width: 0; }
 
-@media (max-width: 1179px) {
- .budget-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "plan" "rail"; }
- .rail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 30px; align-items: start; }
- .sales-note { right: auto; left: auto; right: 8px; bottom: auto; top: -14px; position: absolute; width: 150px; }
- .budget-sticky { width: 150px; font-size: 22px; }
- .c-sales { display: none; }
- .checklist li:has(.sales-note) { position: relative; }
- .checklist li:has(.sales-note) { min-height: 96px; align-items: start; }
- .checklist li:has(.sales-note) > p { padding-right: 150px; }
+/* The full wrap: grid beside the rail, the sticky in the grid card's corner with its arrow to the Sales row. */
+@container budget (min-width: 1440px) {
+ .budget-layout { grid-template-columns: minmax(0, 1fr) 384px; grid-template-areas: "copy rail" "plan rail"; column-gap: 26px; align-items: end; }
+ .plan { padding: 20px 14px 18px; }
+ .checklist { padding: 20px 16px 18px; }
+ .budget-copy { align-self: start; }
+ .rail { margin-top: 0; gap: 20px; }
+ .reminder { padding: 16px 20px; }
+ .checklist li { padding: 8px 12px; }
+ .checklist .dept-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; white-space: normal; }
+ .checklist .dept-row strong::after { content: none; }
+ .checklist .who .dots-in { display: flex; justify-content: space-between; gap: 10px; }
+ .checklist .who .fact ~ .fact::before { content: none; }
+ .checklist .who .fact > span { max-width: none; }
+ .checklist .who .fact:last-child { font-size: 14px; }
+ .checklist li.sales .dept-row { padding-right: 0; }
+ .sticky-row { display: none; }
+ .plan-foot { margin-top: 14px; min-height: 96px; }
+ .note-chip { max-width: calc(100% - 300px); font-size: 16px; }
+ .rail-pill { gap: 10px; padding: 12px; font-size: 15px; }
+ .plan-foot .cur-priya { margin: 22px 0 0 2px; }
+ .sticky-card { display: block; position: absolute; right: 6px; bottom: -6px; }
+ .c-sales { display: block; right: calc(100% - 6px); top: calc(50% - 10px); width: 104px; height: 190px; }
 }
+
+/* Where twelve months no longer fit: frozen labels, "swipe for more", and only whole months in view. */
+@container plan (max-width: 863.98px) {
+ .swipe { display: block; }
+ .plan-grid .item, .plan-grid tbody th { position: sticky; left: 0; z-index: 2; background: #fff; }
+ .plan-grid .item::after, .plan-grid tbody th::after { content: ""; position: absolute; top: 0; right: -1px; bottom: -1px; border-right: 1px solid var(--hair-strong); }
+ .paste-tag { left: calc(var(--label) + 10px); }
+ .paste-box { z-index: 3; }
+ .plan-scroll { --show: 11; }
+}
+@container plan (max-width: 804.98px) { .plan-scroll { --show: 10; } }
+@container plan (max-width: 745.98px) { .plan-scroll { --show: 9; } }
+@container plan (max-width: 686.98px) { .plan-scroll { --show: 8; } }
+@container plan (max-width: 627.98px) { .plan-scroll { --show: 7; } }
+@container plan (max-width: 568.98px) { .plan-scroll { --show: 6; } }
+@container plan (max-width: 509.98px) { .plan-scroll { --show: 5; } }
+@container plan (max-width: 450.98px) { .plan-scroll { --show: 4; } }
+@container plan (max-width: 391.98px) { .plan-scroll { --show: 3; } }
+
 @media (max-width: 759px) {
  .budget-copy { padding-bottom: 26px; }
  .plan { padding: 16px 12px 14px; }
  .plan h3 { font-size: 17px; padding: 0 2px 10px; }
- .swipe { display: inline; color: var(--muted); }
+ .swipe { font-size: 14px; }
+ .swipe-note { display: inline; }
  .spark-plan { display: none; }
- .plan-inner { min-width: 812px; }
- .plan-grid th, .plan-grid td { font-size: 14px; }
- .plan-grid .item, .plan-grid tbody th { position: sticky; left: 0; z-index: 2; background: #fff; }
- .plan-grid .item { width: 116px; }
- .plan-grid tbody th { white-space: normal; }
- .paste-tag { left: 140px; }
- .plan { margin-right: 52px; }
- .cur-priya { right: -46px; top: 128px; }
+ .plan-scroll { --label: 128px; }
+ /* The tag sits in a gap under the pasted block, over the frozen labels. */
+ .plan-grid tbody tr:nth-child(4) > * { height: 66px; padding-top: 26px; }
+ .plan-grid tbody tr:nth-child(4) th::before { top: 25px; }
+ .paste-tag { left: 6px; top: 175px; font-size: 12px; padding: 1px 8px; }
+ .plan-grid th, .plan-grid td { font-size: 14px; padding: 0 4px; }
+ .plan-grid tbody th { font-size: 13px; }
+ .plan-grid .item, .plan-grid tbody th { padding-left: 10px; }
+ .plan-grid .sub th { padding-left: 32px; }
+ .plan-grid .sub th::before { left: 16px; }
+ .plan-foot { display: block; margin-top: 34px; }
+ .plan-foot .cur-priya { position: absolute; right: 2px; top: -34px; margin: 0; }
  .note-chip { max-width: none; font-size: 15px; padding: 12px 14px; }
- .rail { grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 22px; }
+ .rail { gap: 16px; margin-top: 22px; }
  .reminder { grid-template-columns: 40px minmax(0, 1fr); padding: 14px 16px; gap: 12px; }
  .bell { width: 40px; height: 40px; } .bell svg { width: 20px; height: 20px; }
  .checklist { padding: 16px 12px 14px; }
- .checklist li { position: relative; align-items: start; }
- .checklist li > p strong { font-size: 17px; }
- .checklist li .sep { display: none; }
- .checklist li > p { display: block; font-size: 14px; }
- .checklist li > p strong { display: block; }
- .checklist li .sep-phone { display: inline; }
- .checklist li .date { margin: 0; padding: 0; font-size: 14px; }
- .checklist li:has(.sales-note) { position: relative; }
- .checklist li:has(.sales-note) > p { padding-right: 112px; }
- .sales-note { left: auto; right: 4px; top: -6px; width: 118px; }
- .budget-sticky { width: 118px; font-size: 17px; padding: 8px 8px 10px; }
+ .checklist li { align-items: start; }
+ .checklist .dept-row { display: block; font-size: 14px; white-space: normal; }
+ .checklist .dept-row strong { display: block; font-size: 17px; }
+ .checklist .dept-row strong::after { content: none; }
+ .checklist li.sales .dept-row { padding-right: 122px; }
+ .sticky-row { right: 4px; width: 118px; font-size: 17px; padding: 8px 8px 10px; }
+}
+@media (max-width: 380px) {
+ .plan-scroll { --label: 120px; }
+ .plan-grid th, .plan-grid td { padding: 0 3px; }
+ .plan-grid tbody th { font-size: 12px; }
+ .plan-grid .item, .plan-grid tbody th { padding-left: 8px; }
 }

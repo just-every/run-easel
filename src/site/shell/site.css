@@ -14,7 +14,8 @@ a { color: inherit; }
 .site-brand { display: inline-flex; align-items: center; gap: 14px; font-family: Inter, var(--font); font-size: 36px; line-height: 1; font-weight: 850; letter-spacing: -.045em; text-decoration: none; color: #121010; }
 .site-brand img { width: auto; height: 48px; }
 .site-header nav, .site-footer nav { display: flex; gap: 40px; font-size: 19px; }
-.site-header nav a, .site-footer nav a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+.site-header nav a, .site-footer nav a { text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap; }
+.site-footer nav { flex-wrap: wrap; row-gap: 0; }
 .site-header nav a:hover, .site-footer nav a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
 .site-header nav a[aria-current=page] { position: relative; }
 .site-header nav a[aria-current=page]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -24px; border-bottom: 2px solid var(--ink); }
@@ -47,4 +48,11 @@ a { color: inherit; }
  .eyebrow { font-size: 12px; }
  .site-footer { flex-direction: column; align-items: flex-start; }
  .site-footer nav { gap: 24px; }
+}
+@media (max-width: 380px) {
+ .site-brand { font-size: 24px; }
+ .site-brand img { height: 36px; }
+ .site-header { gap: 12px; }
+ .site-header nav { gap: 16px; font-size: 16px; }
+ .site-footer nav { gap: 6px 20px; }
 }

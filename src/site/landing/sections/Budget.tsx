@@ -1,4 +1,4 @@
-import { Check, Cursor, Heading, Spark, Sticky } from '../kit'
+import { Check, Cursor, Dots, Heading, Spark, Sticky } from '../kit'
 import '../styles/budget.css'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -8,7 +8,7 @@ const ROWS: { name: string; value: string; note?: string; sub?: boolean; pasted?
  { name: 'Cloud hosting', value: '95,000', pasted: true },
  { name: 'AWS', value: '78,000', sub: true },
  { name: 'Datadog', value: '17,000', sub: true },
- { name: 'Conference travel', value: '5,000', note: '$60,000 spread evenly' },
+ { name: 'Conference travel', value: '5,000', note: '$60,000 spread\u00a0evenly' },
 ]
 const DEPTS: [dept: string, head: string, date: string][] = [
  ['Support', 'Tasha Greene', 'Thu Oct 8'], ['People', 'Carla Jensen', 'Fri Oct 9'], ['G&A', 'Rachel Kim', 'Mon Oct 12'], ['Product', 'Sam Whitaker', 'Tue Oct 13'],
@@ -25,7 +25,7 @@ export function Budget() {
    </div>
    <article className="card plan" aria-labelledby="plan-title">
     <Spark className="spark-plan" />
-    <h3 id="plan-title"><strong>Engineering</strong> · FY2027 budget · Jan – Dec 2027<span className="swipe"> · swipe for more →</span></h3>
+    <h3 id="plan-title"><Dots><strong>Engineering</strong> · FY2027 budget · Jan – Dec 2027</Dots><span className="swipe">swipe for more →</span></h3>
     <div className="plan-scroll" tabIndex={0} aria-label="Engineering FY2027 budget grid, scrolls sideways">
      <div className="plan-inner">
       <table className="plan-grid">
@@ -41,25 +41,31 @@ export function Budget() {
       <span className="paste-box" aria-hidden="true" />
      </div>
     </div>
-    <Cursor name="Priya" tone="gold" className="cur-priya" />
-    <p className="note-chip"><span className="note-icon" aria-hidden="true" /><span><strong>Cloud hosting · Jul<span className="swipe"> (swipe)</span>:</strong> Database move done Sep 28; usage flat.</span></p>
+    <div className="plan-foot">
+     <p className="note-chip"><span className="note-icon" aria-hidden="true" /><span><strong>Cloud hosting · Jul<span className="swipe-note"> (swipe)</span>:</strong> Database move done Sep 28; usage{'\u00a0'}flat.</span></p>
+     <Cursor name="Priya" tone="gold" className="cur-priya" />
+     <Sticky className="budget-sticky sticky-card">Sales moved its<br />3 starts to May.</Sticky>
+    </div>
    </article>
    <div className="rail">
     <article className="card reminder">
      <Spark className="spark-reminder" />
      <span className="bell" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15zM10 20.5a2 2 0 0 0 4 0" /></svg></span>
-     <p><strong>Reminder</strong><span>Thu Oct 15, 8:00 am · 3 departments open · Slack and email</span></p>
+     <p><strong>Reminder</strong><Dots>Thu Oct 15, 8:00 am · 3 departments open · Slack and email</Dots></p>
     </article>
     <article className="card checklist" aria-labelledby="requested-title">
-     <h3 id="requested-title"><strong>Requested</strong> Mon Oct 5 · due Fri Oct 16</h3>
+     <h3 id="requested-title"><Dots><strong>Requested</strong> Mon Oct 5 · due Fri Oct 16</Dots></h3>
      <ol>
-      {DEPTS.map(([dept, head, date]) => <li key={dept}>
+      {DEPTS.map(([dept, head, date]) => <li key={dept} className={dept === 'Sales' ? 'sales' : undefined}>
        <Check />
-       <p><strong>{dept}</strong><span className="sep"> · </span><span>{head}</span><span className="sep-phone"> · </span><span className="date">{date}</span></p>
-       {dept === 'Sales' ? <span className="sales-note"><Sticky className="budget-sticky">Sales moved its 3 starts to May.</Sticky><svg className="connector c-sales" viewBox="0 0 70 100" aria-hidden="true"><path d="M4 92C36 84 52 50 62 10" /><path className="head" d="M55 15 62 7 67 17" /></svg></span> : null}
+       <p className="dept-row"><strong>{dept}</strong><Dots className="who">{head} · {date}</Dots></p>
+       {dept === 'Sales' ? <>
+        <Sticky className="budget-sticky sticky-row">Sales moved its<br />3 starts to May.</Sticky>
+        <svg className="connector c-sales" viewBox="0 0 104 190" aria-hidden="true"><path d="M4 186C46 172 66 92 92 12" /><path className="head" d="M82 15 93 9 97 21" /></svg>
+       </> : null}
       </li>)}
      </ol>
-     <p className="pill pill-green rail-pill"><Check /><span><strong>FY2027 budget</strong> · 8 of 8 departments in · Fri Oct 16 <span className="ok">✓</span> · $19,600,000</span></p>
+     <p className="pill pill-green rail-pill"><Check /><span><Dots><strong>FY2027 budget</strong> · 8 of 8 departments in</Dots><Dots>Fri Oct 16 <span className="ok">✓</span> · $19,600,000</Dots></span></p>
     </article>
    </div>
   </div>

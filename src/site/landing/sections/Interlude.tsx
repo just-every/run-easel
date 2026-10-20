@@ -6,12 +6,14 @@ import '../styles/interlude.css'
 
 const CAPS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const year: Scale = { count: 12, min: 1_960_000, max: 2_520_000 }
-// The arrowhead follows the Nov → Dec slope on screen, so it is turned for each width's plot proportions.
+// The line runs on past the Dec point along the Nov → Dec slope to its arrowhead, so the Dec point stays visible; the
+// head follows that slope on screen, so it is turned for each width's plot proportions.
+const DEC = PICKED_2027[11], TAIL = 11.45, TAIL_VALUE = DEC + (DEC - PICKED_2027[10]) * (TAIL - 11)
 const turn = (ratio: number) => {
- const dx = (x(year, 11) - x(year, 10)) * ratio, dy = y(year, PICKED_2027[11]) - y(year, PICKED_2027[10])
+ const dx = (x(year, 11) - x(year, 10)) * ratio, dy = y(year, DEC) - y(year, PICKED_2027[10])
  return `${(Math.atan2(dy, dx) * 180 / Math.PI).toFixed(2)}deg`
 }
-const head: CSSProperties = { ...at(year, 11, PICKED_2027[11]), ['--turn-wide' as string]: turn(2.4), ['--turn-phone' as string]: turn(1.35) }
+const head: CSSProperties = { ...at(year, TAIL, TAIL_VALUE), ['--turn-wide' as string]: turn(2.4), ['--turn-phone' as string]: turn(1.35) }
 const MOMENTS = [
  { i: 2, cls: 'm-mar', month: 'Mar 2027', title: 'Lowest cash $2,022,500', line: <>floor kept <span className="ok">✓</span></> },
  { i: 4, cls: 'm-may', month: 'May 2027', title: '3 account executives start', line: 'Ridgeway paid' },
@@ -31,8 +33,9 @@ export function Interlude() {
      <span className="floor-dots" style={{ top: at(year, 0, FLOOR).top }} aria-hidden="true" />
      <span className="floor-name" style={{ top: at(year, 0, FLOOR).top }}>floor $2,000,000</span>
      {MOMENTS.map(m => <i key={m.i} className="year-dot" style={at(year, m.i, PICKED_2027[m.i])} aria-hidden="true" />)}
+     <svg className="plot-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path className="line-year" d={`M${x(year, 11)} ${y(year, DEC)}L${x(year, TAIL)} ${y(year, TAIL_VALUE)}`} /></svg>
      <i className="year-head" style={head} aria-hidden="true" />
-     <Spark className="spark-head" />
+     <span className="spark-head-at" style={at(year, TAIL, TAIL_VALUE)}><Spark className="spark-head" /></span>
      <ol className="caps" style={{ top: at(year, 0, FLOOR).top }} aria-hidden="true">
       <li className="caps-year">2027</li>
       {CAPS.map((m, i) => <li key={m} style={{ left: at(year, i, 0).left }}><span className="cap-wide">{m}</span><span className="cap-phone">{m[0]}</span></li>)}

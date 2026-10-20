@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { Children, Fragment, type CSSProperties, type ReactNode } from 'react'
 
 // The page's shared pieces, the hero's family: the two-line heading (black, then the magenta-to-gold gradient), the
 // cursors, stickies, sparks, checks and padlocks. Decorations are hidden from assistive technology; every word is text.
@@ -6,9 +6,28 @@ import type { CSSProperties, ReactNode } from 'react'
 export function Heading({ id, eyebrow, lines, level = 2, className }: { id: string; eyebrow?: string; lines: [string, string]; level?: 1 | 2; className?: string }) {
  const Tag = level === 1 ? 'h1' : 'h2'
  return <div className={`heading${className ? ` ${className}` : ''}`}>
-  {eyebrow ? <p className="kicker">{eyebrow}</p> : null}
+  {eyebrow ? <p className="kicker"><Dots>{eyebrow}</Dots></p> : null}
   <Tag id={id}><span className="h-ink">{lines[0]}</span> <span className="h-glow">{lines[1]}</span></Tag>
  </div>
+}
+
+/** A run of facts joined by " · ". Each fact keeps its own line break; a "·" that would start a line is clipped, so
+ * no line starts or ends on a separator at any width. String children are split at " · "; `aside` (a floated tag)
+ * sits inside the run so only the lines beside it make room for it. */
+export function Dots({ children, className, aside }: { children: ReactNode; className?: string; aside?: ReactNode }) {
+ const facts: ReactNode[][] = [[]]
+ Children.toArray(children).forEach(child => {
+  if (typeof child !== 'string') { facts[facts.length - 1].push(child); return }
+  child.split(' · ').forEach((part, i) => { if (i) facts.push([]); if (part) facts[facts.length - 1].push(part) })
+ })
+ // A fact that wraps never leaves its last word alone on a line.
+ for (const fact of facts) {
+  const last = fact.findLastIndex(node => typeof node === 'string' && node.trim().includes(' '))
+  if (last >= 0) fact[last] = (fact[last] as string).replace(/ (?=\S+\s*$)/, '\u00a0')
+ }
+ return <span className={`dots${className ? ` ${className}` : ''}`}><span className="dots-in">
+  {aside}{facts.map((fact, i) => <Fragment key={i}>{i ? <wbr /> : null}<span className="fact"><span>{fact}</span></span></Fragment>)}
+ </span></span>
 }
 
 /** A named cursor: the arrow and its pill ("Rachel" and "Owen" in magenta, "Priya" in gold). */

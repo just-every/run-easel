@@ -1,5 +1,5 @@
 /* 03 The slip: the red-ruled decision item beside the #finance-forecast thread. */
-.slip-panes { position: relative; display: grid; grid-template-columns: minmax(0, 60fr) minmax(0, 37fr); gap: 3%; align-items: start; margin-top: 44px; }
+.slip-panes { position: relative; display: grid; grid-template-columns: minmax(0, 60fr) minmax(0, 37fr); gap: 40px; align-items: start; margin-top: 44px; }
 .decision { padding: 28px 34px 22px 38px; border-left: 6px solid var(--red); }
 .spark-decision { left: -34px; top: -36px; }
 .decision-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding-right: 150px; }
@@ -11,7 +11,12 @@
 .decision-short { margin-top: 6px; font-size: 21px; color: var(--muted); }
 .decision-shift { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin-top: 20px; font-size: 19px; color: var(--ink); }
 .shift-arrow { color: #a3a6b0; font-size: 24px; }
-.after { color: var(--red); }
+.before { flex: 0 1 auto; min-width: 0; }
+.after { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; color: var(--red); }
+.after .dots { flex: 0 1 auto; }
+/* The connector runs from the After line, across the gap, to Easel's question in the thread. */
+.after-link { position: relative; flex: 1 1 24px; min-width: 24px; margin: 0 -76px 0 14px; border-top: 2.4px dotted var(--magenta); }
+.after-link::after { content: ""; position: absolute; right: 3px; top: -6.2px; width: 10px; height: 10px; border-right: 2.4px solid var(--magenta); border-top: 2.4px solid var(--magenta); transform: rotate(45deg); }
 .decision dl { margin: 22px 0 0; }
 .decision dl div { padding: 16px 0; border-top: 1px solid var(--hair); }
 .decision dt { font-size: 13px; font-weight: 650; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
@@ -32,11 +37,10 @@
 .choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .choices span { display: inline-flex; align-items: center; justify-content: center; min-width: 74px; min-height: 40px; padding: 0 16px; border: 1px solid var(--hair-strong); border-radius: 8px; font-size: 16px; box-shadow: 0 1px 1px rgba(0, 0, 0, .04); }
 .recorded { margin-top: 8px; padding: 10px 14px; border-radius: 10px; background: var(--green-soft); color: var(--green-ink) !important; font-size: 16px !important; }
-.c-slip { left: calc(60% - 40px); top: 140px; width: 110px; height: 66px; }
 
 @media (max-width: 1179px) {
  .slip-panes { grid-template-columns: minmax(0, 1fr); gap: 36px; }
- .c-slip { display: none; }
+ .after-link { display: none; }
  .thread { margin: 0 0 0 12%; }
 }
 @media (max-width: 759px) {

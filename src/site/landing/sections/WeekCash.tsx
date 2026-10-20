@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { Check, Cursor, Heading, Spark } from '../kit'
+import { Check, Cursor, Dots, Heading, Spark } from '../kit'
 import { FLOOR, WEEKS, netK, short, usd } from '../records'
 import '../styles/weekcash.css'
 
@@ -21,11 +21,11 @@ export function WeekCash() {
     <Spark className="spark-weeks-h" />
     <Heading id="weeks-title" eyebrow="13-week cash · Mon Oct 19" lines={['Thirteen weeks,', 'payroll to the day.']} />
     <p className="lede">Each invoice lands when that customer really pays, and every Gusto payroll lands on its run date.</p>
-    <p className="card bank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" /></svg><span>Bank balance Mon Oct 19 · $2.45M · read-only</span></p>
+    <p className="card bank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" /></svg><Dots>Bank balance Mon Oct 19 · <span className="nowrap">$2.45M · read-only</span></Dots></p>
    </div>
    <figure className="card wk">
     <figcaption className="wk-head">
-     <span className="wk-title"><strong>Closing cash by week</strong> · net in and out · weeks of Oct 19 – Jan 11</span>
+     <Dots className="wk-title"><strong>Closing cash by week</strong> · net in and out · weeks of Oct 19 – Jan 11</Dots>
      <span className="legend"><span className="sw sw-in">net in</span><span className="sw sw-out">net out</span><span className="sw sw-pay">payroll</span><span className="key key-floor">$2,000,000 floor</span></span>
     </figcaption>
     <div className="wk-chart">
@@ -50,10 +50,10 @@ export function WeekCash() {
      {CALLOUTS.map((_, i) => { const from = (i + .5) / 13 * 100, to = (i + .5) / 4 * 100, turnAt = 78 - i * 20; return <path key={i} d={`M${from} 0V${turnAt}H${to}V100`} /> })}
     </svg>
     <ol className="wk-callouts">
-     {CALLOUTS.map(c => <li key={c.title} className="card callout"><h3>{c.title}</h3>{c.lines.map((line, i) => <p key={i}>{line}</p>)}</li>)}
+     {CALLOUTS.map(c => <li key={c.title} className="card callout"><h3>{c.title}</h3>{c.lines.map((line, i) => <p key={i}><Dots>{line}</Dots></p>)}</li>)}
     </ol>
     <p className="wk-moved">Thu Dec 24 payroll moved from Fri Dec 25.</p>
-    <p className="pill pill-green wk-pill"><Check /><span><strong>Dec 31 {usd(WEEKS[10].close)} = monthly forecast <span className="ok">✓</span></strong> · week 13 closes {usd(WEEKS[12].close)}</span></p>
+    <p className="pill pill-green wk-pill"><Check /><Dots><strong>Dec 31 {usd(WEEKS[10].close)} = monthly forecast <span className="ok">✓</span></strong> · week 13 closes {usd(WEEKS[12].close)}</Dots></p>
    </figure>
   </div>
  </section>

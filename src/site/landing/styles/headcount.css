@@ -16,6 +16,7 @@
 .hc-panel h3 { margin-top: 18px; font-family: var(--display); font-size: 33px; font-weight: 820; letter-spacing: -.03em; color: var(--ink); }
 .hc-panel ul { margin-top: 10px; }
 .hc-panel li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--hair); font-size: 18px; color: var(--ink); }
+.hc-panel li .dots { flex: 1 1 auto; min-width: 0; }
 .hc-panel .amt { white-space: nowrap; }
 .hc-panel .lock { width: 20px; height: 20px; flex: none; }
 .hc-total { display: flex; justify-content: space-between; gap: 16px; padding-top: 16px; font-size: 20px; color: var(--ink); }
@@ -23,14 +24,14 @@
 .spark-hc-l { left: -34px; top: -34px; } .spark-hc-r { right: -34px; top: -34px; transform: scaleX(-1); }
 .hc-strip > p { font-size: 20px; color: var(--ink); }
 .hc-strip > p strong { font-family: var(--display); font-weight: 820; letter-spacing: -.02em; }
-.hc-strip ul { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.hc-strip ul { display: grid; grid-template-columns: repeat(8, minmax(max-content, 1fr)); gap: 10px; margin-top: 18px; }
 .hc-strip li { display: grid; gap: 4px; justify-items: center; padding: 12px 6px; border: 1px solid var(--hair); border-radius: 10px; text-align: center; font-size: 15px; color: var(--ink); }
-.hc-strip li strong { font-weight: 650; }
+.hc-strip li strong { font-weight: 650; white-space: nowrap; }
 
 @media (max-width: 1179px) {
  .c-hc-l { right: calc(50% + 300px); } .c-hc-r { left: calc(50% + 300px); }
  .hc-bridge .connector { width: 90px; }
- .hc-strip ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+ .hc-strip ul { grid-template-columns: repeat(4, minmax(max-content, 1fr)); }
  .gusto { max-width: 600px; }
 }
 @media (max-width: 959px) {

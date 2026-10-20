@@ -67,5 +67,7 @@ export const DEPARTMENTS: [name: string, now: number, planned: number][] = [
 export const usd = (value: number) => `$${value.toLocaleString('en-US')}`
 /** $2.45M, $860K style, for axis ticks and short labels. */
 export const short = (value: number, digits = 2) => value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(digits).replace(/\.?0+$/, '')}M` : `$${Math.round(value / 1000)}K`
+/** $2.0M style, one decimal always: axis ticks that step by $0.1M or more. */
+export const tick = (value: number) => `$${(value / 1_000_000).toFixed(1)}M`
 /** +$144.0K / −$192.0K: a week's net movement. */
 export const netK = (value: number) => `${value < 0 ? '−' : '+'}$${(Math.abs(value) / 1000).toFixed(1)}K`
