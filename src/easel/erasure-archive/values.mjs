@@ -10,7 +10,17 @@ const digest = value => createHash('sha256').update(value).digest('hex');
  * before matching identities; never scan only their base64 transport spelling. */
 export function archiveValueTransformer(maps, originals) {
  const digests = originals.digests;
- const strings = new Map();
+ const strings = new Map(), derivedByJob = new Map();
+ const derived = jobId => {
+  if (!jobId) return digests;
+  if (!derivedByJob.has(jobId)) derivedByJob.set(jobId,new Map());
+  return derivedByJob.get(jobId);
+ };
+ const remember = (before,after,jobId) => {
+  const oldBody=canonicalJson(before),newBody=canonicalJson(after);
+  if(oldBody!==newBody) derived(jobId).set(digest(oldBody),digest(newBody));
+  return after;
+ };
  const identity = text => {
   if (!strings.has(text)) strings.set(text, transformErased(text, maps));
   return strings.get(text);
@@ -22,6 +32,7 @@ export function archiveValueTransformer(maps, originals) {
   const originalDigests = local?.digests ?? originals.digests;
   if (typeof item === 'string') {
    if (originalBase64.has(item)) return originalBase64.get(item);
+   if (derived(jobId).has(item)) return derived(jobId).get(item);
    if (originalDigests.has(item)) return originalDigests.get(item);
    if (digests.has(item)) return digests.get(item);
    let parsed;
@@ -32,7 +43,7 @@ export function archiveValueTransformer(maps, originals) {
    }
    return identity(item);
   }
-  if (Array.isArray(item)) return item.map(v=>visit(v,jobId));
+  if (Array.isArray(item)) return remember(item,item.map(v=>visit(v,jobId)),jobId);
   if (!item || typeof item !== 'object') return item;
   if ([2, 3].includes(item.d1Plan) && typeof item.data === 'string') {
    const source = (item.compression === 'brotli' ? brotliDecompressSync : inflateRawSync)(Buffer.from(item.data, 'base64'));
@@ -64,7 +75,7 @@ export function archiveValueTransformer(maps, originals) {
    digests.set(item.fingerprint, fingerprint);
    result.fingerprint = fingerprint;
   }
-  return result;
+  return remember(item,result,jobId);
  };
  return { transform: visit, digests };
 }
