@@ -352,4 +352,8 @@ test('CONNECT-007 actual openings replace estimates and explicitly attributed pr
  assert.equal(repaired.calculation.balanceSheet[0].prepaid,220001)
  assert.equal(repaired.calculation.workingCapital.rows.filter(r=>r.originId===prepaid.originId).at(-1).prepaid,0,'final service month conserves the one-cent correction')
  assert.ok(repaired.calculation.balanceSheet.every(r=>r.balanceDifference===0))
+ const liveAsset=repaired.inputs.asset.find(r=>r.originId===asset.originId)
+ await h.command('input-delete',{kind:'asset',id:liveAsset.id})
+ await h.get(`/api/easel/scenario/${forecast.id}`,h.owner,409)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${kept.id}`),frozen,'deleted allocation origins block working conclusions without changing the kept version')
 })

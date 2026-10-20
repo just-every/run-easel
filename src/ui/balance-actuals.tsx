@@ -6,7 +6,7 @@ export function BalanceActuals({ trials, currency, lines, batches }: { trials: D
  return <section className="card">
   <h2>Balance-sheet actuals and trial balance</h2>
   <p className="muted">Cumulative accepted journal movements through each month, including an opening journal. Do not upload repeated month-end snapshots. Debits and credits include every account, including P&amp;L and excluded accounts. A zero difference checks the imported ledger; it does not certify that the source is complete.</p>
-  <p className="muted">These balances are available for review. Forecast and working-capital openings still use their existing planning assumptions.</p>
+  <p className="muted">Closed ledger balances open forecast statements. Reviewed source allocations replace prepaid, accrued, deferred and asset schedule estimates; unresolved attribution and statement differences stay visible.</p>
   {trials.map(t => <details key={t.period}>
    <summary>{t.period} · {t.blocked ? 'Blocked: unresolved mappings' : t.balanced ? 'Trial balance reconciled' : `Trial balance difference ${money(t.difference, currency)}`}</summary>
    <Table caption={`Trial balance ${t.period}`} heads={['Account', 'Source type', 'Source department', 'Target', 'Debit', 'Credit', 'Rows', 'Source imports']}>

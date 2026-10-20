@@ -803,7 +803,7 @@
       "executable": false
     },
     "src/easel/engine.ts": {
-      "sha256": "01c30a2306279246cfa032da180f8c6df206b619d7a414afabfed39195990ead",
+      "sha256": "33ac99f3fb0db97b77d12dad3c055c2ce2d8f530c0a3459bac6b6cc79d2af363",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -3015,7 +3015,7 @@
       "executable": false
     },
     "src/ui/balance-actuals.tsx": {
-      "sha256": "e77a9e1d070e280668df2b7d9836ac1b4f21d8d097c1cb269ae50152393e3881",
+      "sha256": "8dbd517746e92bf907384f3a8ae59b14885603bb129d172eefd5b4fb37019519",
       "executable": false
     },
     "src/ui/calendar.tsx": {
@@ -3199,7 +3199,7 @@
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
-      "sha256": "57bef63331135b6cb8c486cfc47c3e901ea20b35315dfeda6e2d9e4e8cb5595c",
+      "sha256": "1b9abf0a60eb833cc25c9db2e5e462a58cf1e623df08986cf2c59353d3c43271",
       "executable": false
     },
     "tests/balance-actuals-fixture.mjs": {
@@ -3407,7 +3407,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "8b36b00fa7d128aea44978ae4e2d019202bde3b08744aed027c39a0d56ccf45d",
+      "sha256": "f9a92d66b7fab8ab8f96045eb9efef3144279895d9020376cd497c796313558e",
       "executable": false
     },
     "tests/mcp.test.mjs": {

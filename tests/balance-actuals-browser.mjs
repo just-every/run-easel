@@ -137,6 +137,7 @@ try {
     await noOverflow(reader.page, `CONNECT-007 ${heading} ${as} ${width}`)
     await section.screenshot({ path: join(evidence, `opening-${field}-${as}-${width}.png`) })
    }
+   await reader.page.screenshot({ path: join(evidence, `opening-overview-${as}-${width}.png`), fullPage: true })
    const download = reader.page.waitForEvent('download')
    await reader.page.getByRole('link', { name: 'Download Excel', exact: true }).click()
    assert.equal(await (await download).failure(), null)

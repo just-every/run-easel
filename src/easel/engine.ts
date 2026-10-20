@@ -80,6 +80,8 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
  const cells = new Map<string, Cell>()
  const cash: { month: string; amount: number; collection: boolean; label: string }[] = []
  const allocations = scheduleAllocations(ledger, actualsThrough)
+ const origins = new Set(Object.values(inputs).flat().map(input => input.originId))
+ for (const allocation of allocations) if (!origins.has(allocation.originId)) throw new Fault(409, 'An allocated schedule origin was removed; review and reallocate its accepted balance before using the forecast')
  const working = workingCapital(model, months, allocations)
  const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;amount:number}[]=[]
  const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency):null
