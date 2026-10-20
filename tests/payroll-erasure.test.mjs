@@ -72,7 +72,8 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
   return zip.file(item.path).async('nodebuffer')
  }
  const exportedCsv=(await original(first.job.id)).toString()
- assert.ok(!exportedCsv.includes(email),'Associated ignored email cells are erased too');
+ assert.equal(exportedCsv.split('\n')[1].split(',').at(-1),JSON.stringify(receipt.pseudonym),'Associated ignored email cells are erased too');
+ assert.ok(exportedCsv.includes('other-alex@example.test'),'An unrelated identifier containing the native email stays intact');
  assert.ok(exportedCsv.includes(nativeName),'Unassociated same-name row remains intact');
  assert.ok(exportedCsv.includes(receipt.pseudonym));assert.ok(!exportedCsv.includes(legalName));assert.ok(exportedCsv.includes('2,Unlinked Colleague,Engineering,Analyst,W-2,1,'))
  assert.equal((await original(other.job.id)).toString(),roster.csv,'Identical bytes from another provider remain unchanged')

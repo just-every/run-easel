@@ -3203,7 +3203,7 @@
       "executable": false
     },
     "tests/payroll-erasure.test.mjs": {
-      "sha256": "f283c0e0a47f7d8ef1b125eca40e3072d03842147898872190aaba79a904fdf5",
+      "sha256": "01cff416b07e2957630b1d0bdf13fba7dedce803b9d03acd71863940c3a62c21",
       "executable": false
     },
     "tests/payroll-files-browser.mjs": {
