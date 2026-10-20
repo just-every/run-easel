@@ -47,7 +47,7 @@ import { openExport } from './open-export'
 import { tokenAdmin } from './token-admin'
 import { tokenRate, tokenUse } from './token-auth'
 import { Fault, get, requireThat, type Actor, type Data } from './types'
-import { actualsView, compareView, scenarioView, snapshotView, stateView } from './views'
+import { actualsView, compareView, scenarioView, snapshotView, stateView, paySafePack } from './views'
 import { workbookCommand } from './workbook'
 
 type Env = { Bindings: Bindings; Variables: { apiActor: Actor } }
@@ -257,7 +257,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  requireThat(ctx.x.role, 'Finance has not added you to this plan yet', 403)
  const pack = get(ctx.s, 'pack', c.req.param('id'), 'pack')
  requireThat(pack.status === 'published', 'This pack is not published yet', 409)
- const sn = await snapshot(ctx.db, pack.snapshot)
+ const sn = paySafePack(await snapshot(ctx.db, pack.snapshot))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  if (c.req.param('format') === 'document.xlsx') return spreadsheet(packWorkbook(sn), `easel-review-${pack.month}`)
  const csv = c.req.param('format') === 'document.csv'

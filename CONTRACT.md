@@ -403,7 +403,7 @@ Compensation detail (names, salaries, bonus and commission) is a permission of i
 
 *Acceptance:* through the API and the Excel add-in fake, an analyst without pay access, a department head and a viewer each read the same plan, and none receives a salary they are not granted; a planted salary never appears in their exports.
 
-*Status:* partial.
+*Status:* done.
 
 #### PEOPLE-006 — Headcount plan against actual.
 Monthly headcount, hires, departures and payroll cost are compared between plan and roster actual by department. Hiring slippage (planned start against actual start), backfills and an attrition assumption are shown, and the slippage history feeds `AGENT-004`.
@@ -990,7 +990,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `PEOPLE-002` | Roster from Rippling, Willow, BambooHR and ADP | target | missing |  | No HRIS connectors |
 | `PEOPLE-003` | Open roles from the ATS | target | missing |  | No ATS connector or requisition-driven positions |
 | `PEOPLE-004` | US compensation assumptions | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Salary × (1 + on-costs) by start and end month ships; hourly, W-2 or 1099 type, merit increases, bonus, commission, benefits per head and 401(k) match are missing |
-| `PEOPLE-005` | Compensation access separate from finance | target | partial | `src/easel/views.ts` `tests/easel.test.mjs` | Server-side filtering limits pay detail to finance and the department's contributors; a separate compensation permission and filtering for add-ins and agents are missing |
+| `PEOPLE-005` | Compensation access separate from finance | target | done | `tests/compensation-access.test.mjs` `tests/compensation-access-browser.mjs` | — |
 | `PEOPLE-006` | Headcount plan against actual | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Payroll-line cost variance ships; headcount against a roster, hiring slippage and attrition are missing |
 | `PEOPLE-007` | Roster and payroll-register file import | target | missing |  | No roster or payroll-register file import or roster reconciliation |
 | `REV-001` | Pipeline drivers from Orbit, HubSpot and Salesforce | target | missing |  | No Orbit, HubSpot or Salesforce connector, stage probabilities, line-item revenue rules or pipeline drivers |

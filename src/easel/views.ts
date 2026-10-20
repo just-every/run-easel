@@ -23,7 +23,7 @@ export { canSeeScenario } from './scenario-access'
 
 export function filterCalculation(x: Access, calc: Calculation, payrollLines: string[] = []): Calculation {
  const restricted = (department: string) => !seesPayDetail(x, department)
- calc = { ...calc, cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? [{ kind: 'restricted', label: 'Compensation detail restricted', amount: cell.amount, trace: 'Compensation detail restricted' }] : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
+ calc = { ...calc, warnings: x.payDetail ? calc.warnings : calc.warnings.map(() => 'Calculation warning; source detail requires Pay detail permission'), cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? [{ kind: 'restricted', label: 'Compensation detail restricted', amount: cell.amount, trace: 'Compensation detail restricted' }] : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
  if (x.role === 'finance') return calc
  return { ...calc, ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(r => seesDepartmentDetail(x, r.department)), issues: calc.workingCapital.issues.filter(r => seesDepartmentDetail(x, r.department)) } } : {}), ...(calc.contracts ? { contracts: { ...calc.contracts, rows: calc.contracts.rows.filter(r => seesDepartmentDetail(x, r.department)), invoices: calc.contracts.invoices.filter(r => seesDepartmentDetail(x, r.department)) } } : {}), ...(calc.financing ? { financing: aggregateFinancing(calc.financing) } : {}), assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? { ...c, sources: c.sources.map(source => source.kind === 'financing' ? { kind: 'financing', label: 'Financing interest', amount: source.amount, trace: 'Interest expense; instrument terms restricted to finance' } : source) } : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
 }
@@ -115,7 +115,7 @@ export async function snapshotView(c: Context, id: string) {
  requireMember(c.x)
  const sn = await snapshot(c.db, id)
  if (sn.scenario) scenarioAccess(c.s, c.x, sn.scenario)
- if (sn.kind === 'pack') return sn
+ if (sn.kind === 'pack') return paySafePack(sn)
  requireThat(sn.kind === 'approval' || sn.kind === 'reforecast' || c.x.role === 'finance' || c.x.role === 'contributor', 'Snapshot not found', 404)
  const body = { ...sn.body, ...(sn.body.actualsHistory ? { actualsHistory: filterHistory(c.x, sn.body.actualsHistory) } : {}), calculation: filterCalculation(c.x, sn.body.calculation, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id)), inputs: filterInputs(c.x, sn.body.inputs ?? {}, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id)) }
  return { ...sn, body }
@@ -129,3 +129,9 @@ export async function actualsView(c: Context) {
 export { activityView } from './audit'
 
 export const visibleScenarioInputs = (s: State, x: Access, id: string) => Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, id, k).filter(i => visibleInput(x, k, i) && (!lines(s).some(l => l.id === i.line && l.payroll) || seesPayDetail(x, i.department)))]))
+
+/** Published packs have an aggregate audience, including their older snapshots. */
+export function paySafePack(sn: Data): Data {
+ const payroll = new Set((sn.body.structure?.line ?? []).filter((line: Data) => line.payroll).map((line: Data) => line.name))
+ return { ...sn, body: { ...sn.body, variances: (sn.body.variances ?? []).map((row: Data) => payroll.has(row.line) ? { ...row, explanation: null, evidence: [] } : row) } }
+}
