@@ -35,7 +35,7 @@ test('MODEL-002 rolling forecast extends from drivers after two closes while bud
   assert.equal(current.calculation.months.at(-1), end)
   const cell = current.calculation.cells.find(c => c.month === end && c.line === line.id)
   assert.equal(cell.amount, 100000)
-  assert.match(cell.sources[0].trace, /volume 10.*rate USD 100\.00/)
+  assert.match(cell.sources[0].trace, /volume 10.*rate \$100\.00/)
   assert.equal(current.calculation.cells.find(c => c.month === month).basis, 'actual')
  }
  assert.equal(current.calculation.months.length, 20)

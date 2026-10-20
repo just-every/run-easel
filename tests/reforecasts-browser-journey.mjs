@@ -6,7 +6,7 @@ import { api, noOverflow, session } from './browser-journey.mjs'
 
 const tab = (page, name) => page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name, exact: true }).click()
 const card = (page, name) => page.locator('section.card').filter({ has: page.getByRole('heading', { name, exact: true }) })
-const money = value => `${value < 0 ? '-' : ''}USD ${(Math.abs(value) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const money = value => `${value < 0 ? '-' : ''}$${(Math.abs(value) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export async function seedReforecasts(context, origin) {
  const cmd = (op, body) => api(context, origin, `command/${op}`, body)

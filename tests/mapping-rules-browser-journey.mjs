@@ -101,7 +101,7 @@ export async function mappingViewerJourney(browser, root, origin, evidence, widt
   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
   const variance = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Variances, Feb 2026', exact: true }) })
   await variance.locator('summary').first().click()
-  assert.match(await variance.innerText(), /USD 15,000.00/)
+  assert.match(await variance.innerText(), /\$15,000.00/)
   assert.equal(await variance.getByRole('region', { name: 'Accepted rows', exact: true }).count(), 0)
   assert.doesNotMatch(await variance.innerText(), /February consulting retainer/)
   await noOverflow(page, `CONNECT-008 viewer variance ${width}`)

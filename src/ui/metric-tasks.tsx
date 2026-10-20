@@ -1,3 +1,4 @@
+import { useDate } from './shared'
 import { useEffect, useState } from 'react'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 
@@ -17,6 +18,7 @@ type RefreshResult = { created: string[]; blocked: { rule: string; reason: strin
 
 /** Rule management stays with finance; task visibility comes from the server. */
 export function MetricTasks({ state }: { state: D }) {
+ const displayDate = useDate()
  const [list, setList] = useState<MetricList | null>(null), [error, setError] = useState('')
  const [editing, setEditing] = useState<MetricRule | null>(null), [newForm, setNewForm] = useState(0)
  const [checked, setChecked] = useState<RefreshResult | null>(null)
@@ -51,7 +53,7 @@ export function MetricTasks({ state }: { state: D }) {
      <td className="wrap">{rule.kind === 'overspend' ? <>{departmentName(rule.department)} overspend above {decimalText(rule.percentBps)}% and {money(rule.amountCents, rule.currency)}</> : <>Runway below {decimalText(rule.runwayHundredths)} months</>}</td>
      <td className="wrap"><Person state={state} email={rule.owner} /><small style={{ display: 'block' }}>Due {rule.dueDays} UTC calendar {rule.dueDays === 1 ? 'day' : 'days'} after trigger</small></td>
      <td className="wrap"><span className="pill">{rule.enabled ? 'Enabled' : 'Disabled'}</span>{rule.blocked && <p className="error">{rule.blocked}</p>}</td>
-     <td><span className="date-token">{rule.lastEvaluatedAt ? `${rule.lastEvaluatedAt.slice(0, 19).replace('T', ' ')} UTC` : 'Not checked'}</span></td>
+     <td><span className="date-token">{rule.lastEvaluatedAt ? displayDate(rule.lastEvaluatedAt) : 'Not checked'}</span></td>
      <td><button type="button" className="quiet" onClick={() => setEditing(rule)}>Edit rule</button></td>
     </tr>)}
    </Table> : <p>No metric rules yet.</p>)}
@@ -66,11 +68,11 @@ export function MetricTasks({ state }: { state: D }) {
    {error && <Action label="Reload metric tasks" kind="quiet" run={reload} />}
    {list && (list.tasks.length ? <ul className="plain">{list.tasks.map(task => <li key={task.id}>
     <h3>{task.name} <span className="pill">{task.status}</span></h3>
-    <p>{monthLabel(task.month)} · <Person state={state} email={task.owner} /> · Due <span className="date-token">{task.due}</span> (UTC)</p>
+    <p>{monthLabel(task.month)} · <Person state={state} email={task.owner} /> · Due <span className="date-token">{displayDate(task.due)}</span> (UTC)</p>
     <p className="muted">{state.scenarios.find((s: D) => s.id === task.scenario)?.name ?? task.scenario} · Rule revision {task.ruleRevision}</p>
     <p>{task.evidence.summary}</p>
     <details><summary>Evidence sources</summary><ul>{task.evidence.sources.map((source, i) => <li key={i} style={{ overflowWrap: 'anywhere' }}>{source}</li>)}</ul></details>
-    {task.status === 'done' && <p>Completed by <Person state={state} email={task.completedBy} />{task.completedAt && <> at <span className="date-token">{task.completedAt.slice(0, 19).replace('T', ' ')} UTC</span></>}.</p>}
+    {task.status === 'done' && <p>Completed by <Person state={state} email={task.completedBy} />{task.completedAt && <> at <span className="date-token">{displayDate(task.completedAt)}</span></>}.</p>}
     {task.status === 'open' && (finance || task.owner === state.me.email) && <Action label="Mark complete" run={async () => { await command('metric-task-complete', { id: task.id, revision: task.revision }); await reload() }} />}
    </li>)}</ul> : <p>No metric tasks.</p>)}
   </section>

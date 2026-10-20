@@ -1,3 +1,4 @@
+import { useDate } from './shared'
 import { useState, type ReactNode } from 'react'
 import { money, monthLabel, Table, type D } from './shared'
 
@@ -43,6 +44,7 @@ const cashFlowLines: StatementLine[] = [
 
 /** Read the stored statement rows, including reconciliations; never rebuild a snapshot. */
 export function Statements({ calculation, currency }: { calculation: D; currency: string }) {
+ const displayDate = useDate()
  return <>
   {calculation.contracts && <section className="card">
    <h2>Bookings, billings, revenue and collections</h2>
@@ -51,7 +53,7 @@ export function Statements({ calculation, currency }: { calculation: D; currency
     {calculation.contracts.months.map((r: D) => <tr key={r.month}><th scope="row">{monthLabel(r.month)}</th>{['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue', 'unbilledRevenue'].map(k => <td className="num" key={k}>{money(r[k], currency)}</td>)}</tr>)}
    </Table>
    {calculation.contracts.invoices.length > 0 && <Table caption="Contract invoice dates" heads={['Contract', 'Invoice date', 'Collection date', 'Amount']}>
-    {calculation.contracts.invoices.map((i: D, index: number) => <tr key={index}><th scope="row">{i.name}</th><td>{i.date}</td><td>{i.collectionDate}</td><td className="num">{money(i.amount, currency)}</td></tr>)}
+    {calculation.contracts.invoices.map((i: D, index: number) => <tr key={index}><th scope="row">{i.name}</th><td>{displayDate(i.date)}</td><td>{displayDate(i.collectionDate)}</td><td className="num">{money(i.amount, currency)}</td></tr>)}
    </Table>}
   </section>}
   <Statement heading="Balance sheet" caption="Balance sheet by month" calculation={calculation} rows={calculation.balanceSheet} lines={balanceLines} currency={currency} balance>

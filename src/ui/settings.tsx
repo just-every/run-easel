@@ -1,7 +1,7 @@
 import { AccountRules } from './account-rules'
 import { GaugeConnection } from './gauge-connection'
 import type { Shared } from './app'
-import { Action, api, command, Field, Form, kindLabel, fiscalMonths, Table, type D } from './shared'
+import { Action, api, command, Field, Form, kindLabel, fiscalMonths, US_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS, Table, type D } from './shared'
 
 /** The plan's calendar, departments, lines, people and account mappings. Finance only. */
 export function Settings({ state, refresh }: Shared) {
@@ -14,10 +14,13 @@ export function Settings({ state, refresh }: Shared) {
    <h2>Plan</h2>
    <p><a href="/api/easel/export" download>Download open export (ZIP)</a></p>
    <p className="muted">Table CSVs, scenario Excel workbooks, model JSON, snapshots and original files, with a SHA-256 manifest.</p>
-   <Form submit="Save plan settings" onSubmit={run('workspace')}>
+   <Form submit="Save plan settings" onSubmit={async v => { await command('workspace', v); await refresh() }}>
     <Field label="Company name" name="name" defaultValue={w.name} />
     <Field label="Reporting currency" name="currency" defaultValue={w.currency} />
     <Field label="Fiscal year starts in month" name="fiscalYearStart" defaultValue={String(w.fiscalYearStart)} options={fiscalMonths} />
+    <Field label="Language and region" name="locale" defaultValue={w.locale ?? 'en-US'} options={ENGLISH_LOCALES} />
+    <Field label="Date display" name="dateFormat" defaultValue={w.dateFormat ?? 'MM/DD/YYYY'} options={DATE_FORMATS} />
+    <Field label="Company time zone" name="timeZone" defaultValue={w.timeZone ?? 'America/New_York'} options={[...US_TIME_ZONES, ...(!US_TIME_ZONES.some(z => z.value === w.timeZone) && w.timeZone ? [{value:w.timeZone,label:w.timeZone}] : [])]} />
     <Field label="First plan month" name="planStart" type="month" defaultValue={w.planStart} />
    </Form>
   </section>

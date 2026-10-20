@@ -18,7 +18,7 @@ export async function seedLongRange(context, origin) {
  await cmd('expense', { scenario: budget.id, name: 'Delivery team', kind: 'recurring', department: dept.id, line: costs.id, start: '2026-10', amount: '50000' })
  await cmd('member', { email: 'board@dev.localhost', name: 'Board', role: 'viewer' })
 }
-const amount = n => `${n < 0 ? '-' : ''}USD ${(Math.abs(n) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const amount = n => `${n < 0 ? '-' : ''}$${(Math.abs(n) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export async function longRangeJourney(browser, root, origin, evidence, width, as = 'owner') {
  const reader = await session(browser, root, origin, as, width), page = reader.page

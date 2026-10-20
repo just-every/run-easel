@@ -110,6 +110,7 @@ async function planning(browser, root, origin, evidence, pages, width) {
  await tab(p, 'Actuals')
  const upload = card(p, 'Upload actuals (CSV)')
  await upload.getByLabel('Actuals file').setInputFiles(join(fixtures, 'gl-detail-2026-07.csv'))
+ await upload.getByLabel('Date format', { exact: true }).selectOption('DD/MM/YYYY')
  await press(upload, 'Preview')
  await upload.getByText('16 rows read · 14 can be accepted · 2 rejected').waitFor()
  await upload.getByRole('cell', { name: 'repeats line 13 exactly' }).waitFor()
@@ -233,6 +234,7 @@ async function review(browser, root, origin, evidence, pages, width) {
  await tab(p, 'Actuals')
  const upload = card(p, 'Upload actuals (CSV)')
  await upload.getByLabel('Actuals file').setInputFiles(join(fixtures, 'gl-detail-2026-08.csv'))
+ await upload.getByLabel('Date format', { exact: true }).selectOption('DD/MM/YYYY')
  await press(upload, 'Preview')
  await upload.getByText('11 rows read · 11 can be accepted · 0 rejected').waitFor()
  await press(upload, 'Accept 11 rows')
@@ -381,7 +383,7 @@ async function assertDashboard(page, context, origin) {
  const table = page.getByRole('table', { name: 'Monthly cash', exact: true })
  const closing = table.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Closing', exact: true }) })
  await closing.waitFor()
- const format = n => `${n < 0 ? '-' : ''}${view.workspace.currency === 'AUD' ? '$' : view.workspace.currency + ' '}${(Math.abs(n) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+ const format = n => `${n < 0 ? '-' : ''}${['AUD','USD'].includes(view.workspace.currency) ? '$' : view.workspace.currency + ' '}${(Math.abs(n) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
  assert.deepEqual((await closing.getByRole('cell').allInnerTexts()).slice(1), view.calculation.cash.map(c => format(c.closing)), 'MOBILE-001 dashboard cash equals the public API')
  await page.getByRole('img', { name: /Closing cash by month/ }).waitFor()
  for (const warning of view.calculation.warnings) await page.getByText(warning, { exact: true }).waitFor()

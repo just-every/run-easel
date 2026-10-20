@@ -1,3 +1,4 @@
+import { useDate } from './shared'
 import { useEffect, useRef, useState } from 'react'
 import { Action, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 
@@ -56,6 +57,7 @@ export function DepartmentStatements({ state, month, setMonth, refresh }: { stat
 }
 
 function SavedStatement({ id, state, refresh }: { id: string; state: D; refresh: () => Promise<void> }) {
+ const displayDate = useDate()
  const [statement, setStatement] = useState<Statement | null>(null), [error, setError] = useState('')
  const [revision, setRevision] = useState(0)
  useEffect(() => {
@@ -83,7 +85,7 @@ function SavedStatement({ id, state, refresh }: { id: string; state: D; refresh:
   {statement.rows.map(row => <details id={rowAnchor(id, row.key)} key={row.key} className="card-row" open={statement.toConfirm.some(pending => pending.key === row.key)}>
    <summary>{row.lineName} · variance {money(row.variance, statement.currency)} · {row.explanation ? `explanation ${row.explanation.status}` : 'No explanation'}</summary>
    {row.citations.length ? <Table caption={`Accepted rows for ${row.lineName}`} heads={['File', 'Line', 'Date', 'Description', 'Reference', 'Amount']}>
-    {row.citations.map((citation, index) => <tr key={index}><td>{citation.file}</td><td className="num">{citation.line}</td><td><span className="date-token">{citation.date}</span></td><td>{citation.description}</td><td>{citation.reference}</td><td className="num">{money(citation.amount, statement.currency)}</td></tr>)}
+    {row.citations.map((citation, index) => <tr key={index}><td>{citation.file}</td><td className="num">{citation.line}</td><td><span className="date-token">{displayDate(citation.date)}</span></td><td>{citation.description}</td><td>{citation.reference}</td><td className="num">{money(citation.amount, statement.currency)}</td></tr>)}
    </Table> : <p className="muted">No accepted source rows for this line.</p>}
    {row.explanation && <p><strong>Explanation ({row.explanation.status}):</strong> {row.explanation.text}</p>}
    <Form key={`${row.key}-${row.explanation?.text ?? ''}-${row.explanation?.status ?? ''}`} submit="Save explanation" onSubmit={async values => {
@@ -97,7 +99,7 @@ function SavedStatement({ id, state, refresh }: { id: string; state: D; refresh:
   </details>)}
   <h3>Open tasks</h3>
   {statement.tasks.length ? <Table caption="Open department tasks" heads={['Task', 'Owner', 'Due', 'Evidence']}>
-   {statement.tasks.map(task => <tr key={task.id}><th scope="row">{task.name}</th><td><Person state={state} email={task.owner} /></td><td><span className="date-token">{task.due || '—'}</span></td><td className="wrap">{task.evidence.summary}</td></tr>)}
+   {statement.tasks.map(task => <tr key={task.id}><th scope="row">{task.name}</th><td><Person state={state} email={task.owner} /></td><td><span className="date-token">{displayDate(task.due)}</span></td><td className="wrap">{task.evidence.summary}</td></tr>)}
   </Table> : <p className="muted">No open tasks.</p>}
   <h3>Email status</h3>
   {statement.deliveries.length ? <Table caption="Department statement email status" heads={['Recipient', 'Status', 'Attempts', 'Provider status', 'Reason']}>

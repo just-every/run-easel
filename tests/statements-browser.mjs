@@ -32,7 +32,7 @@ try {
  const approved=await cmd('approve-budget',{scenario:budget.id,revision:view.scenario.revision})
  await cmd('forecast-window',{scenario:approved.forecast.id,revision:1,months:24})
  await cmd('member',{email:'board@dev.localhost',name:'Board',role:'viewer'})
- const amount=n=>`${n<0?'-':''}USD ${(Math.abs(n)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+ const amount=n=>`${n<0?'-':''}$${(Math.abs(n)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
  for(const width of [1440,390])for(const as of ['owner','board']) {
   const reader=await session(browser,root,server.origin,as,width),page=reader.page
   try {

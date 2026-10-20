@@ -73,7 +73,7 @@ try {
    await utilization.getByRole('table', { name: 'Gauge utilization preview', exact: true }).waitFor()
    assert.deepEqual(await api(finance.context, server.origin, `scenario/${scenario}`), before)
    assert.ok((await utilization.innerText()).includes('28800'))
-   assert.ok((await utilization.innerText()).includes('USD 1,200.00'))
+   assert.ok((await utilization.innerText()).includes('$1,200.00'))
    await utilization.scrollIntoViewIfNeeded(); await noOverflow(page, `REV-003 preview ${width}`)
    await utilization.screenshot({ path: join(evidence, `preview-${width}.png`) })
    await utilization.getByRole('button', { name: 'Accept Gauge utilization', exact: true }).click()

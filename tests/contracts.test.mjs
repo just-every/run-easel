@@ -119,7 +119,7 @@ test('REV-004 contract bookings, upfront invoices, exact-date DSO and recognitio
  assert.equal(closed.calculation.profit[0].revenue, 925000, 'accepted P&L is authoritative')
  assert.equal(closed.calculation.cash[0].collections, 25000, 'only unrelated actual collections; no invented contract cash residual')
  assert.equal(closed.calculation.cash[1].collections, 3000000, 'quarterly invoice cash plan remains separate')
- assert.match(closed.calculation.cash[0].incompleteReasons[0], /accepted revenue USD 9,000.00.*USD 10,000.00.*not billing actuals/)
+ assert.match(closed.calculation.cash[0].incompleteReasons[0], /accepted revenue \$9,000.00.*\$10,000.00.*not billing actuals/)
  assert.ok(closed.cashHealth.incompleteReasons.length)
  assert.equal(closed.cashHealth.months[0].floorBreached, null)
  assert.equal(closed.cashHealth.months[0].runwayBreached, null)

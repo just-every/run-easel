@@ -36,7 +36,7 @@ test('MODEL-006: four real editable USD starters reconcile statements, dashboard
    if (starter === 'saas') {
     const customers = v.inputs.revenue.find(r => r.kind === 'customers'), seats = v.inputs.revenue.find(r => r.kind === 'seats'), acquisition = v.inputs.expense.find(e => e.kind === 'acquisition')
     assert.equal(total(customers), 2160000); assert.equal(total(seats), 500000); assert.equal(total(acquisition), 500000)
-    assert.match(v.calculation.cells.find(c => c.line === acquisition.line && c.month === '2025-01').sources[0].trace, /new customers 10\.00.*CAC USD 500\.00/)
+    assert.match(v.calculation.cells.find(c => c.line === acquisition.line && c.month === '2025-01').sources[0].trace, /new customers 10\.00.*CAC \$500\.00/)
     await h.command('revenue', { ...revenueBody(customers), newPerMonth: '20' })
     v = await view(); assert.equal(total(customers), 2360000); assert.equal(total(acquisition), 1000000)
     await h.command('expense', { ...expenseBody(acquisition), cac: '600' })
@@ -45,7 +45,7 @@ test('MODEL-006: four real editable USD starters reconcile statements, dashboard
    } else if (starter === 'services') {
     const service = v.inputs.revenue.find(r => r.kind === 'services')
     assert.equal(total(service), 5400000)
-    assert.match(v.calculation.cells.find(c => c.line === service.line && c.month === '2025-01').sources[0].trace, /3 active positions.*160\.00.*75\.00%.*USD 150\.00/)
+    assert.match(v.calculation.cells.find(c => c.line === service.line && c.month === '2025-01').sources[0].trace, /3 active positions.*160\.00.*75\.00%.*\$150\.00/)
     await h.command('revenue', { ...service, monthlyHours: '160', utilizationPercent: '80', hourlyRate: '175' })
     v = await view(); assert.equal(total(service), 6720000)
    } else if (starter === 'project') {

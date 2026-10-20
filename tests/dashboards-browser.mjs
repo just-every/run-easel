@@ -47,7 +47,7 @@ async function metricChecks(reader, origin, id) {
 }
 async function renderedMetrics(page) {
  await card(page, 'Runway').getByText('6.18 months', { exact: true }).waitFor()
- await card(page, 'ARR').getByText('USD 120,000.00', { exact: true }).waitFor()
+ await card(page, 'ARR').getByText('$120,000.00', { exact: true }).waitFor()
  await card(page, 'Headcount').getByText('2 people', { exact: true }).waitFor()
 }
 
@@ -134,7 +134,7 @@ try {
   assert.equal(await card(bp, 'Headcount').getByRole('table', { name: 'Headcount by month', exact: true }).getByRole('row').last().getByRole('cell').innerText(), '2 people')
   assert.doesNotMatch(await card(bp, 'Headcount').innerText(), /USD|\$/)
   await card(bp, 'ARR').getByRole('img', { name: 'ARR by month', exact: true }).waitFor()
-  assert.equal(await card(bp, 'ARR').locator('.table-scroll').getByRole('table', { name: 'ARR by month', exact: true }).getByRole('row').last().getByRole('cell').first().innerText(), 'USD 120,000.00')
+  assert.equal(await card(bp, 'ARR').locator('.table-scroll').getByRole('table', { name: 'ARR by month', exact: true }).getByRole('row').last().getByRole('cell').first().innerText(), '$120,000.00')
   await card(bp, 'Runway').getByText('6.18 months', { exact: true }).waitFor()
   privateDetailsAbsent(await bp.locator('body').innerText())
   await shoot(bp, 'board-customized', width)

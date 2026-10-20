@@ -1,3 +1,4 @@
+import { usDate } from './date-format'
 // A published review pack as a printable HTML document and as CSV. Both are
 // rendered from the immutable pack snapshot, so a download always shows what
 // was published.
@@ -10,12 +11,13 @@ const csvCell = (v: unknown) => { const s = String(v ?? ''); return /[",\n\r]/.t
 
 export function packHtml(sn: Data): string {
  const b = sn.body, money = (n: number | null) => n === null || n === undefined ? '—' : formatMoney(n, b.currency)
+ const date = (value: string) => usDate(value, b.structure?.workspace?.[0]?.dateFormat)
  const row = (cells: unknown[]) => `<tr>${cells.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`
  const statement = (heading: string, values: Data[] | undefined, fields: [string, string][]) => values ? `<h2>${esc(heading)}</h2><table><thead><tr><th>Month</th>${fields.map(([, label]) => `<th>${esc(label)}</th>`).join('')}<th>Completeness</th></tr></thead><tbody>${values.map(m => row([monthLabel(m.month), ...fields.map(([key]) => money(m[key])), m.incompleteReasons?.join(' ') ?? 'Complete planning schedule'])).join('')}</tbody></table>` : ''
  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(b.title)} · ${esc(b.company)}</title>
 <style>body{font-family:system-ui,sans-serif;margin:2rem;color:#1b2724;overflow-wrap:anywhere}table{display:block;overflow-x:auto;max-width:100%;border-collapse:collapse;width:100%;margin:1rem 0}td,th{overflow-wrap:normal;border:1px solid #9aa8a3;padding:.35rem .5rem;text-align:left;vertical-align:top}th{background:#eef2f0}.meta{color:#4a5a55}</style></head><body>
 <h1>${esc(b.title)} · ${esc(b.company)}</h1>
-<p class="meta">Published by ${esc(b.publishedBy.name)} (${esc(b.publishedBy.email)}) at ${esc(b.publishedAt)}. Snapshot ${esc(sn.id)}, SHA-256 ${esc(sn.sha256)}.</p>
+<p class="meta">Published by ${esc(b.publishedBy.name)} (${esc(b.publishedBy.email)}) at ${esc(date(b.publishedAt))}. Snapshot ${esc(sn.id)}, SHA-256 ${esc(sn.sha256)}.</p>
 <p class="meta">Approved budget: revision ${esc(b.budget.revision)}, approved by ${esc(b.budget.approvedBy?.name)} at ${esc(b.budget.approvedAt)} (snapshot SHA-256 ${esc(b.budget.sha256)}). Forecast: ${esc(b.forecast.name)} revision ${esc(b.forecast.revision)}, actuals through ${esc(monthLabel(b.forecast.actualsThrough))}.</p>
 <h2>Profit and loss, ${esc(monthLabel(b.month))}</h2>
 <table><thead><tr><th>Line</th><th>Actual</th><th>Budget</th><th>Year to date actual</th><th>Year to date budget</th></tr></thead><tbody>
@@ -35,10 +37,10 @@ ${b.contracts ? `<h2>Bookings, billings, revenue and collections</h2><p>Captured
 ${statement('Balance sheet', b.balanceSheet, [['cash', 'Cash'], ['receivables', 'Receivables'], ['deferredRevenue', 'Deferred revenue'], ['assets', 'Assets'], ['liabilities', 'Liabilities'], ['equity', 'Equity'], ['balanceDifference', 'Reconciliation difference']])}
 ${statement('Indirect cash flow', b.cashFlow, [['netIncome', 'Net income'], ['receivablesChange', 'Receivables change'], ['deferredRevenueChange', 'Deferred revenue change'], ['operating', 'Operating cash'], ['investing', 'Investing cash'], ['financing', 'Financing cash'], ['closing', 'Closing cash'], ['difference', 'Reconciliation difference']])}
 <h2>Decisions and actions</h2>
-${b.decisions.length ? `<table><thead><tr><th>Decision or action</th><th>Owner</th><th>Due</th></tr></thead><tbody>${b.decisions.map((d: Data) => row([d.text, d.owner, d.due])).join('')}</tbody></table>` : '<p>No decisions recorded.</p>'}
+${b.decisions.length ? `<table><thead><tr><th>Decision or action</th><th>Owner</th><th>Due</th></tr></thead><tbody>${b.decisions.map((d: Data) => row([d.text, d.owner, date(d.due)])).join('')}</tbody></table>` : '<p>No decisions recorded.</p>'}
 <h2>Sources</h2>
 <table><thead><tr><th>Accepted import</th><th>SHA-256</th><th>Rows</th><th>Accepted by</th></tr></thead><tbody>
-${b.sources.map((x: Data) => row([x.file, x.sha256, x.rows, `${x.acceptedBy} at ${x.acceptedAt}`])).join('')}
+${b.sources.map((x: Data) => row([x.file, x.sha256, x.rows, `${x.acceptedBy} at ${date(x.acceptedAt)}`])).join('')}
 </tbody></table>
 </body></html>`
 }

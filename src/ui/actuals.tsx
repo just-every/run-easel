@@ -52,7 +52,7 @@ function MappingSelect({ state, account, save }: { state: D; account: D; save: (
 
 function CsvImport({ state, refresh }: { state: D; refresh: () => Promise<void> }) {
  const [file, setFile] = useState<{ name: string; csv: string; headers: string[] } | null>(null)
- const [settings, setSettings] = useState<D>({ amountMode: 'debit-credit', dateFormat: 'DD/MM/YYYY', allowRepeats: false, columns: {} })
+ const [settings, setSettings] = useState<D>({ amountMode: 'debit-credit', dateFormat: state.workspace.dateFormat ?? 'MM/DD/YYYY', allowRepeats: false, columns: {} })
  const [preview, setPreview] = useState<D | null>(null)
  const [acknowledged, setAcknowledged] = useState(false)
  const [error, setError] = useState('')

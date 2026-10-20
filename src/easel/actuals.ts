@@ -48,13 +48,13 @@ export async function readActuals(b: Data) {
  const file = typeof b.filename === 'string' && b.filename.trim() ? b.filename.trim().slice(0, 200) : 'actuals.csv'
  const { headers, rows } = parseCsv(b.csv)
  requireThat(rows.length <= MAX_ROWS, `The file has more than ${MAX_ROWS} rows; split it by month`)
- const cols = (b.columns ?? {}) as Columns
+ const cols = (b.columns ?? { date: 'Date', account: 'Account', amount: 'Amount', ...(headers.includes('Department') ? { department: 'Department' } : {}) }) as Columns
  const has = (name?: string) => !!name && headers.includes(name)
  requireThat(has(cols.account), 'Choose the account column')
  requireThat(has(cols.date) || has(cols.period), 'Choose the date or period column')
- const amountMode = choice(b.amountMode, ['debit-credit', 'debit-positive', 'credit-positive'] as const, 'how amounts are signed')
+ const amountMode = choice(b.amountMode ?? 'debit-positive', ['debit-credit', 'debit-positive', 'credit-positive'] as const, 'how amounts are signed')
  requireThat(amountMode === 'debit-credit' ? has(cols.debit) && has(cols.credit) : has(cols.amount), amountMode === 'debit-credit' ? 'Choose the debit and credit columns' : 'Choose the amount column')
- const dateFormat = choice(b.dateFormat, ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM'] as const, 'a date format')
+ const dateFormat = choice(b.dateFormat ?? 'MM/DD/YYYY', ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM'] as const, 'a date format')
  const allowRepeats = b.allowRepeats === true
  const index = (name?: string) => (name ? headers.indexOf(name) : -1)
  const at = (cells: string[], name?: string) => (index(name) >= 0 ? (cells[index(name)] ?? '').trim() : '')
@@ -91,7 +91,7 @@ export async function readActuals(b: Data) {
 export async function previewActuals(c: Context, b: Data) {
  requireFinance(c.x)
  workspace(c.s)
- const read = await readActuals(b)
+ const read = await readActuals({ ...b, dateFormat: b.dateFormat ?? workspace(c.s).dateFormat ?? 'MM/DD/YYYY' })
  const { s } = c
  // Rows already accepted in another import are refused rather than counted twice.
  const prior = new Map<string, string>()

@@ -1,3 +1,4 @@
+import { useDate } from './shared'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { ReforecastComparison } from './reforecast-comparison'
@@ -8,6 +9,7 @@ import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person
 
 /** Closing months, variance explanations and review packs. */
 export function Review({ state, refresh }: Shared) {
+ const displayDate = useDate()
  const me = state.me
  const currency = state.workspace.currency
  const forecast = state.scenarios.find((s: D) => s.kind === 'forecast' && !s.alternativeBudget)
@@ -48,7 +50,7 @@ export function Review({ state, refresh }: Shared) {
    {v.rows.map((r: D) => <details key={r.key} className="card-row">
     <summary className="variance-summary"><strong className="variance-line">{r.lineName} · {r.departmentName}</strong><span className="variance-number"><small>Actual</small>{money(r.actual, currency)}</span><span className="variance-number"><small>Budget</small>{money(r.budget, currency)}</span><span className={`variance-number${r.favourable === false ? ' variance-unfavourable' : ''}`} aria-label={`Variance ${money(r.variance, currency)}${r.favourable === null ? '' : r.favourable ? ', favourable' : ', unfavourable'}`}><small>Variance</small>{money(r.variance, currency)}</span><span className="variance-number variance-prior">{money(r.priorForecast, currency)}</span><span className="variance-status">{r.explanation ? <span className="pill">explanation {r.explanation.status}</span> : <span className="muted">No explanation</span>}</span></summary>
     <p className="trace">{r.draft}</p>
-    {r.citations.length > 0 && <Table caption="Accepted rows" heads={['File', 'Line', 'Date', 'Description', 'Reference', 'Amount']}>{r.citations.map((c: D, i: number) => <tr key={i}><td>{c.file}</td><td className="num">{c.line}</td><td><span className="date-token">{c.date}</span></td><td>{c.description}</td><td>{c.reference}</td><td className="num">{money(c.amount, currency)}</td></tr>)}</Table>}
+    {r.citations.length > 0 && <Table caption="Accepted rows" heads={['File', 'Line', 'Date', 'Description', 'Reference', 'Amount']}>{r.citations.map((c: D, i: number) => <tr key={i}><td>{c.file}</td><td className="num">{c.line}</td><td><span className="date-token">{displayDate(c.date)}</span></td><td>{c.description}</td><td>{c.reference}</td><td className="num">{money(c.amount, currency)}</td></tr>)}</Table>}
     {r.explanation && <p><strong>Explanation ({r.explanation.status}{r.explanation.confirmedBy && <> by <Person state={reviewState} email={r.explanation.confirmedBy} /></>}):</strong> {r.explanation.text}</p>}
     {(me.role === 'finance' || me.departments.includes(r.department)) && <>
      <Form key={`${r.key}-${r.explanation?.at ?? ''}`} submit="Save explanation" onSubmit={async x => { await command('explanation', { month: v.month, line: r.line, department: r.department, text: x.text }); await refresh() }}>
@@ -66,7 +68,7 @@ export function Review({ state, refresh }: Shared) {
    {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}
    {packs.map((p: D) => <div key={p.id} className="pack">
     <h3>{p.title} · {p.status}</h3>
-    {p.decisions.length > 0 && <ul className="plain">{p.decisions.map((d: D) => <li key={d.id}>{d.text}{d.owner ? ` — ${d.owner}` : ''}{d.due && <>, due <span className="date-token">{d.due}</span></>}{p.progress?.[d.id] ? ` (${p.progress[d.id].status})` : ''}
+    {p.decisions.length > 0 && <ul className="plain">{p.decisions.map((d: D) => <li key={d.id}>{d.text}{d.owner ? ` — ${d.owner}` : ''}{d.due && <>, due <span className="date-token">{displayDate(d.due)}</span></>}{p.progress?.[d.id] ? ` (${p.progress[d.id].status})` : ''}
      {p.status === 'published' && me.role === 'finance' && p.progress?.[d.id]?.status !== 'done' && <Action kind="quiet" label="Mark done" run={async () => { await command('action-status', { pack: p.id, decision: d.id, status: 'done' }); await refresh() }} />}
      <PackActionDepartment state={state} pack={p} decision={d} refresh={refresh} /></li>)}</ul>}
     {p.status === 'draft' && me.role === 'finance' && <>
@@ -78,7 +80,7 @@ export function Review({ state, refresh }: Shared) {
      </Form>
      <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id }); await refresh() }} />
     </>}
-    {p.status === 'published' && <p>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{p.publishedAt.slice(0, 19).replace('T', ' ')}</span> · <a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a> · <a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a> · <a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a></p>}
+    {p.status === 'published' && <p>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span> · <a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a> · <a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a> · <a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a></p>}
    </div>)}
    {!packs.length && <p className="muted">No packs for this month yet.</p>}
   </section>

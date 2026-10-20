@@ -24,14 +24,18 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
  }
  if (op === 'workspace') {
   requireFinance(x)
-  const currency = text(b.currency ?? 'AUD', 'Currency').toUpperCase()
+  const existing = find(s, 'workspace', 'main')
+  const currency = text(b.currency ?? existing?.currency ?? 'USD', 'Currency').toUpperCase()
   requireThat(/^[A-Z]{3}$/.test(currency), 'Use a three-letter currency code such as AUD')
-  const fiscalYearStart = integer(b.fiscalYearStart ?? 7, 'Fiscal year start month', 1, 12)
+  const fiscalYearStart = integer(b.fiscalYearStart ?? existing?.fiscalYearStart ?? 1, 'Fiscal year start month', 1, 12)
+  const timeZone = text(b.timeZone ?? existing?.timeZone ?? 'America/New_York', 'Company time zone')
+  try { new Intl.DateTimeFormat('en-US', { timeZone }).format() } catch { requireThat(false, 'Choose a valid IANA time zone') }
+  const locale = choice(b.locale ?? existing?.locale ?? 'en-US', ['en-US', 'en-GB', 'en-AU'] as const, 'English locale')
+  const dateFormat = choice(b.dateFormat ?? existing?.dateFormat ?? 'MM/DD/YYYY', ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'] as const, 'date display')
   const planStart = month(b.planStart, 'First plan month')
   requireThat(Number(planStart.slice(5, 7)) === fiscalYearStart, 'The first plan month must be the first month of a fiscal year')
-  const existing = find(s, 'workspace', 'main')
   requireThat(!existing || existing.planStart === planStart || !all(s, 'scenario').length, 'The plan year is fixed once scenarios exist', 409)
-  put(s, 'workspace', 'main', { name: text(b.name, 'Company name'), currency, fiscalYearStart, planStart, horizon: 12, ...(existing?.cashAgreement ? { cashAgreement: existing.cashAgreement } : {}) })
+  put(s, 'workspace', 'main', { name: text(b.name, 'Company name'), currency, fiscalYearStart, planStart, horizon: 12, timeZone, locale, dateFormat, ...(existing?.cashAgreement ? { cashAgreement: existing.cashAgreement } : {}) })
   if (!all(s, 'scenario').some(sc => sc.kind === 'budget')) {
    const id = uid()
    put(s, 'scenario', id, { name: `${fiscalYearLabel(planStart)} budget`, kind: 'budget', status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, actualsThrough: null, cash: { openingCents: 0, basis: 'estimate', note: '', receivablesCents: 0, payablesCents: 0, collectionLag: 1, paymentLag: 1 } })

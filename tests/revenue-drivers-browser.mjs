@@ -32,7 +32,7 @@ try {
   ['usage', 'Platform usage', { 'Starting monthly usage': '12500', 'Monthly usage growth %': '2', 'Price per usage unit': '0.02' }, 25000, 'usage units 12500.00'],
   ['services', 'Advisory services', { 'Monthly available hours per position': '160', 'Billable utilization %': '75', 'Billable hourly rate': '150' }, 3600000, '2 active positions'],
   ['milestones', 'Implementation projects', { 'Milestone 1 name': 'Discovery', 'Milestone 1 month': '2026-01', 'Milestone 1 amount': '15000' }, 1500000, 'project milestone Discovery'],
-  ['backlog', 'Signed backlog', { 'Opening backlog': '200000', 'Monthly backlog additions': '20000', 'Monthly backlog recognition %': '10' }, 2200000, 'closing backlog USD 198,000.00'],
+  ['backlog', 'Signed backlog', { 'Opening backlog': '200000', 'Monthly backlog additions': '20000', 'Monthly backlog recognition %': '10' }, 2200000, 'closing backlog $198,000.00'],
  ]
  for (const width of [1440, 390]) {
   const finance = await session(browser, root, server.origin, 'owner', width), page = finance.page

@@ -30,7 +30,7 @@ async function shoot(page, name, width) {
 const monthLabel = month => new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
 const prior = (month, offset) => { const date = new Date(`${month}-01T00:00:00Z`); date.setUTCMonth(date.getUTCMonth() - offset); return date.toISOString().slice(0, 7) }
 const decimal = cents => `${cents < 0 ? '-' : ''}${Math.floor(Math.abs(cents) / 100)}.${String(Math.abs(cents) % 100).padStart(2, '0')}`
-const money = cents => `USD ${Number(decimal(cents)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const money = cents => `$${Number(decimal(cents)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const historyAmount = (view, row, month) => view.actualsHistory.cells.find(cell => cell.line === row.line && cell.department === row.department && cell.month === month)?.amount
 function overlayTexts(view, row, month) {
  const current = historyAmount(view, row, month), previous = historyAmount(view, row, prior(month, 12))
@@ -96,11 +96,11 @@ try {
   const projected = original.inputs.schedule.find(row => row.name === projectedName)
   assert.deepEqual(projected.history, { sourceLine: fixture.revenue.id, sourceDepartment: fixture.sales.id, offset: 12, window: 1, growthBps: 500 })
   const table = page.getByRole('table', { name: `${projectedName} calculated monthly amounts`, exact: true })
-  assert.equal(await table.getByRole('row').nth(1).getByRole('cell').first().innerText(), 'USD 1,050.11')
+  assert.equal(await table.getByRole('row').nth(1).getByRole('cell').first().innerText(), '$1,050.11')
   assert.equal(original.calculation.cells.find(cell => cell.line === fixture.projected.id && cell.department === fixture.sales.id && cell.month === '2025-01').sources.find(source => source.id === projected.originId).amount, 105011)
   await table.getByRole('row').nth(1).locator('summary').click()
   const citation = await table.getByRole('row').nth(1).locator('details').innerText()
-  assert.ok(citation.includes('2024-01')); assert.ok(citation.includes('USD 1,000.10')); assert.ok(citation.includes('USD 1,050.11'))
+  assert.ok(citation.includes('2024-01')); assert.ok(citation.includes('$1,000.10')); assert.ok(citation.includes('$1,050.11'))
   assert.equal(await table.locator('input').count(), 0, 'Derived amounts are read-only')
   await shoot(page, 'derived-traces', width)
   await addReference(page, fixture, smoothedName, 'trailing-three', fixture.smoothed, fixture.cost, 0, width)

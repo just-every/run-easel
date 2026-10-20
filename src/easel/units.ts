@@ -44,10 +44,10 @@ export function apportion(amount: number, weights: number[]): number[] {
  return base.map(b => sign * Number(b))
 }
 
-export function formatMoney(minor: number, currency = 'AUD'): string {
+export function formatMoney(minor: number, currency = 'USD'): string {
  const sign = minor < 0 ? '-' : ''
  const abs = Math.abs(minor), whole = Math.floor(abs / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
- return `${sign}${currency === 'AUD' ? '$' : currency + ' '}${whole}.${String(abs % 100).padStart(2, '0')}`
+ return `${sign}${(currency === 'AUD' || currency === 'USD') ? '$' : currency + ' '}${whole}.${String(abs % 100).padStart(2, '0')}`
 }
 
 export const formatHundredths = (n: number) => `${n < 0 ? '-' : ''}${Math.floor(Math.abs(n) / 100)}.${String(Math.abs(n) % 100).padStart(2, '0')}`

@@ -6,7 +6,7 @@ import { api, noOverflow, session } from './browser-journey.mjs'
 
 const card = (page, title) => page.locator('section.card').filter({ has: page.getByRole('heading', { name: title, exact: true }) })
 const tab = (page, name) => page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name, exact: true }).click()
-const money = n => `${n < 0 ? '-' : ''}USD ${(Math.abs(n) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const money = n => `${n < 0 ? '-' : ''}$${(Math.abs(n) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export async function seedCashHealth(context, origin) {
  const cmd = (op, body) => api(context, origin, `command/${op}`, body)
@@ -52,7 +52,7 @@ export async function cashHealthBrowserJourney(browser, root, origin, evidence, 
   await agreement.getByLabel('Agreed cash floor', { exact: true }).fill('500000')
   await agreement.getByLabel('Minimum runway (months)', { exact: true }).fill('3.25')
   await agreement.getByRole('button', { name: 'Save cash constraints', exact: true }).click()
-  await p.getByText('Current agreed cash floor: USD 500,000.00. Runway minimum: 3.25 months.', { exact: true }).waitFor()
+  await p.getByText('Current agreed cash floor: $500,000.00. Runway minimum: 3.25 months.', { exact: true }).waitFor()
   if (create) {
    await tab(p, 'Scenarios')
    const scenarios = card(p, 'Scenarios')
@@ -86,7 +86,7 @@ export async function cashHealthBrowserJourney(browser, root, origin, evidence, 
   await p.screenshot({ path: join(evidence, `cash-dashboard-${width}.png`), fullPage: true })
   await p.getByLabel('Scenario', { exact: true }).selectOption(downside.id)
   await assertHealth(p, 'Cash health', down.cashHealth)
-  await p.getByText('Lowest cash: Dec 2026 · -USD 780,000.00. Cash-zero month: Jul 2026.', { exact: true }).waitFor()
+  await p.getByText('Lowest cash: Dec 2026 · -$780,000.00. Cash-zero month: Jul 2026.', { exact: true }).waitFor()
   await p.screenshot({ path: join(evidence, `cash-scenario-${width}.png`), fullPage: true })
   await tab(p, 'Scenarios')
   const compare = card(p, 'Compare')

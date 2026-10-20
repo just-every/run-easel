@@ -27,7 +27,7 @@ try {
  await cmd('scenario-cash', { scenario: budget.id, basis: 'estimate', opening: '250000' })
  await owner.context.close()
  const createdLines = []
- const amount = n => `USD ${Math.floor(n / 100).toLocaleString('en-US')}.${String(n % 100).padStart(2, '0')}`
+ const amount = n => `$${Math.floor(n / 100).toLocaleString('en-US')}.${String(n % 100).padStart(2, '0')}`
  for (const width of [1440, 390]) {
   const finance = await session(browser, root, server.origin, 'owner', width), page = finance.page
   const line = await api(finance.context, server.origin, 'command/line', { name: `Contract ${width}`, type: 'revenue' }); createdLines.push(line)
@@ -66,7 +66,7 @@ try {
    const jan = contracts.getByRole('table', { name: 'Contract flows by month', exact: true }).getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'Jan 2026', exact: true }) })
    assert.deepEqual(await jan.getByRole('cell').allInnerTexts(), ['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue', 'unbilledRevenue'].map(k => amount(current.calculation.contracts.months[0][k])))
    const invoice = contracts.getByRole('table', { name: 'Contract invoice dates', exact: true }).getByRole('row').filter({ has: page.getByRole('rowheader', { name: `Private annual agreement ${width}`, exact: true }) })
-   assert.deepEqual(await invoice.getByRole('cell').allInnerTexts(), ['2026-01-01', '2026-02-15', 'USD 120,000.00'])
+   assert.deepEqual(await invoice.getByRole('cell').allInnerTexts(), ['01/01/2026', '02/15/2026', '$120,000.00'])
    await contracts.screenshot({ path: join(evidence, `contract-flows-${width}.png`) }); await noOverflow(page, `REV-004 ledger ${width}`)
    for (const [heading, field, labels] of [['Balance sheet', 'balanceSheet', [['Deferred revenue', 'deferredRevenue'], ['Receivables', 'receivables']]], ['Indirect cash flow', 'cashFlow', [['Deferred revenue change', 'deferredRevenueChange'], ['Closing cash', 'closing']]]]) {
     const section = card(page, heading)

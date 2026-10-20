@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { createContext, useContext, useId, useState, type ReactNode } from 'react'
 import { useScrollEdges, revealHorizontally } from './scroll'
 
 export type D = Record<string, any>
@@ -15,10 +15,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export const monthLabel = (m?: string | null) => (m ? `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}` : '—')
 export const addMonths = (m: string, n: number) => { const i = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1 + n; return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}` }
 
-export function money(minor: number | null | undefined, currency = 'AUD') {
+export function money(minor: number | null | undefined, currency = 'USD') {
  if (minor === null || minor === undefined) return '—'
  const abs = Math.abs(minor), whole = Math.floor(abs / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
- return `${minor < 0 ? '-' : ''}${currency === 'AUD' ? '$' : currency + ' '}${whole}.${String(abs % 100).padStart(2, '0')}`
+ return `${minor < 0 ? '-' : ''}${(currency === 'AUD' || currency === 'USD') ? '$' : currency + ' '}${whole}.${String(abs % 100).padStart(2, '0')}`
 }
 /** Integer cents, hundredths or basis points back to the decimal text a form shows. */
 export const decimalText = (n: number | undefined | null) => (n === undefined || n === null ? '' : `${n < 0 ? '-' : ''}${Math.floor(Math.abs(n) / 100)}.${String(Math.abs(n) % 100).padStart(2, '0')}`)
@@ -83,3 +83,12 @@ export function Person({ state, email }: { state: D; email?: string | null }) {
  return <span title={email ?? undefined}>{person?.name || (email ? state.actorNames?.[email] : '') || email || 'Unknown person'}</span>
 }
 export const fiscalMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((label, i) => ({ value: String(i + 1), label }))
+
+import { usDate } from '../easel/date-format'
+export const DateFormatContext = createContext('MM/DD/YYYY')
+export function useDate() { const format = useContext(DateFormatContext); return (value?: string | null) => usDate(value, format) }
+
+export const US_TIME_ZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Phoenix', 'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu'].map(value => ({value, label: value.replaceAll('_', ' ')}))
+
+export const ENGLISH_LOCALES = [{value:'en-US',label:'English (United States)'},{value:'en-GB',label:'English (United Kingdom)'},{value:'en-AU',label:'English (Australia)'}]
+export const DATE_FORMATS = ['MM/DD/YYYY','DD/MM/YYYY','YYYY-MM-DD'].map(value => ({value,label:value}))

@@ -1,3 +1,4 @@
+import { currentTime } from './time'
 import { gaugeCheck } from './gauge-check'
 import { gaugeStatus, gaugeConnection } from './gauge-connection'
 import { gaugeUtilization } from './gauge-utilization'
@@ -76,7 +77,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const a = c.get('apiActor') ?? await actor(c.req.raw, c.env)
  const { state, revision } = await load(c.env.DB)
  if (a.token) requireMember(access(state, a))
- return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: new Date().toISOString() }
+ return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
 async function commit(ctx: Awaited<ReturnType<typeof open>>, structureBefore = ctx.before, structureRevision = ctx.revision) {

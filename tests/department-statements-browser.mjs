@@ -39,7 +39,7 @@ try {
  await owner.page.getByRole('heading',{name:'Department statements',exact:true}).waitFor()
  const record=(await api(owner.context,server.origin,'department-statements')).find(s=>s.department===eng.id)
  assert.ok(record)
- const money=n=>`${n<0?'-':''}USD ${(Math.abs(n)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+ const money=n=>`${n<0?'-':''}$${(Math.abs(n)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
  for(const width of[1440,390]) {
   await owner.page.setViewportSize({width,height:1000})
   await cmd('pack-create',{month:'2026-01'})

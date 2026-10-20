@@ -91,7 +91,7 @@ test('CYCLE-005 exact-revision named reforecasts freeze complete models; actual 
  const packHtml = await h.get(`/api/easel/pack/${pack.id}/document.html`, viewer)
  const packCsv = await h.get(`/api/easel/pack/${pack.id}/document.csv`, viewer)
  assert.match(packHtml, /Q2 reforecast/)
- assert.match(packHtml, /USD 1,200.00/)
+ assert.match(packHtml, /\$1,200.00/)
  assert.ok(packCsv.split('\r\n').includes(`version-comparison,Services,Sales,90000,,,,,Q2 reforecast,USD,120000,"'-30000"`), 'CSV retains the exact signed variance with its existing spreadsheet escaping')
  const filtered = await h.get(`/api/easel/scenario/${q2.id}`, viewer)
  assert.deepEqual(filtered.inputs.position, [])

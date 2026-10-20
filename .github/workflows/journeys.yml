@@ -75,6 +75,10 @@ jobs:
         run: node tests/revenue-drivers-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/revenue-drivers
+      - name: US-001 native defaults, date and currency screens
+        run: perl -e 'setpgrp(0,0); exec @ARGV' -- node tests/us-defaults-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/us-defaults
       - uses: actions/upload-artifact@v4
         if: always()
         with:

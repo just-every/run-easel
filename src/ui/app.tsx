@@ -10,7 +10,7 @@ import { Scenarios } from './scenarios'
 import { Settings } from './settings'
 import { useScrollEdges, revealHorizontally } from './scroll'
 import { ClosingCashChart } from './chart'
-import { addMonths, api, type D } from './shared'
+import { DateFormatContext, addMonths, api, type D } from './shared'
 import { SetupPlan } from './starter-models'
 
 const TABS = [
@@ -46,7 +46,7 @@ export function App() {
  if (!state.workspace) return <main className="shell">{header}{role === 'finance' ? <SetupPlan refresh={refresh} /> : <section className="card solo"><h2 className="lead">Finance is still setting up the plan.</h2><EmptyYear /></section>}</main>
  const shared: Shared = { state, refresh, go: setTab }
  const tabs = TABS.filter(t => t.roles.includes(role))
- return <main className="shell">
+ return <DateFormatContext.Provider value={state.workspace.dateFormat ?? 'MM/DD/YYYY'}><main className="shell" lang={state.workspace.locale ?? 'en-US'}>
   {header}
   <div className="scroll-frame tab-frame" data-before={strip.edges.before} data-after={strip.edges.after}><nav ref={strip.ref as any} className="tabs" aria-label="Easel" onFocusCapture={e => revealHorizontally(e.target as HTMLElement)}>{tabs.map(t => <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>{t.label}</button>)}</nav>{strip.edges.before && <span className="scroll-cue scroll-cue-before" aria-hidden="true">←</span>}{strip.edges.after && <span className="scroll-cue" aria-hidden="true">→</span>}</div>
   {error && <p role="alert" className="error">{error}</p>}
@@ -59,7 +59,7 @@ export function App() {
   {tab === 'review' && <Review {...shared} />}
   {tab === 'settings' && <Settings {...shared} />}
   {tab === 'activity' && <Activity state={state} />}
- </main>
+ </main></DateFormatContext.Provider>
 }
 
 /** The empty graph-paper year behind a waiting state: decoration only. */

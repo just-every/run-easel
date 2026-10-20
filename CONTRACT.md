@@ -163,6 +163,8 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 #### CONNECT-005 — Scheduled refresh with visible freshness.
 Each connection refreshes on a schedule finance sets (hourly, nightly or weekly, in the company's US time zone) and on demand. Refresh pulls data and metadata together. Every view shows each source's last successful refresh, and a source older than its schedule is marked stale wherever its numbers appear. A failed refresh keeps the previous data, shows the provider error and notifies finance (`CYCLE-003`). A provider-side change to a month that is already closed never silently changes closed numbers: it opens a restatement notice that lists the affected lines, packs and kept forecasts, and finance accepts or rejects it.
 
+Before this capability ships, CONNECT-005 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
+
 *Acceptance:* a Workers journey with the scheduled handler, a provider fake and a mail fake: refresh on schedule; fail, and show the error with data unchanged while finance receives one refresh-failure notification naming the source and error (`CYCLE-003`); go stale; and post a change to a closed month that produces a restatement notice instead of a changed pack.
 
 *Status:* missing.
@@ -339,6 +341,8 @@ Every scenario shows, by month, gross burn (cash paid out), net burn (cash paid 
 #### FIN-006 — US tax estimates in the forecast.
 Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labeled as such, and never filings.
 
+Before this capability ships, FIN-006 inherits US-001: provide US statutory payroll and tax defaults for a new US company, with the effective tax year and every planning-estimate label; retain finance overrides.
+
 *Acceptance:* the API journey plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, SUTA at an entered 2.7% state rate stopping at an entered state wage base, and an income-tax line on a profitable month; a loss in an early month is carried forward and reduces income tax in a later profitable month; and sales tax collected on an invoice flows into cash and out through a sales-tax payable without changing revenue.
 
 *Status:* partial.
@@ -381,6 +385,8 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 
 #### PEOPLE-004 — US compensation assumptions.
 Each position or person carries salary or hourly rate with expected hours, W-2 or 1099 type, merit increases on a date, bonus (percent of salary, paid in a month), sales commission (rate on bookings from `REV-001`), benefits per head per month, 401(k) match, and employer taxes from `FIN-006`. On-cost defaults are set per department and overridden per position. Each cost traces to its components.
+
+Before this capability ships, PEOPLE-004 inherits US-001: provide US statutory compensation, payroll and tax defaults for a new US company, with the effective tax year and every planning-estimate label; retain finance overrides.
 
 *Acceptance:* the API journey plans a salaried W-2 engineer with a merit increase, a commissioned salesperson tied to pipeline bookings, a 1099 contractor with no employer tax, an hourly W-2 position at $40 × 120 hours a month, and a salaried position carrying a 10% bonus paid in March, $1,200 a month of benefits, a 4% 401(k) match and a department on-cost default overridden on that position; each monthly cost reads as traced components (salary or hours × rate, merit, bonus, commission, benefits, 401(k) match and each employer tax) that sum to the cell.
 
@@ -514,6 +520,8 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 #### CYCLE-001 — Budget calendar, tasks and reminders.
 Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status (`EASEL-009`) is one kind of task. Before shipping, CYCLE-001 inherits REPORT-005: its open department tasks appear in that department's monthly email and app statement under the same recipient and detail filtering.
 
+Before this capability ships, CYCLE-001 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
+
 *Acceptance:* with a fake clock and mail and chat fakes, the API journey requests submissions due Friday; a reminder goes out Thursday morning Eastern, the reminder for a submitted department is canceled, and an overdue department escalates to finance on Monday.
 
 *Status:* partial.
@@ -527,6 +535,8 @@ Finance writes rules such as "a department's actual spend exceeds budget by 10% 
 
 #### CYCLE-003 — Notifications from discussions and events.
 Mentioning a person in a comment or explanation, a returned submission, a pending approval, a restatement notice, a failed refresh and a triggered task each notify the person by email and, if connected, in Slack, Microsoft Teams or Nook. The notification links to the exact cell or record. Each person sets their channels, and a daily digest is the default.
+
+Before this capability ships, CYCLE-003 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
 
 *Acceptance:* with mail, Slack, Microsoft Teams and Nook fakes and a fake clock, the API journey produces one notification per event type, each linking to its record: a mention in a variance explanation (email and Slack), a returned submission to its contributor (email and Teams), a pending approval to finance, a restatement notice to finance, a failed refresh to finance, and a triggered task to its owner (Nook). A person who chose Teams only receives no email, and a digest-only person receives all their events in the next daily digest instead.
 
@@ -561,6 +571,8 @@ A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headco
 Finance and permitted members build reports. Rows are lines, dimensions or hierarchies. Columns are months, quarters, years, year-to-date or trailing twelve months, across versions (actual, prior-year actual, budget, each reforecast and the forecast), with variance and year-over-year change in dollars and percent. Filters by any dimension member and conditional highlighting (for example a variance over 10% in red) are available. Reports are saved, shared, and scheduled for email delivery to named people daily, weekly or monthly in the company's time zone. They are always role-filtered on the server, and each recipient of a scheduled report gets the copy they would see if they opened it.
 
 Before saved reports ship, REPORT-001 inherits REPORT-002 dashboard tables/charts over saved reports, with personal layouts, audience filtering and aggregate Excel exports.
+
+Before this capability ships, REPORT-001 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
 
 *Acceptance:* in the browser at 1440, build a department-by-quarter report of actual against budget with year-to-date, trailing-twelve-month, prior-year actual and year-over-year % columns, a department filter and a highlight rule; save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail. Year-to-date and trailing-twelve-month cells equal the sum of their months, and year-over-year % equals (actual − prior-year actual) ÷ prior-year actual, to the cent. With a mail fake and a fake clock, schedule the report weekly for Monday 8:00 Eastern to finance and a viewer: on Monday each receives one email, and the viewer's copy omits restricted detail.
 
@@ -600,6 +612,8 @@ Each department owner gets a monthly actual-against-budget statement for their d
 
 #### REPORT-006 — Scheduled cash alerts.
 Finance sets cash alerts: forecast lowest cash below the floor (`FIN-005`), actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged.
+
+Before this capability ships, REPORT-006 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
 
 *Acceptance:* with a fake clock, a bank fake and mail and Slack fakes: a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month; bank cash $60,000 below plan under a $50,000 rule sends one alert, and a 10% rule fires the same way; runway falling to 11 months under a 12-month rule sends one alert; a second refresh with no change sends none; a refresh that worsens the breach re-alerts once; an unchanged breach re-alerts after the set interval (for example seven days) on the fake clock; and acknowledgment is recorded.
 
@@ -682,9 +696,11 @@ An entity plans in its local currency and reports in USD, using rate tables that
 #### US-001 — US defaults.
 A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYYY dates, a January fiscal year with any other start month available, US time zones for schedules and reminders, and the US payroll and tax assumptions of `FIN-006` and `PEOPLE-004`. Files with US date and number formats import without extra choices.
 
-*Acceptance:* set up a new company in the browser without changing defaults and see USD formatting, US dates and an Eastern-time reminder schedule; import a CSV with MM/DD/YYYY dates and $-formatted amounts.
+Current capabilities complete US-001 under ct's 19 October ruling. Finance can change the reporting currency, fiscal start, English locale (US, UK or Australia), date display (MM/DD/YYYY, DD/MM/YYYY or ISO) and IANA company time zone. New companies use America/New_York, including daylight saving time when scheduled capabilities ship. Native date controls follow the browser/OS picker while transport dates remain ISO; app dates follow the saved display preference. Existing captured amounts and digests are unchanged. FIN-006 and PEOPLE-004 inherit US statutory payroll/tax defaults before those capabilities ship and remain partial. CONNECT-005, CYCLE-001, CYCLE-003, REPORT-001 and REPORT-006 inherit using the saved company zone for scheduled refreshes, reminders, digests, reports and alerts before they ship; no delivery is claimed by setting a zone.
 
-*Status:* partial.
+*Acceptance:* `tests/us-defaults.test.mjs` and `tests/us-defaults-browser.mjs` (US-001): create a company without changing defaults and assert USD/$ formatting, en-US, MM/DD/YYYY, January and America/New_York; import a CSV with US dates and dollar/grouped/parenthesized amounts without extra format choices, preview without writes, commit and reload exact cents. At 1440/390 inspect setup, the populated planning/review screens, department statements and the downloaded pack, then change and reload the owner-controlled preferences and prove date rendering follows them. The HTTP journey also sets a July fiscal start and an alternative currency/US zone. FIN-006/PEOPLE-004 carry statutory defaults and the named scheduled clauses carry actual company-zone delivery acceptance before shipping.
+
+*Status:* done.
 
 ### Move in and out
 
@@ -911,8 +927,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 27 | 26 | 33 | 86 |
-| All | 44 | 26 | 33 | 103 |
+| Target and push further | 28 | 25 | 33 | 86 |
+| All | 45 | 25 | 33 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -999,7 +1015,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `API-003` | MCP endpoint for outside agents | target | done | `tests/mcp.test.mjs` (API-003) |  |
 | `ENTITY-001` | Multiple entities and management consolidation | target | missing |  | One entity per installation; no consolidation or eliminations |
 | `ENTITY-002` | Multi-currency planning | target | missing |  | One reporting currency; no rate tables or translation |
-| `US-001` | US defaults | target | partial | `src/easel/setup.ts` `src/easel/csv.ts` | Currency is chosen at setup and CSV dates accept MM/DD/YYYY; the default is AUD, `$` formatting applies only to AUD, and US time zones and tax defaults are missing |
+| `US-001` | US defaults | target | done | `tests/us-defaults.test.mjs` `tests/us-defaults-browser.mjs` | Current default/format/import doors complete; future statutory and scheduled obligations inherited by their named clauses |
 | `MOVE-001` | Move in from Adaptive Planning | target | missing |  | No Adaptive Planning import, including personnel modeled-sheet rows as positions |
 | `MOVE-002` | Move in from Planful | target | missing |  | No Planful import |
 | `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | missing |  | No Anaplan, Runway or Pigment import |
