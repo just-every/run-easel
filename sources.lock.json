@@ -946,6 +946,10 @@
       "sha256": "7f441bdde6168a3a65b86225bbc02404bb3b941c2e35e1390c464842e1fcd041",
       "executable": false
     },
+    "src/easel/payroll-journal.ts": {
+      "sha256": "821a17cbe0371a65721feec2726c77008e777e332afae9cf0257ebd542791725",
+      "executable": false
+    },
     "src/easel/payroll-reconciliation.ts": {
       "sha256": "45ebe44b4298f4a9b3ad41496ad47fe66f8d887ddfcc00a4f4a34492a828ca6d",
       "executable": false
