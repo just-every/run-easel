@@ -1,3 +1,4 @@
+import { workbookScheduleValues } from './workbook-calculation'
 import { payrollTaxes } from './payroll-taxes'
 import { incomeTaxes, salesTaxes } from './tax-calculation'
 import { workingCapital, timedCash, curveContracts, type WorkingCapitalCalculation } from './working-capital'
@@ -34,7 +35,7 @@ export type Model = {
  lines: Line[]
  departments: Department[]
  scenario: Data
- inputs: { revenue: Data[]; position: Data[]; expense: Data[]; schedule: Data[]; allocation: Data[]; asset?: Data[]; 'asset-category'?: Data[]; debt?: Data[]; equity?: Data[]; 'tax-policy'?: Data[] }
+ inputs: { revenue: Data[]; position: Data[]; expense: Data[]; schedule: Data[]; allocation: Data[]; asset?: Data[]; 'asset-category'?: Data[]; debt?: Data[]; equity?: Data[]; 'tax-policy'?: Data[]; 'workbook-model'?: Data[] }
 }
 
 export type Calculation = {
@@ -185,14 +186,15 @@ export function calculate(model: Model, actuals: ActualCell[] = []): Calculation
  }
  const inventoryLines = new Set(inputs.expense.filter(e => e.kind === 'inventory').map(e => `${e.line}|${e.department}`))
 
+ const workbookValues = workbookScheduleValues(inputs)
  for (const s of inputs.schedule) {
   if (s.history) {
    for (const row of historySchedule(s, actuals, months.filter(m => !closed(m)), currency)) add(s.line, s.department, row.month, { kind: 'schedule', id: s.originId, label: s.name, amount: row.amount, trace: row.trace })
    continue
   }
-  for (const [m, amount] of Object.entries(s.values as Record<string, number>)) {
+  for (const [m, amount] of Object.entries((workbookValues.get(s.originId) ?? s.values) as Record<string, number>)) {
    if (!inHorizon.has(m)) { warnings.push(`${s.name}: ${monthLabel(m)} is outside the plan months and is not counted`); continue }
-   add(s.line, s.department, m, { kind: 'schedule', id: s.originId, label: s.name, amount, trace: `${s.name}: ${money(amount)} entered for ${monthLabel(m)}${s.provenance ? ` (${s.provenance.file} ${s.provenance.sheet}!${s.provenance.cells?.[m] ?? ''})` : ''}${s.subrows?.[m]?.length ? `; split: ${s.subrows[m].map((row: Data) => `${row.name} ${money(row.amount)}`).join(' + ')}` : ''}${s.notes?.[m] ? `; note: ${s.notes[m]}` : ''}${s.gridRevisions?.[m] ? `; cell revision ${s.gridRevisions[m].revision}` : ''}` })
+   add(s.line, s.department, m, { kind: s.workbookCells?.[m] && s.provenance?.formulas?.[m] ? 'workbook-formula' : 'schedule', id: s.originId, label: s.name, amount, trace: `${s.name}: ${money(amount)} ${s.workbookCells?.[m] && s.provenance?.formulas?.[m] ? 'from translated workbook arithmetic or an explicitly reported cached unsupported cell' : 'entered'} for ${monthLabel(m)}${s.provenance ? ` (${s.provenance.file} ${s.provenance.sheet}!${s.provenance.cells?.[m] ?? ''})` : ''}${s.subrows?.[m]?.length ? `; split: ${s.subrows[m].map((row: Data) => `${row.name} ${money(row.amount)}`).join(' + ')}` : ''}${s.notes?.[m] ? `; note: ${s.notes[m]}` : ''}${s.gridRevisions?.[m] ? `; cell revision ${s.gridRevisions[m].revision}` : ''}` })
   }
  }
 

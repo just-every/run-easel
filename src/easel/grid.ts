@@ -46,6 +46,7 @@ export async function grid(c: Context, op: string, b: Data): Promise<Data | unde
    if (get(c.s, 'line', row.line).payroll) requirePayDetail(c.x)
    requireThat(row.scenario === sc.id, 'This row belongs to another scenario')
    requireEditable(c.s, c.x, sc, row.department)
+   requireThat(!row.workbookOrigin || !row.provenance?.formulas?.[cell.month], 'This is a workbook formula; edit its source driver',409)
    requireThat(calc.months.includes(cell.month), 'The month is outside this plan')
    requireThat(!sc.actualsThrough || cell.month > sc.actualsThrough, 'Closed actuals cannot be typed over')
    requireThat(!row.history && ![...c.s.values()].some(r => r.kind === 'schedule' && r.value.scenario === sc.id && r.value.line === row.line && r.value.department === row.department && r.value.history), 'This cell is calculated from actuals; read its trace')

@@ -240,13 +240,19 @@
       "clauses": [
         "PEOPLE-006"
       ]
+    },
+    {
+      "id": "formula-model-import",
+      "clauses": [
+        "SHEET-003"
+      ]
     }
   ],
   "nonGoals": [
     "Multi-entity consolidation or currency conversion",
     "Posting journals or correcting the ledger",
     "Payroll, tax or statutory statement calculation",
-    "Evaluating spreadsheet formulas or macros",
+    "Executing spreadsheet macros",
     "Model-supplied arithmetic"
   ],
   "externals": [

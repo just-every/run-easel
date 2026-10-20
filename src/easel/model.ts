@@ -13,7 +13,7 @@ import { cents, decimal, hundredths, percentBps } from './units'
 import { all, choice, find, get, integer, optionalText, requireThat, text, type Access, type Data, type State } from './types'
 import type { Line, Model } from './engine'
 
-export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity', 'tax-policy'] as const
+export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity', 'tax-policy', 'workbook-model'] as const
 export type InputKind = typeof INPUT_KINDS[number]
 
 export function workspace(s: State) {
@@ -35,7 +35,7 @@ export function model(s: State, scenarioId: string): Model {
  return {
   workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon },
   lines: lines(s), departments: departments(s), scenario,
-  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy') },
+  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
 }
 
@@ -62,6 +62,7 @@ const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
 
 /** Validates one input against the model's lines and departments. Returns the stored value. */
 export function validateInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
+ if (kind === 'workbook-model') { requireThat(false, 'Workbook source graphs are created through the reviewed import door',409) }
  if (kind === 'tax-policy') return taxInput(s,b,scenario)
  if(b.line)requireThat(!all(s,'tax-policy').some(p=>p.scenario===scenario&&p.line===b.line),'This line is reserved for the income-tax estimate',409)
  if (kind === 'debt' || kind === 'equity') return validateFinancingInput(s, kind, b, scenario)

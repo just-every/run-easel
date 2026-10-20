@@ -35,6 +35,7 @@ export const seesDepartmentDetail = (x: Access, department: string) =>
 
 /** Individual positions and salaries are private to finance and the department's own contributors. */
 export function visibleInput(x: Access, kind: string, input: Data) {
+ if (kind === 'workbook-model') return x.role === 'finance' && x.payDetail === true
  if (kind === 'position' && !seesPayDetail(x, input.department)) return false
  if (x.role === 'finance') return true
  if (x.role !== 'contributor' || kind === 'debt' || kind === 'equity' || kind === 'tax-policy') return false

@@ -1,3 +1,4 @@
+import { sharedFormula } from './xlsx-formulas'
 // A small reader for Excel workbooks (.xlsx). It reads each cell's cached
 // value and keeps its formula text as provenance. It never evaluates a formula
 // and runs no macro: what Excel last calculated is what Easel sees.
@@ -69,13 +70,15 @@ export async function readXlsx(bytes: Uint8Array): Promise<XlsxSheet[]> {
   const xml = await read(path)
   if (!xml) continue
   const cells: XlsxCell[] = []
+  const sharedFormulas=new Map<string,{ref:string;formula:string}>(),sharedCells:{cell:XlsxCell;id:string}[]=[]
   for (const c of xml.matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
    const tag = `<c${c[1]}>`, body = c[2] ?? ''
    const ref = attr(tag, 'r')
    if (!ref) continue
    const type = attr(tag, 't') ?? 'n'
    const v = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1]
-   const f = /<f\b[^>]*>([\s\S]*?)<\/f>/.exec(body)?.[1]
+   const formulaTag=/<f\b([^>]*?)(?:\/>|>([\s\S]*?)<\/f>)/.exec(body)
+   const f=formulaTag?.[2]
    const cell: XlsxCell = { ref, row: Number(/\d+$/.exec(ref)![0]), col: columnIndex(ref), value: null, ...(f !== undefined ? { formula: '=' + decodeXml(f) } : {}) }
    if (type === 's' && v !== undefined) cell.value = shared[Number(v)] ?? ''
    else if (type === 'inlineStr') cell.value = texts(body)
@@ -83,7 +86,17 @@ export async function readXlsx(bytes: Uint8Array): Promise<XlsxSheet[]> {
    else if (type === 'b') cell.value = v === '1'
    else if (type === 'e') cell.error = v === undefined ? '#ERROR' : decodeXml(v)
    else if (v !== undefined && v !== '') cell.value = Number(v)
+   if(formulaTag && attr(`<f${formulaTag[1]}>`,'t')==='shared') {
+    const id=attr(`<f${formulaTag[1]}>`,'si') ?? ''
+    if(f!==undefined)sharedFormulas.set(id,{ref,formula:'='+decodeXml(f)})
+    else sharedCells.push({cell,id})
+   }
    cells.push(cell)
+  }
+  for(const {cell,id} of sharedCells) {
+   const anchor=sharedFormulas.get(id)
+   requireThat(anchor,'A shared workbook formula has no source cell')
+   cell.formula=sharedFormula(anchor.formula,anchor.ref,cell.ref)
   }
   sheets.push({ name, cells })
  }
