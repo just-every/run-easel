@@ -33,16 +33,6 @@ try {
  const before=new Map(await Promise.all(snapshots.map(async sn=>[sn.id,(await api(owner.context,server.origin,`snapshot/${sn.id}`)).sha256])))
  await cmd('member',{email:'engineering@dev.localhost',name:'Morgan Ellis',role:'contributor',departments:[dept.id],active:false})
  const receipt=await cmd('person-erase',{email:'engineering@dev.localhost'})
- const archive=join(evidence,'erased-installation.rer')
- await command(root,['export','--output',archive])
- let manifest
- for await(const record of fileRecords(archive)) {
-  const content=JSON.stringify(record)
-  assert.ok(!content.includes('Morgan Ellis'),'Erased name absent from entire native archive')
-  assert.ok(!content.includes('engineering@dev.localhost'),'Erased email absent from entire native archive')
-  if(record.kind==='manifest')manifest=record
- }
- assert.ok(manifest.transforms.some(transform=>transform.receiptIds.includes(receipt.receiptId)))
  assert.equal((await contributor.context.request.get(server.origin+'/api/easel/state')).status(),401)
  await contributor.context.close();await owner.context.close()
  for(const width of [1440,390]) {
@@ -63,4 +53,16 @@ try {
    console.log(`ERASE-001 ${width}: submitted/commented member pseudonym, anonymous frozen plan, people removed, unchanged digests and revoked session passed`)
   }finally{await finance.context.close()}
  }
+ await browser.close();browser=undefined
+ await server.close();server=undefined
+ const archive=join(evidence,'erased-installation.rer')
+ await command(root,['export','--output',archive])
+ let manifest
+ for await(const record of fileRecords(archive)) {
+  const content=JSON.stringify(record)
+  assert.ok(!content.includes('Morgan Ellis'),'Erased name absent from entire native archive')
+  assert.ok(!content.includes('engineering@dev.localhost'),'Erased email absent from entire native archive')
+  if(record.kind==='manifest')manifest=record
+ }
+ assert.ok(manifest.transforms.some(transform=>transform.receiptIds.includes(receipt.receiptId)))
 }finally{await browser?.close();await server?.close();await rm(root,{recursive:true,force:true})}

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import JSZip from 'jszip/dist/jszip.min.js';
 import { PortabilityError } from '@runeditrun/rer/modules/portability';
-import { transformErased } from '../../src/easel/erasure-map.mjs';
+import { transformErased } from '../erasure-map.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 const bytesOf = value => Buffer.from(value instanceof ArrayBuffer ? new Uint8Array(value) : value);

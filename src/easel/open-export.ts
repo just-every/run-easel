@@ -1,5 +1,5 @@
-import { prepareEaselExportTransform } from '../../scripts/installer/erasure-export.mjs'
-import { transformOriginalBytes } from '../../scripts/installer/erasure-originals.mjs'
+import { prepareEaselExportTransform } from './erasure-archive/prepare.mjs'
+import { transformOriginalBytes } from './erasure-archive/originals.mjs'
 import { erasureMaps } from './erasure'
 import { transformErased } from './erasure-map.mjs'
 import { canSeeDashboard } from './dashboard-access'

@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { inflateRawSync, deflateRawSync, brotliDecompressSync } from 'node:zlib';
 import { canonicalJson, PortabilityError } from '@runeditrun/rer/modules/portability';
-import { transformErased } from '../../src/easel/erasure-map.mjs';
-import { dictionaryDecode } from '../../src/modules/import-kit/src/d1/plan-dictionary.ts';
-import { planFingerprint } from '../../src/modules/import-kit/src/plan/index.ts';
+import { transformErased } from '../erasure-map.mjs';
+import { dictionaryDecode } from '../../modules/import-kit/src/d1/plan-dictionary.ts';
+import { planFingerprint } from '../../modules/import-kit/src/plan/index.ts';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 /** Encoded originals and compressed import journals are data too. Decode them

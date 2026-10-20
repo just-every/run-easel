@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { canonicalJson, PortabilityError } from '@runeditrun/rer/modules/portability';
-import { entryLocator } from '../../src/modules/import-kit/src/d1/entry-locator.ts';
+import { entryLocator } from '../../modules/import-kit/src/d1/entry-locator.ts';
 const digest = value => createHash('sha256').update(value).digest('hex');
 const layouts = {
  ik_d1_plan_chunks: ['job_id'], ik_d1_creation_plans: ['job_id'],
