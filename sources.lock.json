@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "60fbac4835af0cfc2d1fd1fb4614e091ffcead7b96b55e64d60260ae6f4b496d",
+      "sha256": "7c882cac73d039e278a0659f2792ba78149e8aa5b3f9c6e0d58b838dddd40563",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "933ba2734abb474a6ce54a27c90bfaf12fa9413c36adb65efd022e697c56cf22",
+      "sha256": "a29d56c5c5c9511a4b760c750ccae983859f2f9757f16fa792d21229c267927d",
       "executable": false
     },
     "DEMO.md": {
@@ -619,7 +619,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "878f2b39ac368ee84554875972a1e36bc3a60ca95880b8dd90a0f94f9632c79e",
+      "sha256": "ff6daec5fe2dcee99226c4d3edf91c6ee2415ecc7a03e3c877984fe215c0af37",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -967,7 +967,7 @@
       "executable": false
     },
     "src/easel/views.ts": {
-      "sha256": "543645b088b63189de195c494f27db2746a8a8ae23569ac1c7b04b4ce0555700",
+      "sha256": "20a051ad35dbb683ba65f4bcd05322ef6f846fca96ef3c1c2f4161f47a4b4c39",
       "executable": false
     },
     "src/easel/workbook.ts": {
