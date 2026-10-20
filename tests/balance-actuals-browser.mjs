@@ -1,13 +1,13 @@
 // CONNECT-007: native finance mapping/import/reconciliation at desktop and phone widths.
 import assert from 'node:assert/strict'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
-import { command, freePort, start } from './browser-runtime.mjs'
+import { command, freePort, start, fresh } from './browser-runtime.mjs'
 import { session, api, noOverflow } from './browser-journey.mjs'
 import { balanceSource, seedBalanceActuals } from './balance-actuals-fixture.mjs'
 
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
-const root = process.cwd(), evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-balance-actuals')
+const root = await fresh(), evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-balance-actuals')
 await mkdir(evidence, { recursive: true })
 let server, browser
 try {
@@ -76,4 +76,4 @@ try {
    console.log(`CONNECT-007 native finance mapping, journal import, trial balance, source detail, blocked/restored balances and Excel at ${width}`)
   } finally { await context.close() }
  }
-} finally { await browser?.close(); await server?.close() }
+} finally { await browser?.close(); await server?.close(); await rm(root, { recursive: true, force: true }) }
