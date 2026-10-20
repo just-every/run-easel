@@ -222,6 +222,12 @@
       "clauses": [
         "PEOPLE-005"
       ]
+    },
+    {
+      "id": "person-erasure",
+      "clauses": [
+        "ERASE-001"
+      ]
     }
   ],
   "nonGoals": [

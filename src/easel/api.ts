@@ -1,3 +1,4 @@
+import { erasure, erasedView } from './erasure'
 import { currentTime } from './time'
 import { gaugeCheck } from './gauge-check'
 import { gaugeStatus, gaugeConnection } from './gauge-connection'
@@ -88,7 +89,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
 async function commit(ctx: Awaited<ReturnType<typeof open>>, structureBefore = ctx.before, structureRevision = ctx.revision) {
  const changed = ctx.activity.length > 0 || ctx.snapshots.length > 0 || [...ctx.s].some(([k, r]) => ctx.before.get(k)?.revision !== r.revision) || [...ctx.before.keys()].some(k => !ctx.s.has(k))
  if (changed) await versionStructure(ctx, structureBefore, structureRevision)
- if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance')
+ if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance', ctx.extra ?? [])
  else await readFence(ctx.db, ctx.x.actor, ctx.revision)
 }
 
@@ -103,7 +104,7 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  const ctx = await open(c)
  const result = await view(ctx)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
- return c.json(result as any)
+ return c.json(await erasedView(ctx.db, result) as any)
 }
 
 api.get('/api/easel/export', async c => {
@@ -137,7 +138,7 @@ api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.
 api.post('/api/easel/notifications/preference', async c => {
  const ctx = await open(c), result = await savePreference(ctx, c.env, await body(c))
  await commit(ctx)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 api.post('/api/easel/notifications/:id/retry', async c => {
  const ctx = await open(c)
@@ -159,7 +160,7 @@ api.post('/api/easel/connections/nook/:op', async c => {
 api.post('/api/easel/gauge/:op', async c => {
  const ctx = await open(c), result = await gaugeUtilization(ctx, c.env, c.req.param('op'), await body(c))
  await commit(ctx)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 
 api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
@@ -265,7 +266,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -284,7 +285,7 @@ api.post('/api/easel/command/:op', async c => {
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
  await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 
 api.post('/api/easel/import/:kit/:op', async c => {
@@ -309,7 +310,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
  await commit(after, structureBefore.state, structureBefore.revision)
  await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)
- return c.json(result)
+ return c.json(await erasedView(ctx.db, result))
 })
 
 api.post('/api/easel/invite', async c => {

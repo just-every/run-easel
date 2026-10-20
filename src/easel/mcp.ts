@@ -1,3 +1,4 @@
+import { erasedView } from './erasure'
 import { versionStructure } from './structure-versions'
 // Stateless Streamable HTTP: JSON responses, native identity, and a closed
 // tool list. No command supplied by a client is dispatched directly.
@@ -131,7 +132,7 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
   if (!matches(params.arguments ?? {}, selected.inputSchema)) return reply({ error: { code: -32602, message: 'Arguments do not match the tool input schema' } })
   try {
    const before = new Map(state)
-   const result = await invoke(c, params.name, params.arguments ?? {})
+   const result = await erasedView(c.db, await invoke(c, params.name, params.arguments ?? {}))
    if (c.activity.length || c.snapshots.length) await versionStructure(c, before, revision)
    if (c.activity.length || c.snapshots.length) await save(env.DB, person, before, state, revision, c.activity, c.snapshots, c.x.role === 'finance')
    else await readFence(env.DB, person, revision)

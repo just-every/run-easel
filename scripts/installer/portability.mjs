@@ -1,19 +1,25 @@
 import { lstat } from 'node:fs/promises';
 import { relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { localPortability } from '@runeditrun/rer/portability';
 import { RerError, refuse } from '@runeditrun/rer/errors';
 import { readArchive, PortabilityError } from '@runeditrun/rer/modules/portability';
 import { fileRecords } from '@runeditrun/rer/modules/portability/files';
 import { readLegacyArchive } from '@runeditrun/rer/modules/portability/format';
 
 const transient = ['local runtime caches and logs'];
-const base = localPortability({ database: 'easel', policyModule: 'scripts/installer/easel-policy.mjs', transient });
 /** Import the policy inside our signal-owned worker: JSON transport cannot
  * carry its validator, and Base's file helpers do not accept an AbortSignal. */
 export const easelPortability = {
  legacyRecovery: true,
- export: base.export,
+ async export({ root, path, store, signal, operationToken }) {
+  if (await lstat(path).catch(error => { if (error.code === 'ENOENT') return null; throw error; })) throw refuse('Export requires a new archive path.');
+  await store.run('Applying local data migrations', 'pnpm', ['exec', 'wrangler', 'd1', 'migrations', 'apply', 'easel', '--local', '--persist-to', '.wrangler/state', '--config', 'wrangler.jsonc'], {
+   cwd: root, signal, env: { ...process.env, RER_LOCAL_OPERATION: operationToken, WRANGLER_SEND_METRICS: 'false' },
+  });
+  signal?.throwIfAborted();
+  const receipt = await restoreWorker(store, 'export', { root, path, transient }, signal);
+  return { target: 'local', output: relative(root, path), ...receipt };
+ },
  async import({ root, path, journal, store, signal, operationToken, legacyRecovery }) {
   try {
    if (legacyRecovery && (legacyRecovery.acknowledged !== true || await lstat(legacyRecovery.output).catch(error => { if (error.code === 'ENOENT') return null; throw error; }))) {
@@ -53,7 +59,7 @@ export const easelPortability = {
 };
 
 async function restoreWorker(store, direction, input, signal) {
- const child = store.spawn(direction === 'legacy-preflight' ? 'Checking empty recovery destination' : 'Restoring local installation data', process.execPath,
+ const child = store.spawn(direction === 'legacy-preflight' ? 'Checking empty recovery destination' : direction === 'export' ? 'Exporting local installation data' : 'Restoring local installation data', process.execPath,
   [fileURLToPath(new URL('./restore-worker.mjs', import.meta.url)), direction, JSON.stringify(input)],
   { cwd: input.root, signal, env: { ...process.env, WRANGLER_SEND_METRICS: 'false' } });
  let output = '';

@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "b5f7d72529ee924e10922c7749216419903e56fccad42cb7a68b3600258117f2",
+      "sha256": "acbcd21aa9dacfd9f03b1bf4d54dad98dae8a1648a96b72dbff0c7ebc3db02ba",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "923387da589933a3f86b080d15be923dd5589472e3578b33eef0ee94903d1eb5",
+      "sha256": "66faa395ca0414720b655b15ae0860f61455c6a6225bd9e2af9d1a7afa1542aa",
       "executable": false
     },
     "DEMO.md": {
@@ -306,6 +306,10 @@
       "sha256": "1a50f13ab82daff5eeab19be60ef0a342e3a3b0f9ec71fc32c9918375a8184eb",
       "executable": false
     },
+    "migrations/core/0017_person_erasure.sql": {
+      "sha256": "ed79d8dac7329966de71c629c177733b324310880169cd75f5737ccade86ade3",
+      "executable": false
+    },
     "ONBOARDING.md": {
       "sha256": "6e77acf708bb4de0abef1baf211fd2df5e0e5f90b64b37428ec859871e2b1724",
       "executable": false
@@ -431,7 +435,35 @@
       "executable": false
     },
     "scripts/installer/easel-policy.mjs": {
-      "sha256": "0f86880ba279af711d94ba6c9c8c7a5a61e59dba55c82ad845dd55f631f50bbc",
+      "sha256": "37d0f4de392337df1a4b44ba328bf17d8dc8ce61bc87f8cc6c50658ae132d87f",
+      "executable": false
+    },
+    "scripts/installer/erasure-export.d.mts": {
+      "sha256": "8ccc0046f2df67ec50613ed9c854decf0342ea365c1c4ca9f487b087ed74ad3d",
+      "executable": false
+    },
+    "scripts/installer/erasure-export.mjs": {
+      "sha256": "09f4ec94cde3406f6f04d5f4c1a197feb2499948f1b5711f16c8262b792f2b2d",
+      "executable": false
+    },
+    "scripts/installer/erasure-journals.mjs": {
+      "sha256": "a7f0832b9b90ae958e55201f75dbff97d7f1e8c81d0761d66fc3407d92c56bb1",
+      "executable": false
+    },
+    "scripts/installer/erasure-originals.d.mts": {
+      "sha256": "9a7bfb180a031d6934384877da39dc74a47df8b1f022880cfa509751ab49f76d",
+      "executable": false
+    },
+    "scripts/installer/erasure-originals.mjs": {
+      "sha256": "a18a70abd08a3709881deb42138d352305916cbcd3d143bbbd3b02e3991f5c3d",
+      "executable": false
+    },
+    "scripts/installer/erasure-values.mjs": {
+      "sha256": "8fbf73a56f58689449c44e6c550188c694d33678ea884f24df51d87b1f92e9ca",
+      "executable": false
+    },
+    "scripts/installer/legacy-recovery.mjs": {
+      "sha256": "41189129b9b4e0c289a6b4f9618c8d052c3f7e528eda82221c520ab2c30938b5",
       "executable": false
     },
     "scripts/installer/local.mjs": {
@@ -439,7 +471,7 @@
       "executable": false
     },
     "scripts/installer/portability.mjs": {
-      "sha256": "b402965c2b69e4074661fe503b7e403f7c4f6754afe52808568645d56945f900",
+      "sha256": "8171e303975a3e9cba9eec628fb99b0a80bfe4a1a5fdf9b6f4483be566269e4d",
       "executable": false
     },
     "scripts/installer/restore-context.mjs": {
@@ -447,7 +479,7 @@
       "executable": false
     },
     "scripts/installer/restore-worker.mjs": {
-      "sha256": "a937e8fe371828a9e52aa497b471f2bfb986bc3ea0170c84d3cfbb14c3e11a2d",
+      "sha256": "6d9c67eeb916802ff848ae1db47677dc6f45bedc6270d0e98de1703dbf0b0eca",
       "executable": false
     },
     "scripts/installer/seed.mjs": {
@@ -471,7 +503,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "675c685f17634cfc31e77da458a33165fd110213b188ffa345fdf5d0bf07b051",
+      "sha256": "db2aa709d39f068ada53bf8a72bba74fbb00020532f42672890309179b4b03d2",
       "executable": false
     },
     "SOURCE.md": {
@@ -619,7 +651,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "ff6daec5fe2dcee99226c4d3edf91c6ee2415ecc7a03e3c877984fe215c0af37",
+      "sha256": "1d6ff72714a3c2b2892aec7cf395503943059d8255b1f1adea0c8218ad51ed53",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -639,7 +671,7 @@
       "executable": false
     },
     "src/easel/audit.ts": {
-      "sha256": "f62a3f4fd9437e513494134619da6c062eacf7b445318c302bfadae45dd8eeea",
+      "sha256": "9c9fc64aeae36e73cb2820ece7a9a52181a26dd1388a2d8d23263ae69b539e36",
       "executable": false
     },
     "src/easel/calculation.ts": {
@@ -683,7 +715,7 @@
       "executable": false
     },
     "src/easel/context.ts": {
-      "sha256": "7dc1b6ceb39108e09d6184c0fb68d062f4abec4c5f2a42f4ef3f73e5e9ce5515",
+      "sha256": "09398d070252cb2a0b88219772e34e8a16aea7b50d41d18b7d386753505bcd01",
       "executable": false
     },
     "src/easel/contract-revenue.ts": {
@@ -740,6 +772,18 @@
     },
     "src/easel/engine.ts": {
       "sha256": "eb2848e100d91e37f14b5f58a0763e89c7c0df7d6db476b7b2e7945afe6f6cab",
+      "executable": false
+    },
+    "src/easel/erasure-map.d.mts": {
+      "sha256": "e7803bde5e63c89901c13cb1bc531aa52eacf4570446d1a5ab0fd6f0505ae599",
+      "executable": false
+    },
+    "src/easel/erasure-map.mjs": {
+      "sha256": "8ec71346665feb646e8855466a9604c7f7440268a5df2c7fdd284eda6ec2dda3",
+      "executable": false
+    },
+    "src/easel/erasure.ts": {
+      "sha256": "113ddb04b659d49e1e8c9421b1d3340dbe28907c5af2d1d9df6f0a2da692c0ba",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -823,7 +867,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "a5565b40f059f3da37621850c5cfb347074a98582240d00934974f30cb6c9c9d",
+      "sha256": "4cc589a023964687464225c46ee12fd4cd78895153330092a083432a06bc452c",
       "executable": false
     },
     "src/easel/metric-rules.ts": {
@@ -851,7 +895,7 @@
       "executable": false
     },
     "src/easel/open-export.ts": {
-      "sha256": "f314e99a1c75f9f4a3e50769ba699257af0e3b644c54d8b77355f1f22d4cbcd6",
+      "sha256": "656a8f97b0fdc26f0cedc651b05659c1385f622d43dd48ed635c6485c7dc5c5c",
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
@@ -931,7 +975,7 @@
       "executable": false
     },
     "src/easel/store.ts": {
-      "sha256": "1e5976f0b3899bc27edbd888d5ce3f0ea87d227db5a1f848d9ebf01bee27f64f",
+      "sha256": "e66d8a9bf1b9d80e1b7291beb5e37febf8b364be851d79c80f201e878b14592d",
       "executable": false
     },
     "src/easel/structure-versions.ts": {
@@ -2968,6 +3012,18 @@
     },
     "tests/easel.test.mjs": {
       "sha256": "d4e4c12a36e33690d746783d356c6d2af103019b16cf48d1506ff69f7301ac62",
+      "executable": false
+    },
+    "tests/erasure-browser.mjs": {
+      "sha256": "f977cce1b4a95baeca11d10551478914e8542a2a9c487bab853001e0e216982a",
+      "executable": false
+    },
+    "tests/erasure-portability.test.mjs": {
+      "sha256": "f350ea5a55f4ca9db5ec0fd906dcf0cf944776f9e8e1ba9c614452048500b8d5",
+      "executable": false
+    },
+    "tests/erasure.test.mjs": {
+      "sha256": "3c726ab2ac07083c5804d280762465b832389ef619c55ab6fbfa08669679d45d",
       "executable": false
     },
     "tests/export-browser-journey.mjs": {

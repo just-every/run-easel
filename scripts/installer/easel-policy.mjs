@@ -1,4 +1,5 @@
 import { PortabilityError, sha256 } from '@runeditrun/rer/modules/portability';
+import { transformErased } from '../../src/easel/erasure-map.mjs';
 
 const requireValid = (ok, code) => { if (!ok) throw new PortabilityError(`easel_${code}`, 409); };
 const parse = value => { try { return JSON.parse(value); } catch { throw new PortabilityError('easel_record_json', 409); } };
@@ -11,14 +12,17 @@ const canonical = value => JSON.stringify(value, (_, v) => object(v) ? Object.fr
  * archive checksums, staging and atomic publication; Easel owns its records. */
 export async function validateEaselStaged(staged) {
  const [rawRecords, rawSnapshots, rawActivity] = await Promise.all([staged.read('e_records'), staged.read('e_snapshots'), staged.read('e_activity')]);
- const records = new Map(rawRecords.map(r => [`${r.kind}:${r.id}`, { ...parse(r.value), id: r.id }]));
- const activity = rawActivity.map(r => ({ ...r, detail: parse(r.detail) }));
+ const maps = rawRecords.filter(r => r.kind === 'erasure').map(r => parse(r.value));
+ const mappedRecords = rawRecords.map(r => transformErased({ ...r, value: parse(r.value) }, maps));
+ const records = new Map(mappedRecords.map(r => [`${r.kind}:${r.id}`, { ...r.value, id: r.id }]));
+ const activity = rawActivity.map(r => transformErased({ ...r, detail: parse(r.detail) }, maps));
  const snapshots = new Map();
  for (const row of rawSnapshots) {
   requireValid(typeof row.body === 'string' && await sha256(row.body) === row.sha256, 'snapshot_digest');
-  const body = parse(row.body);
+  const body = transformErased(parse(row.body), maps);
   requireValid(body && typeof body === 'object' && !Array.isArray(body), 'snapshot_body');
-  snapshots.set(row.id, { ...row, body });
+  const mapped = transformErased(row, maps);
+  snapshots.set(mapped.id, { ...mapped, body });
  }
  const reference = (id, kind, scenario) => {
   const sn = snapshots.get(id);
@@ -81,7 +85,7 @@ export async function validateEaselStaged(staged) {
 }
 
 export const easelPolicy = {
- product: 'just-every/planning-easel', excludeTables: ['e_api_tokens', 'e_api_limits', 'e_connection_secrets'], replaceableTables: ['e_meta'],
+ product: 'just-every/planning-easel', excludeTables: ['e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key'], replaceableTables: ['e_meta'],
  requiredConfiguration: ['OWNER_EMAIL', 'SESSION_SECRET', 'SETUP_TOKEN', 'AUTH_ORIGIN', 'MAIL_PROVIDER', 'MAIL_FROM'],
  validateStaged: validateEaselStaged,
 };

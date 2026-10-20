@@ -1,3 +1,7 @@
+import { prepareEaselExportTransform } from '../../scripts/installer/erasure-export.mjs'
+import { transformOriginalBytes } from '../../scripts/installer/erasure-originals.mjs'
+import { erasureMaps } from './erasure'
+import { transformErased } from './erasure-map.mjs'
 import { canSeeDashboard } from './dashboard-access'
 import { canSeeScenario, visibleActivity } from './scenario-access'
 import { readD1ImportOriginals } from '../modules/import-kit/src/d1/index'
@@ -13,7 +17,7 @@ import { scenarioView } from './views'
 
 const encoder = new TextEncoder()
 // Product and import-journal tables; credentials follow the existing backup policy.
-const credentialTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets'])
+const credentialTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key'])
 const identifier = (name: string) => `"${name.replaceAll('"', '""')}"`
 function portableCell(value: unknown): unknown {
  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value) || Array.isArray(value)) {
@@ -76,6 +80,8 @@ async function retainedOriginals(c: Context): Promise<RetainedOriginal[]> {
 export async function openExport(c: Context): Promise<Uint8Array> {
  requireFinance(c.x)
  requirePayDetail(c.x)
+ const maps = await erasureMaps(c.db)
+ const prepared = maps.length ? await prepareEaselExportTransform({db:c.db}) : null
 
  const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
  const visibleRow = (row: Data) => {
@@ -101,6 +107,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
    const event = visibleActivity(c.s, c.x, { ...row, detail: JSON.parse(String(row.detail)) })
    return event ? [{ ...row, detail: JSON.stringify(event.detail) }] : []
   })
+  results = prepared ? results.map(row=>prepared.policy.exportRow(table,row)) : results
   tables[table] = results.length
   definitions.push({ ...definition, columns })
   files.push({ name: `tables/${table}.csv`, bytes: csv(columns, results.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, portableCell(value)])))) })
@@ -109,7 +116,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
  const records = [...c.s.values()].filter(visibleRow)
   .sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
   .map(row => ({ destination: row.destination, kind: row.kind, id: row.id, revision: row.revision, value: row.value }))
- files.push({ name: 'model.json', bytes: json({ workspace: all(c.s, 'workspace')[0], lines: all(c.s, 'line'), departments: all(c.s, 'department'), records, tables: definitions, units: { money: 'integer minor units', counts: 'hundredths', rates: 'basis points' } }) })
+ files.push({ name: 'model.json', bytes: json({ workspace: all(c.s, 'workspace')[0], lines: all(c.s, 'line'), departments: all(c.s, 'department'), records: transformErased(records, maps), tables: definitions, units: { money: 'integer minor units', counts: 'hundredths', rates: 'basis points' } }) })
 
  const scenarios = all(c.s, 'scenario').filter(sc => canSeeScenario(c.x, sc)).sort((a, b) => a.id.localeCompare(b.id))
  for (const scenario of scenarios) {
@@ -136,17 +143,20 @@ export async function openExport(c: Context): Promise<Uint8Array> {
    const raw = atob(original.original.base64)
    const bytes = new Uint8Array(raw.length)
    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i)
-   const filename = safeName(original.name)
+   const filename = safeName(transformErased(original.name, maps))
    const prefix = (await digest(encoder.encode(original.key))).slice(0, 12)
    const path = `originals/${safeName(original.jobId)}/${original.kind}/${prefix}-${filename}`
-   files.push({ name: path, bytes })
+   const exported = maps.length ? await transformOriginalBytes(bytes, maps) : bytes
+   files.push({ name: path, bytes: exported })
+   if (maps.length) { entry.sourceSha256 = original.sha256; entry.sha256 = await digest(exported); entry.size = exported.length }
    entry.path = path
   }
-  return entry
+  return transformErased(entry, maps)
  }))
 
  const manifest = {
   format: 'easel-open-export-v1',
+  transforms: maps.length ? [{ id:'easel-person-erasure-v1',receiptIds:maps.map(map=>map.receiptId) }] : [],
   createdAt: c.now,
   inventory: {
    tables,
