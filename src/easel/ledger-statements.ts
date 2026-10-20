@@ -19,7 +19,7 @@ export function ledgerStatements(model: Model, calc: Calculation, ledger: Ledger
  const income = (t: Data) => -t.accounts.filter((a: Data) => lineIds.has(a.target)).reduce((n: number, a: Data) => n + a.amount, 0)
  const actual = (b: BalanceMonth, t: Data) => {
   for (const [field, target] of Object.entries(targets)) (b as Data)[field] = amount(t, target)
-  b.retainedEarnings = income(t); b.contributedEquity = 0
+  b.retainedEarnings = income(t); b.contributedEquity = 0; b.equity = b.openingEquity + b.retainedEarnings
  }
  const actualAnchor = { ...base[anchorIndex] }; actual(actualAnchor, anchor)
  let previous: BalanceMonth | undefined
@@ -55,6 +55,7 @@ export function ledgerStatements(model: Model, calc: Calculation, ledger: Ledger
    flow.accruedLiabilitiesChange = (b.accruedLiabilities ?? 0) - (prior.accruedLiabilities ?? 0)
    flow.deferredRevenueChange = (b.deferredRevenue ?? 0) - (prior.deferredRevenue ?? 0)
   }
+  if (closed && prior) flow.financing = b.debt - prior.debt + b.equity - prior.equity - flow.netIncome
   flow.operating = flow.netIncome + flow.nonCashExpense + flow.receivablesChange + flow.payablesChange + (flow.prepaidChange ?? 0) + (flow.accruedLiabilitiesChange ?? 0) + (flow.deferredRevenueChange ?? 0) + (flow.unbilledRevenueChange ?? 0) + flow.inventoryChange + (flow.salesTaxPayableChange ?? 0)
   flow.change = flow.operating + flow.investing + flow.financing
   flow.closing = flow.opening + flow.change
@@ -69,7 +70,7 @@ export function ledgerStatements(model: Model, calc: Calculation, ledger: Ledger
   b.causes = issues
   const source = closed ? month : through
   b.trace = `Imported balance-sheet opening from accepted cumulative ${source} trial balance (${anchor.accounts.reduce((n: number, a: Data) => n + a.rows, 0)} source rows). Opening equity is the imported equity account, with unclosed P&L shown separately as retained earnings. Forecast movements follow entered schedules; allocations replace their corresponding estimated openings. Assets ${b.assets} − liabilities ${b.liabilities} − equity ${b.equity} = ${b.balanceDifference} minor units. ${issues.join(' ')}`
-  flow.trace = `Accepted ${source} balances replace opening estimates; net income ${flow.netIncome}, noncash ${flow.nonCashExpense}, receivables change ${flow.receivablesChange}, payables change ${flow.payablesChange}, prepaid change ${flow.prepaidChange}, accrual change ${flow.accruedLiabilitiesChange}, deferred change ${flow.deferredRevenueChange}; operating ${flow.operating}, investing ${flow.investing}, financing ${flow.financing}. Opening ${flow.opening} + change ${flow.change} = indirect closing ${flow.closing}; direct ${direct.closing}; difference ${flow.difference}. No inferred receipt or settlement.`
+  flow.trace = `Accepted ${source} balances replace opening estimates; net income ${flow.netIncome}, noncash ${flow.nonCashExpense}, receivables change ${flow.receivablesChange}, payables change ${flow.payablesChange}, prepaid change ${flow.prepaidChange}, accrual change ${flow.accruedLiabilitiesChange}, deferred change ${flow.deferredRevenueChange}; operating ${flow.operating}, investing ${flow.investing}, financing ${flow.financing}. Opening ${flow.opening} + change ${flow.change} = indirect closing ${flow.closing}; direct ${direct.closing}; difference ${flow.difference}. ${closed ? 'Financing is the observed net debt change plus equity change excluding net income; equity/P&L closing transfers therefore cancel.' : 'Future financing follows entered schedules.'} No inferred receipt or settlement.`
   const reasons = [...new Set(issues)]
   delete b.incompleteReasons; delete direct.incompleteReasons; delete flow.incompleteReasons
   if (reasons.length) { b.incompleteReasons = reasons; direct.incompleteReasons = reasons; flow.incompleteReasons = reasons }

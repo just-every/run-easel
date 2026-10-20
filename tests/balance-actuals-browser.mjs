@@ -109,7 +109,7 @@ try {
    const cash = section.getByRole('row').filter({ has: reader.page.getByRole('rowheader', { name: 'Cash', exact: true }) }).getByRole('cell')
    assert.equal(await cash.first().innerText(), '$96,000.00')
    await section.getByLabel('Balance sheet reconciliation for Feb 2026: Incomplete', { exact: true }).click()
-   await section.getByRole('region', { name: 'Balance sheet reconciliation details', exact: true }).getByText(/no reviewed schedule attribution/).waitFor()
+   await section.getByRole('region', { name: 'Balance sheet reconciliation details', exact: true }).getByText(/no reviewed schedule attribution/).first().waitFor()
    await noOverflow(reader.page, `CONNECT-007 imported opening ${width}`)
    await reader.page.screenshot({ path: join(evidence, `opening-unallocated-${width}.png`), fullPage: true })
   } finally { await reader.context.close() }

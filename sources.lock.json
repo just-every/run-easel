@@ -951,7 +951,7 @@
       "executable": false
     },
     "src/easel/ledger-statements.ts": {
-      "sha256": "70c4aed2c8c9645dc35625fd848a62cafbd2d6bde74666763ec9c880a477e219",
+      "sha256": "0cb87487ed5f4772972d1a4913ed02e53cc95330890d41f34ac1ec939107ba55",
       "executable": false
     },
     "src/easel/long-range-workbook.ts": {
@@ -3199,7 +3199,7 @@
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
-      "sha256": "1b9abf0a60eb833cc25c9db2e5e462a58cf1e623df08986cf2c59353d3c43271",
+      "sha256": "ccf8e244a1d357babc5fdd2bc763cba689acc172217acf1347d941b452409c13",
       "executable": false
     },
     "tests/balance-actuals-fixture.mjs": {
@@ -3407,7 +3407,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "f9a92d66b7fab8ab8f96045eb9efef3144279895d9020376cd497c796313558e",
+      "sha256": "5ef5f8c47d3f38fbb912522ba05b8d012cd325c42cc6b826645b247bdaa12b35",
       "executable": false
     },
     "tests/mcp.test.mjs": {

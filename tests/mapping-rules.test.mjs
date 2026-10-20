@@ -234,6 +234,19 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
  report = await h.get('/api/easel/actuals')
  assert.equal(report.trialBalances.length, 2)
  assert.deepEqual(report.trialBalances[1], january)
+ const februaryLedger = file('february-principal.csv', ['2026-02-15,1000,Bank,-100,Principal payment', '2026-02-15,2300,Debt,100,Principal reduction'])
+ const fp = await h.kit('actuals','preview',februaryLedger)
+ await h.kit('actuals','commit',{...februaryLedger,fingerprint:fp.fingerprint})
+ await h.command('close-month',{scenario:forecast.id,month:'2026-02'})
+ const latest=(await h.get(`/api/easel/scenario/${forecast.id}`)).calculation
+ assert.equal(latest.balanceSheet[1].cash,9590000)
+ assert.equal(latest.balanceSheet[1].debt,1990000)
+ assert.equal(latest.cashFlow[1].financing,-10000)
+ assert.equal(latest.cashFlow[1].difference,0)
+ assert.equal(latest.cash[2].opening,9590000,'next forecast month opens from the latest close, replacing the January anchor')
+ assert.equal(latest.balanceSheet[2].debt,1990000)
+ assert.equal((await h.get('/api/easel/actuals')).trialBalances.at(-1).difference,0)
+
 })
 
 
