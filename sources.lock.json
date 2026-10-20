@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "b25b5c048a94f612da7f3b5ab8fd3263090a541c289468750735f14a9a8bdf69",
+      "sha256": "e60c1ae22a38f63e066c985b2b4cba2f2a479ebd7e01cf79e66dd8865cb7932e",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "acbcd21aa9dacfd9f03b1bf4d54dad98dae8a1648a96b72dbff0c7ebc3db02ba",
+      "sha256": "882cc14c93d1d300a660fcc75fa310b639abd0c57efad60d6f71baf7861345b5",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "9542f50eda906bc398c7318fd605893a5ff651f15be9e50338253ea8dc8a49f6",
+      "sha256": "a5ac2a3abe81f86f8be86251723a664e72ec02e3a69735cbeb4867b5e46fbcef",
       "executable": false
     },
     "DEMO.md": {
@@ -631,7 +631,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "ef13ee939eb44b80b03a0354825e775b4c7c82de8c61054a6ed8f66b795a66d7",
+      "sha256": "8fe357a8c288571498ee0f37f7bda53f014c9cf7070e11bf51d9ab2dde45a2ff",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -920,6 +920,18 @@
     },
     "src/easel/parallel-month.ts": {
       "sha256": "38fa9438779e40b281a1918dfff1682dcf011f3be6b412fbec48ff7e752f7f74",
+      "executable": false
+    },
+    "src/easel/payroll-file.ts": {
+      "sha256": "839fd00209c62c588ecbcfd2c312845880375a843334a7c7f1321df1233518ad",
+      "executable": false
+    },
+    "src/easel/payroll-import.ts": {
+      "sha256": "6dc86079868ddca531cc479964f606036b9ff1f077a33f8ffe3f031bde14fbee",
+      "executable": false
+    },
+    "src/easel/payroll-reconciliation.ts": {
+      "sha256": "45ebe44b4298f4a9b3ad41496ad47fe66f8d887ddfcc00a4f4a34492a828ca6d",
       "executable": false
     },
     "src/easel/plan.ts": {
@@ -3152,6 +3164,14 @@
     },
     "tests/parallel-month.test.mjs": {
       "sha256": "8dee9428beb80d1c18141ab20019219a24b0c3725a4d544a70baa320ec976626",
+      "executable": false
+    },
+    "tests/payroll-files-browser.mjs": {
+      "sha256": "decab9b9d711c1919fbb79e0bb05c8111235e26231fb85b0a850bd159c78d140",
+      "executable": false
+    },
+    "tests/payroll-files.test.mjs": {
+      "sha256": "7c388dd6a47a5f48e910d3275da3b59b595ee646683f1eb46b4e8cc2e655222b",
       "executable": false
     },
     "tests/reforecasts-browser-journey.mjs": {

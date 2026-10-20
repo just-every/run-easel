@@ -417,7 +417,9 @@ A buyer whose PEO or payroll provider has no connector (for example Justworks, T
 
 *Acceptance:* through the API, import a Justworks-shaped roster CSV and an .xlsx payroll register: the preview writes nothing; the accepted import shows the four reconciliation buckets and a register total reconciled to the ledger's payroll lines; a viewer receives headcount and cost totals without names or salaries; a second file in the same shape needs no column choices; and undo removes exactly what the import wrote.
 
-*Status:* missing.
+The HTTP door is `/api/easel/import/payroll/:op` (preview, commit, status, resume, undo), with `/api/easel/payroll/:scenario` for the reconciled result. Roster observations have an explicit ISO `asOf` date; pay runs have their actual pay date. Provider mappings retain column names, date convention, department choices and explicit source employee-ID to position-origin links. No name-based identity match is inferred. Annual salaries compare in cents; an hourly observation against a salary-only planned position is listed as a changed compensation basis, never silently treated as equal. Each provider's latest complete dated roster is shown independently; duplicate employee observations or employee/pay-date runs are refused until the previous import is undone. Register gross wages, employer taxes, benefits and fees sum in cents by payroll line, department and pay month; absent or unresolved ledger data is unavailable, and a difference stays visible. String dates use the saved ISO/US/UK format; Excel dates use whole UTC serial days from 1899-12-30. Invalid rows or fractional cents refuse the entire file. Undo removes the journal's observations and preserves unrelated records; explicit saved mapping choices remain for the next file. All detail and import administration inherit the existing live Pay detail grant; aggregate headcount and cost remain visible under current planning access.
+
+*Status:* done.
 
 ### Revenue and pipeline
 
@@ -906,7 +908,7 @@ Agents keep the plan feasible and honest, not just modeled. Each clause names wh
 Easel is a US-first FP&A product. These are the jobs it deliberately does not do, and how a buyer gets each one done.
 
 - **The ledger and the close.** Easel is not the accounting system of record and never posts journals. Bookkeeping, the close, reconciliations and audited GAAP statements stay in [Pantry](https://github.com/just-every/run-pantry), QuickBooks Online, Xero, NetSuite or Sage Intacct, which Easel reads (`CONNECT-*`). Close-management tools such as FloQast and BlackLine stay separate.
-- **Payroll and tax filing.** Easel estimates employer cost and taxes for planning (`FIN-006`, `PEOPLE-004`). It never runs payroll or files Form 941, Form 940, W-2 or 1099. That stays with Gusto, Rippling, ADP RUN or the buyer's PEO; no Run Edit Run product owns payroll today. Income-tax figures are planning estimates; filings and tax advice come from the buyer's CPA (whose practice may run on [Blotter](https://github.com/just-every/run-blotter)).
+- **Payroll and tax filing.** Easel estimates employer cost and taxes for planning (`FIN-006`, `PEOPLE-004`). It never runs payroll or files Form 941, Form 940, W-2 or 1099. That stays with Gusto, Rippling, ADP RUN or the buyer's PEO; the RunEditRun payroll sibling is [Envelope](https://github.com/just-every/run-envelope). Income-tax figures are planning estimates; filings and tax advice come from the buyer's CPA (whose practice may run on [Blotter](https://github.com/just-every/run-blotter)).
 - **Treasury and payments.** Easel recommends; it does not move money. Payments, transfers, credit-line draws and collections run in the bank, Bill.com or the ledger. Bank access through Plaid is read-only (`CONNECT-009`).
 - **CRM, HRIS, ATS, billing, expenses and procurement.** These belong to [Orbit](https://github.com/just-every/run-orbit), [Willow](https://github.com/just-every/run-willow), [Lodge](https://github.com/just-every/run-lodge), [Nectar](https://github.com/just-every/run-nectar), [Coaster](https://github.com/just-every/run-coaster) and [Purse](https://github.com/just-every/run-purse), or their US incumbents. Easel reads them and never writes deals, employees, offers, invoices or purchase orders.
 - **A full spreadsheet engine.** Easel does not re-implement every Excel function or VBA. Excel and Google Sheets stay the buyer's spreadsheets, connected live (`SHEET-001`, `SHEET-002`). Formulas Easel cannot translate are listed and kept as values with provenance (`SHEET-003`).
@@ -937,8 +939,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 31 | 24 | 31 | 86 |
-| All | 48 | 24 | 31 | 103 |
+| Target and push further | 32 | 24 | 30 | 86 |
+| All | 49 | 24 | 30 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -992,7 +994,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `PEOPLE-004` | US compensation assumptions | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Salary × (1 + on-costs) by start and end month ships; hourly, W-2 or 1099 type, merit increases, bonus, commission, benefits per head and 401(k) match are missing |
 | `PEOPLE-005` | Compensation access separate from finance | target | done | `tests/compensation-access.test.mjs` `tests/compensation-access-browser.mjs` | — |
 | `PEOPLE-006` | Headcount plan against actual | target | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Payroll-line cost variance ships; headcount against a roster, hiring slippage and attrition are missing |
-| `PEOPLE-007` | Roster and payroll-register file import | target | missing |  | No roster or payroll-register file import or roster reconciliation |
+| `PEOPLE-007` | Roster and payroll-register file import | target | done | `src/easel/payroll-import.ts`, `src/easel/payroll-file.ts`, `src/easel/payroll-reconciliation.ts`, `tests/payroll-files.test.mjs`, `tests/payroll-files-browser.mjs` | Provider mappings, reviewed CSV/XLSX journal imports, exact originals/undo, four position buckets, ledger reconciliation and live pay filtering through HTTP |
 | `REV-001` | Pipeline drivers from Orbit, HubSpot and Salesforce | target | missing |  | No Orbit, HubSpot or Salesforce connector, stage probabilities, line-item revenue rules or pipeline drivers |
 | `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | missing |  | No billing connectors, ARR bridge or cohorts |
 | `REV-003` | A revenue driver library | target | done | `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Fixed forms and reviewed Gauge operational actuals; MODEL-004 carries formula-line drivers |

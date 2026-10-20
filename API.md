@@ -270,3 +270,41 @@ A position's optional `payDay` (1–31, clamped to month end) and `payMonthOffse
 Pay detail (PEOPLE-005) is separate from plan access. The signed-in owner uses `POST /api/easel/command/pay-detail` with `{ "email": "analyst@example.com", "granted": true }` (or false). Contributors are limited to their current departments; viewers cannot receive the grant. Tokens keep their issuance ceiling and recheck the live grant. Complete archives and Activity require pay access; filtered scenario/workbook reads retain totals.
 
 Person erasure (ERASE-001): deactivate the former planning member with `member` (`active: false`), then a native finance session posts `person-erase` with `{ "email": "former@example.com" }`. The response contains the anonymous receipt id, pseudonym, changed-record counts and time. The installation owner and last finance member are protected; agents and API tokens cannot erase people. Existing sessions and credentials are revoked atomically. Snapshot reads keep their recorded digest while mapping personal attribution; native exports declare the transform and original/exported digests.
+
+## Roster and payroll-register files (PEOPLE-007)
+
+Finance with Pay detail can call `POST /api/easel/import/payroll/preview`, then
+`commit` with the returned `fingerprint`. The HTTP import door accepts `provider`,
+`scenario`, `kind` (`roster` or `register`), `filename`, and either `csv` text or
+`base64` XLSX bytes; XLSX also accepts `sheet`. Roster files require an ISO `asOf`
+observation date. Column choices and the date format are saved per provider/kind.
+
+`columns` maps the following field names to source headings:
+
+- Roster: `employeeId`, `name`, `department`, `title`, `employmentType` (`W-2` or
+  `1099`), `salary` and/or `hourlyRate`, `start`, optional `termination`.
+- Register: `employeeId`, `department`, `payDate`, `grossWages`, `employerTaxes`,
+  `benefits`, `fees`. `line` selects a payroll-classified ledger line.
+
+Canonical headings such as Employee ID, Name, Department, Salary, Start, Pay Date
+and Gross Wages work on the first file without a column map. `departmentMap`
+maps source labels to existing department IDs; an exact department name also
+resolves. `positionMap` explicitly maps source employee IDs to planned position
+`originId` values. No identity is inferred from names. `dateFormat` is
+`YYYY-MM-DD` (default), `MM/DD/YYYY` or `DD/MM/YYYY`; Excel numeric dates are UTC
+serial days. Decimal money must be nonnegative and exact to cents.
+
+Read `GET /api/easel/payroll/:scenario` for four reconciliation buckets, latest
+roster headcount and monthly register-versus-ledger costs. Missing/blocked ledger
+values are null, differences remain visible, and hourly-versus-salary bases are
+listed for review. Current Pay detail and department grants filter every detail
+row; viewers and analysts without Pay detail receive totals only. Imports and
+original archives require finance and Pay detail. These are HTTP import/read
+doors; no provider connection or browser upload form is claimed.
+
+`POST /api/easel/import/payroll/status`, `resume` and `undo` take `{id}` from the
+commit result's `import.id`. Multi-batch imports require explicit continuation.
+Undo removes that import's observations without changing plans, ledger rows or
+other imports; saved mapping choices remain. Replacing an existing employee
+observation/pay run requires undoing its earlier import first. Original bytes
+travel through the existing import journal and complete owner export.
