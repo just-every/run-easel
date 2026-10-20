@@ -32,8 +32,9 @@ export function transformBlob(value, maps) {
  const bytes = Buffer.from(value.blob, 'base64');
  return encoded(textBytes(bytes, maps) ?? ensureOpaqueSafe(bytes, maps));
 }
-export async function transformOriginalBytes(input, maps, jobId) {
+export async function transformOriginalBytes(input, maps, jobId, payroll = false) {
  const scoped = await transformPayrollOriginal(input, maps, jobId);
+ if (payroll) return Buffer.from(scoped);
  const bytes = Buffer.from(scoped);
  if (!maps.length) return bytes;
  const text = textBytes(bytes, maps);
@@ -60,7 +61,7 @@ export async function prepareOriginals(db, maps) {
  const [originals, chunks] = await Promise.all(['ik_originals', 'ik_d1_original_chunks'].map(async table => (await db.prepare(`SELECT * FROM ${table}`).all()).results));
  const replacements = new Map(), digests = new Map(), base64 = new Map(), metadata = [], byJob = new Map();
  const allDigests = new Map(), allBase64 = new Map();
- const jobs = (await db.prepare('SELECT id,destination FROM ik_jobs').all()).results;
+ const jobs = (await db.prepare('SELECT id,destination,namespace FROM ik_jobs').all()).results;
  const jobForDestination = new Map(jobs.map(j=>[j.destination,j.id]));
  const collect = (map,key,value) => map.set(key,new Set([...(map.get(key) ?? []),value]));
  const groups = new Map();
@@ -75,7 +76,7 @@ export async function prepareOriginals(db, maps) {
   const source = row.bytes !== null ? bytesOf(row.bytes) : parts.length ? textual ? Buffer.from(parts.map(p => p.bytes).join(''), 'base64') : Buffer.concat(parts.map(p => bytesOf(p.bytes))) : null;
   if (source === null) continue;
   if (source.length !== row.size || digest(source) !== row.sha256) throw new PortabilityError('easel_original_digest', 409);
-  const exported = await transformOriginalBytes(source, maps, row.job_id), sha256 = digest(exported);
+  const exported = await transformOriginalBytes(source, maps, row.job_id, jobs.find(j=>j.id===row.job_id)?.namespace === 'easel-payroll-files'), sha256 = digest(exported);
   const local = byJob.get(row.job_id) ?? {digests:new Map(),base64:new Map()};
   byJob.set(row.job_id, local);
   local.digests.set(row.sha256,sha256);

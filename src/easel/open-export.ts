@@ -68,13 +68,13 @@ async function digest(bytes: Uint8Array): Promise<string> {
 
 type ArchiveFile = { name: string; bytes: Uint8Array }
 
-async function retainedOriginals(c: Context, visible:(id:string)=>boolean): Promise<RetainedOriginal[]> {
+async function retainedOriginals(c: Context, visible:(id:string)=>boolean): Promise<(RetainedOriginal & {payroll:boolean})[]> {
  const { results } = await c.db.prepare(
   'SELECT DISTINCT j.id, j.destination, j.namespace, j.mapping_version, j.principal_id FROM ik_jobs j JOIN ik_originals o ON o.job_id=j.id ORDER BY j.id',
  ).all<any>()
  const originals = await Promise.all(results.filter((job:any)=>visible(job.id)).map((job: any) => readD1ImportOriginals(job.id, job.namespace === 'easel-payroll-files' ? payrollJournalContext(c,job.destination,job.mapping_version,job) : journalContext(
   c.db, c.x.actor, job.destination, job.namespace, { mapping_version: job.mapping_version, principal_id: job.principal_id },
- ))))
+ )).then(rows=>rows.map(row=>({...row,payroll:job.namespace === 'easel-payroll-files'})))))
  return originals.flat()
 }
 
@@ -150,7 +150,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
    const filename = safeName(transformErased(original.name, maps))
    const prefix = (await digest(encoder.encode(original.key))).slice(0, 12)
    const path = `originals/${safeName(original.jobId)}/${original.kind}/${prefix}-${filename}`
-   const exported = maps.length ? await transformOriginalBytes(bytes, maps, original.jobId) : bytes
+   const exported = maps.length ? await transformOriginalBytes(bytes, maps, original.jobId, original.payroll) : bytes
    files.push({ name: path, bytes: exported })
    if (maps.length) { entry.sourceSha256 = original.sha256; entry.sha256 = await digest(exported); entry.size = exported.length }
    entry.path = path

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
 import JSZip from 'jszip/dist/jszip.min.js';
-import { erasedHash } from '../erasure-map.mjs';
+import { erasedHash, transformErased } from '../erasure-map.mjs';
 
 const hash = value => erasedHash(String(value).trim());
 const xmlDecode = text => text.replace(/&(lt|gt|amp|quot|apos|#\d+|#x[\da-f]+);/gi, (_, entity) => {
@@ -63,6 +63,11 @@ function transformCsv(bytes, scopes) {
    for (const index of [scope.employeeId, scope.name]) {
     const field = row[index];
     if (field && field.value !== scope.pseudonym) edits.set(field.start, { ...field, value: '"' + scope.pseudonym.replace(/"/g, '""') + '"' });
+   }
+   const mapped = new Set(Object.values(scope.original.columns));
+   for (const [index,field] of row.entries()) if (!mapped.has(headers[index])) {
+    const changed=transformErased(field.value,[scope.map]);
+    if(changed!==field.value) edits.set(field.start,{...field,value:'"'+changed.replace(/"/g,'""')+'"'});
    }
    break;
   }
@@ -144,6 +149,11 @@ async function transformXlsx(bytes, scopes) {
      if (cell.value !== null) identities.add(hash(cell.value));
      replacements.set(cell.ref, scope.pseudonym);
     }
+    const mapped = new Set(Object.values(scope.original.columns));
+    for(const [col,cell] of row) if(!mapped.has(headers[col]) && typeof cell.value==='string') {
+     const changed=transformErased(cell.value,[scope.map]);
+     if(changed!==cell.value) {identities.add(hash(cell.value));replacements.set(cell.ref,changed);}
+    }
     break;
    }
   }
@@ -188,7 +198,7 @@ export async function transformPayrollOriginal(inputBytes, maps, jobId) {
  const digest = createHash('sha256').update(inputBytes).digest('hex');
  const scopes = maps.flatMap(map => (map.payrollScopes ?? []).flatMap(scope => (scope.originals ?? [])
   .filter(original => original.sha256 === digest && original.jobId === jobId)
-  .map(original => ({ employeeHash: scope.employeeHash, pseudonym: map.pseudonym, original }))));
+  .map(original => ({ employeeHash: scope.employeeHash, pseudonym: map.pseudonym, map, original }))));
  if (!scopes.length) return inputBytes;
  return inputBytes[0] === 0x50 && inputBytes[1] === 0x4b ? transformXlsx(inputBytes, scopes) : transformCsv(inputBytes, scopes);
 }

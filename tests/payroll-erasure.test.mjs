@@ -23,7 +23,7 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  await h.command('member',{email,name:nativeName,role:'contributor',departments:[d.id]})
  const position=await h.command('position',{scenario,line:line.id,department:d.id,title:'Engineer',holder:nativeName,annualSalary:'120000',start:'2026-01'})
  const board=await h.person('board@example.test','viewer')
- const roster={provider:'Justworks',scenario,kind:'roster',asOf:'2026-01-31',filename:'roster.csv',csv:`Employee ID,Name,Department,Title,Employment Type,Salary,Start\n1,${legalName},Engineering,Engineer,W-2,120000,2026-01-12\n2,Unlinked Colleague,Engineering,Analyst,W-2,1,2026-01-01\n3,${nativeName},Engineering,Analyst,W-2,1,2026-01-01\n`,positionMap:{1:position.originId},memberMap:{1:email}}
+ const roster={provider:'Justworks',scenario,kind:'roster',asOf:'2026-01-31',filename:'roster.csv',csv:`Employee ID,Name,Department,Title,Employment Type,Salary,Start,Employee Email\n1,${legalName},Engineering,Engineer,W-2,120000,2026-01-12,${email}\n2,Unlinked Colleague,Engineering,Analyst,W-2,1,2026-01-01,colleague@example.test\n3,${nativeName},Engineering,Analyst,W-2,1,2026-01-01,other-alex@example.test\n`,positionMap:{1:position.originId},memberMap:{1:email}}
  const accept=async input=>h.kit('payroll','commit',{...input,fingerprint:(await h.kit('payroll','preview',input)).fingerprint})
  await h.kit('payroll','preview',roster,board,403)
  await h.kit('payroll','preview',{...roster,memberMap:{1:'unknown@example.test'}},h.owner,404)
@@ -72,10 +72,13 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
   return zip.file(item.path).async('nodebuffer')
  }
  const exportedCsv=(await original(first.job.id)).toString()
+ assert.ok(!exportedCsv.includes(email),'Associated ignored email cells are erased too');
+ assert.ok(exportedCsv.includes(nativeName),'Unassociated same-name row remains intact');
  assert.ok(exportedCsv.includes(receipt.pseudonym));assert.ok(!exportedCsv.includes(legalName));assert.ok(exportedCsv.includes('2,Unlinked Colleague,Engineering,Analyst,W-2,1,'))
  assert.equal((await original(other.job.id)).toString(),roster.csv,'Identical bytes from another provider remain unchanged')
  const exportedRoster=await original(later.job.id),rosterRead=new ExcelJS.Workbook();await rosterRead.xlsx.load(exportedRoster)
  assert.equal(rosterRead.worksheets[0].getCell('A2').value,receipt.pseudonym);assert.equal(rosterRead.worksheets[0].getCell('B2').value,receipt.pseudonym)
+ assert.equal(rosterRead.worksheets[0].getCell('B4').value,nativeName);
  assert.equal(rosterRead.worksheets[0].getCell('F3').value,1);assert.equal(rosterRead.worksheets[0].getCell('A3').value,2)
  const nested=await JSZip.loadAsync(exportedRoster)
  for(const entry of Object.values(nested.files).filter(e=>!e.dir))assert.ok(!(await entry.async('string')).includes(legalName),'No orphaned shared-string identity')

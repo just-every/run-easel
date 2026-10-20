@@ -38,7 +38,7 @@ export function transformErased(value, maps) {
    return string(item)
   }
   if (Array.isArray(item)) return item.map(visit)
-  if (item && typeof item === 'object') return Object.fromEntries(Object.entries(transformPayrollIdentity(item, maps)).map(([key, child]) => [string(key), visit(child)]))
+  if (item && typeof item === 'object') return Object.fromEntries(Object.entries(transformPayrollIdentity(item, maps)).map(([key, child]) => [string(key), typeof item.provider === 'string' && typeof item.employeeId === 'string' && ['name','employeeId'].includes(key) ? child : visit(child)]))
   return item
  }
  return maps.length ? visit(value) : value

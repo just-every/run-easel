@@ -759,11 +759,11 @@
       "executable": false
     },
     "src/easel/erasure-archive/originals.d.mts": {
-      "sha256": "4b65ee3244b293fae2bb683364e452038e70c91cb50b73c51f033c8b0e185058",
+      "sha256": "1eca86179a8cdb51eed038643e720223baf0105c050e5ef2a9ab2078f6110542",
       "executable": false
     },
     "src/easel/erasure-archive/originals.mjs": {
-      "sha256": "1ba95aa0f01a75d3cc4078e1bbcfc2c1888853bba5d68393f37ff7f969986ea8",
+      "sha256": "a2fd79dc5c73d5e77b414bc53ccb4255627776df5d38f2594f78a0fdfc12e229",
       "executable": false
     },
     "src/easel/erasure-archive/payroll-originals.d.mts": {
@@ -771,7 +771,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/payroll-originals.mjs": {
-      "sha256": "a99a7664edb5f4b719f27f802bc3d74f8af3005fd289dfc53aa4ac943042d47d",
+      "sha256": "636dd1d80bccc507f2542e4bcebe22b4d2ce0f177793159a1974e57f1575a985",
       "executable": false
     },
     "src/easel/erasure-archive/policy.mjs": {
@@ -787,7 +787,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/values.mjs": {
-      "sha256": "a564466dfe39252560a5ee0f8dc8bf3177c6e41906cd8c3e638962456f84cd13",
+      "sha256": "3d7c5ff3e0ed86a7fc4b0e5222478e6df2e12c8321b97eb6d915facb223d1622",
       "executable": false
     },
     "src/easel/erasure-map.d.mts": {
@@ -795,7 +795,7 @@
       "executable": false
     },
     "src/easel/erasure-map.mjs": {
-      "sha256": "27e1f4cd7acbeb5206f2c42ebe5b89ab6334a85fe596c96e4473d4f87c5b1aeb",
+      "sha256": "37f1f6e088a22ea7de0b072a14a96d4bd2874d1dfc8d1131f0b8e3809d2e489f",
       "executable": false
     },
     "src/easel/erasure.ts": {
@@ -911,7 +911,7 @@
       "executable": false
     },
     "src/easel/open-export.ts": {
-      "sha256": "0576b01399aedda3229e8f836a794c40a57dab7a60630599accb1109862afdc9",
+      "sha256": "77047abddff82df3d2d04b168551b4d7170ab92d2418b6174b56b9e1330335f1",
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
@@ -3203,7 +3203,7 @@
       "executable": false
     },
     "tests/payroll-erasure.test.mjs": {
-      "sha256": "d6eacdaae9b9afe9c971cc57ea68969373f00606b99c71f592da6cf435ca52bc",
+      "sha256": "f283c0e0a47f7d8ef1b125eca40e3072d03842147898872190aaba79a904fdf5",
       "executable": false
     },
     "tests/payroll-files-browser.mjs": {
