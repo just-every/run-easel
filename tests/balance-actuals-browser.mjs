@@ -6,7 +6,7 @@ import { command, freePort, start, fresh } from './browser-runtime.mjs'
 import { session, api, noOverflow } from './browser-journey.mjs'
 import { balanceSource, seedBalanceActuals } from './balance-actuals-fixture.mjs'
 
-const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
+const { chromium, expect } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 const root = await fresh(), evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-balance-actuals')
 await mkdir(evidence, { recursive: true })
 let server, browser
@@ -30,6 +30,7 @@ try {
    await mappings.getByLabel('Maps to', { exact: true }).selectOption('bs:debt')
    await mappings.getByRole('button', { name: 'Save mapping', exact: true }).click()
    await mappings.getByRole('row').filter({ hasText: '2300' }).getByText('Debt', { exact: true }).waitFor()
+   await expect(mappings.getByRole('button', { name: 'Save mapping', exact: true })).toBeEnabled()
    assert.equal(await page.getByLabel('Rule maps to', { exact: true }).locator('option[value^="bs:"]').count(), 8)
    await shot('settings')
    await tab('Actuals')
@@ -67,6 +68,7 @@ try {
    await shot('restored')
    await tab('Activity')
    await page.getByRole('heading', { name: 'Activity', exact: true }).waitFor()
+   await page.getByRole('region', { name: 'Most recent first', exact: true }).getByText('Maps to: Debt', { exact: false }).first().waitFor()
    await shot('activity')
    if (width === 1440) {
     const state = await api(context, server.origin, 'state')

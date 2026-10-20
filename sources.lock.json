@@ -3047,7 +3047,7 @@
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
-      "sha256": "1da37eb759a98a0df1931a504497eaa4850b0eadef843bbc283b9f46f17582c4",
+      "sha256": "78e26ee3fa7b813f039dbdd7d5ea1355cbdf2aa0a0689a19a7747c72a129a704",
       "executable": false
     },
     "tests/balance-actuals-fixture.mjs": {
