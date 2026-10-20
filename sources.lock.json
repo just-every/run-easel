@@ -787,7 +787,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/values.mjs": {
-      "sha256": "4199c7b7ceb7576da8de62219f998478a013fa43a4280cdb351eca64f4f7db9b",
+      "sha256": "9fd734779ba7f7ad085139a6477f339cd3b333562b589a1152854c45645f7759",
       "executable": false
     },
     "src/easel/erasure-map.d.mts": {

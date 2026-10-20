@@ -54,6 +54,11 @@ export function archiveValueTransformer(maps, originals) {
    if ('size' in result) result.size = bytes.length;
    if ('sha256' in result) result.sha256 = digest(bytes);
   }
+  if (typeof item.original?.base64 === 'string' && originalBase64.has(item.original.base64)) {
+   const bytes = Buffer.from(result.original.base64,'base64');
+   if ('size' in result) result.size = bytes.length;
+   if ('sha256' in result) result.sha256 = digest(bytes);
+  }
   if (Array.isArray(result.entries) && result.source && typeof result.fingerprint === 'string' && typeof result.mappingVersion === 'string') {
    const fingerprint = planFingerprint(result);
    digests.set(item.fingerprint, fingerprint);
