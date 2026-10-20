@@ -59,7 +59,7 @@ export function archiveValueTransformer(maps, originals) {
    const sha256 = digest(body); digests.set(item.sha256, sha256);
    return { ...item, size: body.length, sha256, data: deflateRawSync(body).toString('base64') };
   }
-  const result = Object.fromEntries(Object.entries(transformPayrollIdentity(item, maps)).map(([key, value]) => [identity(key), visit(value, jobId)]));
+  const result = Object.fromEntries(Object.entries(transformPayrollIdentity(item, maps)).sort(([a],[b])=>Number(['ownedValue','value','payload','effects'].includes(b))-Number(['ownedValue','value','payload','effects'].includes(a))).map(([key, value]) => [identity(key), visit(value, jobId)]));
   if (typeof item.base64 === 'string' && originalBase64.has(item.base64)) {
    const bytes = Buffer.from(result.base64, 'base64');
    if ('size' in result) result.size = bytes.length;

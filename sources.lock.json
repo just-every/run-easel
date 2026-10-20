@@ -755,7 +755,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
-      "sha256": "d208bb5604ffdbb0e2665d4f09c2b8d25c95b10b6877a6eac281724dd62cc2c4",
+      "sha256": "1ba86e5cde906bd2942ee28277833680cd80cb6f830f2817d347c7b747110741",
       "executable": false
     },
     "src/easel/erasure-archive/originals.d.mts": {
@@ -787,7 +787,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/values.mjs": {
-      "sha256": "421fe1c8f983bea160544a44523b9cd3a78ccc4ffa5f0b81159aac360ad88b12",
+      "sha256": "a564466dfe39252560a5ee0f8dc8bf3177c6e41906cd8c3e638962456f84cd13",
       "executable": false
     },
     "src/easel/erasure-map.d.mts": {

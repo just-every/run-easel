@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { canonicalJson, PortabilityError } from '@runeditrun/rer/modules/portability';
+import { redactDisposition } from '../../modules/import-kit/src/d1/erasure-disposition.ts';
 import { entryLocator } from '../../modules/import-kit/src/d1/entry-locator.ts';
 const digest = value => createHash('sha256').update(value).digest('hex');
 const layouts = {
@@ -55,5 +56,19 @@ export async function prepareJournals(db, transformer) {
    }
   }
  }
- return { row: (table, row) => table === 'ik_jobs' ? jobs.get(row.id) : layouts[table] ? replacements.get(key(table, row)) : undefined };
+ // A reversal disposition remains true after privacy redaction. Base's
+ // evidence-redacted form keeps the reason/decision and removes stale private
+ // equality evidence; bind the whole ordered report again for verified restore.
+ const reports = (await db.prepare('SELECT * FROM ik_d1_reversal_reports ORDER BY job_id,position').all()).results;
+ const exportedReports = new Map();
+ for(const row of reports) {
+  const original=JSON.parse(row.record_json), transformed=transformer.transform(original,row.job_id);
+  const record_json=canonicalJson(original)===canonicalJson(transformed) ? row.record_json : canonicalJson(redactDisposition(transformed));
+  exportedReports.set(`${row.job_id}:${row.effect_id}`,{...row,record_json});
+ }
+ for(const [id,job] of jobs) {
+  const ordered=reports.filter(r=>r.job_id===id).map(r=>exportedReports.get(`${r.job_id}:${r.effect_id}`));
+  if(ordered.length) jobs.set(id,{...job,reversal_hash:digest(canonicalJson(ordered.map(r=>({job_id:r.job_id,effect_id:r.effect_id,position:r.position,record_json:r.record_json}))))});
+ }
+ return { row: (table, row) => table === 'ik_jobs' ? jobs.get(row.id) : table === 'ik_d1_reversal_reports' ? exportedReports.get(`${row.job_id}:${row.effect_id}`) : layouts[table] ? replacements.get(key(table, row)) : undefined };
 }
