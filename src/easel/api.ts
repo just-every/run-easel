@@ -48,6 +48,7 @@ import { packWorkbook } from './pack-workbook'
 import { actualsWorkbook, activityWorkbook } from './operational-workbooks'
 import { review, variance } from './review'
 import { reforecasts } from './reforecasts'
+import { driversView } from './drivers-view'
 import { setup } from './setup'
 import { actor, load, readFence, save, snapshot } from './store'
 import { openExport } from './open-export'
@@ -210,6 +211,7 @@ api.get('/api/easel/dashboards/:id/document.xlsx', async c => {
 
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
+api.get('/api/easel/drivers/:id', c => read(c, ctx => driversView(ctx, c.req.param('id'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
 api.get('/api/easel/snapshot/:id', c => read(c, ctx => snapshotView(ctx, c.req.param('id'))))
 api.get('/api/easel/actuals', c => read(c, actualsView))

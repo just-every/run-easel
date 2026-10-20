@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Dashboards } from './dashboards'
 import { Activity } from './activity'
 import { Actuals } from './actuals'
@@ -12,8 +12,11 @@ import { useScrollEdges, revealHorizontally } from './scroll'
 import { ClosingCashChart } from './chart'
 import { DateFormatContext, addMonths, api, type D } from './shared'
 import { SetupPlan } from './starter-models'
+import { CashDrivers } from './tree/cash-drivers'
+import { TopBar, PageHead } from './top-bar'
 
 const TABS = [
+ { id: 'cash', label: 'Cash', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'overview', label: 'Overview', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'dashboards', label: 'Dashboards', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'plan', label: 'Plan', roles: ['finance', 'contributor'] },
@@ -31,7 +34,7 @@ export function App() {
  const strip = useScrollEdges()
  const [state, setState] = useState<D | null>(null)
  const [error, setError] = useState('')
- const [tab, setTab] = useState(() => typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('departmentStatement') ? 'review' : new URL(window.location.href).searchParams.has('calendar') ? 'cycle' : TABS.find(t => t.id === new URL(window.location.href).searchParams.get('tab'))?.id ?? 'overview')
+ const [tab, setTab] = useState(() => typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('departmentStatement') ? 'review' : new URL(window.location.href).searchParams.has('calendar') ? 'cycle' : TABS.find(t => t.id === new URL(window.location.href).searchParams.get('tab'))?.id ?? 'cash')
  const refresh = useCallback(async () => { try { setState(await api('state')); setError('') } catch (e) { setError((e as Error).message) } }, [])
  useEffect(() => { void refresh() }, [refresh])
  useEffect(() => {
@@ -40,16 +43,16 @@ export function App() {
  }, [tab, state, strip.update])
  if (!state) return <main className="shell"><p className="status" role={error ? 'alert' : 'status'}>{error || 'Loading the plan…'}</p></main>
  const role = state.me.role
- const person = `${state.me.name} · ${role ?? 'no access yet'}${state.me.departments?.length ? ` · ${state.me.departments.map((d: string) => state.departments?.find((x: D) => x.id === d)?.name).join(', ')}` : ''}`
- const header = <header className="top"><div className="brand"><img src="/brand/mark.svg" alt="" />{state.workspace ? <><span className="wordmark" data-rer-name>Easel</span><h1 className="company">{state.workspace.name}</h1></> : <h1 className="wordmark" data-rer-name>Easel</h1>}</div><p className="who"><span className="who-person">{person}</span><span className="who-role">{role ?? 'no access yet'}</span></p></header>
- if (!role) return <main className="shell">{header}<section className="card solo"><h2 className="lead">Waiting for finance</h2><p className="muted">You are signed in, but finance has not added you to this plan yet. Ask them to add you under Settings → People.</p><EmptyYear start={state.workspace?.planStart} /></section></main>
- if (!state.workspace) return <main className="shell">{header}{role === 'finance' ? <SetupPlan refresh={refresh} /> : <section className="card solo"><h2 className="lead">Finance is still setting up the plan.</h2><EmptyYear /></section>}</main>
+ const header = (nav?: ReactNode) => <TopBar state={state} nav={nav} />
+ if (!role) return <main className="shell">{header()}<section className="card solo"><h2 className="lead">Waiting for finance</h2><p className="muted">You are signed in, but finance has not added you to this plan yet. Ask them to add you under Settings → People.</p><EmptyYear start={state.workspace?.planStart} /></section></main>
+ if (!state.workspace) return <main className="shell">{header()}{role === 'finance' ? <SetupPlan refresh={refresh} /> : <section className="card solo"><h2 className="lead">Finance is still setting up the plan.</h2><EmptyYear /></section>}</main>
  const shared: Shared = { state, refresh, go: setTab }
  const tabs = TABS.filter(t => t.roles.includes(role))
  return <DateFormatContext.Provider value={state.workspace.dateFormat ?? 'MM/DD/YYYY'}><main className="shell" lang={state.workspace.locale ?? 'en-US'}>
-  {header}
-  <div className="scroll-frame tab-frame" data-before={strip.edges.before} data-after={strip.edges.after}><nav ref={strip.ref as any} className="tabs" aria-label="Easel" onFocusCapture={e => revealHorizontally(e.target as HTMLElement)}>{tabs.map(t => <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>{t.label}</button>)}</nav>{strip.edges.before && <span className="scroll-cue scroll-cue-before" aria-hidden="true">←</span>}{strip.edges.after && <span className="scroll-cue" aria-hidden="true">→</span>}</div>
+  {header(<div className="scroll-frame tab-frame" data-before={strip.edges.before} data-after={strip.edges.after}><nav ref={strip.ref as any} className="tabs" aria-label="Easel" onFocusCapture={e => revealHorizontally(e.target as HTMLElement)}>{tabs.map(t => <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>{t.label}</button>)}</nav>{strip.edges.before && <span className="scroll-cue scroll-cue-before" aria-hidden="true" />}{strip.edges.after && <span className="scroll-cue" aria-hidden="true" />}</div>)}
+  {tab !== 'cash' && <PageHead state={state} />}
   {error && <p role="alert" className="error">{error}</p>}
+  {tab === 'cash' && <CashDrivers {...shared} />}
   {tab === 'overview' && <Overview {...shared} />}
   {tab === 'dashboards' && <Dashboards {...shared} />}
   {tab === 'plan' && <Plan {...shared} />}

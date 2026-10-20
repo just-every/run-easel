@@ -13,8 +13,10 @@ export function Scenarios({ state, refresh }: Shared) {
  const me = state.me
  const plans = state.scenarios.filter((s: D) => s.kind !== 'proposal')
  const working = state.scenarios.filter((s: D) => s.status === 'working' && s.kind !== 'proposal' && !s.sandbox)
- const [a, setA] = useState(plans.find((s: D) => s.kind === 'forecast')?.id ?? plans[0]?.id ?? '')
- const [b, setB] = useState(plans.find((s: D) => s.kind === 'scenario')?.id ?? plans[1]?.id ?? '')
+ // The cash tree's "cells moved · Open" arrives with the pair to compare.
+ const asked = (name: string) => { const id = typeof window === 'undefined' ? null : new URL(window.location.href).searchParams.get(name); return state.scenarios.some((s: D) => s.id === id) ? id! : '' }
+ const [a, setA] = useState(asked('compareFrom') || (plans.find((s: D) => s.kind === 'forecast')?.id ?? plans[0]?.id ?? ''))
+ const [b, setB] = useState(asked('compareTo') || (plans.find((s: D) => s.kind === 'scenario')?.id ?? plans[1]?.id ?? ''))
  const [cmp, setCmp] = useState<D | null>(null)
  const [error, setError] = useState('')
  const leftCurrency = cmp?.left.workspace.currency ?? state.workspace.currency

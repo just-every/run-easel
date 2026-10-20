@@ -63,7 +63,7 @@ export function Action({ label, run, confirm: question, kind }: { label: string;
 
 export function Table({ heads, children, caption, className }: { heads: ReactNode[]; children: ReactNode; caption?: string; className?: string }) {
  const { ref, edges } = useScrollEdges()
- return <div className="scroll-frame" data-before={edges.before} data-after={edges.after}><div ref={ref} className="table-scroll" tabIndex={0} role="region" aria-label={caption ?? 'Table'} onFocusCapture={e => revealHorizontally(e.target as HTMLElement, true)}><table className={className}>{caption && <caption>{caption}</caption>}<thead><tr>{heads.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>{edges.after && <span className="scroll-cue" aria-hidden="true">→</span>}</div>
+ return <div className="scroll-frame" data-before={edges.before} data-after={edges.after}><div ref={ref} className="table-scroll" tabIndex={0} role="region" aria-label={caption ?? 'Table'} onFocusCapture={e => revealHorizontally(e.target as HTMLElement, true)}><table className={className}>{caption && <caption>{caption}</caption>}<thead><tr>{heads.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>{edges.after && <span className="scroll-cue" aria-hidden="true" />}</div>
 }
 
 export const options = (rows: D[], label = 'name'): { value: string; label: string }[] => rows.map(r => ({ value: String(r.id), label: String(r[label] ?? r.id) }))

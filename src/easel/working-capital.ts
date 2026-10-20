@@ -14,7 +14,7 @@ export const payDate = (month: string, date: number, offset = 0) => {
  const target = addMonths(month, offset)
  return `${target}-${String(Math.min(date, Number(monthEnd(target).slice(8)))).padStart(2, '0')}`
 }
-export type TimingCash = { month: string; amount: number; collection: boolean; label: string }
+export type TimingCash = { month: string; amount: number; collection: boolean; label: string; line?: string; department?: string; source?: string }
 export function timedCash(input: Data, month: string, amount: number, collection: boolean, legacyLag: number, label: string): { events: TimingCash[]; trace: string } {
  const method = collection ? input.collectionMethod : input.paymentMethod
  const date = monthEnd(month)
@@ -121,7 +121,7 @@ export function workingCapital(model: Model, months: string[], allocations: Data
  const finish = (): WorkingCapitalCalculation => {
   prepare()
   cash.length = 0
-  for (const p of postings.filter(p => p.payment && p.month >= months[0])) cash.push({ month: p.month, amount: p.payment, collection: false, label: p.input.name ?? p.input.title })
+  for (const p of postings.filter(p => p.payment && p.month >= months[0])) cash.push({ month: p.month, amount: p.payment, collection: false, label: p.input.name ?? p.input.title, line: p.input.line, department: p.input.department, source: p.input.originId })
   const inputs = [...new Map(postings.map(p => [p.input.originId, p.input])).values()]
   const balance = (input: Data, through: string) => postings.filter(p => p.input.originId === input.originId && p.month <= through).reduce((n, p) => n + (p.prepaid ? p.payment - p.expense : p.expense - p.payment), 0) + (through >= (openingDeltas.get(input.originId)?.month ?? '9999') ? openingDeltas.get(input.originId)!.delta : 0)
   const opening = { prepaid: 0, accruedLiabilities: 0 }

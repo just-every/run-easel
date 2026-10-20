@@ -12,7 +12,10 @@ export const Route = createRootRoute({
     <style>{introCss}</style>
     {fontLinks.map(link => <link key={link.href} {...link} />)}
     <link rel="stylesheet" href="/rer-theme.css" />
-    <link rel="icon" href="/brand/mark.svg" type="image/svg+xml" />
+    <link rel="preload" href="/fonts/inter/inter-latin-opsz-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <HeadContent />
     <style>{appStyle}</style>
   </head><body><Outlet /><Scripts /></body></html>,

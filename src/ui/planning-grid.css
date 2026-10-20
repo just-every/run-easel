@@ -2,7 +2,7 @@
 .planning-grid-table td{min-width:180px;vertical-align:top}
 .planning-grid-table td>input{width:164px;margin:6px 0}
 .planning-grid-table th small,.planning-grid-actuals small,.planning-grid-detail,.planning-grid-review th small{display:block;margin-top:4px;font-weight:400;white-space:normal}
-.planning-grid-table td[data-selected=true]{background:var(--claret-tint)}
+.planning-grid-table td[data-selected=true]{background:var(--pink-soft)}
 .planning-grid-table details{max-width:260px;white-space:normal;overflow-wrap:anywhere}
 .planning-grid-table th button{white-space:normal;max-width:100%;margin-top:8px}
 .planning-grid-table th{overflow-wrap:anywhere}
