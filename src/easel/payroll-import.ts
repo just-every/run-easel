@@ -38,9 +38,10 @@ async function preview(c: Context, b: Data) {
   const department = departmentMap[row.department] ?? all(c.s,'department').find(d => d.name === row.department)?.id
   requireThat(department && find(c.s, 'department', department), `Map department ${row.department} first`, 409)
   const origin = positionMap[row.employeeId] ?? ''
+  const planned = positions.find(p => p.originId === origin)
   if (origin) requireThat(positions.some(p => p.originId === origin && p.department === department), `Choose a position in ${row.department} for employee ${row.employeeId}`, 409)
   requireThat(!sourceRows.some(r => r.employeeId === row.employeeId && (kind === 'roster' ? r.asOf === asOf : r.payDate === row.payDate)), `This employee ${kind === 'roster' ? 'observation' : 'pay run'} is already imported; undo it before replacing it`, 409)
-  return { ...row, department, sourceDepartment: row.department, provider, scenario: scenario.id, ...(kind === 'roster' ? { asOf, positionOrigin: origin } : { line: get(c.s, 'line', b.line ?? saved?.line, 'payroll line').id }) }
+  return { ...row, department, sourceDepartment: row.department, provider, scenario: scenario.id, ...(kind === 'roster' ? { asOf, positionOrigin: origin, plannedStartDate: planned?.plannedStartDate ?? '', plannedStartMonth: planned?.start ?? '', plannedTitle: planned?.title ?? '', plannedPosition: planned?.id ?? '', backfillOrigin: planned?.backfillOrigin ?? '' } : { line: get(c.s, 'line', b.line ?? saved?.line, 'payroll line').id }) }
  })
  if (kind === 'register') requireThat(get(c.s, 'line', b.line ?? saved?.line).payroll, 'Choose a payroll-classified ledger line')
  const linked = rows.map((r: Data) => r.positionOrigin).filter(Boolean)

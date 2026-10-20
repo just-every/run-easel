@@ -82,6 +82,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireEditable(s, x, scenario, inputDepartment(kind, input))
   requireThat(kind !== 'revenue' || !all(s, 'expense').some(e => e.scenario === scenario.id && e.revenueOrigin === input.originId), 'Remove linked acquisition or inventory costs before deleting this revenue driver', 409)
   requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
+  if (kind === 'position') requireThat(!all(s,'position').some(p => p.scenario === scenario.id && p.backfillOrigin === input.originId), 'Remove the backfill link before deleting this position',409)
   remove(s, kind, input.id)
   bump(c, scenario, `${kind}-removed`, input.id, { name: input.name ?? input.title })
   return { removed: input.id }

@@ -1,3 +1,4 @@
+import { headcountView } from './headcount'
 import { payrollImport } from './payroll-import'
 import { payrollView } from './payroll-reconciliation'
 import { erasure, erasedView } from './erasure'
@@ -109,6 +110,7 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  return c.json(await erasedView(ctx.db, result) as any)
 }
 
+api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/payroll/:scenario', c => read(c, ctx => payrollView(ctx, c.req.param('scenario'))))
 
 api.get('/api/easel/export', async c => {

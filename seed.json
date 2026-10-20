@@ -234,6 +234,12 @@
       "clauses": [
         "PEOPLE-007"
       ]
+    },
+    {
+      "id": "headcount-plan-actual",
+      "clauses": [
+        "PEOPLE-006"
+      ]
     }
   ],
   "nonGoals": [

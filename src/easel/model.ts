@@ -1,3 +1,4 @@
+import { headcountInput } from './headcount-input'
 import { taxInput, positionTaxInput } from './tax-input'
 import { collectionInput, paymentInput, payrollInput, workingExpenseInput } from './working-capital-input'
 import { commercialInput } from './commercial-input'
@@ -84,7 +85,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
   const policy=all(s,'tax-policy').find(p=>p.scenario===scenario)
   if(policy && workspace(s).planStart.slice(5)!=='01' && start<workspace(s).planStart && b.employmentType!=='1099') requireThat(b.taxYtdWages!==undefined && b.taxYtdWages!=='','Enter prior year-to-date wages for a continuing W-2 position',409)
   if (b.payDay !== undefined && b.payDay !== '') requireThat(!get(s, 'line', b.line).nonCash, 'Accrued payroll requires a cash salary line')
-  return { ...payrollInput(b), ...positionTaxInput(b), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
+  return { ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
   const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory', 'prepaid', 'bonus'] as const, 'an expense kind')

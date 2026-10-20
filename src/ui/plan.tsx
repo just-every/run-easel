@@ -64,6 +64,9 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Department" name="department" options={depts} defaultValue={p?.department} />
     <Field label="Salary line" name="line" options={costLines} defaultValue={p?.line ?? state.lines.find((l: D) => l.payroll)?.id} />
     <Field label="Start month" name="start" type="month" defaultValue={p?.start} />
+    <Field label="Planned start date" name="plannedStartDate" type="date" required={false} defaultValue={p?.plannedStartDate} hint="Optional exact date in the start month; required for day slippage" />
+    <Field label="Backfills position" name="backfillOrigin" required={false} options={[{value:"",label:"No backfill"},...(inputs.position ?? []).filter((q: D) => q.id !== p?.id).map((q: D) => ({value:q.originId,label:q.title}))]} defaultValue={p?.backfillOrigin} />
+    <Field label="Monthly attrition assumption %" name="attritionPercent" defaultValue={decimalText(p?.attritionBps ?? 0)} hint="Shown as expected departures; does not remove positions or change payroll" />
     <Field label="End month" name="end" type="month" required={false} defaultValue={p?.end} />
     <Field label="Annual salary" name="annualSalary" defaultValue={decimalText(p?.annualSalaryCents)} />
     <Field label="Employment type" name="employmentType" options={[{value:'W-2',label:'W-2 employee'},{value:'1099',label:'1099 contractor'}]} defaultValue={p?.employmentType ?? 'W-2'} />

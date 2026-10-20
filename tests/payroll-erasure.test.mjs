@@ -56,6 +56,9 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
   assert.ok(JSON.stringify(value).includes(receipt.pseudonym))
  }
  const view=await h.get(`/api/easel/payroll/${scenario}`)
+ const headcount=await h.get(`/api/easel/headcount/${scenario}`)
+ assert.ok(headcount.history.some(r=>r.employeeId===receipt.pseudonym&&r.name===receipt.pseudonym),'PEOPLE-006 ERASE-001: retained hiring history uses the provider-scoped pseudonym')
+ assert.ok(!headcount.history.some(r=>r.provider==='Justworks'&&r.employeeId==='1'))
  const own=view.roster.filter(r=>r.provider==='Justworks'),untouched=view.roster.filter(r=>r.provider==='Other PEO')
  assert.equal(own.find(r=>r.employeeId===receipt.pseudonym).name,receipt.pseudonym)
  assert.equal(own.find(r=>r.employeeId==='2').salaryCents,100)

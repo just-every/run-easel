@@ -347,3 +347,7 @@ Undo removes that import's observations without changing plans, ledger rows or
 other imports; that import's saved mapping is removed and the previous mapping applies. Replacing an existing employee
 observation/pay run requires undoing its earlier import first. Original bytes
 travel through the existing import journal and complete owner export.
+
+### Headcount plan against actual (PEOPLE-006)
+
+`GET /api/easel/headcount/:scenario` reads monthly department plan/actual headcount, hires, departures, payroll cents, explicit backfill counts and expected attrition in hundredths of a person. `observations` names each reviewed provider/date; missing actuals are `null`. `history` and `positions` require the reader's live Pay detail grant for that department; aggregates use the existing scenario read grant. `command/position` accepts optional `plannedStartDate` (ISO day in its `start` month), `backfillOrigin` (an earlier same-department position origin), and `attritionPercent` (monthly probability, displayed only). Day slippage is actual minus the planned date retained by roster acceptance; month-only plans return `null`. This door reads reviewed files, not a connected provider pull.
