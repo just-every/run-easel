@@ -93,6 +93,11 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  await importArchive(await createPortability({db:destination.db,policy:easelPolicy}),path,[])
  const restored=await destination.get(`/api/easel/payroll/${scenario}`)
  assert.deepEqual(restored.roster,view.roster);assert.deepEqual(restored.reconciliation,view.reconciliation)
+ for(const imp of [later,register,first]) {
+  await destination.kit('payroll','status',{id:imp.import.id})
+  await destination.kit('payroll','undo',{id:imp.import.id})
+ }
+ assert.ok((await destination.get(`/api/easel/payroll/${scenario}`)).roster.every(r=>r.provider==='Other PEO'))
  // Erasure changes identity only; it cannot turn journal-owned records into edits.
  for(const imp of [later,register,first]) await h.kit('payroll','undo',{id:imp.import.id})
  const undone=await h.get(`/api/easel/payroll/${scenario}`)
