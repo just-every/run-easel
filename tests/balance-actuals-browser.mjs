@@ -95,6 +95,7 @@ try {
  const asset = await cmd('asset', { ...common, name: 'Existing equipment', line: depreciation.id, category: category.originId, kind: 'existing', cost: '24000', remainingLifeMonths: 24 })
  state = await api(owner.context, server.origin, 'state')
  await cmd('approve-budget', { scenario: budget.id, revision: state.scenarios.find(s => s.id === budget.id).revision })
+ await owner.page.reload()
  await owner.page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
  await owner.page.getByRole('button', { name: 'Close Jan 2026', exact: true }).click()
  await owner.page.getByRole('button', { name: 'Close Feb 2026', exact: true }).waitFor()

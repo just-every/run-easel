@@ -3199,7 +3199,7 @@
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
-      "sha256": "7e5cb2a00f32bc1215bf27f7ffae7f10d19e0bd7e15b2ed0fd0f9871bf79e7b3",
+      "sha256": "57bef63331135b6cb8c486cfc47c3e901ea20b35315dfeda6e2d9e4e8cb5595c",
       "executable": false
     },
     "tests/balance-actuals-fixture.mjs": {
@@ -3407,7 +3407,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "ec36f5ae8a1bafe31bb918b429a1e7c1b8116717b1f549714ea5edebc543b0e6",
+      "sha256": "8b36b00fa7d128aea44978ae4e2d019202bde3b08744aed027c39a0d56ccf45d",
       "executable": false
     },
     "tests/mcp.test.mjs": {

@@ -252,10 +252,11 @@ test('CONNECT-007 actual openings replace estimates and explicitly attributed pr
  const base = { scenario: budget.id, department: dept.id, start: '2026-01' }
  const prepaid = await h.command('expense', { ...base, line: insurance.id, name: 'Annual insurance', kind: 'prepaid', amount: '1200', paymentMonth: '2025-12', amortizationMonths: '12' })
  const payroll = await h.command('position', { ...base, start: '2025-12', line: payrollLine.id, title: 'Private operations lead', holder: 'Restricted holder', annualSalary: '12000', payDay: 5, payMonthOffset: 1 })
+ const bonus = await h.command('expense', { ...base, start: '2025-12', line: payrollLine.id, name: 'Restricted quarterly bonus', kind: 'bonus', amount: '900', payMonth: '2026-02' })
  const contract = await h.command('revenue', { ...base, line: subscriptions.id, name: 'Annual subscription', kind: 'contract', start: '2025-12', startDate: '2025-12-01', termMonths: 13, contractValue: '13000', billingCadence: 'annual', dsoDays: 0 })
  // This annual contract has one future invoice; attribution retains that invoice and its collection date.
  const category = await h.command('asset-category', { scenario: budget.id, name: 'Equipment', usefulLifeMonths: 60 })
- const asset = await h.command('asset', { ...base, line: depreciation.id, name: 'Delivery equipment', category: category.originId, kind: 'existing', cost: '24000', remainingLifeMonths: 24 })
+ const asset = await h.command('asset', { ...base, line: depreciation.id, name: 'Delivery equipment', category: category.originId, kind: 'existing', cost: '24000', remainingLifeMonths: 24, disposalMonth: '2026-04', disposalProceeds: '1000' })
  for (const [account, target] of [['1200', 'bs:prepaid'], ['5100', insurance.id], ['5200', payrollLine.id], ['5300', depreciation.id], ['4100', subscriptions.id]]) await h.command('account-map', { account, target })
  const rows = [
  ['2025-12-31','1000','100000'],['2025-12-31','1100','12000'],['2025-12-31','1200','2400'],['2025-12-31','FA-01','18000'],
@@ -275,7 +276,7 @@ test('CONNECT-007 actual openings replace estimates and explicitly attributed pr
  let v = await view(), c = v.calculation
  assert.deepEqual(c.balanceSheet.slice(0,2).map(r => [r.cash,r.receivables,r.prepaid,r.fixedAssets,r.payables,r.accruedLiabilities,r.deferredRevenue,r.debt,r.openingEquity]), [
  [9500000,2200000,220000,1750000,800000,300000,600000,2000000,9480000],
- [10000000,1200000,210000,1650000,400000,300000,500000,2000000,9480000],
+ [9910000,1200000,210000,1650000,400000,240000,500000,2000000,9480000],
  ])
  assert.equal(c.balanceSheet[0].balanceDifference,0)
  assert.equal(c.cash[0].opening,10000000); assert.equal(c.cash[0].collections,0); assert.equal(c.cash[0].payments,500000)
@@ -293,7 +294,7 @@ test('CONNECT-007 actual openings replace estimates and explicitly attributed pr
  const futureContract = (await view()).inputs.revenue.find(r=>r.originId===contract.originId)
  await h.command('revenue',{...base,scenario:forecast.id,id:futureContract.id,line:subscriptions.id,name:'Annual subscription',kind:'contract',start:'2025-12',startDate:'2025-12-01',termMonths:12,contractValue:'12000',billingCadence:'annual',dsoDays:0})
  await allocate('bs:prepaid',prepaid.originId,'2200')
- await allocate('bs:accrued-liabilities',payroll.originId,'3000')
+ await h.command('ledger-allocation',{scenario:forecast.id,revision:(await view()).scenario.revision,month:'2026-01',target:'bs:accrued-liabilities',allocations:[{originId:payroll.originId,amount:'2000'},{originId:bonus.originId,amount:'1000'}]})
  await allocate('bs:deferred-revenue',contract.originId,'6000')
  await allocate('bs:fixed-assets',asset.originId,'17500',{remainingLifeMonths:35})
  v = await view(); c = v.calculation
@@ -303,7 +304,12 @@ test('CONNECT-007 actual openings replace estimates and explicitly attributed pr
  const prepaidRows=c.workingCapital.rows.filter(r=>r.originId===prepaid.originId)
  assert.equal(prepaidRows[1].prepaidExpense,20000); assert.equal(prepaidRows.at(-1).prepaid,0)
  const pay=c.workingCapital.rows.find(r=>r.originId===payroll.originId&&r.month==='2026-02')
- assert.equal(pay.accruedPayments,300000); assert.equal(pay.accruedLiabilities,100000)
+ assert.equal(pay.accruedPayments,200000); assert.equal(pay.accruedLiabilities,100000)
+ const bonusSettlement=c.workingCapital.rows.find(r=>r.originId===bonus.originId&&r.month==='2026-02')
+ assert.equal(bonusSettlement.accruedPayments,130000); assert.equal(bonusSettlement.accruedLiabilities,0)
+ assert.match(bonusSettlement.trace,/Imported.*opening.*account/)
+ const disposal=c.assets.find(r=>r.originId===asset.originId&&r.month==='2026-04')
+ assert.equal(disposal.depreciation,0); assert.equal(disposal.disposalBookValue,1650000); assert.equal(disposal.disposalProceeds,100000); assert.equal(disposal.closingBookValue,0)
  assert.equal(c.contracts.rows.filter(r=>r.month>'2026-01').reduce((n,r)=>n+r.revenue,0),600000)
  for (const r of [prepaidRows[1],pay,c.assets.find(r=>r.month==='2026-02'),c.contracts.rows.find(r=>r.month==='2026-02')]) assert.match(r.trace,/Imported.*opening.*account/)
  for (const [i,row] of c.balanceSheet.entries()) {
