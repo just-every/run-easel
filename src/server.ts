@@ -9,6 +9,7 @@ import { lobbyResponse } from './base/lobby'
 import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
 import { runCalendarSchedule } from './easel/calendar-dispatch'
+import { runActionChases } from './easel/decision-followup'
 
 export default withDemo({
   async fetch(request, env, execution) {
@@ -29,5 +30,6 @@ export default withDemo({
   },
   async scheduled(_controller, env) {
     await runCalendarSchedule(env)
+    await runActionChases(env)
   },
 } satisfies ExportedHandler<Bindings>, { seed: seedDemo })

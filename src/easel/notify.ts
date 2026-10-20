@@ -11,7 +11,7 @@ import type { Context } from './context'
 import { all, choice, find, put, requireThat, uid, type Data } from './types'
 
 export const MODES = ['email', 'digest', 'chat'] as const
-export const EVENT_LABEL: Record<string, string> = { mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you' }
+export const EVENT_LABEL: Record<string, string> = { mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'action-chase': 'Update due on your action' }
 export const preference = (c: Context, email: string): Data => find(c.s, 'notification-preference', email) ?? { mode: 'email', channel: null }
 
 /** Whether `email` may currently read a department's detail (finance always). */
@@ -24,11 +24,14 @@ export async function canRead(c: Context, email: string, department: string) {
 }
 
 export function notify(c: Context, event: keyof typeof EVENT_LABEL, recipients: string[], detail: { title: string; tab: string; record: string; department: string }) {
+ const ids: string[] = []
  for (const recipient of [...new Set(recipients)].filter(r => r !== c.x.actor.email)) {
   const id = uid()
+  ids.push(id)
   put(c.s, 'notification', id, { event, recipient, ...detail, createdAt: c.now, status: 'new', attempts: 0, key: crypto.randomUUID(), history: [] })
   c.activity.push({ action: 'notification-recorded', record: id, detail: { event, recipient, tab: detail.tab, target: detail.record } })
  }
+ return ids
 }
 
 /** Mentions are `@email`; only people who can read the department may be mentioned. */

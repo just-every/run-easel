@@ -8,6 +8,7 @@ import { aggregateFinancing } from './financing-view'
 import { requireDepartment, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail } from './access'
 import { rowsFor } from './actuals'
 import { actorNames } from './actor-names'
+import { linkedProposal } from './decision-followup'
 import { mentions } from './notify'
 import type { Context } from './context'
 import { type Calculation, type Cell } from './engine'
@@ -124,7 +125,8 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   requireFinance(x)
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.status === 'draft', 'A published pack cannot change; record follow-up on its actions', 409)
-  const decision = { id: uid(), department: b.department ? get(s, 'department', b.department).id : '', text: text(b.text, 'Decision or action', 2000), owner: typeof b.owner === 'string' ? b.owner.slice(0, 200) : '', due: typeof b.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.due) ? b.due : '', status: 'open' }
+  const proposal = b.proposal ? linkedProposal(s, pack.forecast, b.proposal).id : ''
+  const decision = { id: uid(), department: b.department ? get(s, 'department', b.department).id : '', text: text(b.text, 'Decision or action', 2000), owner: typeof b.owner === 'string' ? b.owner.slice(0, 200) : '', due: typeof b.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.due) ? b.due : '', status: 'open', ...(proposal ? { proposal } : {}) }
   put(s, 'pack', pack.id, { ...pack, decisions: [...pack.decisions, decision] })
   c.activity.push({ action: op, record: pack.id, detail: { decision: decision.text } })
   return get(s, 'pack', pack.id)

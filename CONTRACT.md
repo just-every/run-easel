@@ -874,7 +874,9 @@ Agents keep the plan feasible and honest, not just modeled. Each clause names wh
 
 *Acceptance:* a decision to delay two hires to July is published; the agent chases the hiring manager before the due date, and after July closes it reports the realized payroll saving against the approved assumption.
 
-*Status:* partial.
+Current doors: a decision recorded in a draft review pack may cite one proposal promoted into that pack's forecast. Promotion captures, for every plan month whose payroll, revenue, headcount or capacity moved, the forecast just before promotion and as promoted, in integer cents and counts: payroll is payroll-line cells plus position costs on other lines; revenue is profit-and-loss revenue; cash is closing cash, unavailable when that month's cash is incomplete; headcount is planned positions; capacity is active positions in each services driver's department × its monthly available hours, in hundredths of an hour. Promotions made before this capture cannot be cited, and a cited promotion cannot be deleted. The scheduled run acts as `scheduler:actions` for the first still-active owner or admin who published a pack. It chases each open action whose owner is recorded as the email of a person who can still read the action's department: one CYCLE-003 notification ("Update due on your action", by that person's email, digest or chat preference) per due date, from 3 calendar days before the due date in the saved company zone until the day before it. Done or stopped actions are never chased; a revised due date is chased again; an owner recorded only as a name is never chased and only finance follows that action up. Only the action's owner or finance revises its due date or stops it, always with a reason. A proposed change to a decision's text or cited promotion, by its owner or finance, stays pending until finance approves or rejects it. Follow-up is recorded beside the published pack; the pack snapshot never changes. `GET /api/easel/decisions` reports, per effect month, the before, approved and realized values once the month closes: realized payroll, revenue and cash come from the forecast's closed months on accepted actuals (ledger figures, not bank balances); realized headcount comes only from reviewed roster files (`PEOPLE-006`) and realized capacity only from accepted Gauge available time on every services driver (`REV-003`), otherwise each is unavailable, never zero. The payroll saving is before minus approved (approved) and before minus realized (realized), summed over the months whose payroll moved, compared through the closed months and complete once all of them have closed. Every member reads decisions and these aggregate amounts as in the pack; position titles and salaries are never included. Easel calls no model for this follow-up.
+
+*Status:* done. Evidence: `src/easel/decision-followup.ts` and `tests/decision-followup.test.mjs` (AGENT-006).
 
 ### Agents that explain and model
 
@@ -1010,8 +1012,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 35 | 21 | 30 | 86 |
-| All | 52 | 21 | 30 | 103 |
+| Target and push further | 36 | 20 | 30 | 86 |
+| All | 53 | 20 | 30 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1112,7 +1114,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `AGENT-003` | Asking owners for uncertain assumptions | push-further | missing |  | No structured owner questions, sourced assumptions or escalation |
 | `AGENT-004` | Learning from the company's own forecast errors | push-further | partial | `src/easel/review.ts` `src/easel/cycle.ts` | Kept forecasts compare with actuals and carry confirmed explanations; error decomposition, backtests and suggested assumption revisions are missing |
 | `AGENT-005` | Source-change guard | push-further | partial | `src/easel/actuals.ts` `tests/easel.test.mjs` | Unmapped accounts and departments block file acceptance; live-feed change detection, mapping proposals and impact lists are missing |
-| `AGENT-006` | Following decisions through to results | push-further | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Published decisions and actions keep owner, due date and progress; chasing and realized-outcome measurement are missing |
+| `AGENT-006` | Following decisions through to results | push-further | done | `src/easel/decision-followup.ts` `tests/decision-followup.test.mjs` | Decisions cite captured promotion effects; company-zone chases before due dates; reasoned owner revisions and stops; finance-approved decision changes; realized payroll, revenue and cash against the approved assumption, with roster headcount and Gauge capacity unavailable unless reviewed |
 | `AGENT-007` | Variance commentary grounded in sources | push-further | partial | `src/easel/review.ts` `tests/easel.test.mjs` | Deterministic drafts cite accepted rows and mark timing hypotheses; model-drafted commentary over connected sources and server-checked citations are missing |
 | `AGENT-008` | Modeler agent | push-further | partial | `src/easel/plan.ts` `API.md` | Outside agents can prepare proposals through the API as a signed-in person; in-product plain-language model changes are missing |
 | `AGENT-009` | Analyst with cited answers | push-further | missing |  | No in-product analyst; Easel calls no model |

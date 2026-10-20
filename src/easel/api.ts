@@ -31,6 +31,7 @@ import { calendar, calendarView } from './calendar'
 import { channelStatus, nookConnection } from './calendar-channels'
 import { deliverCalendar } from './calendar-dispatch'
 import { deliverNotifications } from './notify-dispatch'
+import { decisionFollowups, followup } from './decision-followup'
 import { notificationView, savePreference } from './notify'
 import { departmentStatements, departmentStatementList, departmentStatementView, queueDepartmentStatements } from './department-statements'
 import { dispatchDepartmentStatement } from './department-statement-mail'
@@ -191,6 +192,7 @@ api.get('/api/easel/parallel-month/template/:file', async c => {
 api.get('/api/easel/parallel-month/:id', c => read(c, ctx => { requirePayDetail(ctx.x); return parallelView(ctx, c.req.param('id')) }))
 
 api.get('/api/easel/metric-tasks', c => read(c, metricTaskList))
+api.get('/api/easel/decisions', c => read(c, decisionFollowups))
 
 api.get('/api/easel/department-statements', c => read(c, ctx => departmentStatementList(ctx, c.req.query('month'))))
 api.get('/api/easel/department-statements/:id', c => read(c, ctx => departmentStatementView(ctx, c.req.param('id'))))
@@ -275,7 +277,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "95cc3a0468b444348edc4b7d3c4123f668bfc7fd8aba07516d6d0c1bce4eedc0",
+      "sha256": "1c4d81fd777df3b3c58325ff85e531e36899cf2670a26c5c3e4109c94e0fefb0",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "7b818397f663a06775bb8f945eda68b65d0695b8d8c769a05f33046595f3fa82",
+      "sha256": "5c0bc0c3ec174d1fe196b98e659fa1c3b6a264556d32826555017fb0375b6eea",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b65ac3b3412b20404d4f2ef08aaa0495f14718888a68450621fdb0be84ed78e3",
+      "sha256": "c0777dce8a5f0c403959995f707528f2e8c984e35d50f6d1e124aeffcf2954f3",
       "executable": false
     },
     "DEMO.md": {
@@ -523,7 +523,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "44a88289756690e0afa129552a5ede7a73904a438ab664db3b7439da2b6673f3",
+      "sha256": "39598bccb48c2ba92261b714e7b20b23863f4131a7e1b7c2d627c19f1d3d6ddb",
       "executable": false
     },
     "SOURCE.md": {
@@ -671,7 +671,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "590da11961f4933f8e43f20ad2a96de180d9fa6984032c278fd1862a9578bf2e",
+      "sha256": "18e270ddc3d9c3dff4b2b0ba2c32e3092112370b3fa049941bc44744277a6455",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -687,7 +687,7 @@
       "executable": false
     },
     "src/easel/audit-write.ts": {
-      "sha256": "e425238177dd17efa5db18dc97d0bb80ec0cb2b3701bca16ca422d8dfbf2a98b",
+      "sha256": "39f787bb93dce893076b9b96e9e0cbaad239d5ccc9394428620a5e2704c688ed",
       "executable": false
     },
     "src/easel/audit.ts": {
@@ -784,6 +784,10 @@
     },
     "src/easel/date-format.ts": {
       "sha256": "3fc6c1e514926ff62a3013b1746b027569a555a636ebdc4a9764d15aa26815ac",
+      "executable": false
+    },
+    "src/easel/decision-followup.ts": {
+      "sha256": "b17a1671a695987521e7fa89d33c800ee0b7ea3c3ed6cf6a05143dca312dde8a",
       "executable": false
     },
     "src/easel/department-statement-documents.ts": {
@@ -987,7 +991,7 @@
       "executable": false
     },
     "src/easel/notify.ts": {
-      "sha256": "687084e7e9e7174b8380c9841ef75bea04c9c221d2381cf33f13383c77159ad8",
+      "sha256": "212a7e63d7b1034cbc2bcf10e68737b0ec1d53bb8759b3b935cbdd885e2beed7",
       "executable": false
     },
     "src/easel/open-export.ts": {
@@ -1043,7 +1047,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "4afab0fcca92a1057b02f5b4c4f982bb6eee435b884ddba7b7176bb7bdea9368",
+      "sha256": "63af959e5d7ccc08e20c3930facf85997643941f46b4cdbc0b735b891413e896",
       "executable": false
     },
     "src/easel/ramp.ts": {
@@ -1067,7 +1071,7 @@
       "executable": false
     },
     "src/easel/review.ts": {
-      "sha256": "130c7326029d078a90a94eab19f61be40f08c81e0a288bb5f5d993f602b0f96b",
+      "sha256": "d5107e2cbb729afcddda1c8f0c147aa9b7111b5b5702df640250bab065dae117",
       "executable": false
     },
     "src/easel/sandboxes.ts": {
@@ -2767,7 +2771,7 @@
       "executable": false
     },
     "src/server.ts": {
-      "sha256": "66be3a375ceec7ea304fa63ca60223e9b7e2143f298dac7c4769f57a76359db3",
+      "sha256": "c53fad282404a4afede476336285cfd28aa938c0bcf97d094a6fe7a3f3429dce",
       "executable": false
     },
     "src/site/docs/build/manifest.ts": {
@@ -3274,6 +3278,10 @@
       "sha256": "58248cf63fd26a0e948e09524d264b1200199e2cd99fbb4004132ad1a9846e85",
       "executable": false
     },
+    "tests/decision-followup.test.mjs": {
+      "sha256": "5b126a160c8b9e66e311568c76505ae6a0aad4f3dbba202772a323e292955f71",
+      "executable": false
+    },
     "tests/department-statements-browser.mjs": {
       "sha256": "820e11f293433d82948c8a777f1a966ed2ed3101f9d2bf0550132fe855c74c04",
       "executable": false
@@ -3287,7 +3295,7 @@
       "executable": false
     },
     "tests/easel-worker.ts": {
-      "sha256": "8b5563236f113f7f8fd080b7dec69672166dc941168932a695e77c1a017deb59",
+      "sha256": "d44cee7e67dd76e38e73b081aaeadfb04a4fb81daec5da78bc4e66d5646df240",
       "executable": false
     },
     "tests/easel.test.mjs": {
