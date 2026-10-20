@@ -1,3 +1,4 @@
+import { BALANCE_TARGETS, balanceTarget } from '../easel/balance-targets'
 import { AccountRules } from './account-rules'
 import { GaugeConnection } from './gauge-connection'
 import type { Shared } from './app'
@@ -8,7 +9,7 @@ export function Settings({ state, refresh }: Shared) {
  const w = state.workspace
  const run = (op: string) => async (v: D, form?: HTMLFormElement) => { await command(op, v); form?.reset(); await refresh() }
  const deptName = (id: string) => state.departments.find((d: D) => d.id === id)?.name ?? '—'
- const target = (t: string) => t === 'excluded' ? 'Excluded' : t === 'cash' ? 'Cash balance' : state.lines.find((l: D) => l.id === t)?.name ?? t
+ const target = (t: string) => t === 'excluded' ? 'Excluded' : balanceTarget(t) ? balanceTarget(t)!.label : state.lines.find((l: D) => l.id === t)?.name ?? t
  return <>
   <section className="card">
    <h2>Plan</h2>
@@ -71,7 +72,7 @@ export function Settings({ state, refresh }: Shared) {
    <p className="muted">Change a mapping from the Actuals preview, or here.</p>
    <Form submit="Save mapping" onSubmit={run('account-map')}>
     <Field label="Source account" name="account" />
-    <Field label="Maps to" name="target" options={[...state.lines.map((l: D) => ({ value: l.id, label: l.name })), { value: 'excluded', label: 'Exclude (not planned)' }, { value: 'cash', label: 'Cash balance' }]} />
+    <Field label="Maps to" name="target" options={[...state.lines.map((l: D) => ({ value: l.id, label: l.name })), { value: 'excluded', label: 'Exclude (not planned)' }, ...BALANCE_TARGETS]} />
    </Form>
   </section>
  </>

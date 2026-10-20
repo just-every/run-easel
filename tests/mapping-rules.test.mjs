@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readWorkbook } from './spreadsheet-proof.mjs'
+import { readWorkbook, evaluate } from './spreadsheet-proof.mjs'
 import { harness } from './harness.mjs'
 
 const file = (filename, rows) => ({
@@ -162,4 +162,70 @@ test('CONNECT-006 exact overrides, agreeing rules, ambiguity and reviewed rule c
  assert.equal(month(reconciliation, '2026-01').blocked, false)
  assert.equal(month(reconciliation, '2026-01').revenue, 10000)
  assert.equal(month(reconciliation, '2026-01').costs, -2000)
+})
+
+test('CONNECT-007 accepts attributed balance-sheet journals with reusable targets and a true zero-sum trial balance', async t => {
+ const { balanceSource, seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
+ const h = await harness(); t.after(() => h.close())
+ const { revenue, expense, receivables } = await seedBalanceActuals(h.command)
+ const board = await h.person('board@example.test', 'viewer')
+ const before = await h.get('/api/easel/actuals')
+ const preview = await h.kit('actuals', 'preview', balanceSource)
+ assert.deepEqual(await h.get('/api/easel/actuals'), before, 'balance preview accepts no rows')
+ assert.equal(account(preview, '1101').target, 'bs:receivables')
+ assert.deepEqual(account(preview, '1101').ruleIds, [receivables.id], 'new in-range balance account is automatically listed')
+ await h.kit('actuals', 'commit', { ...balanceSource, fingerprint: preview.fingerprint })
+ let report = await h.get('/api/easel/actuals')
+ const january = report.trialBalances.find(t => t.period === '2026-01')
+ assert.equal(january.debit, 14240000)
+ assert.equal(january.credit, 14240000)
+ assert.equal(january.difference, 0)
+ assert.equal(january.balanced, true)
+ assert.deepEqual(Object.fromEntries(january.balances.map(b => [b.target, b.amount])), {
+  cash: 9600000, 'bs:receivables': 2200000, 'bs:prepaid': 240000, 'bs:fixed-assets': 1800000,
+  'bs:payables': 800000, 'bs:accrued-liabilities': 300000, 'bs:deferred-revenue': 600000,
+  'bs:debt': 2000000, 'bs:equity': 9540000,
+ })
+ const source = january.balances.find(b => b.target === 'bs:receivables').sources.find(s => s.account === '1101')
+ assert.equal(source.rows, 1); assert.equal(source.accountType, 'Receivable')
+ assert.deepEqual(source.periods, ['2026-01']); assert.equal(source.batches[0], preview.destination)
+ assert.equal(month(report, '2026-01').balanced, true, 'classification includes balance-sheet lines')
+ assert.equal(month(report, '2026-01').balanceSheet, 1000000)
+ assert.equal(month(report, '2026-01').revenue, 1000000)
+ assert.equal(month(report, '2026-01').costs, 400000)
+ await h.get('/api/easel/actuals', board, 403)
+ await h.command('account-map', { account: 'PRIVATE', target: 'bs:equity' }, board, 403)
+ await h.command('account-rule', { match: 'prefix', from: 'PRIVATE', target: 'bs:debt' }, board, 403)
+ const budget = (await h.get('/api/easel/state')).scenarios.find(s => s.kind === 'budget')
+ const { forecast } = await h.command('approve-budget', { scenario: budget.id, revision: budget.revision })
+ await h.command('close-month', { scenario: forecast.id, month: '2026-01' })
+ const variance = await h.get('/api/easel/variance/2026-01')
+ assert.equal(variance.rows.find(r => r.line === revenue.id).actual, 1000000)
+ assert.equal(variance.rows.find(r => r.line === expense.id).actual, 400000, 'balance-sheet movements do not become P&L')
+ const response = await h.mf.dispatchFetch(h.origin + '/api/easel/actuals.xlsx', { headers: { cookie: h.owner } })
+ const workbook = await readWorkbook(await response.arrayBuffer())
+ const trial = workbook.getWorksheet('Trial balance')
+ assert.equal(trial.getCell('D4').value.formula, 'B4-C4')
+ assert.equal(evaluate(trial, 'D4'), 0)
+ assert.equal(workbook.getWorksheet('Balance-sheet actuals').getCell('C13').value, 2200000)
+ assert.match(JSON.stringify(workbook.getWorksheet('Ledger balances').getSheetValues()), /1101/)
+ await h.command('account-rule-delete', { id: receivables.id })
+ report = await h.get('/api/easel/actuals')
+ assert.equal(report.trialBalances[1].blocked, true)
+ assert.equal(report.trialBalances[1].balanced, false)
+ assert.ok(report.trialBalances[1].balances.every(b => b.amount === null), 'incomplete balances are unavailable, never zero')
+ await h.command('close-month', { scenario: forecast.id, month: '2026-02' }, h.owner, 409)
+ await h.command('account-rule', { match: 'range', from: '1100', to: '1199', target: 'bs:receivables' })
+ const correction = file('february-imbalance.csv', ['2026-02-01,1000,Bank,0.01,Unbalanced source journal'])
+ const cp = await h.kit('actuals', 'preview', correction)
+ const imported = await h.kit('actuals', 'commit', { ...correction, fingerprint: cp.fingerprint })
+ report = await h.get('/api/easel/actuals')
+ assert.equal(report.trialBalances[2].difference, 1)
+ assert.equal(report.trialBalances[2].balanced, false, 'classification completeness does not mean debit/credit equality')
+ assert.equal(report.months[2].balanced, true)
+ assert.deepEqual(report.trialBalances[1], january, 'later source imbalance preserves earlier trial balances')
+ await h.kit('actuals', 'undo', { id: imported.batch.id })
+ report = await h.get('/api/easel/actuals')
+ assert.equal(report.trialBalances.length, 2)
+ assert.deepEqual(report.trialBalances[1], january)
 })

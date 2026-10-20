@@ -1,3 +1,4 @@
+import { balanceTarget } from './balance-targets'
 // Reusable source-account decisions. Exact picks override reusable rules;
 // conflicting rule targets stay unresolved rather than choosing by accident.
 import { all, find, get, put, remove, choice, requireThat, text, uid, type Data, type State } from './types'
@@ -27,7 +28,7 @@ export function accountRules(c: Context, op: string, b: Data): Data | undefined 
  const from = text(b.from, match === 'range' ? 'First account' : match === 'prefix' ? 'Account prefix' : 'Source account type', 100)
  const to = match === 'range' ? text(b.to, 'Last account', 100) : ''
  if (match === 'range') requireThat(numeric(from) && numeric(to) && BigInt(from) <= BigInt(to), 'Account ranges need whole-number codes with the first no greater than the last')
- const target = b.target === 'excluded' || b.target === 'cash' ? b.target : get(c.s, 'line', b.target, 'planning line').id
+ const target = b.target === 'excluded' || balanceTarget(b.target) ? b.target : get(c.s, 'line', b.target, 'planning line').id
  put(c.s, 'account-rule', id, { match, from, to, target })
  c.activity.push({ action: op, record: id, detail: { match, from, to, target } })
  return get(c.s, 'account-rule', id)

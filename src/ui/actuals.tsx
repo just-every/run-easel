@@ -1,3 +1,5 @@
+import { BalanceActuals } from './balance-actuals'
+import { BALANCE_TARGETS } from '../easel/balance-targets'
 import { useEffect, useState } from 'react'
 import { FilePicker } from './file-picker'
 import type { Shared } from './app'
@@ -34,19 +36,20 @@ export function Actuals({ state, refresh }: Shared) {
   {reconciliation && <section className="card">
    <h2>Reconciliation</h2>
    <p><a href="/api/easel/actuals.xlsx" download>Download reconciliation (Excel)</a></p>
-   <p className="muted">Every imported amount is mapped to a planning line, excluded, held as cash, or shown here as unmapped. Amounts are debit-positive as imported.</p>
-   <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Unmapped', 'Revenue', 'Costs', 'Balanced', 'Mapping status']}>
-    {reconciliation.months.map((m: D) => <tr key={m.period}><td>{m.label}</td><td className="num">{m.rows}</td><td className="num">{money(m.imported, currency)}</td><td className="num">{money(m.mapped, currency)}</td><td className="num">{money(m.excluded, currency)}</td><td className="num">{money(m.cash, currency)}</td><td className="num">{money(m.unmapped, currency)}</td><td className="num">{money(m.revenue, currency)}</td><td className="num">{money(m.costs, currency)}</td><td>{m.balanced ? 'Yes' : 'No'}</td><td>{m.blocked ? `Blocked: ${[...m.unmappedAccounts, ...m.unmappedDepartments].join(', ')}` : 'Complete'}</td></tr>)}
+   <p className="muted">Every imported amount is mapped to a planning line, excluded, held as cash or another balance-sheet line, or shown here as unmapped. Amounts are debit-positive as imported.</p>
+   <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Other balance sheet', 'Unmapped', 'Revenue', 'Costs', 'Balanced', 'Mapping status']}>
+    {reconciliation.months.map((m: D) => <tr key={m.period}><td>{m.label}</td><td className="num">{m.rows}</td><td className="num">{money(m.imported, currency)}</td><td className="num">{money(m.mapped, currency)}</td><td className="num">{money(m.excluded, currency)}</td><td className="num">{money(m.cash, currency)}</td><td className="num">{money(m.balanceSheet, currency)}</td><td className="num">{money(m.unmapped, currency)}</td><td className="num">{money(m.revenue, currency)}</td><td className="num">{money(m.costs, currency)}</td><td>{m.balanced ? 'Yes' : 'No'}</td><td>{m.blocked ? `Blocked: ${[...m.unmappedAccounts, ...m.unmappedDepartments].join(', ')}` : 'Complete'}</td></tr>)}
    </Table>
    {reconciliation.unmapped.length > 0 && <p role="alert">Unmapped accounts: {reconciliation.unmapped.map((u: D) => `${u.period}: ${u.account} (${u.rows} rows; ${u.reason})`).join(', ')}</p>}
   </section>}
+  {reconciliation && <BalanceActuals trials={reconciliation.trialBalances} currency={currency} lines={state.lines} batches={state.batches} />}
   <WorkbookImport state={state} refresh={refresh} />
  </>
 }
 
 function MappingSelect({ state, account, save }: { state: D; account: D; save: (op: string, body: D) => void }) {
  return <select aria-label={`Map account ${account.account}`} defaultValue={account.target ?? ''} onChange={e => save('account-map', { account: account.account, target: e.target.value, name: account.name })}>
-  <option value="">Not mapped</option>{state.lines.map((l: D) => <option key={l.id} value={l.id}>{l.name}</option>)}<option value="excluded">Exclude (not planned)</option><option value="cash">Cash balance</option>
+  <option value="">Not mapped</option>{state.lines.map((l: D) => <option key={l.id} value={l.id}>{l.name}</option>)}<option value="excluded">Exclude (not planned)</option>{BALANCE_TARGETS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
  </select>
 }
 

@@ -1,3 +1,5 @@
+import { balanceActuals } from './balance-actuals'
+import { balanceTarget } from './balance-targets'
 // Accepted-row projections share the same reusable mapping resolver as preview.
 import { resolveAccount } from './account-rules'
 import type { ActualCell } from './engine'
@@ -36,8 +38,9 @@ export async function actualCells(db: D1Database, s: State, through?: string): P
 export async function reconciliation(db: D1Database, s: State) {
  const lineType = new Map(lines(s).map(l => [l.id, l.type]))
  const months = new Map<string, Data>(), unmapped = new Map<string, Data>()
- for (const g of await grouped(db)) {
-  const m = months.get(g.period) ?? { period: g.period, label: monthLabel(g.period), rows: 0, imported: 0, mapped: 0, excluded: 0, cash: 0, unmapped: 0, revenue: 0, costs: 0, blocked: false, unmappedAccounts: [] as string[], unmappedDepartments: [] as string[] }
+ const groups = await grouped(db)
+ for (const g of groups) {
+  const m = months.get(g.period) ?? { period: g.period, label: monthLabel(g.period), rows: 0, imported: 0, mapped: 0, excluded: 0, cash: 0, unmapped: 0, balanceSheet: 0, revenue: 0, costs: 0, blocked: false, unmappedAccounts: [] as string[], unmappedDepartments: [] as string[] }
   m.rows += g.rows; m.imported += g.amount
   const r = resolved(s, g), target = r.target
   if (r.blocked) {
@@ -49,11 +52,12 @@ export async function reconciliation(db: D1Database, s: State) {
    u.rows += g.rows; u.amount += g.amount; unmapped.set(key, u)
   } else if (target === 'excluded') m.excluded += g.amount
   else if (target === 'cash') m.cash += g.amount
+  else if (target && balanceTarget(target)) m.balanceSheet += g.amount
   else if (target && lineType.has(target)) { m.mapped += g.amount; if (lineType.get(target) === 'revenue') m.revenue -= g.amount; else m.costs += g.amount }
   months.set(g.period, m)
  }
- const list = [...months.values()].sort((a, b) => a.period.localeCompare(b.period)).map(m => ({ ...m, revenue: m.blocked ? null : m.revenue, costs: m.blocked ? null : m.costs, balanced: m.mapped + m.excluded + m.cash + m.unmapped === m.imported }))
- return { months: list, unmapped: [...unmapped.values()] }
+ const list: Data[] = [...months.values()].sort((a, b) => a.period.localeCompare(b.period)).map(m => ({ ...m, revenue: m.blocked ? null : m.revenue, costs: m.blocked ? null : m.costs, balanced: m.mapped + m.excluded + m.cash + m.balanceSheet + m.unmapped === m.imported }))
+ return { months: list, unmapped: [...unmapped.values()], trialBalances: balanceActuals(groups.map(g => ({ ...g, ...resolved(s, g), department: g.department })), list.map(m => m.period)) }
 }
 
 export async function cashBalance(db: D1Database, s: State, before: string) {

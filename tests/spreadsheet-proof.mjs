@@ -17,10 +17,12 @@ export function evaluate(sheet, address, overrides = new Map(), visiting = new S
  if (typeof value === 'number') return value
  assert.ok(value && typeof value === 'object' && 'formula' in value, `${identity} is numeric or a formula`)
  visiting.add(identity)
- let text = value.formula.replace(/^=/, '').replace(/SUM\(([A-Z]+)(\d+):([A-Z]+)(\d+)\)/g, (_, a, b, c, d) => {
-  const first = sheet.getCell(`${a}${b}`), last = sheet.getCell(`${c}${d}`)
+ let text = value.formula.replace(/^=/, '').replace(/SUM\((?:'([^']+)'!)?([A-Z]+)(\d+):([A-Z]+)(\d+)\)/g, (_, name, a, b, c, d) => {
+  const rangeSheet = name ? sheet.workbook.getWorksheet(name) : sheet
+  assert.ok(rangeSheet, `Referenced sheet ${name} exists`)
+  const first = rangeSheet.getCell(`${a}${b}`), last = rangeSheet.getCell(`${c}${d}`)
   let total = 0
-  for (let r = first.row; r <= last.row; r++) for (let col = first.col; col <= last.col; col++) total += evaluate(sheet, sheet.getCell(r, col).address, overrides, visiting)
+  for (let r = first.row; r <= last.row; r++) for (let col = first.col; col <= last.col; col++) total += evaluate(rangeSheet, rangeSheet.getCell(r, col).address, rangeSheet === sheet ? overrides : new Map(), visiting)
   return String(total)
  }).replace(/(?:'([^']+)'!)?(\$?[A-Z]+\$?\d+)/g, (_, name, ref) => {
   const target = name ? sheet.workbook.getWorksheet(name) : sheet
