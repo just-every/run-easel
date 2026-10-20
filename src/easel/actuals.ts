@@ -1,3 +1,4 @@
+import { balanceTarget } from './balance-targets'
 // The Excel-first CSV actuals kit: a general-ledger detail export (one row
 // per posted line) becomes accepted actuals through a no-write preview, a
 // reviewed commit into the import journal, explicit resume and undo.
@@ -131,8 +132,9 @@ export async function previewActuals(c: Context, b: Data) {
   const ruleIds = [...new Set(resolutions.flatMap((r: Data) => r.ruleIds))]
   const mappingStatus = target ? 'mapped' : resolutions.some((r: Data) => r.mappingStatus === 'ambiguous') || targets.length > 1 ? 'ambiguous' : 'unmapped'
   const type = target ? lineType.get(target) : undefined
+  const balance = target ? balanceTarget(target) : undefined
   const sign = type === 'revenue' && a.net > 0 ? 'This revenue account is net debit in this file: check the sign convention' : type && type !== 'revenue' && a.net < 0 ? 'This cost account is net credit in this file: check the sign convention' : ''
-  return { ...a, target, ruleIds, mappingStatus, sign }
+  return { ...a, target, ruleIds, mappingStatus, sign: balance && a.net * balance.sign < 0 ? 'Opposite to this balance-sheet line’s usual sign; review the source' : sign }
  })
  const departmentRows: Summary[] = [...departments.values()].sort((a, b) => a.source.localeCompare(b.source)).map(d => ({ ...d, department: find(s, 'department-map', d.source)?.department ?? null }))
  const unmappedAccounts = accountRows.filter(a => a.target === null).map(a => a.account)

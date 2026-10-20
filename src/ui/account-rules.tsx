@@ -1,10 +1,11 @@
+import { BALANCE_TARGETS } from '../easel/balance-targets'
 import { useState } from 'react'
 import { Action, command, Field, Form, Table, type D } from './shared'
 
 /** Existing settings controls, with matching semantics visible before saving. */
 export function AccountRules({ state, refresh }: { state: D; refresh: () => Promise<void> }) {
  const [match, setMatch] = useState('range')
- const targets = [...state.lines.map((l: D) => ({ value: l.id, label: l.name })), { value: 'excluded', label: 'Exclude (not planned)' }, { value: 'cash', label: 'Cash balance' }]
+ const targets = [...state.lines.map((l: D) => ({ value: l.id, label: l.name })), { value: 'excluded', label: 'Exclude (not planned)' }, ...BALANCE_TARGETS]
  const target = (id: string) => targets.find(t => t.value === id)?.label ?? id
  return <section className="card">
   <h2>Reusable account rules</h2>

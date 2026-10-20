@@ -1,3 +1,4 @@
+import { balanceTarget } from './balance-targets'
 // Installation-level commands: the planning calendar, departments, planning
 // lines, people and their roles, and how source accounts map to lines.
 import { accountRules } from './account-rules'
@@ -111,7 +112,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
  if (op === 'account-map') {
   requireFinance(x)
   const account = text(b.account, 'Source account', 100)
-  const target = b.target === 'excluded' || b.target === 'cash' ? b.target : get(s, 'line', b.target, 'planning line').id
+  const target = b.target === 'excluded' || balanceTarget(b.target) ? b.target : get(s, 'line', b.target, 'planning line').id
   put(s, 'account-map', account, { target, name: typeof b.name === 'string' ? b.name.slice(0, 200) : find(s, 'account-map', account)?.name ?? '' })
   c.activity.push({ action: op, record: account, detail: { target } })
   return get(s, 'account-map', account)

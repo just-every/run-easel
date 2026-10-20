@@ -1,3 +1,4 @@
+import { balanceTarget } from '../easel/balance-targets'
 import { fiscalMonths, monthLabel, type D } from './shared'
 
 const events: Record<string, string> = {
@@ -56,7 +57,7 @@ export function activityDetail(state: D, row: D) {
  if (d.role) parts.push(`Role: ${safeText(d.role)}`)
  for (const [key, label, collection, missing] of [['department', 'Department', 'departments', 'Removed department'], ['line', 'Planning line', 'lines', 'Removed line'], ['from', 'From', 'scenarios', 'Removed scenario'], ['proposal', 'Proposal', 'scenarios', 'Removed proposal']]) if (d[key]) parts.push(`${label}: ${named(state, collection, d[key], missing)}`)
  if (d.departments) parts.push(`Departments: ${d.departments.map((id: string) => named(state, 'departments', id, 'Removed department')).join(', ')}`)
- if (d.target) parts.push(`Maps to: ${d.target === 'excluded' ? 'Excluded' : d.target === 'cash' ? 'Cash balance' : named(state, 'lines', d.target, 'Removed line')}`)
+ if (d.target) parts.push(`Maps to: ${d.target === 'excluded' ? 'Excluded' : balanceTarget(d.target) ? balanceTarget(d.target)!.label : named(state, 'lines', d.target, 'Removed line')}`)
  if (d.basis) parts.push(`Opening cash: ${d.basis === 'imported' ? 'Imported from actuals' : 'Estimate'}`)
  if (d.fiscalYearStart) parts.push(`Fiscal year starts ${fiscalMonths[Number(d.fiscalYearStart) - 1]?.label}`)
  for (const [key, label] of [['month', 'Month'], ['planStart', 'First plan month']]) if (d[key]) parts.push(`${label}: ${monthLabel(d[key])}`)
