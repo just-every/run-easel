@@ -87,9 +87,17 @@ export function PlanningGrid({ state, view, refresh }: Props) {
  }
  const calculated = new Map<string, D>()
  for (const cell of view.calculation.cells as D[]) {
-  const key = `${cell.line}:${cell.department}`
-  if (!calculated.has(key)) calculated.set(key, { line: cell.line, department: cell.department, cells: {} })
-  calculated.get(key)!.cells[cell.month] = cell
+  const partitions = new Map<string, D>()
+  for (const source of cell.sources) {
+   const dimensions = source.dimensions ?? {}, tags = JSON.stringify(Object.entries(dimensions).sort(([a], [b]) => a.localeCompare(b)))
+   if (!partitions.has(tags)) partitions.set(tags, { ...cell, dimensions, sources: [], amount: 0 })
+   const part = partitions.get(tags)!; part.sources.push(source); part.amount += source.amount
+  }
+  for (const [tags, part] of partitions) {
+   const key = `${cell.line}:${cell.department}:${tags}`
+   if (!calculated.has(key)) calculated.set(key, { line: cell.line, department: cell.department, dimensions: part.dimensions, cells: {} })
+   calculated.get(key)!.cells[cell.month] = part
+  }
  }
  const chosenRow = schedules.find(row => row.id === chosen?.schedule)
  return <section className="card planning-grid" aria-label="Planning grid" data-revision={view.scenario.revision}>
@@ -159,7 +167,7 @@ export function PlanningGrid({ state, view, refresh }: Props) {
   <details><summary>Calculated cells and their traces (read-only)</summary>
    <p className="muted">Driver, formula and scenario totals are calculated. Edit their source assumptions to change them.</p>
    <Table caption="Read-only calculated planning cells" className="planning-grid-table" heads={['Line / department', ...months.map(monthLabel)]}>
-    {[...calculated.entries()].map(([key, row]) => <tr key={key}><th scope="row">{named(lines, row.line)}<small>{named(departments, row.department)}</small></th>{months.map(month => {
+    {[...calculated.entries()].map(([key, row]) => <tr key={key}><th scope="row">{named(lines, row.line)}<small>{named(departments, row.department)}</small>{Object.entries(row.dimensions ?? {}).map(([dimension, member]) => <small key={dimension}>{view.dimensionStructure?.dimension.find((d: D) => d.id === dimension)?.name}: {view.dimensionStructure?.['dimension-member'].find((m: D) => m.id === member)?.name}</small>)}</th>{months.map(month => {
      const cell = row.cells[month]
      return <td key={month}>{cell ? <><span>{money(cell.amount, currency)}</span><details><summary>Trace {monthLabel(month)}</summary>{cell.sources.map((source: D, index: number) => <p key={index}>{source.trace}</p>)}</details></> : 'No calculated cell'}</td>
     })}</tr>)}

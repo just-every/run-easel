@@ -86,6 +86,18 @@ try {
     const rollupRow = dimCard.getByRole('row').filter({ has: page.getByRole('rowheader', { name: new RegExp(rootMember.name) }) })
     assert.ok((await rollupRow.innerText()).includes(money(rootMember.amounts[view.calculation.months[0]])))
     await shoot(page, dimCard, `${starter}-dimensions-${width}`)
+    const grid = card(page, 'Planning grid')
+    await grid.getByText('Calculated cells and their traces (read-only)', { exact: true }).click()
+    const dimension = dimensionReport.dimensions[0], leaf = dimension.members.find(m => m.parent && !m.rollup)
+    const calculated = grid.getByRole('table', { name: 'Read-only calculated planning cells', exact: true })
+    const firstLine = view.lines.find(line => dimensionReport.lineTotals[line.id]?.[view.calculation.months[0]])
+    const gridRow = calculated.getByRole('row').filter({ has: page.getByRole('rowheader', { name: new RegExp(firstLine.name) }) }).first()
+    assert.ok((await gridRow.innerText()).includes(`${dimension.name}: ${leaf.name}`))
+    const sourceCell = view.calculation.cells.find(cell => cell.line === firstLine.id && cell.month === view.calculation.months[0])
+    assert.ok((await gridRow.innerText()).includes(money(sourceCell.amount)))
+    await shoot(page, grid, `${starter}-dimension-grid-${width}`)
+    await grid.getByText('Calculated cells and their traces (read-only)', { exact: true }).click()
+
     if (['saas','wholesale'].includes(starter)) {
      const expense = view.inputs.expense.find(e => e.kind === (starter === 'saas' ? 'acquisition' : 'inventory'))
      const row = card(page,'Expenses').getByRole('row').filter({ has: page.getByRole('cell', { name: expense.name, exact: true }) })
