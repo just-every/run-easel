@@ -1,0 +1,82 @@
+import assert from 'node:assert/strict'
+import { mkdir, rm } from 'node:fs/promises'
+import { resolve, join } from 'node:path'
+import { command, fresh, freePort, start } from './browser-runtime.mjs'
+import { api, noOverflow, session, settle } from './browser-journey.mjs'
+import { proveFormulas, readWorkbook } from './spreadsheet-proof.mjs'
+const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
+const root = await fresh(), evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-dimensions')
+await mkdir(evidence, { recursive: true })
+let server, browser, finance
+const section = (page, heading) => page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
+try {
+ const port = await freePort(); await command(root, ['setup', '--owner-email', 'owner@example.test', '--port', String(port)]); server = await start(root, port)
+ browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
+ finance = await session(browser, root, server.origin, 'owner', 1440)
+ const { page, context } = finance, cmd = (op, b) => api(context, server.origin, `command/${op}`, b)
+ await cmd('workspace', { name: 'Ridgeline Studio', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const department = await cmd('department', { name: 'Sales and marketing' })
+ const line = await cmd('line', { name: 'Advertising', type: 'operating-expense' })
+ const scenario = (await api(context, server.origin, 'state')).scenarios[0]
+ const nav = async name => { await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name, exact: true }).click(); await settle(page) }
+ const save = async (op, click) => { const pending = page.waitForResponse(r => r.url().endsWith(`/command/${op}`)); await click(); const response = await pending; assert.equal(response.status(), 200, await response.text()); await settle(page); return response.json() }
+ await page.reload(); await page.getByRole('navigation', { name: 'Easel' }).waitFor()
+ for (const width of [1440, 390]) {
+  await page.setViewportSize({ width, height: 1000 }); await nav('Settings')
+  const settings = section(page, 'Dimensions and account hierarchy')
+  await settings.getByLabel('Dimension name', { exact: true }).fill(`Region ${width}`)
+  const dimension = await save('dimension', () => settings.getByRole('button', { name: 'Add dimension', exact: true }).click())
+  await settings.getByLabel('Manage dimension', { exact: true }).selectOption(dimension.id)
+  await settings.getByLabel('Member name', { exact: true }).fill('Domestic')
+  const domestic = await save('dimension-member', () => settings.getByRole('button', { name: 'Save dimension member', exact: true }).click())
+  await settings.getByLabel('Member name', { exact: true }).fill('East')
+  await settings.getByLabel('Parent member', { exact: true }).selectOption(domestic.id)
+  const east = await save('dimension-member', () => settings.getByRole('button', { name: 'Save dimension member', exact: true }).click())
+  await settings.getByLabel('Account group name', { exact: true }).fill(`Operating expense ${width}`)
+  await settings.getByLabel('Account group type', { exact: true }).selectOption('operating-expense')
+  const operating = await save('line-group', () => settings.getByRole('button', { name: 'Save account group', exact: true }).click())
+  await settings.getByLabel('Planning line', { exact: true }).selectOption(line.id)
+  await settings.getByLabel('Line account group', { exact: true }).selectOption(operating.id)
+  await save('line-hierarchy', () => settings.getByRole('button', { name: 'Assign line to account group', exact: true }).click())
+  await settings.getByLabel('Source dimension kind', { exact: true }).selectOption('class')
+  await settings.getByLabel('Source member value', { exact: true }).fill(`East-${width}`)
+  await settings.getByLabel('Mapped member', { exact: true }).selectOption(east.id)
+  await save('dimension-map', () => settings.getByRole('button', { name: 'Save source dimension rule', exact: true }).click())
+  await noOverflow(page, `Dimension settings ${width}`)
+  await settings.screenshot({ path: join(evidence, `dimensions-settings-${width}.png`) })
+  await nav('Plan'); await page.getByLabel('Scenario', { exact: true }).selectOption(scenario.id); await settle(page)
+  const monthly = section(page, 'Monthly budget inputs')
+  await monthly.getByText('Add an entered monthly schedule', { exact: true }).click()
+  await monthly.getByLabel('Monthly schedule name', { exact: true }).fill(`East advertising ${width}`)
+  await monthly.getByLabel('Monthly schedule line', { exact: true }).selectOption(line.id)
+  await monthly.getByLabel('Monthly schedule department', { exact: true }).selectOption(department.id)
+  await monthly.getByLabel(`Dimension: Region ${width}`, { exact: true }).selectOption(east.id)
+  await monthly.getByLabel('Jan 2026 amount', { exact: true }).last().fill('12500.01')
+  await monthly.getByLabel('Feb 2026 amount', { exact: true }).last().fill('14000.02')
+  await noOverflow(page, `Dimension entry ${width}`)
+  await monthly.screenshot({ path: join(evidence, `dimension-entry-${width}.png`) })
+  await save('schedule', () => monthly.getByRole('button', { name: 'Add monthly schedule', exact: true }).click())
+  const reportCard = section(page, 'Dimension planning and reports')
+  await reportCard.getByLabel('Report dimension', { exact: true }).selectOption(dimension.id)
+  await reportCard.getByRole('table', { name: 'Dimension rollups', exact: true }).waitFor(); await settle(page)
+  const report = await api(context, server.origin, `dimension-report/${scenario.id}?dimension=${dimension.id}`)
+  const regional = report.dimensions[0].members.find(m => m.id === domestic.id)
+  assert.equal(regional.amounts['2026-01'], 1250001); assert.equal(regional.amounts['2026-02'], 1400002)
+  const row = reportCard.getByRole('row').filter({ has: page.getByRole('rowheader', { name: `Region ${width}: Domestic (rollup)`, exact: true }) })
+  assert.ok((await row.innerText()).includes('$12,500.01'))
+  await noOverflow(page, `Dimension reports ${width}`)
+  await reportCard.screenshot({ path: join(evidence, `dimension-report-${width}.png`) })
+  const input = await api(context, server.origin, `scenario/${scenario.id}`)
+  const schedule = input.inputs.schedule.find(r => r.name === `East advertising ${width}`)
+  await reportCard.getByLabel('Input to classify', { exact: true }).selectOption(`schedule|${schedule.id}`)
+  for (const d of input.dimensionStructure.dimension) await reportCard.getByLabel(`Dimension: ${d.name}`, { exact: true }).selectOption(d.id === dimension.id ? east.id : '')
+  await save('input-dimensions', () => reportCard.getByRole('button', { name: 'Save input dimensions', exact: true }).click())
+  const grid = section(page, 'Planning grid')
+  assert.ok((await grid.innerText()).includes(`Region ${width}: East`))
+  await grid.screenshot({ path: join(evidence, `dimension-grid-${width}.png`) })
+  const bytes = await context.request.get(`${server.origin}/api/easel/dimension-report/${scenario.id}/document.xlsx?dimension=${dimension.id}`)
+  assert.equal(bytes.status(), 200); proveFormulas(await readWorkbook(await bytes.body()))
+  console.log(`Custom dimensions ${width}: real settings, hierarchy, mapping, tagged monthly input, rollup parity, classification, grid and formula Excel passed`)
+ }
+} catch (error) { if (finance?.page && !finance.page.isClosed()) await finance.page.screenshot({ path: join(evidence, 'failed.png'), fullPage: true }).catch(() => {}); throw error }
+finally { await browser?.close(); await server?.close(); await rm(root, { recursive: true, force: true }) }
