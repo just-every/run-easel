@@ -1,0 +1,101 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { harness } from './harness.mjs'
+import { readWorkbook, proveFormulas, evaluate } from './spreadsheet-proof.mjs'
+
+// REPORT-001: one real user flow covers saved numeric comparisons and the
+// existing dashboard share boundary. No browser report builder is claimed.
+test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Report comparisons', planStart: '2026-10', fiscalYearStart: 10, horizon: 24 })
+ const sales = await h.command('department', { name: 'Sales' })
+ const ops = await h.command('department', { name: 'Operations' })
+ const revenue = await h.command('line', { name: 'Retainers', type: 'revenue' })
+ const payroll = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ const months = Array.from({ length: 24 }, (_, i) => `${2026 + Math.floor((i + 9) / 12)}-${String((i + 9) % 12 + 1).padStart(2, '0')}`)
+ await h.command('schedule', { scenario: budget.id, name: 'Retainers plan', line: revenue.id, department: sales.id, values: Object.fromEntries(months.map(m => [m, '100.01'])) })
+ await h.command('position', { scenario: budget.id, title: 'Private salary role', holder: 'Private pay sentinel', department: ops.id, line: payroll.id, start: '2026-10', annualSalary: '120000', onCostPercent: '0' })
+ await h.command('account-map', { account: '400', target: revenue.id })
+ await h.command('account-map', { account: '600', target: payroll.id })
+ await h.command('department-map', { source: 'Sales', department: sales.id })
+ await h.command('department-map', { source: 'Operations', department: ops.id })
+ const ledgerMonths = Array.from({ length: 24 }, (_, i) => `${2025 + Math.floor((i + 3) / 12)}-${String((i + 3) % 12 + 1).padStart(2, '0')}`)
+ const source = { filename: 'report-history.csv', dateFormat: 'YYYY-MM-DD', csv: 'Date,Account,Department,Amount\n' + ledgerMonths.flatMap((m, i) => [`${m}-01,400,Sales,-${i < 12 ? '80.00' : '120.02'}`, `${m}-01,600,Operations,10000.00`]).join('\n') + '\n' }
+ await h.kit('actuals', 'commit', { ...source, fingerprint: (await h.kit('actuals', 'preview', source)).fingerprint })
+ const board = await h.person('board@example.test', 'viewer')
+ const manager = await h.person('sales@example.test', 'contributor', [sales.id], false)
+ let prior = await h.get(`/api/easel/scenario/${budget.id}`)
+ const { forecast } = await h.command('approve-budget', { scenario: budget.id, revision: prior.scenario.revision })
+ const frozen = await h.get(`/api/easel/scenario/${budget.id}`)
+ const extra = await h.command('schedule', { scenario: forecast.id, name: 'Revised plan', line: revenue.id, department: sales.id, values: { '2026-10': '30.01' } })
+ const body = { name: 'Sales actual against budget', scenario: budget.id, audience: 'board', department: sales.id,
+  widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'department', period: 'quarter', through: '2027-03', lines: [revenue.id], comparison: forecast.id, highlightBps: 1000 } }
+ let d = await h.command('dashboard-save', body)
+ const path = `/api/easel/dashboards/${d.id}/report`
+ const read = (cookie = h.owner) => h.get(path, cookie)
+ let result = await read(), shared = await read(board)
+ assert.deepEqual(shared, result)
+ assert.equal(shared.rows.length, 4)
+ const first = result.rows.find(r => r.period === 'FY2027 Q1')
+ assert.equal(first.name, 'Sales'); assert.deepEqual(first.months, ['2026-10', '2026-11', '2026-12'])
+ assert.equal(first.actual, 36006); assert.equal(first.budget, 30003); assert.equal(first.comparison, 33004)
+ assert.equal(first.priorYearActual, 24000); assert.equal(first.yoy, 12006); assert.equal(first.yoyBps, 5003)
+ assert.equal(first.variance, 6003); assert.equal(first.varianceBps, 2001); assert.equal(first.highlight, true)
+ const ytd = result.rows.find(r => r.period === 'YTD'), ttm = result.rows.find(r => r.period === 'TTM')
+ assert.equal(ytd.actual, 72012); assert.equal(ytd.budget, 60006); assert.equal(ytd.priorYearActual, 48000)
+ assert.equal(ttm.actual, 144024); assert.equal(ttm.budget, null, 'TTM outside plan horizon is unavailable')
+ assert.equal(ttm.priorYearActual, 96000)
+ assert.doesNotMatch(JSON.stringify(shared), /Private pay sentinel|Private salary role|annualSalary|sources|originId/)
+ await h.get(path, manager, 404)
+ await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision - 1 }, h.owner, 409)
+ await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision, report: { ...body.report, through: '2030-01' } }, h.owner, 409)
+ assert.deepEqual(await read(), result, 'Invalid report edit is atomic')
+ // An ordinary dashboard edit preserves the saved numeric report.
+ const { report: ignored, ...ordinary } = body
+ d = await h.command('dashboard-save', { ...ordinary, id: d.id, revision: d.revision })
+ assert.deepEqual(await read(), result)
+ const download = async (who = board) => h.mf.dispatchFetch(h.origin + `/api/easel/dashboards/${d.id}/report.xlsx`, { headers: { cookie: who } })
+ let response = await download(); assert.equal(response.status, 200)
+ const book = await readWorkbook(await response.arrayBuffer()); proveFormulas(book)
+ const sheet = book.getWorksheet('Saved report')
+ assert.equal(evaluate(sheet, 'F3'), 6003); assert.equal(evaluate(sheet, 'G3'), 2001); assert.equal(evaluate(sheet, 'J3'), 5003)
+ assert.equal(sheet.getCell('D6').value, null, 'Unavailable TTM plan remains blank in Excel')
+ assert.doesNotMatch(JSON.stringify(book.model), /Private pay sentinel|Private salary role|annualSalary/)
+ // Closed and missing data are explicit, and formula percentages never divide by zero.
+ d = await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision, department: '', report: { ...body.report, row: 'line', lines: [revenue.id, payroll.id], period: 'month', through: '2026-10' } })
+ result = await read(); assert.equal(result.rows.find(r => r.name === 'Payroll' && r.period === '2026-10').actual, 1000000)
+ assert.doesNotMatch(JSON.stringify(result), /Private pay sentinel|Private salary role|annualSalary/)
+ await h.command('account-map', { account: '400', target: '' }, h.owner, 400)
+ await h.command('account-map', { account: '400', target: 'excluded' })
+ assert.equal((await read()).rows.find(r => r.name === 'Retainers' && r.period === '2026-10').actual, 0)
+ await h.command('account-map', { account: '400', target: revenue.id })
+ const rule = await h.command('account-rule', { match: 'prefix', from: '499', target: revenue.id })
+ const pending = { filename: 'later.csv', dateFormat: 'YYYY-MM-DD', csv: 'Date,Account,Department,Amount\n2026-10-10,499,Sales,0\n' }
+ await h.kit('actuals', 'commit', { ...pending, fingerprint: (await h.kit('actuals', 'preview', pending)).fingerprint })
+ await h.command('account-rule-delete', { id: rule.id })
+ const blocked = await read()
+ assert.ok(blocked.blockedMonths.includes('2026-10'))
+ assert.ok(blocked.rows.filter(r => r.period === '2026-10').every(r => r.actual === null && r.variance === null && !r.highlight))
+ await h.command('account-rule', { match: 'prefix', from: '499', target: revenue.id })
+ d = await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision, report: { ...body.report, through: '2027-12' } })
+ const missing = await read()
+ assert.ok(missing.missingMonths.includes('2027-12'))
+ assert.equal(missing.rows.find(r => r.period === 'TTM').actual, null)
+ // Fiscal-year rollups use elapsed periods; zero denominators stay unavailable.
+ d = await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision, report: { ...body.report, period: 'year', lines: [payroll.id] } })
+ const zero = await read()
+ const annual = zero.rows.find(r => r.period === 'FY2027')
+ assert.deepEqual(annual.months, ['2026-10', '2026-11', '2026-12', '2027-01', '2027-02', '2027-03'])
+ assert.equal(annual.actual, 0); assert.equal(annual.budget, 0); assert.equal(annual.priorYearActual, 0)
+ assert.equal(annual.varianceBps, null); assert.equal(annual.yoyBps, null); assert.equal(annual.highlight, false)
+ const zeroResponse = await download()
+ const zeroSheet = (await readWorkbook(await zeroResponse.arrayBuffer())).getWorksheet('Saved report')
+ assert.equal(zeroSheet.getCell('G3').value, null); assert.equal(zeroSheet.getCell('J3').value, null)
+ // Unsharing removes both JSON and file access immediately; source versions stay intact.
+ d = await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision, audience: 'private' })
+ await h.get(path, board, 404); assert.equal((await download()).status, 404)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${budget.id}`), frozen)
+ await h.command('dashboard-delete', { id: d.id, revision: d.revision })
+ await h.get(path, h.owner, 404)
+})

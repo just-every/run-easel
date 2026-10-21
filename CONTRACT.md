@@ -1041,7 +1041,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `a7c7a01d9ec58ad6d8c9a488b752279060b81640` (21 October 2026).
+Judged from the code and tests at commit `a59bd696880ac66028ca57ef0f41664b53d28dd5` (21 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
@@ -1118,7 +1118,7 @@ Judged from the code and tests at commit `a7c7a01d9ec58ad6d8c9a488b752279060b816
 | `CYCLE-004` | Private and shared scenarios | target | done | `tests/sandboxes.test.mjs` `tests/sandboxes-browser.mjs` | None for current named-person doors; ACCESS-001 inherits group shares |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | done | `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs` | Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths |
-| `REPORT-001` | Report builder | target | partial | `src/ui/overview.tsx` `src/easel/views.ts` | Fixed overview, scenario and variance views ship; user-built and saved reports, year-to-date, trailing-twelve-month, prior-year and year-over-year columns, filters, highlighting and scheduled email delivery are missing |
+| `REPORT-001` | Report builder | target | partial | `src/easel/saved-reports.ts` `tests/saved-reports.test.mjs` | Saved aggregate department/line reports through dashboard/API doors: fiscal month/quarter/year, version comparison, YTD/TTM, prior-year actuals, exact variance/YoY, department/line filters, highlight flags and formula Excel ship under existing dashboard audiences. Remaining: browser report builder, custom dimensions/hierarchies, permitted-member authoring, dashboard tables/charts over reports and named-recipient scheduled email delivery |
 | `REPORT-002` | Dashboards | target | done | `src/easel/dashboards.ts` `tests/dashboards.test.mjs` `tests/dashboards-browser.mjs` |  |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |
 | `REPORT-004` | Linked PowerPoint and Word reporting | target | missing |  | No PowerPoint or Word add-ins |

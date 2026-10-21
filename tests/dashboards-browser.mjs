@@ -84,6 +84,8 @@ try {
   assert.ok(definition, 'UI-created dashboard is persisted')
   assert.equal(definition.audience, 'board')
   assert.equal(definition.scenario, fixture.budget.id)
+  // REPORT-001 saved numeric definitions share the existing dashboard audience.
+  await call('command/dashboard-save', { ...definition, report: { row: 'department', period: 'quarter', through: '2026-03', lines: [fixture.revenue.id], highlightBps: 1000 } })
   await page.reload(); await tab(page)
   await page.getByLabel('Dashboard', { exact: true }).selectOption(definition.id)
   await settle(page); await card(page, name).waitFor()
@@ -102,6 +104,18 @@ try {
   privateDetailsAbsent(await bp.locator('body').innerText())
   assert.equal(await bp.getByRole('button', { name: 'Edit and share', exact: true }).count(), 0)
   await shoot(bp, 'board', width)
+
+  const [reportDownload] = await Promise.all([bp.waitForEvent('download'), bp.getByRole('link', { name: 'Download saved report (Excel)', exact: true }).click()])
+  assert.equal(await reportDownload.failure(), null)
+  const reportBook = await readWorkbook(await readFile(await reportDownload.path()))
+  const reportSheet = reportBook.getWorksheet('Saved report')
+  const salesQuarter = reportSheet.getRows(3, reportSheet.rowCount - 2).find(row => row.getCell(1).value === 'Sales' && row.getCell(2).value === 'FY2026 Q1')
+  assert.ok(salesQuarter)
+  assert.equal(salesQuarter.getCell(4).value, 4500000, 'REPORT-001 department quarter equals the three planned months')
+  assert.equal(salesQuarter.getCell(3).value, null, 'REPORT-001 no actuals is unavailable, never zero')
+  privateDetailsAbsent(JSON.stringify(reportBook.model))
+  const report = await api(board.context, server.origin, `dashboards/${definition.id}/report`)
+  assert.equal(report.rows.find(r => r.name === 'Sales' && r.period === 'YTD').budget, 4500000)
 
   const [download] = await Promise.all([bp.waitForEvent('download'), bp.getByRole('link', { name: 'Download dashboard (Excel)', exact: true }).click()])
   assert.equal(await download.failure(), null)
@@ -148,11 +162,12 @@ try {
   await card(bp, name).waitFor({ state: 'detached' })
   await settle(bp)
   assert.equal((await api(board.context, server.origin, 'dashboards')).some(d => d.id === definition.id), false)
-  for (const suffix of ['', '/document.xlsx']) {
+  for (const suffix of ['', '/document.xlsx', '/report', '/report.xlsx']) {
    const denied = await board.context.request.get(`${server.origin}/api/easel/dashboards/${definition.id}${suffix}`)
    assert.equal(denied.status(), 404, 'Revoked dashboard and workbook access are checked server-side')
   }
   assert.equal(await bp.getByRole('link', { name: 'Download dashboard (Excel)', exact: true }).count(), 0)
+  assert.equal(await bp.getByRole('link', { name: 'Download saved report (Excel)', exact: true }).count(), 0)
   await shoot(bp, 'board-revoked', width)
   await board.context.close()
   console.log(`REPORT-002 ${width}: UI dashboard, aggregate metrics, Excel formulas, personal layout persistence and access revocation passed`)

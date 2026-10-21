@@ -401,3 +401,45 @@ PEOPLE-004 uses one explicit merit increase and one explicitly dated salary bonu
 A department has an entered on-cost default. Blank or omitted position on-costs capture that department rate at each position save; an explicit percentage, including zero, overrides it. Changing a department default alone changes no existing position or frozen arithmetic. A commission quota is entered in cents per accounting period. Attainment is cumulative explicitly linked contract bookings / quota, displayed as once-rounded basis points; zero quota disables attainment and requires no tiers. Up to twenty increasing attainment thresholds and increasing commission rates define marginal accelerators: only booking cents above a threshold earn that tier's rate, without retroactive changes to earlier cents. Threshold cents are quota × attainment basis points / 10,000 once half-away rounded, and must be positive and distinct. Same-period contracts consume quota in ascending stable origin-ID order. Each contract sums exact cent × rate numerators over its marginal slices, then rounds once to cents; without tiers the existing contract × rate rule is unchanged. Quota resets each accounting period. Every trace names the quota, attainment, slices and resulting planning estimate; employer taxes, live pay filtering, proposals, immutable captures and formula exports use the same result. REV-001 inherits these quota/attainment/accelerator rules for weighted pipeline bookings before shipping. No eligibility, deferral, payment, payroll execution or statutory certification is inferred.
 
 `GET /api/easel/weekly-cash/:scenario?start=YYYY-MM-DD` reads thirteen seven-day planned cash windows and accounting-period-end reconciliation under the current scenario read grant. `weekly-cash-override {scenario, start, adjustment, note}` is a finance-only working-scenario command: signed decimal adjustment replaces that week’s prior override, settles on its seventh day and carries forward. Monthly forecast and frozen versions remain unchanged. The view labels undated assumptions and unavailable horizon/version coverage; it is not a bank or open-item feed.
+
+### Saved numeric reports (REPORT-001, partial)
+
+The existing `dashboard-save` command accepts an optional `report` definition.
+Its creator, revision, source scenario, department filter and audience keep the
+existing dashboard rules; a personal layout never changes a report definition.
+Omitting `report` preserves it on an ordinary dashboard edit; `null` removes it.
+
+```json
+{
+  "row": "department",
+  "period": "quarter",
+  "through": "2027-03",
+  "lines": ["<line id>"],
+  "comparison": "<optional company version id>",
+  "highlightBps": 1000
+}
+```
+
+`row` is `department` or `line`; `period` is `month`, `quarter` or `year`.
+Read `GET /api/easel/dashboards/:id/report` or download
+`GET /api/easel/dashboards/:id/report.xlsx`. Both recheck current dashboard
+and source-version access and return aggregate cells only, never inputs or
+source traces. The source version's values occupy the `budget` column; the
+optional version occupies `comparison`. Versions must share currency and
+accounting periods. Actuals use the current reconciled ledger; frozen plan
+values retain their captured arithmetic.
+
+Periods end at the inclusive `through` key. Quarter/year groups and YTD use
+the source version's fiscal calendar; TTM is the twelve accounting periods
+ending at `through`, and prior-year actuals use the same keys minus twelve.
+A complete accepted period without a selected row has an observed zero; a
+missing or blocked actual period, or a plan period outside its horizon, makes
+the corresponding aggregate unavailable (`null`, blank in Excel). Variance
+is actual minus source version. YoY is actual minus prior-year actual.
+Percentages are integer basis points, `(difference * 10000) / baseline`,
+rounded once half away from zero; a zero baseline is unavailable. A highlight
+flag means the absolute variance percentage is strictly above `highlightBps`.
+
+The browser builder, report-driven dashboard widgets, custom dimensions and
+hierarchies, permitted-member authoring and scheduled email delivery remain
+unfinished; these API reports do not mark REPORT-001 done.

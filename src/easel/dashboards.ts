@@ -1,3 +1,4 @@
+import { reportDefinition, savedReport } from './saved-reports'
 import { workingCalculation } from './calculation'
 import { requireFinance, requireMember } from './access'
 import { canSeeDashboard } from './dashboard-access'
@@ -82,8 +83,10 @@ export async function dashboards(c: Context, op: string, b: Data): Promise<Data 
  const department = b.department ? get(c.s, 'department', b.department).id : ''
  requireThat(audience !== 'department' || department, 'A department audience needs a department')
  const id = prior?.id ?? uid()
- const value = { name: text(b.name, 'Dashboard name'), scenario: sc.id, department, audience, widgets: widgets(b.widgets), revision: (prior?.revision ?? 0) + 1, createdBy: prior?.createdBy ?? c.x.actor.email, createdAt: prior?.createdAt ?? c.now, updatedAt: c.now }
+ const value = { name: text(b.name, 'Dashboard name'), scenario: sc.id, department, audience, widgets: widgets(b.widgets), revision: (prior?.revision ?? 0) + 1, createdBy: prior?.createdBy ?? c.x.actor.email, createdAt: prior?.createdAt ?? c.now, updatedAt: c.now, report: b.report === undefined ? prior?.report ?? null : reportDefinition(c, b.report) }
  put(c.s, 'dashboard', id, value)
+ // Validate source versions, horizon and filters before the atomic API save.
+ if (value.report) await savedReport(c, id)
  c.activity.push({ action: op, record: id, scenario: sc.id, detail: { createdBy: value.createdBy, audience, department } })
  return get(c.s, 'dashboard', id)
 }

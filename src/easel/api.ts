@@ -1,3 +1,4 @@
+import { savedReport, savedReportWorkbook } from './saved-reports'
 import { weeklyCashWorkbook } from './weekly-cash-workbook'
 import { weeklyCash, weeklyCashCommand } from './weekly-cash'
 import { publicLedger } from './ledger-public'
@@ -211,6 +212,12 @@ api.get('/api/easel/department-statements/:id/document.xlsx', async c => {
 })
 
 api.get('/api/easel/dashboards', c => read(c, async ctx => dashboardList(ctx)))
+api.get('/api/easel/dashboards/:id/report', c => read(c, ctx => savedReport(ctx, c.req.param('id'))))
+api.get('/api/easel/dashboards/:id/report.xlsx', async c => {
+ const ctx = await open(c), view = await savedReport(ctx, c.req.param('id'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(savedReportWorkbook(view), 'easel-saved-report')
+})
 api.get('/api/easel/dashboards/:id', c => read(c, ctx => dashboardView(ctx, c.req.param('id'))))
 api.get('/api/easel/dashboards/:id/document.xlsx', async c => {
  const ctx = await open(c), view = await dashboardView(ctx, c.req.param('id'))
