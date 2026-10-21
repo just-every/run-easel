@@ -646,7 +646,11 @@ Before this capability ships, REPORT-001 inherits US-001: schedules use the save
 
 *Acceptance:* in the browser at 1440, build a department-by-quarter report of actual against budget with year-to-date, trailing-twelve-month, prior-year actual and year-over-year % columns, a department filter and a highlight rule; save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail. Year-to-date and trailing-twelve-month cells equal the sum of their months, and year-over-year % equals (actual − prior-year actual) ÷ prior-year actual, to the cent. With a mail fake and a fake clock, schedule the report weekly for Monday 8:00 Eastern to finance and a viewer: on Monday each receives one email, and the viewer's copy omits restricted detail.
 
-*Status:* partial.
+Current report semantics: money is integer minor units; percentage changes are half-away rounded basis points, unavailable when the denominator is zero. Months/quarters/years, fiscal YTD and TTM sum the selected source cells; missing or blocked actuals and out-of-horizon version months stay unavailable. Rows may use departments, lines, custom members including descendants, or account hierarchies; overlapping rollups are labelled non-additive. Reports compare the current source with selected official working/frozen versions and retain the captured structure of frozen versions. Native finance and contributors build reports under their existing authority; contributors author only their own current department and private/department audiences, and only the creator changes the definition. Every reader and export uses current scenario, department, dimension and Pay detail filtering. Personal table/chart layouts are separate from the shared definition.
+
+Finance explicitly names active account/member recipients and saves a daily, weekly or monthly company-zone schedule. Each attempt rebuilds the recipient's current permitted aggregate report, rechecks the active native finance author and recipient membership, and persists the intent before contacting mail. One recipient/date/schedule delivery key prevents duplicates. Known refusals remain pending for explicit finance retry with the same body/key; a changed report or audience blocks that retry. Accepted, sending and uncertain outcomes never resend automatically. Local suppression is labelled as not sent. The delivery view records the saved IANA zone, scheduled instant and actual dispatch instant, including DST transitions. REPORT-003/004/007 inherit current saved-report source, audience and formula-export semantics when their new doors ship.
+
+*Status:* done.
 
 Saved report authors and recipients inherit ACCESS-001 live group and dimension scope; group grants never expand stored token ceilings or compensation authority.
 
@@ -668,12 +672,16 @@ A board pack template contains statements, KPIs, charts, variance commentary, de
 
 *Status:* partial.
 
+Before this capability ships, inherit REPORT-001 saved-report source/version availability, live audience/Pay detail filtering and aggregate formula Excel on each new report door.
+
 #### REPORT-004 — Linked PowerPoint and Word reporting.
 PowerPoint and Word add-ins insert Easel tables, charts and single numbers into a deck or memo, and refresh them in place from a chosen version and period, under the person's role filtering.
 
 *Acceptance:* an Office.js test host inserts a table and a number into a .pptx, refreshes after an Easel change, and sees the new values.
 
 *Status:* missing.
+
+Before this capability ships, inherit REPORT-001 saved-report source/version availability, live audience/Pay detail filtering and aggregate formula Excel on each new report door.
 
 #### REPORT-005 — Department budget-owner reporting.
 Each department owner gets a monthly actual-against-budget statement for their department after close. It includes their top variances, the rows behind them, open tasks and explanations to confirm, by email and in the app, and never includes other departments' detail. Current owners are all active contributors assigned to that department (ct, 19 October); finance can inspect every statement, while a contributor must still belong to its department on every read/export. A close queues one persisted statement per department and one delivery record per then-active contributor, in the same fenced save. Preparation captures actual/budget values and every accepted source row after close; the app overlays current explanation and open-task states. The email captures that scoped content on its first attempt, lists up to five variances in descending absolute amount, and links to the authenticated app statement. Recipient membership and native account are rechecked before every attempt. A provider acceptance is labeled only as acceptance; local development suppresses email and says so. Refused/rate-limited or unconfigured mail stays pending for explicit finance retry with the same message and delivery key; accepted mail is never resent. An uncertain or interrupted attempt remains visibly unresolved and is never blindly retried. ACCESS-001 inherits future custom ownership/group grants and statement recipient/read filtering before it ships. Current open tasks include department metric tasks, outstanding department submissions and department-tagged published pack actions; CYCLE-001 inherits future generic department tasks. Pack decisions may carry an explicit department; finance can classify an older published action through separate metadata without changing its captured pack. Unclassified actions stay in the company pack with a finance reminder and never enter a department email; no department is inferred from free-text ownership.
@@ -703,6 +711,8 @@ Operational metrics flow in from Snowflake, BigQuery or Databricks as driver act
 *Status:* missing.
 
 ### Access, audit and governance
+
+Before this capability ships, inherit REPORT-001 saved-report source/version availability, live audience/Pay detail filtering and aggregate formula Excel on each new report door.
 
 #### ACCESS-001 — Groups and per-dimension permissions.
 Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario (`CYCLE-004`) and by capability: compensation (`PEOPLE-005`), connections, model structure, approvals and publishing. Every server route enforces the grants, and an access report shows who can see what. Before groups ship, ACCESS-001 inherits CYCLE-004: scenario read/edit group shares use current group membership on every read, comparison, export and write; membership removal ends access immediately. Before shipping, ACCESS-001 inherits REPORT-005: its ownership and group grants govern department-statement recipients, reads and exports, with recipient access rechecked before delivery.
@@ -1053,13 +1063,13 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `184c2ab26078d85b8f525fefcfd72c169374fdce` (22 October 2026).
+Judged from the code and tests at commit `8a3a4c660b25aa695ea5e2de0e1d5257fb26306b` (22 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 41 | 18 | 27 | 86 |
-| All | 58 | 18 | 27 | 103 |
+| Target and push further | 42 | 17 | 27 | 86 |
+| All | 59 | 17 | 27 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1130,7 +1140,7 @@ Judged from the code and tests at commit `184c2ab26078d85b8f525fefcfd72c169374fd
 | `CYCLE-004` | Private and shared scenarios | target | done | `tests/sandboxes.test.mjs` `tests/sandboxes-browser.mjs` | None for current named-person doors; ACCESS-001 inherits group shares |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | done | `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs` | Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths |
-| `REPORT-001` | Report builder | target | partial | `src/easel/saved-reports.ts` `tests/saved-reports.test.mjs` `tests/dashboards-browser.mjs` | Saved aggregate department/line reports through dashboard/API doors: fiscal month/quarter/year, version comparison, YTD/TTM, prior-year actuals, exact variance/YoY, department/line filters, highlight flags and formula Excel ship under existing dashboard audiences. Remaining: browser report builder, custom dimensions/hierarchies, permitted-member authoring, dashboard tables/charts over reports and named-recipient scheduled email delivery |
+| `REPORT-001` | Report builder | target | done | `tests/saved-reports.test.mjs` (REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes; Report authors stay within their department and scheduled copies follow current recipients and company DST; Saved report dimension and account hierarchies preserve source cuts, frozen versions and blocked-cell availability); `tests/saved-reports-browser.mjs` (native quarter builder, filter/highlight, share, personal table/chart dashboard, Excel and named schedule at 1440/390) | None for current report doors; REPORT-003/004/007 inherit their new report surfaces |
 | `REPORT-002` | Dashboards | target | done | `src/easel/dashboards.ts` `tests/dashboards.test.mjs` `tests/dashboards-browser.mjs` |  |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |
 | `REPORT-004` | Linked PowerPoint and Word reporting | target | missing |  | No PowerPoint or Word add-ins |
