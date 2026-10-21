@@ -1,3 +1,4 @@
+import { boundEntity, entityDimensions } from './entity-scope'
 import { dimensionStructure, validateDimensions } from './dimensions'
 import { nativeInput, nativeBindings } from './native-input'
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
@@ -32,13 +33,13 @@ export const departments = (s: State) => all(s, 'department').sort((a, b) => a.n
 // Inputs in a stable order (by name, then origin) so calculations and their
 // traces are identical however the rows happen to be stored or restored.
 const inputName = (i: Data) => String(i.name ?? i.title ?? '')
-export const scenarioInputs = (s: State, scenario: string, kind: InputKind) => all(s, kind).filter(i => i.scenario === scenario).sort((a, b) => inputName(a).localeCompare(inputName(b)) || String(a.originId).localeCompare(String(b.originId)))
+export const scenarioInputs = (s: State, scenario: string, kind: InputKind) => all(s, kind).filter(i => i.scenario === scenario).sort((a, b) => inputName(a).localeCompare(inputName(b)) || String(a.originId).localeCompare(String(b.originId))).map((input): Data => ({ ...input, dimensions: entityDimensions(s, scenario, input.dimensions) }))
 
 export function model(s: State, scenarioId: string): Model {
  const w = workspace(s)
  const scenario = get(s, 'scenario', scenarioId)
  return {
-  workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon, fiscalYearStart: w.fiscalYearStart, calendar: w.calendar ?? 'calendar-month', ...(w.retailStartDate ? { retailStartDate: w.retailStartDate } : {}) },
+  workspace: { currency: scenario.currency ?? boundEntity(s, scenario)?.currency ?? w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon, fiscalYearStart: w.fiscalYearStart, calendar: w.calendar ?? 'calendar-month', ...(w.retailStartDate ? { retailStartDate: w.retailStartDate } : {}) },
   lines: lines(s), departments: departments(s), scenario, dimensionStructure: dimensionStructure(s),
   inputs: { formula: scenarioInputs(s, scenarioId, 'formula'), revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
@@ -67,7 +68,7 @@ const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
 
 /** Validates one input against the model's lines and departments. Returns the stored value. */
 export function validateInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
- const dimensions = validateDimensions(s, b.dimensions)
+ const dimensions = entityDimensions(s, scenario, validateDimensions(s, b.dimensions))
  return { ...validateBaseInput(s, kind, b, scenario), dimensions }
 }
 

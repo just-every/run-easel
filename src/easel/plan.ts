@@ -1,3 +1,4 @@
+import { entityDimensions, boundEntity } from './entity-scope'
 import { requireDimensionAccess, validateDimensions } from './dimensions'
 import { nativeBindings, requireNativeSources } from './native-input'
 // Scenario inputs, branching and agent-ready proposals. A proposal is a
@@ -27,7 +28,11 @@ export function bump(c: Context, scenario: Data, action: string, record: string,
 
 /** Copies every input of one scenario into another, keeping each input's origin so changes can be compared. */
 export function copyInputs(s: State, from: string, to: string) {
- for (const kind of INPUT_KINDS) for (const input of scenarioInputs(s, from, kind)) put(s, kind, uid(), { ...input, scenario: to })
+ const source = boundEntity(s, get(s, 'scenario', from))
+ for (const kind of INPUT_KINDS) for (const input of scenarioInputs(s, from, kind)) {
+  const dimensions = { ...input.dimensions }; if (source) delete dimensions[source.dimension]
+  put(s, kind, uid(), { ...input, scenario: to, dimensions: entityDimensions(s, to, dimensions) })
+ }
 }
 
 /** A frozen version may outlive its source, so branch from its captured inputs. */
@@ -53,8 +58,8 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(integer(b.revision, 'Reviewed scenario revision', 1, Number.MAX_SAFE_INTEGER) === scenario.revision, 'The plan changed; reload before tagging the input', 409)
   if (kind === 'position' || kind === 'workbook-model' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
-  requireDimensionAccess(s, x, input.dimensions)
-  const dimensions = validateDimensions(s, b.dimensions)
+  requireDimensionAccess(s, x, entityDimensions(s, scenario.id, input.dimensions))
+  const dimensions = entityDimensions(s, scenario.id, validateDimensions(s, b.dimensions))
   requireDimensionAccess(s, x, dimensions)
   put(s, kind, input.id, { ...input, dimensions })
   bump(c, scenario, op, input.id, { kind, before: input.dimensions ?? {}, dimensions })
@@ -79,11 +84,11 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
     requireDepartment(x, position!.department)
    }
   }
-  if (prior) { requireEditable(s, x, scenario, inputDepartment(kind, prior)); requireDimensionAccess(s, x, prior.dimensions) }
+  if (prior) { requireEditable(s, x, scenario, inputDepartment(kind, prior)); requireDimensionAccess(s, x, entityDimensions(s, scenario.id, prior.dimensions)) }
   const originId = prior?.originId ?? uid()
   const value: Data = { ...validateInput(s, kind, { ...b, dimensions: b.dimensions ?? prior?.dimensions, originId }, scenario.id), scenario: scenario.id, originId }
   requireEditable(s, x, scenario, inputDepartment(kind, value))
-  requireDimensionAccess(s, x, value.dimensions)
+  requireDimensionAccess(s, x, entityDimensions(s, scenario.id, value.dimensions))
   if (kind === 'revenue' && prior?.kind === 'services' && value.kind === 'services' && prior.gaugeActuals) {
    requireThat(value.department === prior.department, 'Undo Gauge utilization imports before changing the driver department', 409)
    Object.assign(value, { gaugeActuals: prior.gaugeActuals, gaugeUndo: null })
@@ -119,7 +124,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if (kind === 'position' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
-  requireDimensionAccess(s, x, input.dimensions)
+  requireDimensionAccess(s, x, entityDimensions(s, scenario.id, input.dimensions))
   requireThat(kind !== 'revenue' || !all(s, 'expense').some(e => e.scenario === scenario.id && e.revenueOrigin === input.originId), 'Remove linked acquisition or inventory costs before deleting this revenue driver', 409)
   requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
   if (kind === 'revenue' && input.commissionPosition) {
@@ -172,7 +177,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const kind = op === 'branch' ? 'scenario' : 'proposal'
   put(s, 'scenario', id, {
    name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
-   ...(from.horizon ? { horizon: from.horizon } : {}),
+   ...(from.horizon ? { horizon: from.horizon } : {}), ...(from.currency ? { currency: from.currency } : {}),
    ...((b.privateSandbox === true || from.sandbox) ? { sandbox: { grants: {} } } : {}),
    parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash, ledgerAllocations: from.ledgerAllocations, balanceLedger: from.balanceLedger,
    ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
@@ -206,6 +211,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const beforeModel = model(s, target.id), before = await effectCalculation(c, target.id)
   clearInputs(s, target.id)
   copyInputs(s, p.id, target.id)
+  requireThat(model(s, target.id).workspace.currency === model(s, p.id).workspace.currency, 'Proposal and target currencies differ', 409)
   put(s, 'scenario', target.id, { ...target, cash: p.cash, ledgerAllocations: p.ledgerAllocations, balanceLedger: p.balanceLedger })
   const promoted = await effectCalculation(c, target.id)
   const promotedEffect = before && promoted ? promotionEffect(beforeModel, before, model(s, target.id), promoted) : { unavailable: 'The forecast could not be calculated at promotion' }
@@ -231,6 +237,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(from.id !== into.id && from.kind !== 'proposal', 'Choose a different scenario to adopt')
   requireEditable(s, x, into, null)
   requireThat(Number(b.revision) === into.revision, `${into.name} changed since you reviewed it; review its current revision`, 409)
+  requireThat(model(s, from.id).workspace.currency === model(s, into.id).workspace.currency, 'Source and target currencies differ', 409)
   clearInputs(s, into.id)
   await copyVersionInputs(c, from, into.id)
   bump(c, get(s, 'scenario', into.id), op, into.id, { from: from.id, fromRevision: from.revision, name: from.name })
@@ -238,6 +245,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'scenario-delete') {
   requireFinance(x)
+  requireThat(!all(s, 'entity').some(e => e.scenario === b.id) && !find(s, 'entity-group', b.id), 'This plan is bound to an entity or consolidation group', 409)
   const sc = scenarioAccess(s, x, b.id)
   requireThat(!sc.sandbox, 'Private sandboxes are retained with their sharing history', 409)
   requireThat(sc.kind === 'scenario' || (sc.kind === 'proposal' && sc.status === 'closed'), 'Only branched scenarios and closed proposals can be deleted', 409)

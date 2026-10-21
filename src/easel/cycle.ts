@@ -1,3 +1,4 @@
+import { boundEntity } from './entity-scope'
 import { ledgerContext, requireBalancedClose } from './ledger-context'
 import { workingCalculation } from './calculation'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
@@ -77,14 +78,14 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const calculation = await workingCalculation(c, budget.id)
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'approval', scenario: budget.id, label: `${budget.name} approved at revision ${budget.revision}`, body: {
-   scenario: { ...budget, status: 'frozen' }, workspace: w, lines: m.lines, departments: m.departments, inputs: m.inputs, calculation,
+   scenario: { ...budget, status: 'frozen' }, workspace: { ...w, ...m.workspace }, lines: m.lines, departments: m.departments, inputs: m.inputs, calculation,
    approvedBy: { email: x.actor.email, name: x.actor.name }, approvedAt: c.now, revision: budget.revision,
    submissions: all(s, 'submission').filter(x => x.scenario === budget.id), note: typeof b.note === 'string' ? b.note.slice(0, 2000) : '',
   } })
   put(s, 'scenario', budget.id, { ...budget, status: 'frozen', approval: { snapshot: snapshotId, by: x.actor.email, at: c.now, revision: budget.revision } })
   c.activity.push({ action: op, record: budget.id, scenario: budget.id, before: budget.revision, after: budget.revision, detail: { snapshot: snapshotId } })
   const forecastId = uid()
-  put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, horizon: m.workspace.horizon, parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
+  put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, horizon: m.workspace.horizon, ...(budget.currency ? { currency: budget.currency } : {}), parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
   copyInputs(s, budget.id, forecastId)
   c.activity.push({ action: 'forecast-opened', record: forecastId, scenario: forecastId, after: 1, detail: { from: budget.id } })
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
@@ -104,6 +105,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
  if (op === 'close-month') {
   requireCapability(x, 'approvals', s)
   const forecast = scenarioAccess(s, x, b.scenario)
+  requireThat(!boundEntity(s, forecast), 'Entity actuals require an entity-scoped ledger connection', 409)
   requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Months close on the working forecast', 409)
   const w = workspace(s)
   const next = forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : w.planStart

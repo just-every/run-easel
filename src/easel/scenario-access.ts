@@ -1,9 +1,10 @@
+import { dimensionAllowed } from './access'
 // Scenario sharing adds a boundary; it never replaces department/pay authority.
 import { canSeeDashboard } from './dashboard-access'
 import { find, get, requireThat, type Access, type Data, type State } from './types'
 
 export function canSeeScenario(x: Access, sc: Data) {
- if (!x.role) return false
+ if (!x.role || x.scenarioDimensions?.[sc.id] && !dimensionAllowed(new Map(), x, x.scenarioDimensions[sc.id])) return false
  if (sc.sandbox) return x.actor.token ? ['read', 'edit'].includes(x.scenarioGrants?.[sc.id] ?? '') : sc.createdBy === x.actor.email || ['read', 'edit'].includes(sc.sandbox.grants?.[x.actor.email]) || ['read', 'edit'].includes(x.scenarioGrants?.[sc.id] ?? '')
  if (sc.kind === 'proposal') return x.role === 'finance' || (x.role === 'contributor' && sc.createdBy === x.actor.email)
  return true

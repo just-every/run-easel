@@ -1,3 +1,4 @@
+import { boundEntity } from './entity-scope'
 // Resolve current membership and groups once per loaded model revision. Groups
 // add grants, never a role; dimension limits intersect department authority.
 import { all, find, requireThat, type Access, type Actor, type Capability, type Data, type GrantCeiling, type State } from './types'
@@ -43,7 +44,8 @@ function currentAccess(s: State, a: Actor): Access {
   if (modes.includes('edit')) scenarioGrants[sc.id] = 'edit'
   else if (modes.includes('read')) scenarioGrants[sc.id] = 'read'
  }
- return { actor: a, role, departments, readDepartments, payDetail, capabilities, dimensionRead, dimensionEdit, groups: groups.map(g => g.id), scenarioGrants, groupOnly,
+ const scenarioDimensions = Object.fromEntries(all(s, 'scenario').flatMap(sc => { const e = boundEntity(s, sc); return e ? [[sc.id, { [e.dimension]: e.member }]] : [] }))
+ return { scenarioDimensions, actor: a, role, departments, readDepartments, payDetail, capabilities, dimensionRead, dimensionEdit, groups: groups.map(g => g.id), scenarioGrants, groupOnly,
   statementDepartments: unique([...direct, ...groups.flatMap(g => g.departments.owners)]).filter(id => readDepartments.includes(id)) }
 }
 

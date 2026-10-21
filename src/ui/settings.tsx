@@ -1,3 +1,4 @@
+import { Entities } from './entities'
 import { Groups } from './groups'
 import { Dimensions } from './dimensions'
 import { BALANCE_TARGETS, balanceTarget } from '../easel/balance-targets'
@@ -78,6 +79,7 @@ export function Settings({ state, refresh }: Shared) {
     <Field label="Departments (contributors)" name="departments" multiple required={false} options={state.departments.map((d: D) => ({ value: d.id, label: d.name }))} />
    </Form>
   </section>
+  <Entities state={state} refresh={refresh} />
   <Groups state={state} refresh={refresh} />
   <Dimensions state={state} refresh={refresh} />
   <AccountRules state={state} refresh={refresh} />

@@ -1,3 +1,6 @@
+import { entityCommands, entitiesView } from './entity'
+import { consolidationView } from './entity-consolidation'
+import { entityWorkbook } from './entity-workbook'
 import { savedReportCommands, savedReportList } from './saved-report-commands'
 import { savedReportScheduleCommands, reportScheduleList } from './saved-report-schedules'
 import { dispatchSavedReports } from './saved-report-dispatch'
@@ -107,7 +110,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const { state, revision } = await load(c.env.DB)
  const current = access(state, a)
  if (a.token) requireMember(current)
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -244,6 +247,9 @@ api.get('/api/easel/dimension-report/:scenario/document.xlsx', async c => {
 })
 api.get('/api/easel/dimension-report/:scenario', c => read(c, ctx => dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'))))
 
+api.get('/api/easel/entities', c => read(c, async ctx => entitiesView(ctx)))
+api.get('/api/easel/consolidation/:id', c => read(c, ctx => consolidationView(ctx, c.req.param('id'))))
+api.get('/api/easel/consolidation/:id/workbook', async c => { const ctx = await open(c); const view = await consolidationView(ctx, c.req.param('id')); await readFence(ctx.db, ctx.x.actor, ctx.revision); return spreadsheet(entityWorkbook(view), 'easel-consolidation') })
 api.get('/api/easel/access-report', c => read(c, accessReport))
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
@@ -322,7 +328,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

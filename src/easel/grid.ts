@@ -1,3 +1,4 @@
+import { entityDimensions } from './entity-scope'
 import { requireDimensionAccess } from './dimensions'
 import { requireMember, requirePayDetail } from './access'
 import { workingCalculation } from './calculation'
@@ -28,10 +29,10 @@ export async function grid(c: Context, op: string, b: Data): Promise<Data | unde
    const current = get(c.s, 'schedule', row.id)
    if (get(c.s, 'line', current.line).payroll) requirePayDetail(c.x)
    requireEditable(c.s, c.x, sc, current.department)
-   requireDimensionAccess(c.s, c.x, current.dimensions)
-   requireDimensionAccess(c.s, c.x, row.dimensions)
+   requireDimensionAccess(c.s, c.x, entityDimensions(c.s, sc.id, current.dimensions))
+   requireDimensionAccess(c.s, c.x, entityDimensions(c.s, sc.id, row.dimensions))
    requireEditable(c.s, c.x, sc, row.department)
-   requireDimensionAccess(c.s, c.x, row.dimensions)
+   requireDimensionAccess(c.s, c.x, entityDimensions(c.s, sc.id, row.dimensions))
   }
   for (const row of history.before) put(c.s, 'schedule', row.id, row)
   remove(c.s, 'grid-history', sc.id)
@@ -50,7 +51,7 @@ export async function grid(c: Context, op: string, b: Data): Promise<Data | unde
    if (get(c.s, 'line', row.line).payroll) requirePayDetail(c.x)
    requireThat(row.scenario === sc.id, 'This row belongs to another scenario')
    requireEditable(c.s, c.x, sc, row.department)
-   requireDimensionAccess(c.s, c.x, row.dimensions)
+   requireDimensionAccess(c.s, c.x, entityDimensions(c.s, sc.id, row.dimensions))
    requireThat(!row.workbookOrigin || !row.provenance?.formulas?.[cell.month], 'This is a workbook formula; edit its source driver',409)
    requireThat(calc.months.includes(cell.month), 'The month is outside this plan')
    requireThat(!sc.actualsThrough || cell.month > sc.actualsThrough, 'Closed actuals cannot be typed over')
