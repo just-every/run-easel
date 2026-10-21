@@ -3283,7 +3283,7 @@
       "executable": false
     },
     "tests/decision-followup-browser.mjs": {
-      "sha256": "cc715144e49fd33f22c0cf9da23c4c4357ed561dc5d65d61792f699a30aa5da0",
+      "sha256": "17fd5b6ef7340b15106163cbba3a0ba8f1e847e0d44edd52b2ace521bda95f6e",
       "executable": false
     },
     "tests/decision-followup.test.mjs": {

@@ -14,6 +14,7 @@ await mkdir(evidence, { recursive: true })
 const DELAY = 'Delay the two engineering hires to July', AUGUST = `${DELAY} and review in August`, SEPTEMBER = `${DELAY} and review in September`
 let server, browser, finance
 const followup = async page => {
+ await page.reload(); await page.locator('h1').first().waitFor()
  await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
  const card = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Decision follow-up', exact: true }) })
  await card.waitFor()
@@ -107,7 +108,6 @@ try {
  for (const width of [1440, 390]) for (const as of ['owner', 'engineering', 'board']) {
   const reader = as === 'owner' && width === 390 ? finance : await session(browser, root, server.origin, as, width)
   try {
-   if (reader === finance) await finance.page.reload()
    const card = await followup(reader.page), item = action(card, AUGUST)
    await item.getByText('Payroll saving:', { exact: false }).waitFor()
    assert.match(await item.innerText(), /\$36,000\.00 approved; \$34,000\.00 realized against \$36,000\.00 approved through Jul 2026/)
