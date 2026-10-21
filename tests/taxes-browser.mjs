@@ -72,6 +72,7 @@ try {
     const safe=await api(viewer.context,server.origin,`scenario/${scenario}`)
     assert.deepEqual(safe.calculation.taxes.payrollRows,[])
     assert.ok(!JSON.stringify(safe).includes('Morgan Lee'))
+    await viewer.page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name:'Overview',exact:true}).click()
     await viewer.page.getByText(/US tax planning estimates/).waitFor()
     const statement=viewer.page.locator('section.card').filter({has:viewer.page.getByRole('heading',{name:'Balance sheet',exact:true})})
     await statement.getByRole('rowheader',{name:'Sales tax payable',exact:true}).waitFor()
