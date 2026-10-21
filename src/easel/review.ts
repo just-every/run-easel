@@ -171,6 +171,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const batches = all(s, 'batch').filter(x => x.status === 'accepted' && x.periods.includes(pack.month)).map(x => ({ file: x.file, sha256: x.sha256, rows: x.accepted, acceptedBy: x.acceptedBy, acceptedAt: x.acceptedAt }))
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'pack', scenario: forecast.id, label: pack.title, body: {
+   ...(forecastCalc.formulaValues?.length ? {nativeDefinitions:{scenario:{id:forecast.id,name:forecast.name,revision:forecast.revision},inputs:all(s,'formula').filter(f=>f.scenario===forecast.id),formulaValues:forecastCalc.formulaValues,sources:forecastCalc.nativeSources??{}}}:{}),
    title: pack.title, company: w.name, month: pack.month, currency: w.currency, status: 'published',
    versionComparison: { currency: w.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
    budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
@@ -180,7 +181,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
    ...(forecastCalc.financing ? { financing: aggregateFinancing(forecastCalc.financing) } : {}),
    assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),
    cash: forecastCalc.cash.map(m => ({ ...(m.incompleteReasons ? { incompleteReasons: m.incompleteReasons } : {}), month: m.month, closing: m.closing, budget: budget.body.calculation.cash.find((b: Data) => b.month === m.month)?.closing ?? null })),
-   // Pack readers include viewers: individual pay detail never enters the pack.
+   // Pack audience projections omit private native definitions and individual pay detail.
    variances: v.rows.map(r => ({ line: r.lineName, department: r.departmentName, actual: r.actual, budget: r.budget, priorForecast: r.priorForecast, variance: r.variance, favourable: r.favourable, explanation: !r.payroll && r.explanation?.status === 'confirmed' ? { text: r.explanation.text, status: r.explanation.status, citationIds: r.explanation.citationIds ?? [], confirmedBy: r.explanation.confirmedBy ?? null } : null, evidence: [...lines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
    sources: batches, decisions: pack.decisions, publishedBy: { email: x.actor.email, name: x.actor.name }, publishedAt: c.now,
   } })

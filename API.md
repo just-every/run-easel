@@ -92,6 +92,49 @@ Create a non-cash expense line with the normal `line` command (`nonCash: true`).
 
 Scenario reads include `calculation.assets`: each asset/month's pre-depreciation book value, depreciation, disposed book value, closing book value, capex cash, disposal cash and non-cash expense. Exact cent rounding and disposal-month semantics are in CONTRACT.md. Asset details use the same department filtering as other inputs. MCP offers `asset-category` and `asset` only inside the caller's own draft proposals; promotion remains a human finance action.
 
+### Native formulas and driver lines (MODEL-004)
+
+`POST /api/easel/command/formula` accepts `scenario`, its reviewed `revision`,
+`name`, `department`, `unit` (`money`, `count` or `percent`) and either a scalar
+`formula` or a `dimension` with `members: [{name, formula}]`. Optional `id` edits
+an existing definition; `start` defaults to the plan start and `end` is optional.
+A money driver can supply an output `line`; member outputs sum into that line.
+`collectionLag` sets revenue collection timing. Use `input-delete` with
+`kind: "formula"` to remove an unused definition. Invalid dependencies, cycles
+and stale revisions refuse the whole save.
+
+Expressions use decimal literals, `+ - * /`, comparisons `= <> < <= > >=`,
+lazy `IF(test,yes,no)`, `MIN`, `MAX`, `ROUND(value,decimalPlaces)` and
+`GROWTH(value,percent)`. Percent arguments use percentage points: 10 means 10%.
+Every numeric value is an integer in hundredths; each division, including the
+scale division for multiplication, rounds half away from zero. Thus
+`1.25 * 3.33 * 100` produces 416.00. Native formulas use this arithmetic;
+imported workbook formulas retain their separately documented workbook rules.
+
+`DRIVER("Customers")` reads a named driver, `PRIOR("Customers",1)` its prior
+period, and `DRIVER("Customers",-2)` two periods earlier.
+`LOOKUP("Cost per ticket","Region","West")` selects a member;
+`MEMBER()` gives the current member inside a dimensional definition, and
+`SUM("Support by region","Region")` sums its members.
+`LINE("Subscriptions","Sales",-1)` reads a final planning line by department.
+`ACTUAL("Subscriptions","Sales",-1)` reads accepted actuals, and
+`VERSION("Budget","Subscriptions","Sales",-1)` reads another version.
+Offsets are optional and default to zero. `PERIOD()` is one-based and can seed
+a recurrence: `IF(PERIOD()=1,100,GROWTH(PRIOR("Customers"),10))`.
+References bind to stable identities when saved; source renames do not retarget
+them. Missing sources are refused, including missing actuals; an accepted zero
+remains a valid source.
+
+Scenario reads expose filtered `inputs.formula` definitions and
+`calculation.formulaValues` with each driver's month, optional member, integer
+`value` and exact `trace`. Output sources also appear in ordinary planning
+cells. Formula cells are read-only in the grid. Changes enter the existing
+structure-version trail and proposal comparison; approved and saved versions
+retain their captured definitions and arithmetic. The MCP `formula` tool uses
+the same fields, with revision as a string, inside the caller's own draft
+proposal. Existing department, Pay detail and scenario authority apply to
+both destinations and referenced sources.
+
 ### Named reforecasts (`CYCLE-005`)
 
 Finance calls `POST /api/easel/command/reforecast-save` with `{from, revision, name}` for a working forecast or scenario. The reviewed revision must still match (409 otherwise); the source stays working and unchanged. The result is a new frozen `reforecast` scenario with `reforecast.snapshot`, source lineage and saved revision. Names are trimmed and case-insensitively unique among reforecasts. It is readable through the existing scenario, comparison, snapshot and spreadsheet routes; branch it to make changes. Captured structure, inputs and arithmetic are read from the immutable snapshot, including after the source is deleted and after restore.

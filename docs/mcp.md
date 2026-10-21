@@ -28,7 +28,7 @@ filtering as the HTTP views. Metrics include monthly profit, cash and
 department headcount.
 
 The available commands are `proposal-create`, `proposal-submit`, `revenue`,
-`position`, `expense`, `schedule`, `allocation`, `input-delete`, `comment` and
+`position`, `expense`, `schedule`, `formula`, `allocation`, `input-delete`, `comment` and
 `explanation`, with the command arguments documented in [the HTTP API](../API.md).
 Input edits and
 submission are limited to the caller's own working draft proposals, including

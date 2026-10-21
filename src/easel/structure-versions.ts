@@ -1,3 +1,4 @@
+import { nativeRevisions } from './native-revisions'
 import { historyOverlay } from './history-sources'
 import { addMonths } from './months'
 import { workingCalculation } from './calculation'
@@ -38,6 +39,7 @@ async function cells(c: Context, s: State, id: string) {
 }
 
 export async function versionStructure(c: Context, before: State, modelRevisionBefore: number) {
+ const nativeAffected = await nativeRevisions(c,before)
  // Every newly captured immutable version carries today's global definitions.
  for (const sn of c.snapshots) {
   sn.body.structure = capturedStructure(c.s)
@@ -64,7 +66,7 @@ export async function versionStructure(c: Context, before: State, modelRevisionB
  for (const id of [...new Set([...all(before, 'scenario'), ...all(c.s, 'scenario')].map(sc => sc.id))].sort()) {
   const prior = find(before, 'scenario', id), next = find(c.s, 'scenario', id)
   // Frozen arithmetic is never recalculated, including under global edits.
-  if ((next ?? prior)?.status === 'frozen' || (!global && !ids.has(id))) continue
+  if ((next ?? prior)?.status === 'frozen' || (!global && !ids.has(id) && !nativeAffected.has(id))) continue
   const a = await cells(c, before, id), b = await cells(c, c.s, id)
   const key = (cell: Data) => `${cell.line}|${cell.department}|${cell.month}`
   const l = new Map(a.cells.map(cell => [key(cell), cell.amount])), r = new Map(b.cells.map(cell => [key(cell), cell.amount]))

@@ -2,6 +2,12 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { proveFormulas, readWorkbook } from './spreadsheet-proof.mjs'
+import { nativeFormulaFlow } from './native-formula-flow.mjs'
+
+test('Native formula drivers: regional support, exact arithmetic, revenue proposals, grid refusal and immutable definitions', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await nativeFormulaFlow(h)
+})
 
 test('REV-003 fixed revenue forms trace exact cells, cash timing, proposals and frozen versions under live department authority', async t => {
  const h = await harness(); t.after(() => h.close())

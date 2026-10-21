@@ -1,3 +1,4 @@
+import { visibleNativeDependencies, visibleNativeInput } from './native-visibility'
 import { fiscalSummary } from './fiscal-summary'
 import { historyOverlay } from './history-sources'
 import { addMonths } from './months'
@@ -23,7 +24,11 @@ import { all, find, get, requireThat, type Access, type Data, type State } from 
 
 export { canSeeScenario } from './scenario-access'
 
-export function filterCalculation(x: Access, calc: Calculation, payrollLines: string[] = []): Calculation {
+export function filterCalculation(x: Access, calc: Calculation, payrollLines: string[] = [], state?: State): Calculation {
+ const { nativeSources: _privateSources, ...publicCalculation } = calc
+ const formulaRows=calc.formulaValues??[]
+ const visibleFormula=(id:string|undefined)=>formulaRows.filter(r=>r.originId===id).every(r=>visibleNativeDependencies(x,r.dependencies??[],state))
+ calc={...publicCalculation, ...(calc.cashDrivers?{cashDrivers:calc.cashDrivers.map(d=>!visibleFormula(d.source)?{...d,source:'',label:'Formula detail restricted'}:d)}:{}), ...(calc.formulaValues?{formulaValues:formulaRows.filter(r=>visibleNativeDependencies(x,r.dependencies??[],state)).map(r=>({...r,dependencies:[]}))}:{}),cells:calc.cells.map(cell=>({...cell,sources:cell.sources.map(source=>source.kind==='formula'&&!visibleFormula(source.id)?{kind:'restricted',label:'Formula detail restricted',amount:source.amount,trace:'Formula detail restricted to its source departments and permissions'}:source)}))}
  const restricted = (department: string) => !seesPayDetail(x, department)
  calc = { ...calc, ...(calc.taxes?{taxes:{...calc.taxes,payrollRows:calc.taxes.payrollRows.filter(row=>seesPayDetail(x,row.department))}}:{}), warnings: x.payDetail ? calc.warnings : calc.warnings.map(() => 'Calculation warning; source detail requires Pay detail permission'), cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? [{ kind: 'restricted', label: 'Compensation detail restricted', amount: cell.amount, trace: 'Compensation detail restricted' }] : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
  if (x.role === 'finance') return calc
@@ -38,8 +43,8 @@ const paySafeInput = (x: Access, input: Data, positions: Data[]) => {
  const { commissionPosition: _link, ...safe } = input
  return safe
 }
-const filterInputs = (x: Access, inputs: Record<string, Data[]>, payrollLines: string[] = []) =>
- Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
+const filterInputs = (x: Access, inputs: Record<string, Data[]>, payrollLines: string[] = [], state?: State) =>
+ Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => (k !== 'formula' || !state || visibleNativeInput(state,x,i,new Set(),inputs.formula??[])) && (k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department)))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
 
 export async function stateView(c: Context) {
  const { s, x } = c
@@ -89,7 +94,7 @@ export async function scenarioView(c: Context, id: string) {
  const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
  const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
  const visibleHistory = filterHistory(c.x, actualsHistory)
- return { fiscal: fiscalSummary(m.workspace, calc, m.lines), actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id)), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id)) }
+ return { fiscal: fiscalSummary(m.workspace, calc, m.lines), actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id), c.s), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id), c.s) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }
@@ -127,7 +132,8 @@ export async function snapshotView(c: Context, id: string) {
  if (sn.scenario) scenarioAccess(c.s, c.x, sn.scenario)
  if (sn.kind === 'pack') return paySafePack(sn)
  requireThat(sn.kind === 'approval' || sn.kind === 'reforecast' || c.x.role === 'finance' || c.x.role === 'contributor', 'Snapshot not found', 404)
- const body = { ...sn.body, ...(sn.body.actualsHistory ? { actualsHistory: filterHistory(c.x, sn.body.actualsHistory) } : {}), calculation: filterCalculation(c.x, sn.body.calculation, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id)), inputs: filterInputs(c.x, sn.body.inputs ?? {}, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id)) }
+ const { nativeSources: _privateSources, ...safeBody } = sn.body
+ const body = { ...safeBody, ...(sn.body.actualsHistory ? { actualsHistory: filterHistory(c.x, sn.body.actualsHistory) } : {}), calculation: filterCalculation(c.x, sn.body.calculation, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id), c.s), inputs: filterInputs(c.x, sn.body.inputs ?? {}, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id), c.s) }
  return { ...sn, body }
 }
 
@@ -138,10 +144,11 @@ export async function actualsView(c: Context) {
 
 export { activityView } from './audit'
 
-export const visibleScenarioInputs = (s: State, x: Access, id: string) => filterInputs(x, Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, id, k)])), lines(s).filter(l => l.payroll).map(l => l.id))
+export const visibleScenarioInputs = (s: State, x: Access, id: string) => filterInputs(x, Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, id, k)])), lines(s).filter(l => l.payroll).map(l => l.id), s)
 
 /** Published packs have an aggregate audience, including their older snapshots. */
 export function paySafePack(sn: Data): Data {
  const payroll = new Set((sn.body.structure?.line ?? []).filter((line: Data) => line.payroll).map((line: Data) => line.name))
- return { ...sn, body: { ...sn.body, variances: (sn.body.variances ?? []).map((row: Data) => payroll.has(row.line) ? { ...row, explanation: null, evidence: [] } : row) } }
+ const {nativeDefinitions: _nativeDefinitions,...body}=sn.body
+ return { ...sn, body: { ...body, variances: (sn.body.variances ?? []).map((row: Data) => payroll.has(row.line) ? { ...row, explanation: null, evidence: [] } : row) } }
 }

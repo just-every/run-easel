@@ -1,3 +1,4 @@
+import { nativeBindings, requireNativeSources } from './native-input'
 // Scenario inputs, branching and agent-ready proposals. A proposal is a
 // branch bound to the exact revision of the scenario it would change; finance
 // promotes the exact proposal revision it reviewed, or nothing changes.
@@ -48,6 +49,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if(kind==='workbook-model') requirePayDetail(x)
   if (kind === 'position' || b.line && get(s, 'line', b.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, b.scenario)
+  if(kind==='formula') requireThat(Number(b.revision)===scenario.revision,'The plan changed; reload before saving the formula',409)
   const prior = b.id ? get(s, kind, b.id) : undefined
   requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
   if (prior?.line && get(s, 'line', prior.line).payroll) requirePayDetail(x)
@@ -85,6 +87,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   }
   const id = prior?.id ?? uid()
   put(s, kind, id, value)
+  if(kind==='formula') { requireNativeSources(s,x,value,scenario.id); await workingCalculation(c,scenario.id) }
   bump(c, scenario, prior ? `${kind}-changed` : `${kind}-added`, id, { name: value.name ?? value.title, department: value.department ?? value.sourceDepartment })
   return { ...value, id }
  }
@@ -108,7 +111,9 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if (kind === 'position') requireThat(!scenarioInputs(s, scenario.id, 'revenue').some(r => r.commissionPosition === input.originId), 'Remove commission links before deleting this position', 409)
   if (kind === 'position') requireThat(!all(s,'position').some(p => p.scenario === scenario.id && p.backfillOrigin === input.originId), 'Remove the backfill link before deleting this position',409)
   if(kind==='workbook-model') requireThat(!all(s,'schedule').some(row=>row.scenario===scenario.id&&row.workbookOrigin===input.originId),'Remove linked workbook schedules before deleting the source graph',409)
+  if(kind==='formula' && b.revision!==undefined) requireThat(Number(b.revision)===scenario.revision,'The plan changed; reload before deleting the formula',409)
   remove(s, kind, input.id)
+  if(scenarioInputs(s,scenario.id,'formula').length)await workingCalculation(c,scenario.id)
   bump(c, scenario, `${kind}-removed`, input.id, { name: input.name ?? input.title })
   return { removed: input.id }
  }
@@ -172,6 +177,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
   const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
+  requireThat(p.submittedRevision === p.revision, 'The proposal sources changed after submission; submit a fresh proposal for review',409)
   requireThat(reviewed === p.revision, 'The proposal changed after you reviewed it; review its current revision', 409)
   const target = scenarioAccess(s, x, p.branchedFrom.scenario)
   requireScenarioEdit(x, target)
@@ -217,6 +223,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(sc.kind === 'scenario' || (sc.kind === 'proposal' && sc.status === 'closed'), 'Only branched scenarios and closed proposals can be deleted', 409)
   requireThat(!all(s, 'scenario').some(o => o.parent === sc.id && o.status === 'working'), 'Close or delete the proposals made from this scenario first', 409)
   requireThat(!citesProposal(s, sc.id), 'A published decision cites this promotion; keep it for follow-up', 409)
+  requireThat(!all(s,'formula').some(f=>nativeBindings(f).some(b=>b.scenario===sc.id)), 'This version is referenced by a formula; remove the reference first',409)
   clearInputs(s, sc.id)
   remove(s, 'scenario', sc.id)
   c.activity.push({ action: op, record: sc.id, detail: { name: sc.name } })
@@ -253,7 +260,7 @@ function requireProposalScope(s: State, x: import('./types').Access, p: Data) {
    if (a && b && value(a) === value(b)) continue
    if (kind === 'position' || [a, b].some(row => row?.commissionPosition) || [a, b].some(row => row?.line && get(s, 'line', row.line).payroll)) requirePayDetail(x)
    requireThat(kind !== 'allocation', 'Only finance can propose allocation changes', 403)
-   for (const row of [a, b]) if (row) requireDepartment(x, inputDepartment(kind, row)!)
+   for (const row of [a, b]) if (row) { requireDepartment(x, inputDepartment(kind, row)!); if(kind==='formula')requireNativeSources(s,x,row,p.id) }
   }
  }
 }

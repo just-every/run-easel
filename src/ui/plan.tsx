@@ -1,4 +1,5 @@
 import { WorkbookDrivers } from './workbook-drivers'
+import { NativeFormulas } from './native-formulas'
 import { CollectionSummary, ExpenseForm, PayrollFields } from './working-capital-inputs'
 import { CommercialExpenseForm, CommercialExpenseSummary } from './commercial-costs'
 import { GaugeUtilization } from './gauge-utilization'
@@ -53,6 +54,8 @@ export function Plan({ state, refresh }: Shared) {
   {me.role === 'finance' && sc && <GaugeUtilization key={`gauge-${sc.id}:${sc.revision}`} scenario={id} revision={sc.revision} drivers={(inputs.revenue ?? []).filter((r: D) => r.kind === 'services')} currency={currency} onChange={async () => { await load(); await refresh() }} />}
 
   {(inputs['workbook-model'] ?? []).map((book:D)=><WorkbookDrivers key={book.id} book={book} revision={sc.revision} onChange={async()=>{await load();await refresh()}} />)}
+
+  {view && sc && <NativeFormulas key={`formulas-${sc.id}:${sc.revision}`} state={state} view={view} depts={depts} save={save} remove={remove} />}
 
   <section className="card">
    <h2>Positions</h2>

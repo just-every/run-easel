@@ -1,3 +1,4 @@
+import { nativeInput, nativeBindings } from './native-input'
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { compensationInput } from './compensation'
 import { commissionPosition, commissionInput } from './commissions'
@@ -16,7 +17,7 @@ import { cents, decimal, hundredths, percentBps } from './units'
 import { all, choice, find, get, integer, optionalText, requireThat, text, type Access, type Data, type State } from './types'
 import type { Line, Model } from './engine'
 
-export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity', 'tax-policy', 'workbook-model'] as const
+export const INPUT_KINDS = ['revenue', 'position', 'expense', 'schedule', 'allocation', 'asset-category', 'asset', 'debt', 'equity', 'tax-policy', 'workbook-model', 'formula'] as const
 export type InputKind = typeof INPUT_KINDS[number]
 
 export function workspace(s: State) {
@@ -38,7 +39,7 @@ export function model(s: State, scenarioId: string): Model {
  return {
   workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon, fiscalYearStart: w.fiscalYearStart, calendar: w.calendar ?? 'calendar-month', ...(w.retailStartDate ? { retailStartDate: w.retailStartDate } : {}) },
   lines: lines(s), departments: departments(s), scenario,
-  inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
+  inputs: { formula: scenarioInputs(s, scenarioId, 'formula'), revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
 }
 
@@ -68,6 +69,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  if (kind === 'workbook-model') { requireThat(false, 'Workbook source graphs are created through the reviewed import door',409) }
  if (kind === 'tax-policy') return taxInput(s,b,scenario)
  if(b.line)requireThat(!all(s,'tax-policy').some(p=>p.scenario===scenario&&p.line===b.line),'This line is reserved for the income-tax estimate',409)
+ if (kind === 'formula') return nativeInput(s,b,scenario)
  if (kind === 'debt' || kind === 'equity') return validateFinancingInput(s, kind, b, scenario)
  if (kind === 'asset-category' || kind === 'asset') return validateAssetInput(s, kind, b, scenario)
  if (kind === 'revenue') {
@@ -163,5 +165,5 @@ export function requireEditable(s: State, x: Access, scenario: Data, dept: strin
  requireThat(scenario.kind === 'proposal' && scenario.createdBy === x.actor.email, 'Contributors change budgets through submissions and other plans through their own proposals', 403)
 }
 
-export const usesLine = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.line === id || i.history?.sourceLine === id)) || ['account-map', 'account-rule'].some(k => all(s, k).some(m => m.target === id))
-export const usesDepartment = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.department === id || i.history?.sourceDepartment === id || i.repDepartment === id || i.sourceDepartment === id || i.targets?.some((t: Data) => t.department === id))) || all(s, 'department-map').some(m => m.department === id) || all(s, 'member').some(m => m.departments?.includes(id))
+export const usesLine = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.line === id || (k === 'formula' && nativeBindings(i).some(b => b.line === id)) || i.history?.sourceLine === id)) || ['account-map', 'account-rule'].some(k => all(s, k).some(m => m.target === id))
+export const usesDepartment = (s: State, id: string) => INPUT_KINDS.some(k => all(s, k).some(i => i.department === id || (k === 'formula' && nativeBindings(i).some(b => b.department === id)) || i.history?.sourceDepartment === id || i.repDepartment === id || i.sourceDepartment === id || i.targets?.some((t: Data) => t.department === id))) || all(s, 'department-map').some(m => m.department === id) || all(s, 'member').some(m => m.departments?.includes(id))

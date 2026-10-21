@@ -20,7 +20,7 @@ export async function headcountView(c: Context, scenario: string) {
  requireThat(canSeeScenario(c.x,sc), 'Scenario not found',404)
  const m = sc.status === 'frozen' ? await frozenModel(c,sc) : model(c.s,scenario)
  // Compare planned cost, even where the working forecast now uses closed actuals.
- const calculation = calculate({...m,scenario:{...m.scenario,actualsThrough:null}})
+ const calculation = calculate({...m,inputs:{...m.inputs,formula:[]},scenario:{...m.scenario,actualsThrough:null}})
  const positions = m.inputs.position
  const imports = all(c.s,'payroll-import').filter(i => i.scenario === scenario && i.status === 'imported')
  const roster = all(c.s,'roster-actual').filter(r => imports.some(i => i.destination === r.batch))

@@ -5,6 +5,7 @@ import { resolve, join } from 'node:path'
 import { command, fresh, freePort, start } from './browser-runtime.mjs'
 import { api, session, noOverflow } from './browser-journey.mjs'
 import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
+import { nativeFormulasJourney } from './native-formulas-journey.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 const existing = process.argv.includes('--existing'), root = existing ? process.cwd() : await fresh()
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/revenue-drivers')
@@ -71,6 +72,7 @@ try {
     await models.getByRole('button', { name: 'Add revenue model', exact: true }).waitFor()
     assert.deepEqual((await api(finance.context, server.origin, `scenario/${budget.id}`)).calculation, view.calculation, `${kind}: edited values retain exact arithmetic and traces`)
    }
+   await nativeFormulasJourney({ page, context: finance.context, origin: server.origin, budget, department, width, evidence })
    await models.scrollIntoViewIfNeeded(); await noOverflow(page, `REV-003 models ${width}`)
    await models.screenshot({ path: join(evidence, `all-models-${width}.png`) })
    await nav(page, 'Overview')

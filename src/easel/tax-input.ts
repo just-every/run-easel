@@ -12,7 +12,7 @@ export function taxInput(s:State,b:Data,scenario:string):Data {
  for(const field of ['socialSecurity','medicare','futa','suta','federalIncome','stateIncome','lossOffset','salesTax']) settings[`${field}Bps`]=percentBps(b[`${field}Percent`]??(US_TAX_DEFAULTS as Data)[`${field}Percent`]??(field==='salesTax'?'0':undefined),`${field} rate %`)
  for(const field of ['socialSecurity','futa','suta'])settings[`${field}BaseCents`]=cents(b[`${field}Base`]??(US_TAX_DEFAULTS as Data)[`${field}Base`],`${field} annual wage base`)
  requireThat(settings.federalIncomeBps+settings.stateIncomeBps<=10000,'Combined income tax rates cannot exceed 100%')
- for(const kind of ['revenue','position','expense','schedule','debt','asset'])requireThat(!all(s,kind).some(r=>r.scenario===scenario&&r.line===line.id),'Use a dedicated income-tax expense line without other planned inputs',409)
+ for(const kind of ['revenue','position','expense','schedule','debt','asset','formula'])requireThat(!all(s,kind).some(r=>r.scenario===scenario&&r.line===line.id),'Use a dedicated income-tax expense line without other planned inputs',409)
  const w=get(s,'workspace','main')
  if(periodForKey(w as Data & CalendarWorkspace, w.planStart).startDate.slice(5)!=='01-01') for(const p of all(s,'position').filter(p=>p.scenario===scenario&&p.start<w.planStart&&p.employmentType!=='1099')) requireThat(p.taxYtdWagesCents!==undefined,'Enter prior-year-to-date wages for each continuing W-2 position before enabling taxes in a partial calendar year',409)
  return settings
