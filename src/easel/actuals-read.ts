@@ -1,3 +1,4 @@
+import { resolveDimensions } from './dimension-mapping'
 import { balanceActuals } from './balance-actuals'
 import { balanceTarget } from './balance-targets'
 // Accepted-row projections share the same reusable mapping resolver as preview.
@@ -8,7 +9,7 @@ import { monthLabel } from './months'
 import { find, requireThat, type Data, type State } from './types'
 
 async function grouped(db: D1Database) {
- const { results } = await db.prepare("SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),'')").all<any>()
+ const { results } = await db.prepare("SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, COALESCE(json_extract(value,'$.sourceDimensions'),'{}') AS sourceDimensions, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),''), COALESCE(json_extract(value,'$.sourceDimensions'),'{}')").all<any>()
  return results.map(r => ({ ...r, amount: Number(r.amount), rows: Number(r.rows), batches: String(r.batches).split(',') }))
 }
 const resolved = (s: State, g: Data) => {
@@ -27,8 +28,12 @@ export async function actualCells(db: D1Database, s: State, through?: string): P
   if (through && g.period >= workspace(s).planStart && g.period <= through) requireThat(!r.blocked, `Actuals reconciliation blocked for ${g.period}; map account ${g.account} and department ${g.department}`, 409)
   if (r.blocked || !r.target || !lineType.has(r.target)) continue
   const k = `${r.target}|${r.department}|${g.period}`
-  const cell = cells.get(k) ?? { line: r.target, department: r.department, month: g.period, amount: 0, rows: 0, batches: [] }
-  cell.amount += lineType.get(r.target) === 'revenue' ? -g.amount : g.amount
+  const cell: ActualCell = cells.get(k) ?? { dimensionSources: [], line: r.target, department: r.department, month: g.period, amount: 0, rows: 0, batches: [] }
+  const amount = lineType.get(r.target) === 'revenue' ? -g.amount : g.amount
+  cell.amount += amount
+  const dimensions = resolveDimensions(s, JSON.parse(g.sourceDimensions)).dimensions
+  cell.dimensionSources ??= []
+  cell.dimensionSources.push({ dimensions, amount, rows: g.rows, batches: g.batches })
   cell.rows += g.rows; cell.batches = [...new Set([...cell.batches, ...g.batches])]
   cells.set(k, cell)
  }

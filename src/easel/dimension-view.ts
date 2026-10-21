@@ -19,6 +19,7 @@ export async function dimensionView(c: Context, scenario: string, dimension?: st
   const view = await scenarioView(c, scenario)
   calc = view.calculation
   const sc = get(c.s, 'scenario', scenario)
+  if (sc.status !== 'frozen' && sc.actualsThrough) blocked = (await dimensionActuals(c.db, c.s)).blocked.filter(issue => issue.month <= sc.actualsThrough)
   if (sc.status === 'frozen') {
    const frozen = await frozenModel(c, sc)
    structure = (frozen as Data).dimensionStructure ?? { dimension: [], 'dimension-member': [], 'line-group': [], line: frozen.lines }
@@ -53,7 +54,7 @@ export function dimensionWorkbook(view: Data) {
    const cells = view.months.map((month: string) => {
     if (member.amounts[month] === null) return null
     const refs = view.cells.flatMap((cell: Data, row: number) => cell.month === month && members.has(cell.dimensions[dimension.id] ?? '') ? [`'Cells'!E${row + 2}`] : [])
-    return { formula: refs.length ? `SUM(${refs.join(',')})` : '0', value: member.amounts[month] }
+    return { formula: refs.length ? refs.join('+') : '0', value: member.amounts[month] }
    })
    return [member.name, ...cells, cells.includes(null) ? null : { formula: `SUM(B${i + 2}:${column(view.months.length)}${i + 2})`, value: view.months.reduce((sum: number, month: string) => sum + member.amounts[month], 0) }]
   }),
@@ -63,7 +64,7 @@ export function dimensionWorkbook(view: Data) {
   ...view.accountHierarchy.map((group: Data) => [group.name, ...view.months.map((month: string) => {
    if (group.amounts[month] === null) return null
    const refs = view.cells.flatMap((cell: Data, row: number) => cell.month === month && group.lines.includes(cell.line) ? [`'Cells'!E${row + 2}`] : [])
-   return { formula: refs.length ? `SUM(${refs.join(',')})` : '0', value: group.amounts[month] }
+   return { formula: refs.length ? refs.join('+') : '0', value: group.amounts[month] }
   })]),
  ] as XlsxCell[][] }, { name: 'Cells', rows: facts })
  return workbook(sheets)

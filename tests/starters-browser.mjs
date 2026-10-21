@@ -62,7 +62,7 @@ try {
     await page.getByRole('button', { name: `${line.name} Jan 2025: how it was calculated`, exact: true }).click()
     const trace = page.locator('.trace-panel')
     const text = await trace.innerText()
-    assert.match(text, starter === 'services' ? /3 active positions.*160\.00.*75\.00%.*$150\.00/s : starter === 'project' ? /milestone Kickoff/s : starter === 'wholesale' ? /45 inventory days ÷ 31 calendar days/s : /new customers 10\.00.*CAC $500\.00/s)
+    assert.match(text, starter === 'services' ? /3 active positions.*160\.00.*75\.00%.*\$150\.00/s : starter === 'project' ? /milestone Kickoff/s : starter === 'wholesale' ? /45 inventory days ÷ 31 calendar days/s : /new customers 10\.00.*CAC \$500\.00/s)
     await shoot(page, trace, `${starter}-trace-${width}`)
     await trace.getByRole('button', { name: 'Close', exact: true }).click()
     if (starter === 'project') {
