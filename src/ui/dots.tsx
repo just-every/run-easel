@@ -6,7 +6,7 @@ import { Children, type ElementType, type ReactNode } from 'react'
 // zero-size span, so the line reads, copies and matches as before (style.ts .dots).
 export function Dots({ as: Tag = 'span', className, itemClass, children, ...rest }: { as?: ElementType; className?: string; itemClass?: (index: number) => string | undefined; children: ReactNode; [attribute: string]: unknown }) {
  const items = Children.toArray(children).filter(item => item !== '')
- return <Tag {...rest} className={className ? `dots ${className}` : 'dots'}>{items.map((item, i) => <span key={i} className={itemClass?.(i)}>{i > 0 && <span className="dot"> ·{'\u00a0'}</span>}{item}</span>)}</Tag>
+ return <Tag {...rest} className={className ? `dots ${className}` : 'dots'}>{items.map((item, i) => <span key={i} className={itemClass?.(i)}>{i > 0 && <span className="dot"> · </span>}{item}</span>)}</Tag>
 }
 
 /** Text that already joins its parts with " · " (labels, change notes, task names), as a Dots line. */

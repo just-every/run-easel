@@ -97,6 +97,7 @@ export async function cashHealthBrowserJourney(browser, root, origin, evidence, 
   await p.screenshot({ path: join(evidence, `cash-comparison-${width}.png`), fullPage: true })
   const board = await session(browser, root, origin, 'board', width)
   try {
+   await tab(board.page, 'Overview')
    await board.page.getByLabel('Scenario', { exact: true }).selectOption(downside.id)
    await assertHealth(board.page, 'Cash health', down.cashHealth)
    assert.equal(await board.page.getByRole('button', { name: 'Save cash constraints', exact: true }).count(), 0)
