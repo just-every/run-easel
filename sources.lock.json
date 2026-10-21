@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "1c4d81fd777df3b3c58325ff85e531e36899cf2670a26c5c3e4109c94e0fefb0",
+      "sha256": "cd43c760d77a0916582d1eac553a1227d6220d178443d73fac6c70d2ccdd80b5",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "c0777dce8a5f0c403959995f707528f2e8c984e35d50f6d1e124aeffcf2954f3",
+      "sha256": "b09618b015783223cf895a1cd21e34f16716b73754870ec842d4fd8a09812aeb",
       "executable": false
     },
     "DEMO.md": {
@@ -3046,6 +3046,10 @@
       "sha256": "f19a0e998404980dca3edd1f51014c3a31d8b16d531804538b6fc143b68e830a",
       "executable": false
     },
+    "src/ui/decision-followup.tsx": {
+      "sha256": "54bc7a2c4a02d978a359c66f4c9f28069e8a19dc1afd5595ef92c8269dbbec0d",
+      "executable": false
+    },
     "src/ui/department-statements.tsx": {
       "sha256": "6accf3a1d01b461ad2cec15d357895dfff025ff3d1d63862b4dcbca47b0b8189",
       "executable": false
@@ -3127,7 +3131,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "437b4f3eb9180722e29df34367f04ab16e7cf0c0677ed0dd34341346e0865cdf",
+      "sha256": "36422accf7c4414d896f7799c0edb644214b423d28597c4cd03b74c26af62804",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -3278,6 +3282,10 @@
       "sha256": "58248cf63fd26a0e948e09524d264b1200199e2cd99fbb4004132ad1a9846e85",
       "executable": false
     },
+    "tests/decision-followup-browser.mjs": {
+      "sha256": "cc715144e49fd33f22c0cf9da23c4c4357ed561dc5d65d61792f699a30aa5da0",
+      "executable": false
+    },
     "tests/decision-followup.test.mjs": {
       "sha256": "5b126a160c8b9e66e311568c76505ae6a0aad4f3dbba202772a323e292955f71",
       "executable": false
@@ -3415,7 +3423,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "5ef5f8c47d3f38fbb912522ba05b8d012cd325c42cc6b826645b247bdaa12b35",
+      "sha256": "ac16c357edf7fa8c1b6e9dca662600020d784c31aa757910f462eb735edfe31b",
       "executable": false
     },
     "tests/mcp.test.mjs": {

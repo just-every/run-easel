@@ -250,7 +250,7 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
 })
 
 
-test('CONNECT-007 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
+test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
  const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
  const h = await harness(); t.after(() => h.close())
  const { revenue, expense } = await seedBalanceActuals(h.command)
