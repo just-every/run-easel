@@ -28,7 +28,7 @@ export function Plan({ state, refresh }: Shared) {
  const load = async () => { const mine = ++ticket.n; const value = await api(`scenario/${id}`); if (mine === ticket.n) setView(value) }
  useEffect(() => { setView(null); if (id) void load() }, [id, state])
  if (!editable.length) return <section className="card"><p>There is nothing for you to edit right now. Contributors edit the budget once finance requests their department's submission, and their own proposals.</p></section>
- const save = async (op: string, body: D) => { await command(op, { ...body, ...(!body.id ? { dimensions: newDimensions } : {}), scenario: id }); setEditing(null); setRound(r => r + 1); await load(); await refresh() }
+ const save = async (op: string, body: D) => { await command(op, { ...body, ...(!body.id ? { dimensions: body.dimensions ?? newDimensions } : {}), scenario: id }); setEditing(null); setRound(r => r + 1); await load(); await refresh() }
  const remove = async (kind: string, inputId: string) => { await command('input-delete', { kind, id: inputId }); await load(); await refresh() }
  const currency = view?.workspace.currency ?? state.workspace.currency
  const localState = view ? { ...state, workspace: { ...state.workspace, ...view.workspace } } : state
