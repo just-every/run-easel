@@ -42,7 +42,7 @@ const confirmExplanation = async details => {
  await details.getByText('explanation confirmed', { exact: true }).waitFor()
 }
 /** Waits until the page has no Easel API request in flight for a moment. */
-const settle = async page => { for (let quiet = 0; quiet < 3;) { await page.waitForTimeout(100); quiet = page.inflight() === 0 ? quiet + 1 : 0 } }
+export const settle = async page => { for (let quiet = 0; quiet < 3;) { await page.waitForTimeout(100); quiet = page.inflight() === 0 ? quiet + 1 : 0 } }
 function track(page) {
  let n = 0
  const mine = r => r.url().includes('/api/easel/')

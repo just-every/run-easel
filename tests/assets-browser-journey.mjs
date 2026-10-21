@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { join } from 'node:path'
-import { api } from './browser-journey.mjs'
+import { api, settle } from './browser-journey.mjs'
 
 const addMonths = (month, count) => { const d = new Date(`${month}-01T00:00:00Z`); d.setUTCMonth(d.getUTCMonth()+count); return d.toISOString().slice(0,7) }
 
@@ -19,10 +19,14 @@ export async function assetsBrowserJourney(page, context, origin, evidence, widt
   await lines.scrollIntoViewIfNeeded()
   await page.screenshot({path:join(evidence,`asset-settings-${width}.png`),fullPage:false})
   await page.getByRole('button',{name:'Plan',exact:true}).click()
+  await page.getByLabel('Scenario', { exact: true }).selectOption(forecast.id)
+  await settle(page)
   const category = page.locator('form').filter({has:page.getByRole('button',{name:'Add asset category',exact:true})})
   await category.getByLabel('Asset category name',{exact:true}).fill('Equipment')
   await category.getByLabel('Useful life (months)',{exact:true}).fill('60')
   await category.getByRole('button',{name:'Add asset category',exact:true}).click()
+  await settle(page)
+  await page.getByRole('cell', { name: 'Equipment', exact: true }).waitFor()
   const asset = page.locator('form').filter({has:page.getByRole('button',{name:'Add asset',exact:true})})
   await asset.getByLabel('Asset name',{exact:true}).fill('Production equipment')
   await asset.getByLabel('Asset category',{exact:true}).selectOption({label:'Equipment'})
@@ -34,7 +38,9 @@ export async function assetsBrowserJourney(page, context, origin, evidence, widt
   await asset.getByLabel('Disposal month',{exact:true}).fill(addMonths(start,3))
   await asset.getByLabel('Disposal proceeds',{exact:true}).fill('110000')
   await asset.getByRole('button',{name:'Add asset',exact:true}).click()
-  await page.getByRole('cell',{name:'Production equipment',exact:true}).waitFor()
+  await settle(page)
+  try { await page.getByRole('cell',{name:'Production equipment',exact:true}).waitFor() }
+  catch (error) { await asset.screenshot({ path: join(evidence, `failed-asset-form-${width}.png`) }); throw error }
  }
  await page.getByRole('button',{name:'Plan',exact:true}).click()
  const section = page.locator('section').filter({has:page.getByRole('heading',{name:'Fixed assets',exact:true})})
