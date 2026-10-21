@@ -28,7 +28,7 @@ export function CashAlerts({ state }: { state: D }) {
  const last = list?.checks[0]
  return <section className="card" aria-label="Cash alerts">
   <h2>Cash alerts</h2>
-  <p className="muted">Checked after every actuals refresh and month close, and daily at {String(list?.checkHour ?? 8).padStart(2, '0')}:00 {list?.zone ?? state.workspace.timeZone}. A breach emails active finance once; it alerts again only when it worsens or after its re-alert interval. Actual cash is forecast closing cash on accepted actuals, not a bank balance.</p>
+  <p className="muted">Checked after every actuals refresh and month close, and daily at {String(list?.checkHour ?? 8).padStart(2, '0')}:00 {list?.zone ?? state.workspace.timeZone}. A breach notifies active finance once, by each person's notification preference; it notifies again only when it worsens or after its re-alert interval. Actual cash is forecast closing cash on accepted actuals, not a bank balance.</p>
   {error && <p role="alert" className="error">{error}</p>}
   {last && <p>Last scheduled check {displayDate(last.date)}: scheduled {zoneTime(last.scheduledAt, last.zone)}, ran {zoneTime(last.ranAt, last.zone)}.</p>}
   <Action label="Check cash alerts" run={async () => { setChecked(await command('cash-alert-check', {})); await reload() }} />

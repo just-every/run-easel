@@ -3091,7 +3091,7 @@
       "executable": false
     },
     "src/ui/cash-alerts.tsx": {
-      "sha256": "4a250a7b5c9ddbf2000785df25493a92fa57964a9eee13ca7fe5cfdfa2a48546",
+      "sha256": "7ffec6fbe8d65e35ae04d387cc51880e9bd84fa01f19ffb08802f0111abcd69a",
       "executable": false
     },
     "src/ui/cash-health.tsx": {
