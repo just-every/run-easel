@@ -177,7 +177,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
   const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
-  requireThat(p.submittedRevision === p.revision, 'The proposal sources changed after submission; submit a fresh proposal for review',409)
+  if (scenarioInputs(s, p.id, 'formula').length) requireThat(p.submittedRevision === p.revision, 'The proposal sources changed after submission; submit a fresh proposal for review',409)
   requireThat(reviewed === p.revision, 'The proposal changed after you reviewed it; review its current revision', 409)
   const target = scenarioAccess(s, x, p.branchedFrom.scenario)
   requireScenarioEdit(x, target)

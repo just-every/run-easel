@@ -1127,7 +1127,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "c76ddba593e9cde7abcbea6db274e4f67298242b4784d9a5182d90d99789532e",
+      "sha256": "f3334815b5cca55a6989f51ad3e8358c7ad4400cad2d03981b1917028a2e69db",
       "executable": false
     },
     "src/easel/ramp.ts": {
