@@ -1,3 +1,4 @@
+import { runSavedReportSchedules } from './easel/saved-report-dispatch'
 import { withDemo } from './modules/demo/index.mjs'
 import { seedDemo } from './demo'
 import start from '@tanstack/react-start/server-entry'
@@ -32,6 +33,6 @@ export default withDemo({
   async scheduled(_controller, env) {
     await runCalendarSchedule(env)
     await runActionChases(env)
-    await runCashAlertSchedule(env)
+    await runSavedReportSchedules(env); await runCashAlertSchedule(env)
   },
 } satisfies ExportedHandler<Bindings>, { seed: seedDemo })

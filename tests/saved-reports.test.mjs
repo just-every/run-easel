@@ -106,3 +106,110 @@ test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year a
  await h.get(path, h.owner, 404)
 })
 
+// The same public doors exercise author authority and durable scheduled mail.
+test('Report authors stay within their department and scheduled copies follow current recipients and company DST', async t => {
+ let now = '2026-10-30T12:00:00.000Z', response = 'accepted'
+ const h = await harness({ now: () => now, mailResponse: () => response === 'refused' ? new Response('provider refused', { status: 429 }) : response === 'unknown' ? new Response('upstream unavailable', { status: 503 }) : Response.json({ id: crypto.randomUUID() }) }); t.after(() => h.close())
+ await h.command('workspace', { name: 'Report delivery', fiscalYearStart: 10, planStart: '2026-10', horizon: 12, timeZone: 'America/New_York' })
+ const sales = await h.command('department', { name: 'Sales' }), ops = await h.command('department', { name: 'Ops' })
+ const line = await h.command('line', { name: 'Retainers', type: 'revenue' })
+ const scenario = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('schedule', { scenario: scenario.id, name: 'Plan', line: line.id, department: sales.id, values: { '2026-10': '100.00' } })
+ const manager = await h.person('report-manager@example.test', 'contributor', [sales.id], false)
+ const viewer = await h.person('report-viewer@example.test', 'viewer')
+ const definition = { name: 'Sales report', scenario: scenario.id, audience: 'department', department: sales.id,
+  report: { row: 'department', period: 'quarter', through: '2026-10', lines: [line.id], highlightBps: 1000 } }
+ const own = await h.command('report-save', definition, manager)
+ assert.equal((await h.get(`/api/easel/dashboards/${own.id}/report`, manager)).rows[0].name, 'Sales')
+ await h.command('report-save', { ...definition, department: ops.id }, manager, 403)
+ await h.command('report-save', { ...definition, audience: 'board' }, manager, 403)
+ await h.command('report-save', definition, viewer, 403)
+ await h.command('report-schedule-save', { dashboard: own.id, cadence: 'weekly', recipients: ['report-manager@example.test'] }, manager, 403)
+ const shared = await h.command('report-save', { ...definition, name: 'Weekly board report', audience: 'board' })
+ await h.command('report-schedule-save', { dashboard: shared.id, cadence: 'weekly', weekday: 1, hour: 8, recipients: ['owner@example.test', 'report-viewer@example.test'] })
+ const schedule = async () => (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' })
+ h.messages.length = 0
+ now = '2026-11-02T12:59:00.000Z'; await schedule(); assert.equal(h.messages.length, 0)
+ now = '2026-11-02T13:00:00.000Z'; await schedule(); await schedule()
+ assert.equal(h.messages.length, 2, 'Monday 8 Eastern after DST sends once per named recipient')
+ assert.ok(h.messages.every(m => m.to.length === 1))
+ assert.doesNotMatch(JSON.stringify(h.messages), /annualSalary|originId|sources/)
+ let deliveries = (await h.get('/api/easel/report-schedules')).deliveries
+ assert.equal(deliveries.length, 2)
+ assert.ok(deliveries.every(d => d.status === 'accepted' && d.scheduledAt === now && d.dispatchedAt === now && d.zone === 'America/New_York' && !('message' in d)))
+ await h.command('report-schedule-retry', { id: deliveries[0].id }, h.owner, 409)
+ await h.get('/api/easel/report-schedules', viewer, 403)
+ // Current membership is rechecked when the next scheduled copy is prepared.
+ await h.command('member', { email: 'report-viewer@example.test', name: 'Viewer', role: 'viewer', active: false })
+ now = '2026-11-09T13:00:00.000Z'; await schedule()
+ deliveries = (await h.get('/api/easel/report-schedules')).deliveries
+ assert.equal(deliveries.find(d => d.recipient === 'report-viewer@example.test' && d.scheduledAt === now).status, 'blocked')
+ assert.equal(h.messages.length, 3)
+ // Refused sends stay pending and require an explicit finance retry.
+ response = 'refused'; now = '2026-11-16T13:00:00.000Z'; await schedule(); await schedule()
+ deliveries = (await h.get('/api/easel/report-schedules')).deliveries
+ const refused = deliveries.find(d => d.recipient === 'owner@example.test' && d.scheduledAt === now)
+ assert.equal(refused.status, 'pending'); assert.equal(refused.attempts, 1)
+ response = 'accepted'; await h.command('report-schedule-retry', { id: refused.id })
+ assert.equal((await h.get('/api/easel/report-schedules')).deliveries.find(d => d.id === refused.id).status, 'accepted')
+ // Unknown provider outcomes are sealed against explicit and automatic resend.
+ response = 'unknown'; now = '2026-11-23T13:00:00.000Z'; await schedule()
+ const unknown = (await h.get('/api/easel/report-schedules')).deliveries.find(d => d.recipient === 'owner@example.test' && d.scheduledAt === now)
+ assert.equal(unknown.status, 'uncertain'); const unknownCount = h.messages.length
+ await schedule(); assert.equal(h.messages.length, unknownCount)
+ await h.command('report-schedule-retry', { id: unknown.id }, h.owner, 409)
+ // The spring transition also follows 08:00 local, rather than fixed UTC.
+ response = 'accepted'; now = '2027-03-15T11:59:00.000Z'; const count = h.messages.length; await schedule(); assert.equal(h.messages.length, count)
+ now = '2027-03-15T12:00:00.000Z'; await schedule(); assert.equal(h.messages.length, count + 1)
+ // Daily and monthly schedules share the same persistent delivery guard.
+ now = '2027-03-15T13:00:00.000Z'
+ await h.command('report-schedule-save', { dashboard: shared.id, cadence: 'daily', hour: 8, recipients: ['owner@example.test'] })
+ await h.command('report-schedule-save', { dashboard: shared.id, cadence: 'monthly', day: 16, hour: 8, recipients: ['owner@example.test'] })
+ now = '2027-03-16T12:05:00.000Z'; const dailyCount = h.messages.length; await schedule(); await schedule()
+ assert.equal(h.messages.length, dailyCount + 2)
+ const late = (await h.get('/api/easel/report-schedules')).deliveries.filter(d => d.scheduledAt === '2027-03-16T12:00:00.000Z')
+ assert.ok(late.every(d => d.dispatchedAt === now))
+})
+
+test('Saved report dimension and account hierarchies preserve source cuts, frozen versions and blocked-cell availability', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Ridgeline dimensional reports', currency: 'USD', planStart: '2026-01', fiscalYearStart: 1 })
+ const department = await h.command('department', { name: 'Marketing' })
+ const ads = await h.command('line', { name: 'Advertising', type: 'operating-expense' }), events = await h.command('line', { name: 'Events', type: 'operating-expense' })
+ const dimension = await h.command('dimension', { name: 'Region' })
+ const domestic = await h.command('dimension-member', { dimension: dimension.id, name: 'Domestic' })
+ const east = await h.command('dimension-member', { dimension: dimension.id, name: 'East', parent: domestic.id }), west = await h.command('dimension-member', { dimension: dimension.id, name: 'West', parent: domestic.id })
+ const group = await h.command('line-group', { name: 'Sales and marketing', type: 'operating-expense' })
+ for (const line of [ads, events]) await h.command('line-hierarchy', { line: line.id, parent: group.id })
+ const scenario = (await h.get('/api/easel/state')).scenarios[0]
+ const inputs = []
+ for (const [member, value] of [[east, '100'], [west, '200']]) inputs.push(await h.command('schedule', { scenario: scenario.id, name: `${member.name} advertising`, line: ads.id, department: department.id, dimensions: { [dimension.id]: member.id }, values: { '2026-01': value } }))
+ await h.command('schedule', { scenario: scenario.id, name: 'Eastern events', line: events.id, department: department.id, dimensions: { [dimension.id]: east.id }, values: { '2026-01': '60' } })
+ await h.command('account-map', { account: '500', target: ads.id }); await h.command('account-map', { account: '510', target: events.id }); await h.command('department-map', { source: 'Marketing', department: department.id })
+ const eastRule = await h.command('dimension-map', { dimension: dimension.id, member: east.id, sourceKind: 'class', source: 'East' })
+ await h.command('dimension-map', { dimension: dimension.id, member: west.id, sourceKind: 'class', source: 'West' })
+ const file = { filename: 'synthetic-easel-3.csv', csv: 'Date,Account,Department,Class,Amount\n2026-01-31,500,Marketing,East,120\n2026-01-31,500,Marketing,West,210\n2026-01-31,510,Marketing,West,70\n', columns: { date: 'Date', account: 'Account', department: 'Department', class: 'Class', amount: 'Amount' }, dateFormat: 'YYYY-MM-DD' }
+ const preview = await h.kit('actuals', 'preview', file); await h.kit('actuals', 'commit', { ...file, fingerprint: preview.fingerprint })
+ const branch = await h.command('branch', { from: scenario.id, name: 'Forecast case' })
+ const kept = await h.command('reforecast-save', { from: branch.id, name: 'January outlook', revision: branch.revision })
+ const base = { name: 'Regional advertising', scenario: scenario.id, audience: 'board', report: { row: 'dimension', dimension: dimension.id, period: 'month', through: '2026-01', lines: [ads.id], comparisons: [branch.id, kept.id] } }
+ const saved = await h.command('report-save', base)
+ const read = () => h.get(`/api/easel/dashboards/${saved.id}/report`)
+ let report = await read(), root = report.rows.find(r => r.row === domestic.id && r.period === '2026-01')
+ assert.equal(root.actual, 33000); assert.equal(root.budget, 30000)
+ assert.equal(root.versions[branch.id], 30000); assert.equal(root.versions[kept.id], 30000)
+ assert.equal(report.rows.find(r => r.row === east.id && r.period === '2026-01').actual, 12000)
+ const filtered = await h.command('report-save', { ...base, name: 'East filter', report: { ...base.report, dimensions: { [dimension.id]: east.id } } })
+ assert.equal((await h.get(`/api/easel/dashboards/${filtered.id}/report`)).rows.find(r => r.row === domestic.id && r.period === '2026-01').actual, 12000)
+ const accounts = await h.command('report-save', { ...base, name: 'Account hierarchy', report: { ...base.report, row: 'hierarchy', dimension: '', lines: [ads.id, events.id] } })
+ const hierarchy = await h.get(`/api/easel/dashboards/${accounts.id}/report`)
+ const subtotal = hierarchy.rows.find(r => r.row === `group:${group.id}` && r.period === '2026-01')
+ assert.equal(subtotal.actual, 40000); assert.equal(subtotal.budget, 36000)
+ const response = await h.mf.dispatchFetch(`${h.origin}/api/easel/dashboards/${accounts.id}/report.xlsx`, { headers: { cookie: h.owner } })
+ assert.equal(response.status, 200); proveFormulas(await readWorkbook(await response.arrayBuffer()))
+ await h.command('dimension-map', { id: eastRule.id, dimension: dimension.id, member: east.id, sourceKind: 'class', source: 'Changed' })
+ report = await read()
+ assert.equal(report.rows.find(r => r.row === domestic.id && r.period === '2026-01').actual, null)
+ const independent = await h.command('report-save', { ...base, name: 'Independent events', report: { row: 'line', period: 'month', through: '2026-01', lines: [events.id] } })
+ assert.equal((await h.get(`/api/easel/dashboards/${independent.id}/report`)).rows.find(r => r.period === '2026-01').actual, 7000)
+})

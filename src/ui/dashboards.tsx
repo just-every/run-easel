@@ -1,3 +1,4 @@
+import { SavedReportPanel } from './saved-reports'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { ClosingCashChart } from './chart'
@@ -110,6 +111,7 @@ export function Dashboards({ state, refresh }: Shared) {
     {definition.department && <p>Company cash, burn and runway are unavailable in this department view.</p>}
     <details><summary>Arrange my dashboard</summary><p>Choose the order and display for your own view. The shared definition stays available to every reader.</p><WidgetControls widgets={widgets} setWidgets={setWidgets} /><Action label="Save my layout" run={async () => { await command('dashboard-layout', { dashboard: definition.id, revision: view.layoutRevision, definitionRevision: definition.revision, widgets }); await changed(definition.id) }} />{dirty && <p role="status">You have unsaved layout changes.</p>}</details>
    </section>
+   {definition.report && <section className="card"><h2>Saved report</h2><SavedReportPanel key={`${definition.id}:${definition.revision}`} id={definition.id} /></section>}
    {!view.blocked && widgets.map(widget => <section className="card" key={widget.metric}><h2>{metrics[widget.metric]}</h2>
     {widget.metric === 'arr' && <p className="muted">Planned recurring revenue × 12. Closed months are unavailable because accepted actuals do not classify recurring revenue.</p>}
     {widget.metric === 'grossMargin' && <p className="muted">Revenue less cost of sales, in {view.currency}.</p>}

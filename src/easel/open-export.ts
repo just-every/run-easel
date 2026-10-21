@@ -88,6 +88,10 @@ export async function openExport(c: Context): Promise<Uint8Array> {
  const importAccess = await payrollExportAccess(c)
  const hidden = new Set(all(c.s, 'scenario').filter(sc => !canSeeScenario(c.x, sc)).map(sc => sc.id))
  const visibleRow = (row: Data) => {
+  if (['report-schedule', 'report-delivery'].includes(row.kind)) {
+   const dashboard = all(c.s, 'dashboard').find(d => d.id === row.value.dashboard)
+   if (!dashboard || !canSeeDashboard(c.s, c.x, dashboard)) return false
+  }
   if (row.kind === 'dashboard') return canSeeDashboard(c.s, c.x, row.value)
   if (row.kind === 'dashboard-layout') {
    const dashboard = all(c.s, 'dashboard').find(d => d.id === row.value.dashboard)
@@ -105,7 +109,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   const columns = columnRows.map(column => column.name)
   let { results } = await c.db.prepare(`SELECT * FROM ${identifier(table)}`).all<Record<string, unknown>>()
   results = results.filter(row=>importAccess.row(table,row))
-  if (table === 'e_records') results = results.filter(row => visibleRow({ ...row, value: JSON.parse(String(row.value)) }))
+  if (table === 'e_records') results = results.filter(row => visibleRow({ ...row, value: JSON.parse(String(row.value)) })).map(row => row.kind === 'report-delivery' ? { ...row, value: JSON.stringify({ ...JSON.parse(String(row.value)), message: null }) } : row)
   if (table === 'e_snapshots') results = results.filter(row => !hidden.has(String(row.scenario)))
   if (table === 'e_activity') results = results.flatMap(row => {
    const event = visibleActivity(c.s, c.x, { ...row, detail: JSON.parse(String(row.detail)) })
@@ -117,7 +121,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
   files.push({ name: `tables/${table}.csv`, bytes: csv(columns, results.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, portableCell(value)])))) })
  }
 
- const records = [...c.s.values()].filter(visibleRow)
+ const records = [...c.s.values()].filter(visibleRow).map(row => row.kind === 'report-delivery' ? { ...row, value: { ...row.value, message: null } } : row)
   .sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
   .map(row => ({ destination: row.destination, kind: row.kind, id: row.id, revision: row.revision, value: row.value }))
  files.push({ name: 'model.json', bytes: json({ workspace: all(c.s, 'workspace')[0], lines: all(c.s, 'line'), departments: all(c.s, 'department'), records: transformErased(records, maps), tables: definitions, units: { money: 'integer minor units', counts: 'hundredths', rates: 'basis points' } }) })

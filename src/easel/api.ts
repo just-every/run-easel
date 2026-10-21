@@ -1,3 +1,6 @@
+import { savedReportCommands, savedReportList } from './saved-report-commands'
+import { savedReportScheduleCommands, reportScheduleList } from './saved-report-schedules'
+import { dispatchSavedReports } from './saved-report-dispatch'
 import { groups, accessReport } from './groups'
 import { scopedReader } from './group-projections'
 import { dimensionCommands } from './dimensions'
@@ -218,6 +221,8 @@ api.get('/api/easel/department-statements/:id/document.xlsx', async c => {
  return spreadsheet(departmentStatementWorkbook(view), 'easel-department-statement')
 })
 
+api.get('/api/easel/reports', c => read(c, async ctx => savedReportList(ctx)))
+api.get('/api/easel/report-schedules', c => read(c, async ctx => reportScheduleList(ctx)))
 api.get('/api/easel/dashboards', c => read(c, async ctx => dashboardList(ctx)))
 api.get('/api/easel/dashboards/:id/report', c => read(c, ctx => savedReport(ctx, c.req.param('id'))))
 api.get('/api/easel/dashboards/:id/report.xlsx', async c => {
@@ -317,7 +322,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -338,6 +343,7 @@ api.post('/api/easel/command/:op', async c => {
  const statementIds = op === 'close-month' && !result.alternativeBudget ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
+ if (op === 'report-schedule-retry') await dispatchSavedReports(result.deliveryIds, c.env, () => open(c), commit)
  if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
  await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
  return c.json(publicLedger(await erasedView(ctx.db, result)))

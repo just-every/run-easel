@@ -1,3 +1,4 @@
+import { SavedReports } from './saved-reports'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Dashboards } from './dashboards'
 import { Activity } from './activity'
@@ -18,6 +19,7 @@ import { TopBar, PageHead } from './top-bar'
 const TABS = [
  { id: 'cash', label: 'Cash', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'overview', label: 'Overview', roles: ['finance', 'contributor', 'viewer'] },
+ { id: 'reports', label: 'Reports', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'dashboards', label: 'Dashboards', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'plan', label: 'Plan', roles: ['finance', 'contributor'] },
  { id: 'actuals', label: 'Actuals', roles: ['finance'] },
@@ -60,6 +62,7 @@ export function App() {
   {error && <p role="alert" className="error">{error}</p>}
   {tab === 'cash' && <CashDrivers {...shared} />}
   {tab === 'overview' && <Overview {...shared} />}
+  {tab === 'reports' && <SavedReports {...shared} />}
   {tab === 'dashboards' && <Dashboards {...shared} />}
   {tab === 'plan' && <Plan {...shared} />}
   {tab === 'actuals' && <Actuals {...shared} />}
