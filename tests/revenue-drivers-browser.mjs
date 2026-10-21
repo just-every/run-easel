@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdir, readFile, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'
 import { command, fresh, freePort, start } from './browser-runtime.mjs'
-import { api, session, noOverflow } from './browser-journey.mjs'
+import { api, session, noOverflow, settle } from './browser-journey.mjs'
 import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
 import { nativeFormulasJourney } from './native-formulas-journey.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
@@ -37,6 +37,7 @@ try {
  ]
  for (const width of [1440, 390]) {
   const finance = await session(browser, root, server.origin, 'owner', width), page = finance.page
+  page.setDefaultTimeout(15000)
   try {
    const lines = {}
    for (const [kind, label] of definitions) lines[kind] = await api(finance.context, server.origin, 'command/line', { name: `${label} ${width}`, type: 'revenue' })
@@ -45,6 +46,7 @@ try {
    await page.getByLabel('Scenario', { exact: true }).selectOption(budget.id)
    const models = card(page, 'Revenue drivers')
    for (const [kind, label, fields, expected, trace] of definitions) {
+    await settle(page)
     await models.getByLabel('Driver', { exact: true }).selectOption(kind)
     await models.getByLabel('Revenue model name', { exact: true }).fill(`${label} ${width}`)
     await models.getByLabel('Revenue line', { exact: true }).selectOption(lines[kind].id)
@@ -60,7 +62,7 @@ try {
     await models.locator('form').screenshot({ path: join(evidence, `${kind}-form-${width}.png`) })
     await models.getByRole('button', { name: 'Add revenue model', exact: true }).click()
     const row = models.getByRole('row').filter({ has: page.getByRole('cell', { name: `${label} ${width}`, exact: true }) })
-    await row.waitFor()
+    await row.waitFor(); await settle(page)
     const view = await api(finance.context, server.origin, `scenario/${budget.id}`)
     const cell = view.calculation.cells.find(c => c.line === lines[kind].id && c.month === '2026-01')
     assert.equal(cell.amount, expected)
@@ -69,7 +71,7 @@ try {
     assert.equal(await models.getByLabel('Driver', { exact: true }).inputValue(), kind)
     for (const [field, value] of Object.entries(fields)) assert.equal(Number(await models.getByLabel(field, { exact: true }).inputValue()) || await models.getByLabel(field, { exact: true }).inputValue(), Number(value) || value)
     await models.getByRole('button', { name: 'Save revenue model', exact: true }).click()
-    await models.getByRole('button', { name: 'Add revenue model', exact: true }).waitFor()
+    await models.getByRole('button', { name: 'Add revenue model', exact: true }).waitFor(); await settle(page)
     assert.deepEqual((await api(finance.context, server.origin, `scenario/${budget.id}`)).calculation, view.calculation, `${kind}: edited values retain exact arithmetic and traces`)
    }
    await nativeFormulasJourney({ page, context: finance.context, origin: server.origin, budget, department, width, evidence })
@@ -93,6 +95,10 @@ try {
    await noOverflow(page, `REV-003 Overview ${width}`)
    await page.screenshot({ path: join(evidence, `overview-${width}.png`) })
    console.log(`REV-003 ${width}: five new driver forms entered, edited and read exact traces; complete formula Excel and no page overflow passed`)
+  } catch (error) {
+   await page.screenshot({ path: join(evidence, `failure-${width}.png`) }).catch(() => {})
+   console.error(`Revenue journey ${width} refused: ${await page.getByRole('alert').allInnerTexts()}`)
+   throw error
   } finally { await finance.context.close() }
   const viewer = await session(browser, root, server.origin, 'board', width)
   try {

@@ -3683,7 +3683,7 @@
       "executable": false
     },
     "tests/revenue-drivers-browser.mjs": {
-      "sha256": "e7fb9bdc5ced7acf118388dfdb865558c61fa9f04c9ca7a9540f04c7a3df072d",
+      "sha256": "addc9985083ea9267cf4ab17805508d14f8569a873e2432085e37bae6ef54a73",
       "executable": false
     },
     "tests/revenue-drivers.test.mjs": {
