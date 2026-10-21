@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { mkdir, readFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { command, fresh, freePort, start } from './browser-runtime.mjs'
+import { fresh, freePort, start } from './browser-runtime.mjs'
 import { api, noOverflow, session } from './browser-journey.mjs'
 import { proveFormulas, readWorkbook } from './spreadsheet-proof.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
@@ -14,7 +14,6 @@ const fill = async (scope, values) => { for (const [label, value] of Object.entr
 let server, browser
 try {
  const port = await freePort()
- await command(root, ['setup', '--owner-email', 'owner@example.test', '--port', String(port)])
  server = await start(root, port)
  browser = await chromium.launch({ headless: true, args: ['--use-mock-keychain', '--password-store=basic'] })
  const setup = await session(browser, root, server.origin, 'owner', 1440)
