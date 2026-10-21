@@ -1,3 +1,6 @@
+import { canSeeScenario } from './scenario-access'
+import { backgroundScenario, INLINE_INPUT_ROWS } from './calculation-dispatch'
+import { activeCalculationJob, readCalculationJob, startCalculationJob } from './calculation-jobs'
 import { entityCommands, entitiesView } from './entity'
 import { consolidationView } from './entity-consolidation'
 import { entityWorkbook } from './entity-workbook'
@@ -110,7 +113,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const { state, revision } = await load(c.env.DB)
  const current = access(state, a)
  if (a.token) requireMember(current)
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -194,7 +197,7 @@ api.post('/api/easel/gauge/:op', async c => {
  return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 
-api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env))
+api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env, c.executionCtx))
 
 api.get('/api/easel/long-range', c => read(c, longRangeList))
 api.get('/api/easel/long-range/:id', c => read(c, ctx => longRangeView(ctx, c.req.param('id'))))
@@ -252,7 +255,16 @@ api.get('/api/easel/consolidation/:id', c => read(c, ctx => consolidationView(ct
 api.get('/api/easel/consolidation/:id/workbook', async c => { const ctx = await open(c); const view = await consolidationView(ctx, c.req.param('id')); await readFence(ctx.db, ctx.x.actor, ctx.revision); return spreadsheet(entityWorkbook(view), 'easel-consolidation') })
 api.get('/api/easel/access-report', c => read(c, accessReport))
 api.get('/api/easel/state', c => read(c, stateView))
-api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
+api.get('/api/easel/calculation-jobs/:id', c => read(c, ctx => readCalculationJob(ctx, c.req.param('id'))))
+api.get('/api/easel/scenario/:id', async c => {
+ const ctx = await open(c), id = c.req.param('id')
+ requireMember(ctx.x)
+ requireThat(canSeeScenario(ctx.x, get(ctx.s, 'scenario', id)), 'Scenario not found', 404)
+ const job = await activeCalculationJob(ctx, id)
+ if (job) { await readFence(ctx.db, ctx.x.actor, ctx.revision); return c.json({ calculationJob: job }, 202) }
+ const value = await scenarioView(ctx, id); await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return c.json(publicLedger(await erasedView(ctx.db, value)))
+})
 api.get('/api/easel/weekly-cash/:id/document.xlsx', async c => {
  const ctx = await open(c), view = await weeklyCash(ctx, c.req.param('id'), c.req.query('start'))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
@@ -335,6 +347,12 @@ api.post('/api/easel/command/:op', async c => {
  const b = await body(c)
  const op = c.req.param('op')
  if (op.startsWith('parallel-')) requirePayDetail(ctx.x)
+ const scenarioId = backgroundScenario(ctx.s, op, b)
+ if (scenarioId) return c.json(await startCalculationJob(ctx, [scenarioId], async id => { ctx.calculationJob = id; return executeCommand(c, ctx, op, b) }, promise => c.executionCtx.waitUntil(promise)), 202)
+ return executeCommand(c, ctx, op, b)
+})
+
+async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeof open>>, op: string, b: Data): Promise<Response> {
  let result: Data | undefined
  for (const command of commands) { result = await command(ctx, op, b); if (result !== undefined) break }
  requireThat(result !== undefined, 'Unknown action', 404)
@@ -353,7 +371,7 @@ api.post('/api/easel/command/:op', async c => {
  if (op === 'calendar-delivery-retry') await deliverCalendar([result.id], c.env, () => open(c), commit)
  await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
  return c.json(publicLedger(await erasedView(ctx.db, result)))
-})
+}
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
@@ -363,6 +381,12 @@ api.post('/api/easel/import/:kit/:op', async c => {
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
  const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
+ const imported = [...ctx.s.values()].find(row => row.kind === 'workbook-import' && (row.id === b.id || ctx.before.get(`workbook-import:${row.id}`)?.revision !== row.revision))?.value
+ if (kit === 'workbook' && step.kit && imported && imported.rows > INLINE_INPUT_ROWS) return c.json(await startCalculationJob(ctx, [imported.scenario], async id => { ctx.calculationJob = id; return executeImport(c, ctx, step) }, promise => c.executionCtx.waitUntil(promise)), 202)
+ return executeImport(c, ctx, step)
+})
+
+async function executeImport(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeof open>>, step: KitStep): Promise<Response> {
  await commit(ctx)
  if (!step.kit) return c.json(await erasedView(ctx.db, step.result))
  const structureBefore = await load(ctx.db)
@@ -371,7 +395,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
   if (step.failed) { const after = await open(c); requireFinance(after.x); await step.failed(after, e as Error); await commit(after) }
   throw e
  }
- const after = await open(c)
+ const after = await open(c); after.calculationJob = ctx.calculationJob
  requireFinance(after.x)
  const result = step.record!(after, outcome)
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
@@ -379,7 +403,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  await commit(after, structureBefore.state, structureBefore.revision)
  await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)
  return c.json(publicLedger(await erasedView(ctx.db, result)))
-})
+}
 
 api.post('/api/easel/invite', async c => {
  const ctx = await open(c)

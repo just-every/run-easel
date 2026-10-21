@@ -168,12 +168,13 @@ export async function readCalculationJob(c: Context, id: string): Promise<Calcul
 
 /** The caller checks its requested scenario before displaying this metadata. */
 export async function activeCalculationJob(c: Context, scenario: string, excludingId?: string): Promise<CalculationJob | undefined> {
- const { state, revision, x } = await reader(c)
- await expire(c.db)
+ requireMember(c.x)
  const row = await c.db.prepare(`SELECT j.* FROM e_calculation_jobs j WHERE j.status='running' AND j.id<>?
   AND EXISTS(SELECT 1 FROM json_each(j.scenarios) WHERE value=?) ORDER BY j.started_at LIMIT 1`)
   .bind(excludingId ?? '', scenario).first<JobRow>()
- const result = row && mayReadMetadata(state, x, row) ? metadata(row) : undefined
- await readFence(c.db, x.actor, revision)
- return result
+ if (!row || !mayReadMetadata(c.s, c.x, row)) return undefined
+ if (row.deadline_at <= Date.now()) { await expire(c.db); return undefined }
+ // The caller's normal read/save fence checks this already-loaded context.
+ // Polling a result itself resolves current authority again in reader().
+ return metadata(row)
 }

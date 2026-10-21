@@ -33,7 +33,7 @@ async function cells(c: Context, s: State, id: string) {
  if (!sc || !find(s, 'workspace', 'main')) return { cells: [], currency: null }
  try {
   const calc = await workingCalculation({ ...c, s }, id)
-  return { cells: [...calc.cells, ...dimensionVersionCells(calc, dimensionStructure(s))], currency: calc.currency }
+  return { cells: [...calc.cells.map(({ line, department, month, amount }) => ({ line, department, month, amount })), ...dimensionVersionCells(calc, dimensionStructure(s))], currency: calc.currency }
  } catch (error) {
   if (!(error instanceof Fault) || error.status !== 409) throw error
   return { cells: [], currency: null, blocked: error.message }

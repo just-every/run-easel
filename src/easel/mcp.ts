@@ -1,3 +1,6 @@
+import { backgroundScenario } from './calculation-dispatch'
+import { activeCalculationJob, readCalculationJob, startCalculationJob } from './calculation-jobs'
+import { canSeeScenario } from './scenario-access'
 import { erasedView } from './erasure'
 import { versionStructure } from './structure-versions'
 // Stateless Streamable HTTP: JSON responses, native identity, and a closed
@@ -33,6 +36,7 @@ function tool(name: string, description: string, required: string[], optional: s
  return { name, description, inputSchema: { type: 'object', properties: Object.fromEntries([...required, ...optional].map(k => [k, fields[k] ?? str])), required, additionalProperties: false }, annotations: { readOnlyHint: readOnly, openWorldHint: false } }
 }
 const tools = [
+ tool('calculation_status', 'Read the status of an accepted background planning change; never resubmit a pending mutation.', ['id'], [], true),
  tool('scenarios', 'List scenarios visible to you, plus planning lines and departments.', [], [], true),
  tool('scenario', 'Read a scenario and its role-filtered inputs, cells and traces.', ['scenario'], [], true),
  tool('compare', 'Compare two visible scenarios, including changed inputs and cells.', ['a', 'b'], [], true),
@@ -71,6 +75,12 @@ function matches(value: unknown, schema: Data): boolean {
 async function invoke(c: Context, name: string, b: Data): Promise<Data> {
  requireThat(tools.some(t => t.name === name), 'This tool is not available to agents', 403)
  if (name === 'scenarios') { const s = await stateView(c); requireThat('scenarios' in s, 'Plan access required', 403); return { scenarios: s.scenarios, lines: s.lines, departments: s.departments, workspace: s.workspace } }
+ if (name === 'calculation_status') return readCalculationJob(c, b.id)
+ if (['scenario', 'metrics'].includes(name)) {
+  requireThat(canSeeScenario(c.x, get(c.s, 'scenario', b.scenario)), 'Scenario not found', 404)
+  const job = await activeCalculationJob(c, b.scenario)
+  if (job) return { calculationJob: job }
+ }
  if (name === 'scenario') return scenarioView(c, b.scenario)
  if (name === 'compare') return compareView(c, b.a, b.b)
  if (name === 'variance') return variance(c, month(b.month))
@@ -91,7 +101,7 @@ async function invoke(c: Context, name: string, b: Data): Promise<Data> {
  return result
 }
 
-export async function handleMcp(request: Request, env: Bindings): Promise<Response> {
+export async function handleMcp(request: Request, env: Bindings, execution: Pick<ExecutionContext, 'waitUntil'>): Promise<Response> {
  const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'MCP-Protocol-Version': versions[0] }
  let id: string | number | null = null
  const reply = (value: Data, status = 200) => Response.json({ jsonrpc: '2.0', id, ...value }, { status, headers })
@@ -137,11 +147,16 @@ export async function handleMcp(request: Request, env: Bindings): Promise<Respon
   if (!selected) return reply({ error: { code: -32602, message: 'This tool is not available to agents' } })
   if (!matches(params.arguments ?? {}, selected.inputSchema)) return reply({ error: { code: -32602, message: 'Arguments do not match the tool input schema' } })
   try {
-   const before = new Map(state)
-   const result = await erasedView(c.db, await invoke(c, params.name, params.arguments ?? {}))
-   if (c.activity.length || c.snapshots.length) await versionStructure(c, before, revision)
-   if (c.activity.length || c.snapshots.length) await save(env.DB, person, before, state, revision, c.activity, c.snapshots, c.x.role === 'finance')
-   else await readFence(env.DB, person, revision)
+   const execute = async () => {
+    const before = new Map(state)
+    const result = await erasedView(c.db, await invoke(c, params.name, params.arguments ?? {}))
+    if (c.activity.length || c.snapshots.length) await versionStructure(c, before, revision)
+    if (c.activity.length || c.snapshots.length) await save(env.DB, person, before, state, revision, c.activity, c.snapshots, c.x.role === 'finance')
+    else await readFence(env.DB, person, revision)
+    return result
+   }
+   const scenario = backgroundScenario(c.s, params.name, params.arguments ?? {})
+   const result = scenario ? await startCalculationJob({ ...c, revision }, [scenario], async id => { c.calculationJob = id; return Response.json(await execute()) }, promise => execution.waitUntil(promise)) : await execute()
    return reply({ result: { structuredContent: result, content: [{ type: 'text', text: JSON.stringify(result) }] } })
   } catch (e) {
    if (!(e instanceof Fault)) throw e

@@ -8,15 +8,17 @@ export const dimensionKey = (tags: DimensionTags = {}) => JSON.stringify(Object.
 /** Source amounts, including allocation reversals, partition the existing cells
  * exactly. Untagged values remain visible as an explicit unassigned bucket. */
 export function dimensionalCells(cells: Cell[]): DimensionCell[] {
- const result = new Map<string, DimensionCell>()
+ const result = new Map<string, DimensionCell>(), tagKeys = new WeakMap<DimensionTags, string>()
  for (const cell of cells) for (const source of cell.sources) {
   const dimensions = source.dimensions ?? {}
-  const key = JSON.stringify([cell.line, cell.department, cell.month, dimensionKey(dimensions)])
+  let tags = tagKeys.get(dimensions)
+  if (tags === undefined) { tags = dimensionKey(dimensions); tagKeys.set(dimensions, tags) }
+  const key = JSON.stringify([cell.line, cell.department, cell.month, tags])
   const row = result.get(key) ?? { line: cell.line, department: cell.department, month: cell.month, basis: cell.basis, dimensions, amount: 0 }
   row.amount += source.amount
   result.set(key, row)
  }
- return [...result.values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+ return [...result.values()].map(row => ({ row, sort: JSON.stringify(row) })).sort((a, b) => a.sort.localeCompare(b.sort)).map(item => item.row)
 }
 
 export function dimensionReport(calculation: Calculation, structure: DimensionStructure, dimension?: string) {
@@ -55,6 +57,15 @@ function totals(cells: DimensionCell[], months: string[]) {
 export function dimensionVersionCells(calculation: Calculation, structure: DimensionStructure): Data[] {
  if (!structure.dimension.length && !structure['line-group'].length) return []
  const rows = new Map<string, Data>()
+ const ancestors = (members: Data[]) => {
+  const index = new Map<string, string[]>()
+  for (const parent of members) for (const child of descendants(members, parent.id)) {
+   const group = index.get(child) ?? []; group.push(parent.id); index.set(child, group)
+  }
+  return index
+ }
+ const dimensionAncestors = new Map(structure.dimension.map(d => [d.id, ancestors(structure['dimension-member'].filter(m => m.dimension === d.id))]))
+ const lineAncestors = ancestors(structure['line-group']), lineById = new Map(structure.line.map(line => [line.id, line]))
  const add = (cell: DimensionCell, group: Data) => {
   const address = { line: cell.line, department: cell.department, month: cell.month, ...group }
   const key = JSON.stringify(address)
@@ -65,11 +76,10 @@ export function dimensionVersionCells(calculation: Calculation, structure: Dimen
   for (const dimension of structure.dimension) {
    const member = cell.dimensions[dimension.id]
    if (!member) { add(cell, { dimension: dimension.id, member: '' }); continue }
-   const members = structure['dimension-member'].filter(m => m.dimension === dimension.id)
-   for (const parent of members) if (descendants(members, parent.id).has(member)) add(cell, { dimension: dimension.id, member: parent.id })
+   for (const parent of dimensionAncestors.get(dimension.id)?.get(member) ?? []) add(cell, { dimension: dimension.id, member: parent })
   }
-  const line = structure.line.find(line => line.id === cell.line)
-  if (line?.group) for (const group of structure['line-group']) if (descendants(structure['line-group'], group.id).has(line.group)) add(cell, { lineGroup: group.id })
+  const line = lineById.get(cell.line)
+  if (line?.group) for (const group of lineAncestors.get(line.group) ?? []) add(cell, { lineGroup: group })
  }
  return [...rows.values()]
 }

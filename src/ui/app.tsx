@@ -1,3 +1,4 @@
+import { CalculationState } from './calculation-state'
 import { SavedReports } from './saved-reports'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Dashboards } from './dashboards'
@@ -36,6 +37,7 @@ export function App() {
  const strip = useScrollEdges()
  const [state, setState] = useState<D | null>(null)
  const [error, setError] = useState('')
+ const [calculation, setCalculation] = useState<D | null>(null)
  const [tab, setTab] = useState(() => {
   // The server renders the loading state with no URL; the tab is read once the browser has one.
   if (typeof window === 'undefined') return 'cash'
@@ -44,6 +46,11 @@ export function App() {
  })
  const refresh = useCallback(async () => { try { setState(await api('state')); setError('') } catch (e) { setError((e as Error).message) } }, [])
  useEffect(() => { void refresh() }, [refresh])
+ useEffect(() => {
+  const progress = (event: Event) => { const job = (event as CustomEvent).detail; setCalculation(job.status === 'completed' ? null : job); if (job.status === 'completed') void refresh() }
+  window.addEventListener('easel-calculation', progress)
+  return () => window.removeEventListener('easel-calculation', progress)
+ }, [refresh])
  useEffect(() => {
   const reveal = () => { const selected = strip.ref.current?.querySelector<HTMLElement>('[aria-current]'); if (selected) revealHorizontally(selected); strip.update() }
   reveal(); window.addEventListener('resize', reveal); return () => window.removeEventListener('resize', reveal)
@@ -60,6 +67,8 @@ export function App() {
   {state.workspace.calendar && state.workspace.calendar !== 'calendar-month' && <p className="note">{state.workspace.calendar} retail calendar. YYYY-MM inputs and headings are consecutive accounting-period keys, not Gregorian months. See Overview → Fiscal summaries → Accounting periods for dates.</p>}
   {tab !== 'cash' && <PageHead state={state} />}
   {error && <p role="alert" className="error">{error}</p>}
+  {calculation && <CalculationState state={state} job={calculation} reload={async () => { setCalculation(null); await refresh() }} />}
+  {!calculation && <>
   {tab === 'cash' && <CashDrivers {...shared} />}
   {tab === 'overview' && <Overview {...shared} />}
   {tab === 'reports' && <SavedReports {...shared} />}
@@ -71,6 +80,7 @@ export function App() {
   {tab === 'review' && <Review {...shared} />}
   {tab === 'settings' && <Settings {...shared} />}
   {tab === 'activity' && <Activity state={state} />}
+  </>}
  </main></DateFormatContext.Provider>
 }
 

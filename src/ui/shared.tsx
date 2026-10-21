@@ -1,3 +1,4 @@
+import { waitForCalculation } from './calculation-request'
 import { createContext, useContext, useId, useState, type ReactNode } from 'react'
 import { useScrollEdges, revealHorizontally } from './scroll'
 import { DotText } from './dots'
@@ -8,6 +9,7 @@ export async function api(path: string, body?: unknown): Promise<any> {
  const response = await fetch(`/api/easel/${path}`, body === undefined ? undefined : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
  const value: any = await response.json().catch(() => ({ error: `Request failed (${response.status})` }))
  if (!response.ok) throw new Error(value.error ?? `Request failed (${response.status})`)
+ if (response.status === 202 && value.calculationJob) return waitForCalculation(path, body, value, api)
  return value
 }
 export const command = (op: string, body: D) => api(`command/${op}`, body)

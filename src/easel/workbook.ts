@@ -1,3 +1,4 @@
+import { validateDimensions } from './dimensions'
 import { datePeriod } from './fiscal-calendar'
 import { compileWorkbook, evaluateWorkbook, workbookCellKey } from './workbook-formula'
 // The Excel-first planning workbook kit. A budget sheet with one row per line
@@ -49,6 +50,7 @@ export async function previewWorkbook(c: Context, b: Data) {
  requireThat(new Set(monthCols.map(m => m.month)).size === monthCols.length, 'Two columns name the same month')
  const planMonths = new Set(range(w.planStart, w.horizon))
  const outside = monthCols.filter(m => !planMonths.has(m.month)).map(m => monthLabel(m.month))
+ const dimensions = validateDimensions(c.s, b.dimensions)
  const lineMap = (b.lineMap ?? {}) as Record<string, string>, deptMap = (b.departmentMap ?? {}) as Record<string, string>
  const resolveLine = (name: string) => lineMap[name] ?? lines(c.s).find(l => l.name.toLowerCase() === name.toLowerCase())?.id
  const resolveDept = (name: string) => deptMap[name] ?? departments(c.s).find(d => d.name.toLowerCase() === name.toLowerCase())?.id
@@ -98,7 +100,7 @@ export async function previewWorkbook(c: Context, b: Data) {
  const unresolvedDepartments = [...new Set(rows.filter(r => !r.department || !find(c.s, 'department', r.department)).map(r => r.deptName))]
  const id = `wb-${sha.slice(0, 16)}`
  const destination = `workbook:${sha.slice(0, 20)}`
- const ctx = kitContext(c.db, c.x.actor, destination, WORKBOOK_NAMESPACE, `${WORKBOOK_MAPPING}:${kitSha(canonicalJson({ sheet: sheet.name, lineMap, deptMap })).slice(0, 16)}`)
+ const ctx = kitContext(c.db, c.x.actor, destination, WORKBOOK_NAMESPACE, `${WORKBOOK_MAPPING}:${kitSha(canonicalJson({ sheet: sheet.name, lineMap, deptMap, dimensions })).slice(0, 16)}`)
  const budget = all(c.s, 'scenario').find(x => x.kind === 'budget' && !x.alternativeBudget)
  const scenarioValue = { name: `Imported from ${file}`, kind: 'scenario', status: 'working', revision: 1, createdBy: c.x.actor.email, parent: null, actualsThrough: null, cash: budget?.cash ?? { openingCents: 0, basis: 'estimate', note: '', receivablesCents: 0, payablesCents: 0, collectionLag: 0, paymentLag: 0 }, imported: { file, sha256: sha, sheet: sheet.name, destination } }
  const workbookOrigin=`${id}:formulas`
@@ -114,12 +116,12 @@ export async function previewWorkbook(c: Context, b: Data) {
   const r = record.payload as any
   if (!r.line || !r.department) return { effects: [], rejection: 'Map the line and department first' }
   const originId = `${id}-r${r.row}`
-  return { effects: [{ targetKind: 'schedule', targetId: originId, value: { scenario: id, originId, name: `${r.lineName} · ${r.deptName}`, line: r.line, department: r.department, values: r.values, workbookOrigin, workbookCells:Object.fromEntries(Object.entries(r.refs).map(([m,ref])=>[m,workbookCellKey(sheet.name,ref as string)])), provenance: { file, sheet: sheet.name, row: r.row, cells: r.refs, formulas: r.formulas } } as any }] }
+  return { effects: [{ targetKind: 'schedule', targetId: originId, value: { scenario: id, originId, name: `${r.lineName} · ${r.deptName}`, dimensions, line: r.line, department: r.department, values: r.values, workbookOrigin, workbookCells:Object.fromEntries(Object.entries(r.refs).map(([m,ref])=>[m,workbookCellKey(sheet.name,ref as string)])), provenance: { file, sheet: sheet.name, row: r.row, cells: r.refs, formulas: r.formulas } } as any }] }
  } }
  const plan = await planD1Import(source, mapping, ctx)
  const totals = Object.fromEntries([...planMonths].map(m => [m, rows.reduce((a, r) => a + (r.values[m] ?? 0), 0)]))
  return {
-  id, file, sha256: sha, size: bytes.length, sheets: sheets.map(x => x.name), sheet: sheet.name, headerRow,
+  id, file, sha256: sha, dimensions, size: bytes.length, sheets: sheets.map(x => x.name), sheet: sheet.name, headerRow,
   months: monthCols.map(m => ({ month: m.month, label: monthLabel(m.month), ref: m.ref })), outside,
   rows: rows.map(r => ({ row: r.row, line: r.lineName, department: r.deptName, mappedLine: r.line, mappedDepartment: r.department, total: r.total, totalText: formatMoney(r.total, w.currency), formulas: Object.keys(r.formulas).length })),
   formulaReport:translation.report,workbookTotals,formulaReconciliation,

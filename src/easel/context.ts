@@ -7,6 +7,7 @@ export type Context = {
  x: Access
  db: D1Database
  activity: Activity[]
+ calculationJob?: string
  extra?: D1PreparedStatement[]
  snapshots: Snapshot[]
  now: string
