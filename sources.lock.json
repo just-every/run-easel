@@ -3731,7 +3731,7 @@
       "executable": false
     },
     "tests/weekly-cash-browser.mjs": {
-      "sha256": "4cd52e3fb296342aac82870a8aee312e28e75e3d9c338b46148ad1cd8d0f0a79",
+      "sha256": "ec27622c6ce77f25dc6afbfbc29ac9a9cf386d9a3b157db87846028d1a8f7eb7",
       "executable": false
     },
     "tests/weekly-cash.test.mjs": {
