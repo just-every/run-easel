@@ -4,6 +4,7 @@ import { find, type Access, type Data, type State } from './types'
 export function canSeeDashboard(s: State, x: Access, dashboard: Data) {
  const source = find(s, 'scenario', dashboard.scenario)
  if (!x.role || !source || source.sandbox || source.kind === 'proposal') return false
+ if (dashboard.reportAuthorDepartment && x.role === 'contributor' && !x.departments.includes(dashboard.reportAuthorDepartment)) return false
  if (dashboard.createdBy === x.actor.email) return true
  if (dashboard.audience === 'leadership') return x.role === 'finance'
  if (dashboard.audience === 'board') return x.role === 'viewer'

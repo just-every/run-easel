@@ -4,7 +4,7 @@ import { harness } from './harness.mjs'
 import { readWorkbook, proveFormulas, evaluate } from './spreadsheet-proof.mjs'
 
 // REPORT-001: one real user flow covers saved numeric comparisons and the
-// existing dashboard share boundary. No browser report builder is claimed.
+// existing dashboard share boundary.
 test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Report comparisons', planStart: '2026-10', fiscalYearStart: 10, horizon: 24 })
@@ -30,7 +30,7 @@ test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year a
  const frozen = await h.get(`/api/easel/scenario/${budget.id}`)
  const extra = await h.command('schedule', { scenario: forecast.id, name: 'Revised plan', line: revenue.id, department: sales.id, values: { '2026-10': '30.01' } })
  const body = { name: 'Sales actual against budget', scenario: budget.id, audience: 'board', department: sales.id,
-  widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'department', period: 'quarter', through: '2027-03', lines: [revenue.id], comparison: forecast.id, highlightBps: 1000 } }
+  widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'department', period: 'quarter', through: '2027-03', lines: [revenue.id], comparison: forecast.id, comparisons: [budget.id], highlightBps: 1000 } }
  let d = await h.command('dashboard-save', body)
  const path = `/api/easel/dashboards/${d.id}/report`
  const read = (cookie = h.owner) => h.get(path, cookie)
@@ -40,6 +40,7 @@ test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year a
  const first = result.rows.find(r => r.period === 'FY2027 Q1')
  assert.equal(first.name, 'Sales'); assert.deepEqual(first.months, ['2026-10', '2026-11', '2026-12'])
  assert.equal(first.actual, 36006); assert.equal(first.budget, 30003); assert.equal(first.comparison, 33004)
+ assert.equal(first.versions[budget.id], 30003)
  assert.equal(first.priorYearActual, 24000); assert.equal(first.yoy, 12006); assert.equal(first.yoyBps, 5003)
  assert.equal(first.variance, 6003); assert.equal(first.varianceBps, 2001); assert.equal(first.highlight, true)
  const ytd = result.rows.find(r => r.period === 'YTD'), ttm = result.rows.find(r => r.period === 'TTM')
@@ -54,7 +55,7 @@ test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year a
  // An ordinary dashboard edit preserves the saved numeric report.
  const { report: ignored, ...ordinary } = body
  d = await h.command('dashboard-save', { ...ordinary, id: d.id, revision: d.revision })
- assert.deepEqual(await read(), result)
+ assert.deepEqual(await read(), { ...result, definitionRevision: d.revision })
  const download = async (who = board) => h.mf.dispatchFetch(h.origin + `/api/easel/dashboards/${d.id}/report.xlsx`, { headers: { cookie: who } })
  let response = await download(); assert.equal(response.status, 200)
  const book = await readWorkbook(await response.arrayBuffer()); proveFormulas(book)
@@ -104,3 +105,4 @@ test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year a
  await h.command('dashboard-delete', { id: d.id, revision: d.revision })
  await h.get(path, h.owner, 404)
 })
+

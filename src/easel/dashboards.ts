@@ -1,6 +1,8 @@
+import type { Calculation } from './engine'
+import { scopedCalculation, scopedReader } from './group-projections'
 import { reportDefinition, savedReport } from './saved-reports'
 import { workingCalculation } from './calculation'
-import { requireFinance, requireMember } from './access'
+import { requireFinance, requireMember, visibleInput } from './access'
 import { canSeeDashboard } from './dashboard-access'
 import { dashboardMetrics } from './dashboard-metrics'
 import type { Context } from './context'
@@ -38,8 +40,9 @@ export async function dashboardView(c: Context, id: unknown) {
  // Aggregate raw arithmetic locally; no input, source, salary or name leaves
  // this view. Reading frozen versions uses their original sources and values.
  const pending = sc.status !== 'frozen' && !!sc.actualsThrough && all(c.s, 'batch').some(b => ['importing', 'undoing'].includes(b.status))
- const calculation = 'calculation' in m ? m.calculation : await workingCalculation(c, sc.id)
- const rows = dashboardMetrics({ lines: m.lines, calculation }, m.inputs.revenue, dashboard.department)
+ const calculation: Calculation = 'calculation' in m ? m.calculation as Calculation : await workingCalculation(c, sc.id)
+ const rows = dashboardMetrics({ lines: m.lines, calculation: scopedCalculation(c.s, c.x, calculation, m.lines) }, m.inputs.revenue.filter(input => !scopedReader(c.x) || visibleInput(c.x, 'revenue', input)), dashboard.department)
+ if (scopedReader(c.x)) for (const row of rows) row.headcount = null
  const blocked = pending ? 'Complete the in-progress actuals import before reading final dashboard metrics.' : null
  if (blocked) for (const row of rows) {
   for (const metric of METRICS) if (metric !== 'headcount') row[metric] = null
@@ -62,7 +65,7 @@ export async function dashboards(c: Context, op: string, b: Data): Promise<Data 
   requireThat(Number(b.definitionRevision) === d.revision, 'The dashboard changed; reload before saving your layout', 409)
   const next = widgets(b.widgets)
   requireThat(next.length === d.widgets.length && next.every(w => d.widgets.some((v: Data) => v.metric === w.metric)), 'A personal layout must contain the dashboard metrics exactly once')
-  put(c.s, 'dashboard-layout', id, { dashboard: d.id, owner: c.x.actor.email, definitionRevision: d.revision, revision: (prior?.revision ?? 0) + 1, widgets: next })
+  put(c.s, 'dashboard-layout', id, { dashboard: d.id, owner: c.x.actor.email, definitionRevision: d.revision, reportDisplay: prior?.definitionRevision === d.revision ? prior?.reportDisplay : undefined, revision: (prior?.revision ?? 0) + 1, widgets: next })
   c.activity.push({ action: op, record: d.id, scenario: d.scenario, detail: {} })
   return { saved: true }
  }
