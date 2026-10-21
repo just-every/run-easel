@@ -34,6 +34,13 @@ const card = (page, heading) => page.locator('section.card').filter({ has: page.
 const fill = (scope, label, value) => scope.getByLabel(label, { exact: true }).fill(String(value))
 const pick = (scope, label, value) => scope.getByLabel(label, { exact: true }).selectOption(value)
 const press = (scope, name) => scope.getByRole('button', { name, exact: true }).click()
+const confirmExplanation = async details => {
+ const confirm = details.getByRole('button', { name: 'Confirm explanation', exact: true })
+ await confirm.waitFor({ state: 'attached' })
+ if (await details.getAttribute('open') === null) await details.locator('summary').click()
+ await confirm.click()
+ await details.getByText('explanation confirmed', { exact: true }).waitFor()
+}
 /** Waits until the page has no Easel API request in flight for a moment. */
 const settle = async page => { for (let quiet = 0; quiet < 3;) { await page.waitForTimeout(100); quiet = page.inflight() === 0 ? quiet + 1 : 0 } }
 function track(page) {
@@ -256,8 +263,7 @@ async function review(browser, root, origin, evidence, pages, width) {
  await ads.getByRole('cell', { name: 'Conference sponsorship deposit' }).waitFor()
  await fill(ads, 'Explanation for Advertising · Marketing', 'Conference sponsorship deposit paid in August, budgeted in September.')
  await press(ads, 'Save explanation')
- await p.locator('details').filter({ hasText: 'Advertising · Marketing' }).getByRole('button', { name: 'Confirm explanation' }).click()
- await p.getByText(/explanation confirmed/).first().waitFor()
+ await confirmExplanation(ads)
  await noOverflow(p, 'review at 390')
  await shoot(p, evidence, `${width}-finance-variances`)
 
@@ -267,7 +273,7 @@ async function review(browser, root, origin, evidence, pages, width) {
  await travel.locator('summary').click()
  await fill(travel, 'Explanation for Travel · Sales', 'Fewer client visits in August.')
  await press(travel, 'Save explanation')
- await sales.page.locator('details').filter({ hasText: 'Travel · Sales' }).getByRole('button', { name: 'Confirm explanation' }).click()
+ await confirmExplanation(travel)
  const adsForSales = sales.page.locator('details').filter({ hasText: 'Advertising · Marketing' })
  await adsForSales.locator('summary').click()
  await adsForSales.getByText(/restricted to finance and this department/).waitFor()
