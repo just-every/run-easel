@@ -778,7 +778,7 @@ A company plans several entities (for example a US C-corp and a services subsidi
 
 *Acceptance:* two entities with an intercompany management fee; the API journey reads entity and consolidated statements in which the fee and the intercompany balance are eliminated and consolidated totals equal the sum less eliminations; the same holds when both entities arrive from one Sage Intacct multi-entity connection fake (`CONNECT-011`).
 
-Current native management-consolidation semantics: a native owner/admin session binds each entity to its own official working source plan and fixed local currency, and assigns the entities to an explicit reporting-currency group. Derived proposals, branches, approved budgets and kept forecasts retain their entity/currency boundary. Entity is a stable custom dimension member; input entry cannot relabel an input into another entity, and ordinary scenario reads, comparisons and exports check the live entity grant. Whole-entity statements require every department in that entity; narrower grants use the scoped Plan view. A reader with only some entities sees only those entities, and full consolidated totals remain unavailable.
+Current native management-consolidation semantics: a native owner/admin session binds each entity to its own official working source plan and fixed local currency, and assigns the entities to an explicit reporting-currency group. Derived proposals, branches, approved budgets and kept forecasts retain their entity/currency boundary. A newly bound copied template receives its own entity member and keeps its entered local amounts, without changing its source; bind an inherited template before deriving further versions. Binding a source that contains compensation requires Pay detail. Entity is a stable custom dimension member; input entry cannot relabel an input into another entity, and ordinary scenario reads, comparisons and exports check the live entity grant. Whole-entity statements require every department in that entity; narrower grants use the scoped Plan view. A reader with only some entities sees only those entities, and full consolidated totals remain unavailable.
 
 Each entity has its own budget/average/month-end rate table. Translation happens once per entity before summation; P&L uses average rates and balance sheets month-end rates with a visible translation adjustment. Local cash-flow statements retain local currency. The consolidated cash bridge uses prior month-end opening cash, average-rate receipts/payments and month-end closing cash with a separate cash translation effect. Missing rates, unbalanced or incomplete source statements, and stale/overlapping eliminations make the affected consolidated month unavailable. Finance explicitly reviews both input origins and local charge, receivable/payable and settlement amounts; each side must agree after translation and cannot exceed the selected source or aggregate outstanding balance. No matching or amounts are inferred. Workbook totals use the same authorized sum-less-elimination formulas.
 
@@ -1071,7 +1071,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `4bf376239ec2156d06af765bdd10ec729054110e` (22 October 2026).
+Judged from the code and tests at commit `49a1896cf102f08acf5ffb52d4cef05d9615e33c` (22 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |

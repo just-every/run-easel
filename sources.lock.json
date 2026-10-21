@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "6e534df8d74252a20ea2dec2e7cc01a2048421089b970c82e307ba0091a1d3f9",
+      "sha256": "0920997204fc30d0b46c0e264bce1acd0bf02bf894382f960703235384acae5f",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "00a773e94b26a2d091d17d6e156bd6fa890ead7e2319dd05ad3ffff36b5b4f75",
+      "sha256": "a04d6b2b6467007d051b6a068acbb2927f047aa8b9a25372fe3b1a31c70085b6",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "8eafd40bf2c1d628ac3291b5f7bb6fd579c27e462985724f80df82f6975700e3",
+      "sha256": "fa1f4356d1405367b0aa8a2a6bd1ce3f178d8c1396d446dd7c3498b323f624cf",
       "executable": false
     },
     "DEMO.md": {
@@ -903,7 +903,7 @@
       "executable": false
     },
     "src/easel/entity.ts": {
-      "sha256": "ea847535853dce089e55e1e16ac955616bf01925b48d2b72c68904d0c6ba40f2",
+      "sha256": "765428f83852d4b463c0743fd4476aeb786b1ad63b73821c5a91a32d387141c6",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -3591,7 +3591,7 @@
       "executable": false
     },
     "tests/entities.test.mjs": {
-      "sha256": "80878884394fe8303cc6c91f5e6cc04553940420f230e4015198fd64e10eb671",
+      "sha256": "e9d184ff5952f24f42b908ffda96b013bd2f527bff6667f5b1c5a3edfe5b5cb0",
       "executable": false
     },
     "tests/erasure-browser.mjs": {
