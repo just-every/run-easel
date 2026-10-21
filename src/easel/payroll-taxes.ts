@@ -1,12 +1,12 @@
 // Employer payroll taxes on salary before owner-supplied on-costs.
-import { compensation } from './compensation'
+import { compensationSchedule } from './compensation'
 import { formatBps, formatMoney, mulDiv } from './units'
 import { requireThat, type Data } from './types'
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 
 export type PayrollTaxRow = {
  originId: string; month: string; line: string; department: string
- wagesCents: number; socialSecurityCents: number; medicareCents: number
+ wagesCents: number; bonusTaxCents: number; socialSecurityCents: number; medicareCents: number
  futaCents: number; sutaCents: number; totalCents: number; ytdWagesCents: number; trace: string
 }
 export type PayrollTaxCalculation = { rows: PayrollTaxRow[]; issues: Data[] }
@@ -33,6 +33,7 @@ export function payrollTaxes(positions: Data[], months: string[], settings: Data
   if (!positionMonths.length) continue
   const monthly = Number(BigInt(p.annualSalaryCents) / 12n)
   const target = mulDiv(p.annualSalaryCents, positionMonths.length, 12)
+  const schedule = compensationSchedule(p, months, currency, workspace)
   let year = '', ytd = 0
   for (const [index, month] of positionMonths.entries()) {
    const calendarYear = yearFor(month)
@@ -43,8 +44,8 @@ export function payrollTaxes(positions: Data[], months: string[], settings: Data
    const last = index === positionMonths.length - 1
    const salaryCents = last ? target - monthly * (positionMonths.length - 1) : monthly
    const commissionCents = commissions.get(`${p.originId}|${month}`)?.amount ?? 0
-   const components = compensation(p, salaryCents, currency)
-   const wagesCents = sum(components.wages, commissionCents)
+   const components = schedule.get(month)!
+   const wagesCents = sum(components.wages, components.bonus, commissionCents)
    const opening = ytd, contractor = p.employmentType === '1099'
    const capped = (base: number) => contractor ? 0 : Math.min(wagesCents, Math.max(0, base - opening))
    const ssWages = capped(settings.socialSecurityBaseCents)
@@ -57,12 +58,14 @@ export function payrollTaxes(positions: Data[], months: string[], settings: Data
    const futaCents = liability(settings.futaBps,settings.futaBaseCents)
    const sutaCents = liability(settings.sutaBps,settings.sutaBaseCents)
    const totalCents = sum(socialSecurityCents, medicareCents, futaCents, sutaCents)
+   const withoutBonus = (rate:number,base=Number.MAX_SAFE_INTEGER) => contractor ? 0 : mulDiv(Math.min(base,sum(opening,wagesCents-components.bonus)),rate,10000)-mulDiv(Math.min(base,opening),rate,10000)
+   const bonusTaxCents = totalCents - sum(withoutBonus(settings.socialSecurityBps,settings.socialSecurityBaseCents),withoutBonus(settings.medicareBps),withoutBonus(settings.futaBps,settings.futaBaseCents),withoutBonus(settings.sutaBps,settings.sutaBaseCents))
    ytd = sum(opening, wagesCents)
    const baseTrace = p.payBasis === 'hourly' ? `${components.trace}Hourly taxable wages ${money(components.wages)} before on-costs.` : `Salary before on-costs: ${money(p.annualSalaryCents)} a year ÷ 12, ordinary months rounded down to ${money(monthly)}; ${positionMonths.length} active plan months target ${money(target)}${last ? `; final active month receives the remainder, wages ${money(wagesCents)}` : `; wages ${money(wagesCents)}`}.`
-   const wageTrace = `${baseTrace} ${commissionCents ? `Commission planning estimate ${money(commissionCents)} adds to base wages ${money(components.wages)} as taxable wages, without on-costs. ` : ''}${year} opening YTD wages ${money(opening)} + wages ${money(wagesCents)} = YTD ${money(ytd)}; ${retail ? `retail planning convention assigns all period wages to the calendar year of the period end (${periodForKey(workspace!, month).endDate}); annual wage caps reset with the first period ending in a new calendar year` : 'annual wage caps reset in January'}.`
+   const wageTrace = `${baseTrace} ${components.merit || components.bonus ? `Taxable merit ${money(components.merit)} and bonus ${money(components.bonus)} included; base plus merit ${money(components.wages)}. ` : ''} ${commissionCents ? `Commission planning estimate ${money(commissionCents)} adds to base wages ${money(components.wages)} as taxable wages, without on-costs. ` : ''}${year} opening YTD wages ${money(opening)} + wages ${money(wagesCents)} = YTD ${money(ytd)}; ${retail ? `retail planning convention assigns all period wages to the calendar year of the period end (${periodForKey(workspace!, month).endDate}); annual wage caps reset with the first period ending in a new calendar year` : 'annual wage caps reset in January'}.`
    const taxTrace = contractor ? '1099 contractor: employer Social Security, Medicare, FUTA and SUTA are zero.'
     : `Employer tax assumptions for ${assumptionYear}, applied to ${year}: Social Security taxable wages ${money(ssWages)} (annual base ${money(settings.socialSecurityBaseCents)}) × ${formatBps(settings.socialSecurityBps)} = ${money(socialSecurityCents)}; Medicare uncapped wages ${money(wagesCents)} × ${formatBps(settings.medicareBps)} = ${money(medicareCents)}; FUTA taxable wages ${money(futaWages)} (annual base ${money(settings.futaBaseCents)}) × entered ${formatBps(settings.futaBps)} = ${money(futaCents)}, without an automatically applied state credit; SUTA taxable wages ${money(sutaWages)} (annual base ${money(settings.sutaBaseCents)}) × ${formatBps(settings.sutaBps)} = ${money(sutaCents)}. Each cumulative component rounds half away from zero once; this month is the change in cumulative liability, preserving the annual cap exactly; employer Medicare has no additional Medicare tax. Employer taxes total ${money(totalCents)}, added separately from salary and on-costs.`
-   rows.push({ originId: p.originId, month, line: p.line, department: p.department, wagesCents, socialSecurityCents, medicareCents, futaCents, sutaCents, totalCents, ytdWagesCents: ytd, trace: `${wageTrace} ${taxTrace}` })
+   rows.push({ originId: p.originId, month, line: p.line, department: p.department, wagesCents, bonusTaxCents, socialSecurityCents, medicareCents, futaCents, sutaCents, totalCents, ytdWagesCents: ytd, trace: `${wageTrace} ${taxTrace}` })
   }
  }
  return { rows, issues: [] }

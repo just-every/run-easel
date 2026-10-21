@@ -5,7 +5,7 @@ import { balanceTarget } from './balance-targets'
 import { accountRules } from './account-rules'
 import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
-import { cents, hundredths } from './units'
+import { cents, hundredths, percentBps } from './units'
 import { fiscalYearLabel, month } from './months'
 import { departments, usesDepartment, usesLine, workspace } from './model'
 import { all, choice, find, get, integer, put, remove, requireThat, text, uid, type Data } from './types'
@@ -61,7 +61,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   if (b.id) get(s, 'department', id)
   const name = text(b.name, 'Department name')
   requireThat(!departments(s).some(d => d.id !== id && d.name.toLowerCase() === name.toLowerCase()), 'A department with this name exists')
-  put(s, 'department', id, { name, shared: b.shared === true || b.shared === 'on' || b.shared === 'true' })
+  put(s, 'department', id, { name, onCostDefaultBps: b.onCostDefaultPercent === undefined ? (b.id ? get(s,'department',id).onCostDefaultBps ?? 0 : 0) : percentBps(b.onCostDefaultPercent || '0','Department on-cost default %'), shared: b.shared === true || b.shared === 'on' || b.shared === 'true' })
   c.activity.push({ action: op, record: id, detail: { name } })
   return get(s, 'department', id)
  }

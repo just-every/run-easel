@@ -1,6 +1,6 @@
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { compensationInput } from './compensation'
-import { commissionPosition } from './commissions'
+import { commissionPosition, commissionInput } from './commissions'
 import { headcountInput } from './headcount-input'
 import { taxInput, positionTaxInput } from './tax-input'
 import { collectionInput, paymentInput, payrollInput, workingExpenseInput } from './working-capital-input'
@@ -100,7 +100,8 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
    commissionPosition([{ originId: b.originId, start, end }], contract)
    requireThat(!get(s, 'line', b.line).nonCash, 'Commission requires a cash salary line', 409)
   }
-  return { ...compensationInput(b), commissionRateBps: percentBps(b.commissionPercent ?? '0', 'Commission planning estimate %'), ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end, onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
+  const onCostBps = b.onCostPercent === '' || b.onCostPercent === undefined ? get(s, 'department', b.department).onCostDefaultBps ?? 0 : percentBps(b.onCostPercent, 'On-costs %')
+  return { ...compensationInput({ ...b, onCostPercent: String(onCostBps / 100) }), ...commissionInput(b), onCostSource: b.onCostPercent === '' || b.onCostPercent === undefined ? 'department' : 'position', commissionRateBps: percentBps(b.commissionPercent ?? '0', 'Commission planning estimate %'), ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end, onCostBps }
  }
  if (kind === 'expense') {
   const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory', 'prepaid', 'bonus'] as const, 'an expense kind')

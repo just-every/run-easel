@@ -81,7 +81,13 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Prior year-to-date taxable wages" name="taxYtdWages" required={false} defaultValue={p?.taxYtdWagesCents === undefined ? '' : decimalText(p.taxYtdWagesCents)} hint="Before the first plan month; required for a continuing W-2 position when tax estimates start midyear" />
     <PayrollFields row={p} />
     <Field label="Commission planning estimate %" name="commissionPercent" defaultValue={decimalText(p?.commissionRateBps ?? 0)} hint="Applies only to explicitly linked contract bookings at start; no on-costs. ASC 340-40 capitalisation is not modelled." />
-    <Field label="On-costs %" name="onCostPercent" defaultValue={p ? decimalText(p.onCostBps) : '12.00'} />
+    <Field label="Commission quota per period" name="commissionQuota" defaultValue={decimalText(p?.commissionQuotaCents ?? 0)} hint="Linked contract bookings only; resets each accounting period. Zero disables attainment." />
+    <Field label="Commission accelerators" name="commissionTiers" type="textarea" required={false} defaultValue={(p?.commissionTiers ?? []).map((t: D) => `${decimalText(t.attainmentBps)}:${decimalText(t.rateBps)}`).join('\n')} hint="One attainment %:rate % per line, e.g. 100:15 then 150:20. Higher rates apply only above each threshold." />
+    <Field label="Merit increase %" name="meritPercent" defaultValue={decimalText(p?.meritBps ?? 0)} />
+    <Field label="Merit effective date" name="meritDate" type="date" required={false} defaultValue={p?.meritDate} hint="One increase, prorated by inclusive UTC days in its first period." />
+    <Field label="Position bonus % of annual salary" name="bonusPercent" defaultValue={decimalText(p?.bonusBps ?? 0)} />
+    <Field label="Bonus payment period" name="bonusMonth" type="month" required={false} defaultValue={p?.bonusMonth} hint="One bonus, using the annual salary rate at period end. Paid in this period, without on-costs or employer match." />
+    <Field label="On-costs %" name="onCostPercent" required={false} defaultValue={p && p.onCostSource !== 'department' ? decimalText(p.onCostBps) : ''} hint="Blank captures the department default when saved; enter 0 to override it with zero. Existing positions keep their captured rate." />
    </Form> })()}
    </> : <p className="muted">Individual positions and pay require a pay-detail grant from the owner. Payroll totals remain available in Overview.</p>}
   </section>

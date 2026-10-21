@@ -2,7 +2,7 @@ import { BALANCE_TARGETS, balanceTarget } from '../easel/balance-targets'
 import { AccountRules } from './account-rules'
 import { GaugeConnection } from './gauge-connection'
 import type { Shared } from './app'
-import { Action, api, command, Field, Form, kindLabel, fiscalMonths, US_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS, Table, type D } from './shared'
+import { Action, api, command, Field, Form, decimalText, kindLabel, fiscalMonths, US_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS, Table, type D } from './shared'
 import { Dots } from './dots'
 
 /** The plan's calendar, departments, lines, people and account mappings. Finance only. */
@@ -32,10 +32,18 @@ export function Settings({ state, refresh }: Shared) {
   </section>
   <section className="card">
    <h2>Departments</h2>
-   <Table caption="Departments" heads={['Name', 'Shared costs', '']}>{state.departments.map((d: D) => <tr key={d.id}><td>{d.name}</td><td>{d.shared ? 'Shared (allocated)' : '—'}</td><td><Action kind="danger" label="Delete" run={async () => { await command('department-delete', { id: d.id }); await refresh() }} /></td></tr>)}</Table>
+   <Table caption="Departments" heads={['Name', 'Shared costs', 'On-cost default', '']}>{state.departments.map((d: D) => <tr key={d.id}><td>{d.name}</td><td>{d.shared ? 'Shared (allocated)' : '—'}</td><td>{decimalText(d.onCostDefaultBps ?? 0)}%</td><td><Action kind="danger" label="Delete" run={async () => { await command('department-delete', { id: d.id }); await refresh() }} /></td></tr>)}</Table>
    <Form submit="Add department" onSubmit={run('department')}>
     <Field label="Department name" name="name" />
+    <Field label="Department on-cost default %" name="onCostDefaultPercent" defaultValue="0" hint="Captured by positions saved without an override; existing positions stay unchanged." />
     <Field label="Shared costs department (allocated to others)" name="shared" type="checkbox" required={false} />
+   </Form>
+  </section>
+  <section className="card">
+   <h2>Department compensation defaults</h2>
+   <Form submit="Save department default" onSubmit={async v => { const d = state.departments.find((d:D) => d.id === v.department); await command('department',{id:d.id,name:d.name,shared:d.shared,onCostDefaultPercent:v.onCostDefaultPercent}); await refresh() }}>
+    <Field label="Department" name="department" options={state.departments.map((d:D)=>({value:d.id,label:d.name}))} />
+    <Field label="Department on-cost default %" name="onCostDefaultPercent" defaultValue="0" hint="Applied when a position is next saved with no override. Existing and frozen costs stay unchanged." />
    </Form>
   </section>
   <section className="card">
