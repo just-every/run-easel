@@ -5,6 +5,7 @@ import { ReforecastComparison } from './reforecast-comparison'
 import { ParallelMonth } from './parallel-month'
 import { DepartmentStatements } from './department-statements'
 import { PackActionDepartment } from './pack-action-departments'
+import { DecisionFollowup } from './decision-followup'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 import { Dots, glue } from './dots'
 
@@ -85,5 +86,6 @@ export function Review({ state, refresh }: Shared) {
    </div>)}
    {!packs.length && <p className="muted">No packs for this month yet.</p>}
   </section>
+  <DecisionFollowup state={state} />
  </>
 }

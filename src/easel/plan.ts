@@ -8,11 +8,13 @@ import { range } from './months'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 import { requireDepartment, requirePayDetail, requireFinance, requireMember } from './access'
 import type { Context } from './context'
-import { INPUT_KINDS, inputDepartment, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
+import { INPUT_KINDS, inputDepartment, model, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
 import { cents } from './units'
 import { cashBalance } from './actuals'
 import { frozenModel } from './reforecasts'
-import { all, choice, find, get, integer, optionalText, put, remove, requireThat, text, uid, type Data, type State } from './types'
+import { workingCalculation } from './calculation'
+import { citesProposal, promotionEffect } from './decision-followup'
+import { all, choice, Fault, find, get, integer, optionalText, put, remove, requireThat, text, uid, type Data, type State } from './types'
 
 export function bump(c: Context, scenario: Data, action: string, record: string, detail: Data = {}) {
  const before = scenario.revision, after = before + 1
@@ -160,11 +162,14 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireScenarioEdit(x, target)
   requireThat(target.status === 'working', 'The target scenario is frozen', 409)
   requireThat(target.revision === p.branchedFrom.revision, `${target.name} changed since this proposal was made (revision ${p.branchedFrom.revision} → ${target.revision}); make a fresh proposal from its current revision`, 409)
+  const beforeModel = model(s, target.id), before = await effectCalculation(c, target.id)
   clearInputs(s, target.id)
   copyInputs(s, p.id, target.id)
   put(s, 'scenario', target.id, { ...target, cash: p.cash, ledgerAllocations: p.ledgerAllocations, balanceLedger: p.balanceLedger })
+  const promoted = await effectCalculation(c, target.id)
+  const promotedEffect = before && promoted ? promotionEffect(beforeModel, before, model(s, target.id), promoted) : { unavailable: 'The forecast could not be calculated at promotion' }
   const after = bump(c, get(s, 'scenario', target.id), 'proposal-promoted', p.id, { proposal: p.id, proposalRevision: p.revision, request: p.request })
-  put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'promoted', promotedBy: x.actor.email, promotedAt: c.now, promotedInto: { scenario: target.id, revision: after } })
+  put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'promoted', promotedBy: x.actor.email, promotedAt: c.now, promotedInto: { scenario: target.id, revision: after }, promotedEffect })
   return { target: get(s, 'scenario', target.id), proposal: get(s, 'scenario', p.id) }
  }
  if (op === 'proposal-decline') {
@@ -196,12 +201,18 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(!sc.sandbox, 'Private sandboxes are retained with their sharing history', 409)
   requireThat(sc.kind === 'scenario' || (sc.kind === 'proposal' && sc.status === 'closed'), 'Only branched scenarios and closed proposals can be deleted', 409)
   requireThat(!all(s, 'scenario').some(o => o.parent === sc.id && o.status === 'working'), 'Close or delete the proposals made from this scenario first', 409)
+  requireThat(!citesProposal(s, sc.id), 'A published decision cites this promotion; keep it for follow-up', 409)
   clearInputs(s, sc.id)
   remove(s, 'scenario', sc.id)
   c.activity.push({ action: op, record: sc.id, detail: { name: sc.name } })
   return { removed: sc.id }
  }
  return undefined
+}
+
+/** A calculation the forecast cannot produce leaves the promotion's effect unavailable rather than guessed. */
+async function effectCalculation(c: Context, scenario: string) {
+ try { return await workingCalculation(c, scenario) } catch (error) { if (error instanceof Fault) return null; throw error }
 }
 
 function proposal(s: State, id: unknown, x: import('./types').Access) {
