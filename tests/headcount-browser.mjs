@@ -56,6 +56,7 @@ try {
     const safe=await api(viewer.context,server.origin,`headcount/${f.scenario}`)
     assert.deepEqual(safe.history,[]);assert.deepEqual(safe.positions,[])
     assert.doesNotMatch(JSON.stringify(safe),/Private Morgan|Private Taylor|Private Drew/)
+    await viewer.page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name:'Overview',exact:true}).click()
     const section=viewer.page.locator('section.card').filter({has:viewer.page.getByRole('heading',{name:'Headcount plan against actual',exact:true})})
     await section.getByLabel('Headcount month').selectOption('2026-02')
     await section.getByRole('cell',{name:'$26,000.00',exact:true}).waitFor()

@@ -52,6 +52,7 @@ try {
    await noOverflow(page,`SHEET-003 recalculation ${width}`);await pl.screenshot({path:join(evidence,`recalculated-${width}.png`)})
    const board=await session(browser,root,server.origin,'board',width)
    try {
+    await board.page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name:'Overview',exact:true}).click()
     await board.page.getByLabel('Scenario',{exact:true}).selectOption(scenario)
     const safe=await api(board.context,server.origin,`scenario/${scenario}`)
     assert.deepEqual(safe.inputs['workbook-model'],[]);assert.ok(!JSON.stringify(safe).includes('987654.32'))
