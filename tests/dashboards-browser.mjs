@@ -111,7 +111,7 @@ try {
   const reportSheet = reportBook.getWorksheet('Saved report')
   const salesQuarter = reportSheet.getRows(3, reportSheet.rowCount - 2).find(row => row.getCell(1).value === 'Sales' && row.getCell(2).value === 'FY2026 Q1')
   assert.ok(salesQuarter)
-  assert.equal(salesQuarter.getCell(4).value, 4500000, 'REPORT-001 department quarter equals the three planned months')
+  assert.equal(salesQuarter.getCell(4).result, 4500000, 'REPORT-001 department quarter equals the three planned months')
   assert.equal(salesQuarter.getCell(3).value, null, 'REPORT-001 no actuals is unavailable, never zero')
   privateDetailsAbsent(JSON.stringify(reportBook.model))
   const report = await api(board.context, server.origin, `dashboards/${definition.id}/report`)

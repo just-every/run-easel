@@ -422,7 +422,8 @@ Omitting `report` preserves it on an ordinary dashboard edit; `null` removes it.
 
 `row` is `department` or `line`; `period` is `month`, `quarter` or `year`.
 Read `GET /api/easel/dashboards/:id/report` or download
-`GET /api/easel/dashboards/:id/report.xlsx`. Both recheck current dashboard
+`GET /api/easel/dashboards/:id/report.xlsx`. A dashboard carrying a definition also shows Download saved report (Excel).
+Both routes recheck current dashboard
 and source-version access and return aggregate cells only, never inputs or
 source traces. The source version's values occupy the `budget` column; the
 optional version occupies `comparison`. Versions must share currency and
@@ -436,6 +437,7 @@ A complete accepted period without a selected row has an observed zero; a
 missing or blocked actual period, or a plan period outside its horizon, makes
 the corresponding aggregate unavailable (`null`, blank in Excel). Variance
 is actual minus source version. YoY is actual minus prior-year actual.
+The workbook includes monthly aggregate cells and live period sums and variance formulas.
 Percentages are integer basis points, `(difference * 10000) / baseline`,
 rounded once half away from zero; a zero baseline is unavailable. A highlight
 flag means the absolute variance percentage is strictly above `highlightBps`.

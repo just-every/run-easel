@@ -27,7 +27,12 @@ function exact(values: number[]): number {
  requireThat(result <= BigInt(Number.MAX_SAFE_INTEGER) && result >= BigInt(Number.MIN_SAFE_INTEGER), 'Report total exceeds the supported exact range')
  return Number(result)
 }
-const percent = (difference: number | null, base: number | null) => difference === null || base === null || base === 0 ? null : mulDiv(difference, 10000, base)
+function percent(difference: number | null, base: number | null) {
+ if (difference === null || base === null || base === 0) return null
+ const result = mulDiv(difference, 10000, base)
+ requireThat(Number.isSafeInteger(result), 'Report percentage exceeds the supported exact range')
+ return result
+}
 
 export async function savedReport(c: Context, id: string) {
  const d = get(c.s, 'dashboard', id)
@@ -69,6 +74,13 @@ export async function savedReport(c: Context, id: string) {
   if (consumed.some(cell => cell.amount === null)) return null
   return exact(consumed.map(cell => cell.amount))
  }
+ const monthly = dimensions.flatMap(dimension => [...requested].sort().map(m => ({ row: dimension.id, name: dimension.name, month: m,
+  actual: aggregate(actuals.cells, [m], dimension.id, key => !unavailable.has(key)),
+  budget: aggregate(source.calculation.cells, [m], dimension.id, key => source.calculation.months.includes(key) &&
+   (source.scenario.status === 'frozen' || !source.calculation.actualsThrough || key > source.calculation.actualsThrough || !unavailable.has(key))),
+  comparison: comparison ? aggregate(comparison.calculation.cells, [m], dimension.id, key => comparison.calculation.months.includes(key) &&
+   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || key > comparison.calculation.actualsThrough || !unavailable.has(key))) : null,
+ })))
  const rows = groups.flatMap(group => dimensions.map(dimension => {
   const actual = aggregate(actuals.cells, group.months, dimension.id, m => !unavailable.has(m))
   const budget = aggregate(source.calculation.cells, group.months, dimension.id, m => source.calculation.months.includes(m) &&
@@ -84,7 +96,7 @@ export async function savedReport(c: Context, id: string) {
    highlight: varianceBps !== null && Math.abs(varianceBps) > definition.highlightBps }
  }))
  return { name: d.name, definition, currency: source.workspace.currency, sourceName: source.scenario.name,
-  comparisonName: comparison?.scenario.name ?? null, department: d.department, rows,
+  comparisonName: comparison?.scenario.name ?? null, department: d.department, rows, monthly,
   missingMonths: actuals.missingMonths, blockedMonths: actuals.blockedMonths,
   units: { money: 'integer minor units', percentages: 'basis points; half away from zero; unavailable for zero denominator' } }
 }
@@ -92,14 +104,21 @@ export async function savedReport(c: Context, id: string) {
 export function savedReportWorkbook(view: Data): Uint8Array {
  const rows: Cell[][] = [[`${view.name} · ${view.currency} minor units; percentages in basis points`],
   ['Row', 'Period', 'Actual', view.sourceName, view.comparisonName ?? 'No comparison', 'Variance', 'Variance bps', 'Prior-year actual', 'YoY change', 'YoY bps', 'Highlight']]
+ const monthly: Cell[][] = [['Row', 'Month', 'Actual', view.sourceName, view.comparisonName ?? 'No comparison'],
+  ...view.monthly.map((m: Data) => [m.name, m.month, m.actual, m.budget, m.comparison])]
+ const rollup = (row: Data, col: string, periods: string[], value: number | null): Cell => {
+  if (value === null) return null
+  const refs = view.monthly.flatMap((m: Data, i: number) => m.row === row.row && periods.includes(m.month) ? [i + 2] : [])
+  return { formula: `SUM('Monthly'!${col}${refs[0]}:${col}${refs.at(-1)})`, value }
+ }
  for (const row of view.rows) {
   const n = rows.length + 1
   const formula = (text: string, value: number | null): Cell => value === null ? null : { formula: text, value }
-  rows.push([row.name, row.period, row.actual, row.budget, row.comparison,
-   formula(`C${n}-D${n}`, row.variance), formula(`ROUND((C${n}-D${n})*10000/D${n},0)`, row.varianceBps), row.priorYearActual,
+  rows.push([row.name, row.period, rollup(row, 'C', row.months, row.actual), rollup(row, 'D', row.months, row.budget), rollup(row, 'E', row.months, row.comparison),
+   formula(`C${n}-D${n}`, row.variance), formula(`ROUND((C${n}-D${n})*10000/D${n},0)`, row.varianceBps), rollup(row, 'C', row.months.map((m: string) => addMonths(m, -12)), row.priorYearActual),
    formula(`C${n}-H${n}`, row.yoy), formula(`ROUND((C${n}-H${n})*10000/H${n},0)`, row.yoyBps), row.highlight ? 'Above threshold' : ''])
  }
- return workbook([{ name: 'Saved report', rows }, { name: 'Availability', rows: [
+ return workbook([{ name: 'Saved report', rows }, { name: 'Monthly', rows: monthly }, { name: 'Availability', rows: [
   ['Unavailable values are blank, never zero. Accepted periods without this row have an observed zero.'],
   ['Missing actual periods', ...view.missingMonths], ['Blocked actual periods', ...view.blockedMonths],
  ] }])

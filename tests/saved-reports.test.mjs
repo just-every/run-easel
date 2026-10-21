@@ -61,6 +61,11 @@ test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year a
  const sheet = book.getWorksheet('Saved report')
  assert.equal(evaluate(sheet, 'F3'), 6003); assert.equal(evaluate(sheet, 'G3'), 2001); assert.equal(evaluate(sheet, 'J3'), 5003)
  assert.equal(sheet.getCell('D6').value, null, 'Unavailable TTM plan remains blank in Excel')
+ const monthlySheet = book.getWorksheet('Monthly')
+ const october = monthlySheet.getRows(2, monthlySheet.rowCount - 1).find(r => r.getCell(1).value === 'Sales' && r.getCell(2).value === '2026-10')
+ october.getCell(3).value += 100
+ assert.equal(evaluate(sheet, 'C3'), 36106, 'Quarter totals are live sums of the monthly cells')
+ assert.equal(evaluate(sheet, 'F3'), 6103, 'Variance updates with its underlying monthly cells')
  assert.doesNotMatch(JSON.stringify(book.model), /Private pay sentinel|Private salary role|annualSalary/)
  // Closed and missing data are explicit, and formula percentages never divide by zero.
  d = await h.command('dashboard-save', { ...body, id: d.id, revision: d.revision, department: '', report: { ...body.report, row: 'line', lines: [revenue.id, payroll.id], period: 'month', through: '2026-10' } })
