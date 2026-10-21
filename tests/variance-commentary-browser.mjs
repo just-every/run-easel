@@ -1,6 +1,6 @@
 // AGENT-007: real Review entry, human confirmation and immutable published HTML at 1440/390.
 import assert from 'node:assert/strict'
-import { mkdir, readFile, rm } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { fresh, freePort, start } from './browser-runtime.mjs'
@@ -82,6 +82,18 @@ try {
   await shoot(`published-confirmed-${width}`, visible); await visible.close()
  }
  console.log('AGENT-007: native draft/save/publish/confirm and immutable HTML downloads passed at 1440 and 390 without overflow')
+} catch (error) {
+ // Report only fixed diagnostic markers, never private capture text or settings.
+ const directory = join(root, '.seed', 'installer')
+ const markers = ['EADDRINUSE', 'ENOSPC', 'ENOENT', 'ERR_MODULE_NOT_FOUND', 'ECONNREFUSED', 'Could not resolve', 'Cannot find module', 'fetch failed', 'error during build', 'Timed out', 'timeout']
+ const found = new Set()
+ for (const name of await readdir(directory, { recursive: true }).catch(() => [])) {
+  if (!name.endsWith('install.log')) continue
+  const log = await readFile(join(directory, name), 'utf8')
+  for (const marker of markers) if (log.includes(marker)) found.add(marker)
+ }
+ console.error('Lifecycle diagnostic markers:', [...found].join(', ') || 'none of the known markers')
+ throw error
 } finally {
  await finance?.context.close(); await browser.close(); await server?.close(); await rm(root, { recursive: true, force: true })
 }

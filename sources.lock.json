@@ -91,7 +91,7 @@
   ],
   "files": {
     ".github/workflows/journeys.yml": {
-      "sha256": "227e9880f5b90dd3ea4250582c516c06e7b82ea7a441adf7dc0b7d2f55759329",
+      "sha256": "58c6f22e15c79dd4dae1851f0ae206986868ebdee2c1d175a90fbbd62402c69d",
       "executable": false
     },
     ".github/workflows/run-demo.yml": {
@@ -3663,7 +3663,7 @@
       "executable": false
     },
     "tests/variance-commentary-browser.mjs": {
-      "sha256": "1d99054c8a3ebbd03fe89408ae72e931e4bd67480394dc9d4fea1507d2e20b12",
+      "sha256": "30559c822bfdba274ce2586a333d08920527973d6a65bbfc5ae00a555ca72226",
       "executable": false
     },
     "tests/variance-commentary.test.mjs": {
