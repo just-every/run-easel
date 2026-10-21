@@ -49,16 +49,18 @@ try {
   const file = join(evidence, `${name}.html`); await (await pending).saveAs(file)
   return file
  }
- for (const [width, month, label] of [[1440, '2026-01', 'January 2026'], [390, '2026-02', 'February 2026']]) {
+ for (const [width, month, label] of [[1440, '2026-01', 'Jan 2026'], [390, '2026-02', 'Feb 2026']]) {
   await page.setViewportSize({ width, height: 1000 })
   await page.reload(); await page.getByRole('navigation', { name: 'Easel' }).waitFor()
   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
   await page.getByLabel('Month', { exact: true }).selectOption(month); await settle(page)
   const detail = page.locator('details.card-row').filter({ has: page.getByText('Cloud', { exact: true }) })
-  await detail.locator('summary').click()
+  const openDetail = async () => { await detail.waitFor(); if (!await detail.getAttribute('open').then(value => value !== null)) await detail.locator('summary').click() }
+  await openDetail()
   const narrative = `Unconfirmed capacity hypothesis ${width}`
   await detail.getByLabel('Explanation for Cloud · Engineering', { exact: true }).fill(narrative)
   await action('explanation', 'Save explanation')
+  await openDetail()
   await detail.getByText('Explanation (draft):', { exact: true }).waitFor()
   await shoot(`draft-review-${width}`)
   const draftPack = await action('pack-create', `Start the ${label} pack`)
@@ -70,7 +72,9 @@ try {
   await rendered.goto(pathToFileURL(file).href)
   assert.equal(await rendered.getByText(narrative, { exact: true }).count(), 0)
   await shoot(`published-draft-excluded-${width}`, rendered); await rendered.close()
+  await openDetail()
   await action('explanation-confirm', 'Confirm explanation')
+  await openDetail()
   await detail.getByText(/Explanation \(confirmed/).waitFor()
   await shoot(`confirmed-review-${width}`)
   await action('pack-create', `Start the ${label} pack`)
