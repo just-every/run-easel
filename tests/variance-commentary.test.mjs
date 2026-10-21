@@ -73,6 +73,12 @@ test('AGENT-007 accepted citations stay in their visible variance and unconfirme
  assert.deepEqual(await h.get(`/api/easel/snapshot/${published.snapshot}`, board), frozen)
  await documents(pack.id, explanation.text)
  const next = await h.command('pack-create', { month: '2026-01' })
+ // Confirmation cannot authorize a later pack against differently mapped sources.
+ await h.command('account-map', { account: '500', target: travel.id })
+ const beforeRefusedPack = await records()
+ await h.command('pack-publish', { pack: next.id }, h.owner, 409)
+ assert.deepEqual(await records(), beforeRefusedPack)
+ await h.command('account-map', { account: '500', target: cloud.id })
  const confirmed = await h.command('pack-publish', { pack: next.id })
  const confirmedSnapshot = await h.get(`/api/easel/snapshot/${confirmed.snapshot}`, board)
  const commentary = confirmedSnapshot.body.variances.find(r => r.line === 'Cloud' && r.department === 'Engineering').explanation

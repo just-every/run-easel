@@ -152,6 +152,11 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   requireThat(pack.status === 'draft', 'This pack is already published', 409)
   const w = workspace(s)
   const v = await variance(c, pack.month)
+  for (const row of v.rows) {
+   if (row.payroll || row.explanation?.status !== 'confirmed') continue
+   const ids = row.explanation.citationIds ?? [], visible = new Set(row.citations.map(source => source.id))
+   requireThat(Array.isArray(ids) && ids.every((id: unknown) => typeof id === 'string' && visible.has(id)), 'An explanation citation changed; review its sources before publishing', 409)
+  }
   const forecast = get(s, 'scenario', pack.forecast)
   const forecastCalc = await workingCalculation(c, forecast.id, forecast.actualsThrough)
   const budget = await snapshot(c.db, forecast.budgetSnapshot)
