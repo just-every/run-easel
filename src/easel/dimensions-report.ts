@@ -56,7 +56,7 @@ function totals(cells: DimensionCell[], months: string[]) {
  * even when the aggregate profit-and-loss cell is unchanged. */
 export function dimensionVersionCells(calculation: Calculation, structure: DimensionStructure): Data[] {
  if (!structure.dimension.length && !structure['line-group'].length) return []
- const rows = new Map<string, Data>()
+ const rows = new Map<string, { address: Data; amount: bigint }>()
  const ancestors = (members: Data[]) => {
   const index = new Map<string, string[]>()
   for (const parent of members) for (const child of descendants(members, parent.id)) {
@@ -66,20 +66,38 @@ export function dimensionVersionCells(calculation: Calculation, structure: Dimen
  }
  const dimensionAncestors = new Map(structure.dimension.map(d => [d.id, ancestors(structure['dimension-member'].filter(m => m.dimension === d.id))]))
  const lineAncestors = ancestors(structure['line-group']), lineById = new Map(structure.line.map(line => [line.id, line]))
- const add = (cell: DimensionCell, group: Data) => {
-  const address = { line: cell.line, department: cell.department, month: cell.month, ...group }
-  const key = JSON.stringify(address)
+ const add = (cell: Cell, group: Data, amount: bigint) => {
+  const address = { line: cell.line, department: cell.department, month: cell.month, ...group }, key = JSON.stringify(address)
   const prior = rows.get(key)
-  rows.set(key, { ...address, amount: (prior?.amount ?? 0) + cell.amount })
+  if (prior) prior.amount += amount
+  else rows.set(key, { address, amount })
  }
- for (const cell of dimensionalCells(calculation.cells)) {
+ // A structure version needs each individual dimension's rollups, rather than
+ // every cross-product of all five tags. Fold source cents into member buckets
+ // first; this avoids materializing/sorting a full dimensional source table.
+ for (const cell of calculation.cells) {
+  if (!cell.sources.length) continue
+  const sources = cell.sources.map(source => ({ dimensions: source.dimensions ?? {}, amount: BigInt(source.amount) }))
   for (const dimension of structure.dimension) {
-   const member = cell.dimensions[dimension.id]
-   if (!member) { add(cell, { dimension: dimension.id, member: '' }); continue }
-   for (const parent of dimensionAncestors.get(dimension.id)?.get(member) ?? []) add(cell, { dimension: dimension.id, member: parent })
+   const leaves = new Map<string, bigint>()
+   for (const source of sources) {
+    const member = source.dimensions[dimension.id] ?? ''
+    leaves.set(member, (leaves.get(member) ?? 0n) + source.amount)
+   }
+   for (const [member, amount] of leaves) {
+    const parents = member ? dimensionAncestors.get(dimension.id)?.get(member) ?? [] : ['']
+    for (const parent of parents) add(cell, { dimension: dimension.id, member: parent }, amount)
+   }
   }
   const line = lineById.get(cell.line)
-  if (line?.group) for (const group of lineAncestors.get(line.group) ?? []) add(cell, { lineGroup: group })
+  if (line?.group) {
+   const amount = sources.reduce((sum, source) => sum + source.amount, 0n)
+   for (const group of lineAncestors.get(line.group) ?? []) add(cell, { lineGroup: group }, amount)
+  }
  }
- return [...rows.values()]
+ return [...rows.values()].map(({ address, amount }) => {
+  const value = Number(amount)
+  requireThat(Number.isSafeInteger(value) && BigInt(value) === amount, 'Dimensional total exceeds the supported exact range')
+  return { ...address, amount: value }
+ })
 }
