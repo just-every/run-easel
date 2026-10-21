@@ -73,6 +73,7 @@ try {
   await rendered.setViewportSize({ width, height: 1000 })
   await rendered.goto(pathToFileURL(file).href)
   assert.equal(await rendered.getByText(narrative, { exact: true }).count(), 0)
+  await rendered.getByRole('cell', { name: 'No explanation recorded', exact: true }).scrollIntoViewIfNeeded()
   await shoot(`published-draft-excluded-${width}`, rendered); await rendered.close()
   await openDetail()
   await action('explanation-confirm', 'Confirm explanation')
@@ -87,6 +88,7 @@ try {
   assert.ok(!(await readFile(file, 'utf8')).includes(narrative), 'Earlier immutable pack remains draft-free')
   const visible = await context.newPage(); await visible.setViewportSize({ width, height: 1000 }); await visible.goto(pathToFileURL(secondFile).href)
   await visible.getByText(new RegExp(narrative)).waitFor()
+  await visible.getByText(new RegExp(narrative)).scrollIntoViewIfNeeded()
   await shoot(`published-confirmed-${width}`, visible); await visible.close()
  }
  console.log('AGENT-007: native draft/save/publish/confirm and immutable HTML downloads passed at 1440 and 390 without overflow')
