@@ -28,7 +28,7 @@ export async function cashAlerts(c: Context, op: string, b: Data): Promise<Data 
   requireThat(!prior || prior.revision === Number(b.revision), 'The rule changed; reload before saving', 409)
   const kind = choice(b.kind, ['floor', 'below-plan', 'runway'] as const, 'cash alert')
   const basis = kind === 'below-plan' ? choice(b.basis, ['amount', 'percent'] as const, 'shortfall basis') : null
-  const rule: Data = { name: text(b.name, 'Rule name'), kind, intervalDays: integer(b.intervalDays, 'Re-alert interval (days)', 1, 365), enabled: b.enabled !== false, currency: workspace(c.s).currency,
+  const rule: Data = { name: text(b.name, 'Rule name'), kind, intervalDays: integer(b.intervalDays ?? 7, 'Re-alert interval (days)', 1, 365), enabled: b.enabled !== false, currency: workspace(c.s).currency,
    ...(basis === 'amount' ? { basis, amountCents: cents(b.amount, 'Shortfall amount') } : basis === 'percent' ? { basis, percentBps: percentBps(b.percent, 'Shortfall percent') } : {}),
    ...(kind === 'runway' ? { runwayHundredths: hundredths(b.runway, 'Runway threshold') } : {}),
    revision: (prior?.revision ?? 0) + 1, updatedBy: c.x.actor.email, updatedAt: c.now,

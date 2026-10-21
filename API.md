@@ -171,7 +171,8 @@ or revision returns 409, unauthorized access 403, invalid CSV 400.
 
 ### Cash alerts (`REPORT-006`)
 
-Finance saves `cash-alert-rule-save` with `{name,kind,intervalDays,enabled}`.
+Finance saves `cash-alert-rule-save` with `{name,kind,intervalDays,enabled}`
+(`intervalDays` 1 to 365 company-zone days, 7 when omitted).
 `kind: "floor"` checks forecast months against the agreed cash floor
 (`cash-constraints`); `kind: "below-plan"` takes `{basis:"amount",amount}` or
 `{basis:"percent",percent}` and compares the latest closed month's forecast

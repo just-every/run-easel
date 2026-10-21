@@ -24,9 +24,9 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  await h.command('department-map', { source: 'Operations', department: ops.id })
  await h.command('cash-constraints', { floor: '350000', runwayMinimum: '0' })
  const planner = await h.person('planner@example.test', 'contributor', [ops.id]), viewer = await h.person('viewer@example.test', 'viewer')
- const rule = body => h.command('cash-alert-rule-save', { intervalDays: 7, enabled: true, ...body })
+ const rule = body => h.command('cash-alert-rule-save', { enabled: true, ...body })
  for (const cookie of [planner, viewer]) {
-  await h.command('cash-alert-rule-save', { name: 'Not finance', kind: 'floor', intervalDays: 7 }, cookie, 403)
+  await h.command('cash-alert-rule-save', { name: 'Not finance', kind: 'floor' }, cookie, 403)
   await h.command('cash-alert-check', {}, cookie, 403)
   await h.get(list, cookie, 403)
  }
@@ -94,7 +94,7 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  for (const r of [floor, amount, percent, runway]) assert.deepEqual(alertOf(r)[0].sends.map(s => s.reason), ['breach', 'worse', 'interval'], r.name)
  mail = alertMail()
  assert.equal(mail.length, 12)
- assert.match(mail.at(-1).text, /Still breached 7 company-zone days after the last alert/)
+ assert.match(mail.at(-1).text, /Still breached 7 company-zone days after the last alert/, 'the default interval is seven days')
  assert.match(mail.at(-1).text, /Cause: scheduled check for Mon, 03\/09\/2026, 08:00\sAM\sEDT\./)
 
  // Acknowledgment is recorded against the latest send, once, at the exact revision.

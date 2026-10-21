@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "76793d05cd39eca9fc00fe93369bfd8dea1b47f5527f7315038d09a3b5367108",
+      "sha256": "7937931887c27d0f05af2bb9d9ef6b47457243f61d6726a8107d256088fffb0c",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "7e4fb040b903973289b87f381fb50f0994f02b02bdef197aadb6f263a83d054e",
+      "sha256": "3dbc65441702de258de0bf0de6ed7c50567cb5b4590567d6388b74e624b3f67c",
       "executable": false
     },
     "DEMO.md": {
@@ -735,7 +735,7 @@
       "executable": false
     },
     "src/easel/cash-alert-rules.ts": {
-      "sha256": "8d6a4f7017ea86df0a5c142f3651667d5c137e732b40d1af939c3ced1db7c4a7",
+      "sha256": "c824bea03bfbb2eb721bad736dc5fe6a3795461e4c934e8858a0b751649460f4",
       "executable": false
     },
     "src/easel/cash-alert-schedule.ts": {
@@ -3359,7 +3359,7 @@
       "executable": false
     },
     "tests/cash-alerts.test.mjs": {
-      "sha256": "0696b3c2b8e6b03c4798447d8f35688d851e80a9a080f876c5dead691a752e54",
+      "sha256": "1b65dd67cf321f931629cea2a8ebd3d75aeea5d6cbb565fa9c5bb294566a8617",
       "executable": false
     },
     "tests/cash-drivers.test.mjs": {
