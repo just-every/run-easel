@@ -488,3 +488,11 @@ flag means the absolute variance percentage is strictly above `highlightBps`.
 The browser builder, report-driven dashboard widgets, custom dimensions and
 hierarchies, permitted-member authoring and scheduled email delivery remain
 unfinished; these API reports do not mark REPORT-001 done.
+
+### Custom dimensions and account hierarchies
+
+Finance uses `dimension` / `dimension-member` with stable IDs and optional member `parent`, and `line-group` / `line-hierarchy` for same-type account rollups. Every planning input accepts `dimensions: {dimensionId: memberId}`. `input-dimensions` changes an existing input at `{scenario,kind,id,revision,dimensions}` without changing its other terms. Entered and calculated planning-grid rows display their member tags.
+
+`dimension-map` stores `{dimension,member,sourceKind,source,match}` rules, where sourceKind is `department`, `class` or `tracking-option` and match is `exact` or `prefix`. CSV actuals accept the `class` and `trackingOption` column choices (headers Class and Tracking option are detected). Preview lists `dimensionExceptions`; unresolved or conflicting member rules refuse commit. Changed rules block only dependent dimension/line/month conclusions, never manufacture a zero.
+
+Read `GET /api/easel/dimension-report/:scenario?dimension=<id>&member=<id>` or use `actuals` as the scenario. The same path with `/document.xlsx` before the query exports live totals in integer currency minor units. Frozen scenarios read captured definitions and source partitions. Deleting an in-use definition refuses; structure changes retain readable diffs and every affected department/member cell in Activity.
