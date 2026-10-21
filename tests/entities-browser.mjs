@@ -65,7 +65,11 @@ try {
   for (const statement of ['Profit and loss', 'Balance sheet', 'Cash bridge']) {
    const table = consolidated.getByRole('table', { name: `${statement} in USD`, exact: true })
    await table.waitFor(); assert.ok((await table.innerText()).includes('Northstar Canada'))
-   await table.screenshot({ path: join(evidence, `entity-${statement.toLowerCase().replaceAll(' ', '-')}-${width}.png`) })
+   const scroller = table.locator('..')
+   await scroller.screenshot({ path: join(evidence, `entity-${statement.toLowerCase().replaceAll(' ', '-')}-${width}.png`) })
+   await scroller.evaluate(node => { node.scrollLeft = node.scrollWidth })
+   await scroller.screenshot({ path: join(evidence, `entity-${statement.toLowerCase().replaceAll(' ', '-')}-totals-${width}.png`) })
+   if (statement !== 'Cash bridge') assert.equal(await table.locator('tbody tr').first().locator('td').last().innerText(), '$0.00')
   }
   assert.ok((await consolidated.innerText()).includes('rate for 2026-02'))
   await consolidated.getByText('Northstar Canada: local statements in CAD', { exact: true }).click()
