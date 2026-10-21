@@ -3,7 +3,7 @@
 The same routes serve the app and integrations acting under a person's authority.
 Use a native session cookie (and a same-origin `Origin` header for writes), or
 a scoped personal/service bearer token as documented below. Responses are JSON; refusals are
-`{ "error": "..." }` with 400, 401, 403, 404, 409, 413 or 429. A 409 means the plan
+`{ "error": "..." }` with 400, 401, 403, 404, 409, 413, 425 or 429. A 409 means the plan
 or the person's access changed (reload and decide again) or a reviewed
 revision or fingerprint no longer matches.
 
@@ -516,3 +516,25 @@ A native owner/admin session uses `entity-save {name,scenario,currency,group,rep
 `entity-elimination-save` takes `name`, `month`, `fromEntity`, `toEntity`, source input `fromOrigin`/`toOrigin`, local `fromAmount`/`toAmount`, `receivable`/`payable`, `cashReceived`/`cashPaid`, and explicit `reviewed:true`. Both translated sides must match and remain source-backed; overlapping rules cannot exceed the source. `entity-elimination-delete {id}` removes a reviewed rule. No automatic matching or inference runs.
 
 `GET /entities` returns authorized entities and groups (native finance additionally sees rates/rules/source options). `/consolidation/:group` and `/consolidation/:group/workbook` expose local and translated statements, before/elimination/after totals, visible FX adjustments and missing-source states through current entity and department authority. A subset of entities never implies a complete consolidation. The unpartitioned installation ledger cannot close a bound entity forecast; provider/entity-scoped actuals remain CONNECT-003/011 work.
+
+
+## Background calculation
+
+Input and grid mutations on plans above 2,000 input rows return HTTP 202 with
+`calculationJob {id,scenarios,status,startedAt}`. A reviewed workbook above that
+size runs each bounded commit, continuation or undo as a background operation.
+The app shows the affected plan periods as recalculating and removes old figures
+until completion. A partially imported workbook returns 425 with
+`calculation.status: awaiting-continuation`; explicitly continue or undo the
+source import before using its figures or editing its inputs.
+
+Poll `GET /api/easel/calculation-jobs/:id` (MCP `calculation_status`) for
+`running|completed|failed|interrupted`. Authorized scenario readers receive
+metadata; only the initiating actor with unchanged effective authority receives
+the stored `result` and `responseStatus`. All commands retain ordinary session,
+origin, model revision and input authority checks. Reads consuming an active
+calculation return 202 metadata without financial values. Re-read after a
+completed job; never repeat an accepted mutation to discover its outcome.
+An interrupted operation has an unknown outcome: reload current state before
+deciding on another action. Background responses are transient operational data
+and are excluded from portable model archives.

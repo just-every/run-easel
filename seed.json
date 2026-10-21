@@ -288,10 +288,33 @@
       "clauses": [
         "REPORT-001"
       ]
+    },
+    {
+      "id": "custom-model-dimensions",
+      "clauses": [
+        "MODEL-003"
+      ]
+    },
+    {
+      "id": "native-group-grants",
+      "clauses": [
+        "ACCESS-001"
+      ]
+    },
+    {
+      "id": "native-entity-consolidation",
+      "clauses": [
+        "ENTITY-001"
+      ]
+    },
+    {
+      "id": "background-model-calculation",
+      "clauses": [
+        "MODEL-007"
+      ]
     }
   ],
   "nonGoals": [
-    "Multi-entity consolidation or currency conversion",
     "Posting journals or correcting the ledger",
     "Payroll, tax or statutory statement calculation",
     "Executing spreadsheet macros",

@@ -39,7 +39,7 @@ That is evidence, not a permanent test.
 [CONTRACT.md](CONTRACT.md) defines the product Easel is being built towards:
 86 target and push-further clauses beyond the published loop, each with the
 acceptance evidence below. Status follows the clause evidence below and CONTRACT.md's Status table:
-38 done, 18 partial and 30 missing target/push-further clauses.
+42 done, 18 partial and 26 missing target/push-further clauses.
 A build round that starts a clause registers it in `seed.json → capabilities`,
 adds the flow test or journey named here through a public door (the HTTP API,
 the browser at 1440 and 390, a `rer` command, an add-in host, a native build

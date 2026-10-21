@@ -5,7 +5,7 @@ import { harness } from './harness.mjs'
 import { smallBusinessModel } from './scale-fixtures.mjs'
 
 const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-const run = `sx-easel-c37-model-scale-${new Date().toISOString().replaceAll(':', '').replaceAll('.', '')}`
+const run = process.argv[2] ?? `sx-easel-c37-model-scale-${new Date().toISOString().replaceAll(':', '').replaceAll('.', '')}`
 console.log(`SCALE_RUN ${run} candidate=${sha}`)
 const h = await harness()
 try {
