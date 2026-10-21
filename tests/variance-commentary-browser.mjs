@@ -84,8 +84,8 @@ try {
  console.log('AGENT-007: native draft/save/publish/confirm and immutable HTML downloads passed at 1440 and 390 without overflow')
 } catch (error) {
  // Report only fixed diagnostic markers, never private capture text or settings.
- const directory = join(root, '.seed', 'installer')
- const markers = ['EADDRINUSE', 'ENOSPC', 'ENOENT', 'ERR_MODULE_NOT_FOUND', 'ECONNREFUSED', 'Could not resolve', 'Cannot find module', 'fetch failed', 'error during build', 'Timed out', 'timeout']
+ const directory = join(root, '.rer')
+ const markers = ['EADDRINUSE', 'ENOSPC', 'ENOENT', 'ERR_MODULE_NOT_FOUND', 'ECONNREFUSED', 'Could not resolve', 'Cannot find module', 'fetch failed', 'error during build', 'Timed out', 'timeout', 'Cannot find package', 'Failed to start', 'failed to start', 'ERR_', 'Error:', 'error:', 'Permission denied', 'certificate', 'proxy', 'health', 'SIGTERM']
  const found = new Set()
  for (const name of await readdir(directory, { recursive: true }).catch(() => [])) {
   if (!name.endsWith('install.log')) continue
