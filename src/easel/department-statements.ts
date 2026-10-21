@@ -1,6 +1,6 @@
 import { captureStatementDimensions, scopedStatementRows } from './statement-dimensions'
 // Monthly department statements are scoped before they are stored or mailed.
-import { access, dimensionAllowed, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail } from './access'
+import { access, dimensionAllowed, requireCapability, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail } from './access'
 import type { Context } from './context'
 import { departments, workspace } from './model'
 import { monthLabel } from './months'
@@ -52,7 +52,7 @@ export function statementWork(c: Context, s: Data): Data {
 }
 
 export async function captureDepartmentStatement(c: Context, id: string) {
- requireFinance(c.x)
+ requireCapability(c.x, 'approvals', c.s)
  const statement = get(c.s, 'department-statement', id)
  if (statement.rows !== null) return statement
  // Capture complete evidence internally even when the finance operator cannot

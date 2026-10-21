@@ -95,7 +95,7 @@ async function explanationCitations(c: Context, month: string, line: string, dep
 export async function review(c: Context, op: string, b: Data): Promise<Data | undefined> {
  const { s, x } = c
  if (op === 'pack-action-department') {
-  requireCapability(x, 'publishing')
+  requireCapability(x, 'publishing', s)
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.decisions.some((d: Data) => d.id === b.decision), 'Action not found', 404)
   const department = b.department ? get(s, 'department', b.department).id : ''
@@ -127,7 +127,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   return get(s, 'explanation', id)
  }
  if (op === 'pack-create') {
-  requireCapability(x, 'publishing')
+  requireCapability(x, 'publishing', s)
   const month = typeof b.month === 'string' ? b.month : ''
   const forecast = forecastFor(s, month)
   requireThat(!all(s, 'pack').some(p => p.month === month && p.status === 'draft'), `A draft pack for ${monthLabel(month)} already exists`, 409)
@@ -137,7 +137,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   return get(s, 'pack', id)
  }
  if (op === 'pack-decision') {
-  requireCapability(x, 'publishing')
+  requireCapability(x, 'publishing', s)
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.status === 'draft', 'A published pack cannot change; record follow-up on its actions', 409)
   const proposal = b.proposal ? linkedProposal(s, pack.forecast, b.proposal).id : ''
@@ -147,7 +147,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   return get(s, 'pack', pack.id)
  }
  if (op === 'pack-publish') {
-  requireCapability(x, 'publishing')
+  requireCapability(x, 'publishing', s)
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.status === 'draft', 'This pack is already published', 409)
   const w = workspace(s)
@@ -190,7 +190,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   return get(s, 'pack', pack.id)
  }
  if (op === 'action-status') {
-  requireCapability(x, 'publishing')
+  requireCapability(x, 'publishing', s)
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.decisions.some((d: Data) => d.id === b.decision), 'Action not found', 404)
   const status = b.status === 'done' ? 'done' : 'open'

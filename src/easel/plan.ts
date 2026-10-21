@@ -193,7 +193,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   return get(s, 'scenario', p.id)
  }
  if (op === 'proposal-promote') {
-  requireCapability(x, 'approvals')
+  requireCapability(x, 'approvals', s)
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
   const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
@@ -214,7 +214,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   return { target: get(s, 'scenario', target.id), proposal: get(s, 'scenario', p.id) }
  }
  if (op === 'proposal-decline') {
-  requireCapability(x, 'approvals')
+  requireCapability(x, 'approvals', s)
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted' || p.proposalStatus === 'draft', 'This proposal is already closed', 409)
   put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'declined', declinedBy: x.actor.email, reason: text(b.reason, 'Reason', 2000) })

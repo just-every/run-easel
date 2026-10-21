@@ -97,6 +97,24 @@ test('ACCESS-001 group department and dimension authority, scenario shares, capa
  await h.command('revenue', { ...input, scenario: sandbox.id }, person, 404)
  await h.get(`/api/easel/scenario/${sandbox.id}`, board)
  await h.command('revenue', { ...input, scenario: sandbox.id }, board, 403)
+ // Global capabilities require full visibility as well as their explicit grant.
+ group = await h.command('group-save', { ...definition, id: group.id, revision: group.revision, members: ['planner@example.test'], capabilities: ['approvals', 'publishing'] })
+ await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision }, person, 403)
+ const delegate = await h.person('delegate@example.test', 'contributor', [sales.id, eng.id, legal.id], false)
+ await h.command('request-submissions', { scenario: budget.id, departments: [eng.id] }, delegate, 403)
+ await h.command('group-save', { name: 'Company review delegates', members: ['delegate@example.test'], capabilities: ['approvals', 'publishing'] })
+ await h.command('request-submissions', { scenario: budget.id, departments: [eng.id] }, delegate)
+ await h.command('submit', { scenario: budget.id, department: eng.id }, delegate)
+ const approved = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision }, delegate)
+ await h.command('account-map', { account: '400', target: line.id })
+ await h.command('department-map', { source: 'Sales', department: sales.id })
+ const file = { filename: 'synthetic-easel-5.csv', dateFormat: 'YYYY-MM-DD', csv: 'Date,Account,Department,Amount\n2026-01-15,400,Sales,-200\n' }
+ const preview = await h.kit('actuals', 'preview', file)
+ await h.kit('actuals', 'commit', { ...file, fingerprint: preview.fingerprint })
+ await h.command('close-month', { scenario: approved.forecast.id, month: '2026-01' }, delegate)
+ const pack = await h.command('pack-create', { month: '2026-01' }, delegate)
+ const published = await h.command('pack-publish', { pack: pack.id }, delegate)
+ assert.equal(published.status, 'published')
 })
 
 test('ACCESS-001 statement ownership groups determine recipients and revoke app, workbook and pending email access', async t => {

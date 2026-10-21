@@ -76,9 +76,14 @@ export function access(s: State, a: Actor): Access {
 }
 export function requireMember(x: Access) { requireThat(x.role, 'Finance has not added you to this plan yet', 403) }
 export function requireFinance(x: Access) { requireThat(x.role === 'finance', 'Only finance can do this', 403) }
-export function requireCapability(x: Access, capability: Capability) {
+export function requireCapability(x: Access, capability: Capability, state?: State) {
  requireMember(x)
  requireThat(x.capabilities?.includes(capability) || !x.capabilities && x.role === 'finance' && capability !== 'compensation', `The ${capability} permission is required`, 403)
+ if (state && ['approvals', 'publishing'].includes(capability)) {
+  const departments = all(state, 'department').every(d => seesDepartmentDetail(x, d.id))
+  const dimensions = all(state, 'dimension').every(d => x.dimensionRead?.[d.id] === undefined || ['', ...all(state, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)].every(id => x.dimensionRead![d.id].includes(id)))
+  requireThat(departments && dimensions, 'Company-wide approval and publishing require access to every department and dimension member', 403)
+ }
 }
 export function requireDepartment(x: Access, department: string) {
  requireThat(x.role === 'finance' || x.role === 'contributor' && x.departments.includes(department), 'You can only change your own departments', 403)
