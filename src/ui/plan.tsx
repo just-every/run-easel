@@ -1,4 +1,4 @@
-import { DimensionPlan } from './dimensions'
+import { DimensionPlan, DimensionFields, dimensionValues } from './dimensions'
 import { WorkbookDrivers } from './workbook-drivers'
 import { NativeFormulas } from './native-formulas'
 import { CollectionSummary, ExpenseForm, PayrollFields } from './working-capital-inputs'
@@ -21,15 +21,17 @@ export function Plan({ state, refresh }: Shared) {
  const [id, setId] = useState(defaultScenario(editable))
  const [view, setView] = useState<D | null>(null)
  const [editing, setEditing] = useState<D | null>(null)
+ const [newDimensions, setNewDimensions] = useState<D>({})
  const [round, setRound] = useState(0)
  // Only the latest request for the scenario on screen may fill the view.
  const [ticket] = useState({ n: 0 })
  const load = async () => { const mine = ++ticket.n; const value = await api(`scenario/${id}`); if (mine === ticket.n) setView(value) }
  useEffect(() => { setView(null); if (id) void load() }, [id, state])
  if (!editable.length) return <section className="card"><p>There is nothing for you to edit right now. Contributors edit the budget once finance requests their department's submission, and their own proposals.</p></section>
- const save = async (op: string, body: D) => { await command(op, { ...body, scenario: id }); setEditing(null); setRound(r => r + 1); await load(); await refresh() }
+ const save = async (op: string, body: D) => { await command(op, { ...body, ...(!body.id ? { dimensions: newDimensions } : {}), scenario: id }); setEditing(null); setRound(r => r + 1); await load(); await refresh() }
  const remove = async (kind: string, inputId: string) => { await command('input-delete', { kind, id: inputId }); await load(); await refresh() }
- const currency = state.workspace.currency
+ const currency = view?.workspace.currency ?? state.workspace.currency
+ const localState = view ? { ...state, workspace: { ...state.workspace, ...view.workspace } } : state
  const myDepartments = me.role === 'finance' ? state.departments : state.departments.filter((d: D) => me.departments.includes(d.id))
  const deptName = (d: string) => state.departments.find((x: D) => x.id === d)?.name ?? '—'
  const lineName = (l: string) => state.lines.find((x: D) => x.id === l)?.name ?? '—'
@@ -41,8 +43,14 @@ export function Plan({ state, refresh }: Shared) {
  const form = (kind: string) => (editing?.kind === kind ? editing.row : null)
  const sc = view?.scenario
  return <>
-  <div className="row spread controls"><ScenarioPicker scenarios={editable} value={id} onChange={v => { setId(v); setEditing(null) }} />{sc && <span>Revision {sc.revision}</span>}</div>
+  <div className="row spread controls"><ScenarioPicker scenarios={editable} value={id} onChange={v => { setId(v); setEditing(null); setNewDimensions({}) }} />{sc && <span>Revision {sc.revision}</span>}</div>
   {sc?.kind === 'proposal' && <p className="notice">Proposal: {sc.request} — changes here stay in this proposal until finance promotes it.</p>}
+
+  {!!view?.dimensionStructure?.dimension.length && <section className="card" aria-label="Dimensions for new inputs"><h2>Dimensions for new inputs</h2>
+   <p>Choose the members for new drivers, positions and expenses in this plan. Existing inputs keep their own members when edited.</p>
+   <Form key={id} submit="Use these input dimensions" onSubmit={async values => { setNewDimensions(dimensionValues(values)) }}><DimensionFields structure={view.dimensionStructure} /> </Form>
+   <p role="status">{Object.entries(newDimensions).map(([dimension, member]) => `${view.dimensionStructure.dimension.find((d: D) => d.id === dimension)?.name}: ${view.dimensionStructure['dimension-member'].find((m: D) => m.id === member)?.name}`).join(', ') || 'New inputs are unassigned unless this plan supplies its entity.'}</p>
+  </section>}
 
   <section className="card">
    <h2>Revenue drivers</h2>
@@ -56,7 +64,7 @@ export function Plan({ state, refresh }: Shared) {
 
   {(inputs['workbook-model'] ?? []).map((book:D)=><WorkbookDrivers key={book.id} book={book} revision={sc.revision} onChange={async()=>{await load();await refresh()}} />)}
 
-  {view && sc && <NativeFormulas key={`formulas-${sc.id}:${sc.revision}`} state={state} view={view} depts={depts} save={save} remove={remove} />}
+  {view && sc && <NativeFormulas key={`formulas-${sc.id}:${sc.revision}`} state={localState} view={view} depts={depts} save={save} remove={remove} />}
 
   <section className="card">
    <h2>Positions</h2>
@@ -118,9 +126,9 @@ export function Plan({ state, refresh }: Shared) {
 
   {view && <HistoryInputs state={state} view={view} save={save} refresh={refresh} />}
 
-  {view && me.role === 'finance' && <FinancingInputs view={view} state={state} save={save} remove={remove} />}
+  {view && me.role === 'finance' && <FinancingInputs view={view} state={localState} save={save} remove={remove} />}
 
-  {view && <AssetInputs key={`assets-${round}`} view={view} state={state} save={save} remove={remove} />}
+  {view && <AssetInputs key={`assets-${round}`} view={view} state={localState} save={save} remove={remove} />}
 
   {me.role === 'finance' && <section className="card">
    <h2>Shared-cost allocation</h2>
