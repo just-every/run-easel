@@ -1,3 +1,4 @@
+import { validateCalendar } from './fiscal-calendar'
 import { balanceTarget } from './balance-targets'
 // Installation-level commands: the planning calendar, departments, planning
 // lines, people and their roles, and how source accounts map to lines.
@@ -36,13 +37,22 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   const planStart = month(b.planStart, 'First plan month')
   requireThat(Number(planStart.slice(5, 7)) === fiscalYearStart, 'The first plan month must be the first month of a fiscal year')
   requireThat(!existing || existing.planStart === planStart || !all(s, 'scenario').length, 'The plan year is fixed once scenarios exist', 409)
-  put(s, 'workspace', 'main', { name: text(b.name, 'Company name'), currency, fiscalYearStart, planStart, horizon: 12, timeZone, locale, dateFormat, ...(existing?.cashAgreement ? { cashAgreement: existing.cashAgreement } : {}) })
+  const horizon = integer(b.horizon ?? existing?.horizon ?? 12, 'Plan horizon (months)', 12, 60)
+  const calendar = choice(b.calendar ?? existing?.calendar ?? 'calendar-month', ['calendar-month', '4-4-5', '5-4-4'] as const, 'planning calendar')
+  const retailStartDate = calendar === 'calendar-month' ? undefined : String(b.retailStartDate ?? existing?.retailStartDate ?? '')
+  validateCalendar({ planStart, horizon, fiscalYearStart, calendar, retailStartDate })
+  requireThat(!existing || !all(s, 'scenario').length || ((existing.calendar ?? 'calendar-month') === calendar && existing.retailStartDate === retailStartDate), 'The accounting calendar is fixed once scenarios exist', 409)
+  if (existing && existing.horizon !== horizon) for (const sc of all(s, 'scenario').filter(sc => sc.status === 'working' && !sc.horizon)) {
+   put(s, 'scenario', sc.id, { ...sc, revision: sc.revision + 1 })
+   c.activity.push({ action: 'horizon-changed', record: sc.id, scenario: sc.id, before: sc.revision, after: sc.revision + 1, detail: { before: existing.horizon, after: horizon } })
+  }
+  put(s, 'workspace', 'main', { name: text(b.name, 'Company name'), currency, fiscalYearStart, planStart, horizon, calendar, ...(retailStartDate ? { retailStartDate } : {}), timeZone, locale, dateFormat, ...(existing?.cashAgreement ? { cashAgreement: existing.cashAgreement } : {}) })
   if (!all(s, 'scenario').some(sc => sc.kind === 'budget')) {
    const id = uid()
    put(s, 'scenario', id, { name: `${fiscalYearLabel(planStart)} budget`, kind: 'budget', status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, actualsThrough: null, cash: { openingCents: 0, basis: 'estimate', note: '', receivablesCents: 0, payablesCents: 0, collectionLag: 1, paymentLag: 1 } })
    c.activity.push({ action: 'scenario-created', record: id, scenario: id, after: 1, detail: { kind: 'budget' } })
   }
-  c.activity.push({ action: 'workspace', record: 'main', detail: { currency, fiscalYearStart, planStart } })
+  c.activity.push({ action: 'workspace', record: 'main', detail: { currency, fiscalYearStart, planStart, horizon, calendar, retailStartDate } })
   return get(s, 'workspace', 'main')
  }
  if (op === 'department') {

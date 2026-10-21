@@ -3,7 +3,8 @@
 import type { Bindings } from '../auth.server'
 import type { Context } from './context'
 import { gaugeKey } from './gauge-connection'
-import { addMonths } from './months'
+import { periodForKey } from './fiscal-calendar'
+import { workspace } from './model'
 import { Fault, requireThat, type Data } from './types'
 
 export class GaugeFailure extends Fault {
@@ -12,8 +13,7 @@ export class GaugeFailure extends Fault {
 
 export async function gaugeSource(c: Context, env: Bindings, month: string) {
  const { origin, key } = await gaugeKey(c, env)
- const from = `${month}-01`, next = `${addMonths(month, 1)}-01`
- const to = new Date(Date.parse(`${next}T00:00:00Z`) - 86400000).toISOString().slice(0, 10)
+ const { startDate: from, endDate: to } = periodForKey(workspace(c.s), month)
  const url = new URL('/api/gauge/state', origin)
  url.searchParams.set('from', from); url.searchParams.set('to', to)
  let response: Response
@@ -32,7 +32,7 @@ export async function gaugeSource(c: Context, env: Bindings, month: string) {
  raw += decoder.decode()
  let source: Data
  try { source = JSON.parse(raw) } catch { throw new Fault(502, 'Gauge returned invalid aggregate JSON') }
- requireThat(source && source.scope === 'utilization:read' && source.from === from && source.to === to && typeof source.asOf === 'string' && Number.isFinite(Date.parse(source.asOf)), 'Gauge aggregate scope or period does not match the requested calendar month', 502)
+ requireThat(source && source.scope === 'utilization:read' && source.from === from && source.to === to && typeof source.asOf === 'string' && Number.isFinite(Date.parse(source.asOf)), 'Gauge aggregate scope or period does not match the requested accounting period', 502)
  for (const field of ['participantCount', 'knownAvailableSeconds', 'missingCalendarDays', 'approvedBillableSeconds']) requireThat(Number.isSafeInteger(source[field]) && source[field] >= 0, `Gauge returned invalid ${field}`, 502)
  requireThat(source.missingCalendarDays === 0 && Number.isSafeInteger(source.availableSeconds) && source.availableSeconds >= 0 && source.availableSeconds === source.knownAvailableSeconds, 'Gauge capacity is missing for this month; import is blocked, never treated as zero', 409)
  requireThat(source.availableSeconds > 0 || source.approvedBillableSeconds === 0, 'Gauge has billable time but zero capacity; resolve the source before importing', 409)

@@ -49,6 +49,7 @@ export function App() {
  return <DateFormatContext.Provider value={state.workspace.dateFormat ?? 'MM/DD/YYYY'}><main className="shell" lang={state.workspace.locale ?? 'en-US'}>
   {header}
   <div className="scroll-frame tab-frame" data-before={strip.edges.before} data-after={strip.edges.after}><nav ref={strip.ref as any} className="tabs" aria-label="Easel" onFocusCapture={e => revealHorizontally(e.target as HTMLElement)}>{tabs.map(t => <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined} onClick={() => setTab(t.id)}>{t.label}</button>)}</nav>{strip.edges.before && <span className="scroll-cue scroll-cue-before" aria-hidden="true">←</span>}{strip.edges.after && <span className="scroll-cue" aria-hidden="true">→</span>}</div>
+  {state.workspace.calendar && state.workspace.calendar !== 'calendar-month' && <p className="note">{state.workspace.calendar} retail calendar. YYYY-MM inputs and headings are consecutive accounting-period keys, not Gregorian months. See Overview → Fiscal summaries → Accounting periods for dates.</p>}
   {error && <p role="alert" className="error">{error}</p>}
   {tab === 'overview' && <Overview {...shared} />}
   {tab === 'dashboards' && <Dashboards {...shared} />}

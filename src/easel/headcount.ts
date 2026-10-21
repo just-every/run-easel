@@ -3,6 +3,7 @@
 import { requireMember, seesPayDetail } from './access'
 import type { Context } from './context'
 import { calculate } from './engine'
+import { datePeriod } from './fiscal-calendar'
 import { model } from './model'
 import { addMonths } from './months'
 import { frozenModel } from './reforecasts'
@@ -30,11 +31,11 @@ export async function headcountView(c: Context, scenario: string) {
   return [{department:r.department,provider:r.provider,asOf:r.asOf,employeeId:r.employeeId,name:r.name,position:r.plannedPosition || p?.id || null,title:r.plannedTitle || p?.title || 'Removed position',plannedStartDate:r.plannedStartDate || null,actualStartDate:r.start,slippageDays:r.plannedStartDate ? dayDifference(r.start,r.plannedStartDate) : null,backfillOrigin:r.backfillOrigin || null,batch:r.batch}]
  }).sort((a,b) => a.asOf.localeCompare(b.asOf) || a.employeeId.localeCompare(b.employeeId))
  const months = calculation.months.flatMap(month => {
-  const observations = imports.filter(i => i.kind === 'roster' && i.asOf.slice(0,7) === month)
+  const observations = imports.filter(i => i.kind === 'roster' && datePeriod(m.workspace, i.asOf) === month)
   const latest = new Map<string,Data>()
   for (const i of observations) if (!latest.has(i.provider) || i.asOf > latest.get(i.provider)!.asOf) latest.set(i.provider,i)
   const selected = roster.filter(r => r.asOf === latest.get(r.provider)?.asOf)
-  const monthlyRuns = runs.filter(r => r.payDate.slice(0,7) === month)
+  const monthlyRuns = runs.filter(r => datePeriod(m.workspace, r.payDate) === month)
   return m.departments.map(d => {
    const planned = positions.filter(p => p.department === d.id), current = planned.filter(p => active(p,month))
    const actual = selected.filter(r => r.department === d.id), pay = monthlyRuns.filter(r => r.department === d.id)
@@ -47,8 +48,8 @@ export async function headcountView(c: Context, scenario: string) {
    const actualHeadcount = available ? actual.filter(r => r.start <= r.asOf && (!r.termination || r.termination > r.asOf)).length : null
    return {month,department:d.id,name:d.name,observations:[...latest.values()].map(i => ({provider:i.provider,asOf:i.asOf})),issue:ambiguous ? 'Multiple providers link employees to the same planned position' : null,
     plannedHeadcount:current.length,actualHeadcount,headcountDifference:actualHeadcount === null ? null : actualHeadcount-current.length,
-    plannedHires:planned.filter(p => p.start === month).length,actualHires:available ? actual.filter(r => r.start.slice(0,7) === month && r.start <= r.asOf).length : null,
-    plannedDepartures:planned.filter(p => p.end === addMonths(month,-1)).length,actualDepartures:available ? actual.filter(r => r.termination?.slice(0,7) === month && r.termination <= r.asOf).length : null,
+    plannedHires:planned.filter(p => p.start === month).length,actualHires:available ? actual.filter(r => datePeriod(m.workspace, r.start) === month && r.start <= r.asOf).length : null,
+    plannedDepartures:planned.filter(p => p.end === addMonths(month,-1)).length,actualDepartures:available ? actual.filter(r => r.termination && datePeriod(m.workspace, r.termination) === month && r.termination <= r.asOf).length : null,
     plannedCostCents,actualCostCents,costDifferenceCents:actualCostCents === null ? null : actualCostCents-plannedCostCents,
     expectedAttritionHundredths:mulDiv(current.reduce((n,p) => n+(p.attritionBps ?? 0),0),100,10000),
     backfills:planned.filter(p => p.start === month && p.backfillOrigin).length,

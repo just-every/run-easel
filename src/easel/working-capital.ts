@@ -2,6 +2,7 @@
 import type { ContractCalculation } from './contract-revenue'
 import type { Model, Source } from './engine'
 import { addMonths } from './months'
+import { datePeriod, periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { apportion, formatMoney } from './units'
 import { requireThat, type Data } from './types'
 
@@ -10,29 +11,36 @@ const stamp = (date: string) => Date.parse(`${date}T00:00:00Z`)
 const iso = (time: number) => new Date(time).toISOString().slice(0, 10)
 export const monthEnd = (month: string) => iso(stamp(`${addMonths(month, 1)}-01`) - day)
 const afterDays = (date: string, days: number) => iso(stamp(date) + days * day)
-export const payDate = (month: string, date: number, offset = 0) => {
+/** Retail pay days count from one within the target period and clamp to its end. */
+export const payDate = (month: string, date: number, offset = 0, workspace?: CalendarWorkspace) => {
  const target = addMonths(month, offset)
+ if (workspace?.calendar && workspace.calendar !== 'calendar-month') {
+  const period = periodForKey(workspace, target)
+  return iso(Math.min(stamp(period.startDate) + (date - 1) * day, stamp(period.endDate)))
+ }
  return `${target}-${String(Math.min(date, Number(monthEnd(target).slice(8)))).padStart(2, '0')}`
 }
 export type TimingCash = { month: string; amount: number; collection: boolean; label: string }
-export function timedCash(input: Data, month: string, amount: number, collection: boolean, legacyLag: number, label: string): { events: TimingCash[]; trace: string } {
+export function timedCash(input: Data, month: string, amount: number, collection: boolean, legacyLag: number, label: string, workspace?: CalendarWorkspace): { events: TimingCash[]; trace: string } {
  const method = collection ? input.collectionMethod : input.paymentMethod
- const date = monthEnd(month)
+ const date = workspace ? periodForKey(workspace, month).endDate : monthEnd(month)
+ const period = (date: string) => workspace ? datePeriod(workspace, date) : date.slice(0, 7)
  if (collection && method === 'curve') {
   const parts = apportion(amount, input.collectionCurve.map((r: Data) => r.bps))
   const dates = input.collectionCurve.map((r: Data) => afterDays(date, r.days))
-  return { events: parts.map((n, i) => ({ month: dates[i].slice(0, 7), amount: n, collection, label })), trace: `Invoice dated ${date}; collection curve ${input.collectionCurve.map((r: Data, i: number) => `${r.bps} basis points at ${r.days} exact calendar days (${dates[i]}, ${parts[i]} minor units)`).join('; ')}. Cents apportioned by largest remainder, earliest installment wins ties.` }
+  return { events: parts.map((n, i) => ({ month: period(dates[i]), amount: n, collection, label })), trace: `Invoice dated ${date}; collection curve ${input.collectionCurve.map((r: Data, i: number) => `${r.bps} basis points at ${r.days} exact calendar days (${dates[i]}, ${parts[i]} minor units)`).join('; ')}. Cents apportioned by largest remainder, earliest installment wins ties.` }
  }
  if (method === 'dso' || method === 'dpo' || method === 'terms') {
   const days = method === 'dso' ? input.dsoDays : method === 'dpo' ? input.dpoDays : input.paymentTermDays
   const settlement = afterDays(date, days)
-  return { events: [{ month: settlement.slice(0, 7), amount, collection, label }], trace: `Invoice dated ${date}; ${method === 'terms' ? 'vendor terms after invoice month end' : method.toUpperCase()} ${days} exact calendar days; ${collection ? 'collect' : 'pay'} ${settlement}.` }
+  return { events: [{ month: period(settlement), amount, collection, label }], trace: `Invoice dated ${date}; ${method === 'terms' ? `vendor terms after invoice ${workspace?.calendar && workspace.calendar !== 'calendar-month' ? 'accounting period' : 'month'} end` : method.toUpperCase()} ${days} exact calendar days; ${collection ? 'collect' : 'pay'} ${settlement}.` }
  }
  return { events: [{ month: addMonths(month, legacyLag), amount, collection, label }], trace: '' }
 }
 
 /** A contract curve applies to real planned invoice dates, never revenue dates. */
-export function curveContracts(contracts: ContractCalculation, inputs: Data[], months: string[]) {
+export function curveContracts(contracts: ContractCalculation, inputs: Data[], months: string[], workspace?: CalendarWorkspace) {
+ const period = (date: string) => workspace ? datePeriod(workspace, date) : date.slice(0, 7)
  for (const input of inputs.filter(r => r.kind === 'contract' && r.collectionMethod === 'curve')) {
   const invoices = contracts.invoices.filter(i => i.originId === input.originId)
   contracts.invoices = contracts.invoices.filter(i => i.originId !== input.originId)
@@ -41,12 +49,12 @@ export function curveContracts(contracts: ContractCalculation, inputs: Data[], m
    input.collectionCurve.forEach((r: Data, i: number) => contracts.invoices.push({ ...invoice, amount: parts[i], collectionDate: afterDays(invoice.date, r.days) }))
   }
   const changed = contracts.invoices.filter(i => i.originId === input.originId)
-  const ar = (month: string) => changed.reduce((n, i) => n + (i.date.slice(0, 7) <= month ? i.amount : 0) - (i.collectionDate.slice(0, 7) <= month ? i.amount : 0), 0)
+  const ar = (month: string) => changed.reduce((n, i) => n + (period(i.date) <= month ? i.amount : 0) - (period(i.collectionDate) <= month ? i.amount : 0), 0)
   const prior = addMonths(months[0], -1)
-  contracts.opening.receivables += ar(prior) - invoices.reduce((n, i) => n + (i.date.slice(0, 7) <= prior ? i.amount : 0) - (i.collectionDate.slice(0, 7) <= prior ? i.amount : 0), 0)
+  contracts.opening.receivables += ar(prior) - invoices.reduce((n, i) => n + (period(i.date) <= prior ? i.amount : 0) - (period(i.collectionDate) <= prior ? i.amount : 0), 0)
   for (const row of contracts.rows.filter(r => r.originId === input.originId)) {
    row.receivables = ar(row.month)
-   row.collections = changed.filter(i => i.collectionDate.slice(0, 7) === row.month).reduce((n, i) => n + i.amount, 0)
+   row.collections = changed.filter(i => period(i.collectionDate) === row.month).reduce((n, i) => n + i.amount, 0)
    row.trace = row.trace.replace(/collections .*\.$/, `collections ${row.collections} minor units under the invoice collection curve.`)
    row.trace = row.trace.replace(/DSO \d+ exact calendar days after invoice date\./, `Collection curve from each invoice date: ${input.collectionCurve.map((r: Data) => `${r.bps} basis points at ${r.days} exact calendar days`).join('; ')}; largest-remainder cent allocation, earliest installment wins ties.`)
   }
@@ -65,25 +73,26 @@ type Posting = { input: Data; month: string; expense: number; payment: number; p
 export function workingCapital(model: Model, months: string[], allocations: Data[] = []) {
  const postings: Posting[] = [], cash: TimingCash[] = [], before = addMonths(months[0], -1)
  const money = (n: number) => formatMoney(n, model.workspace.currency)
+ const retail = model.workspace.calendar && model.workspace.calendar !== 'calendar-month'
  const post = (input: Data, month: string, expense: number, payment: number, prepaid: boolean, detail: string) => postings.push({ input, month, expense, payment, prepaid, detail })
  for (const input of model.inputs.expense.filter(e => ['prepaid', 'bonus'].includes(e.kind))) {
   if (input.kind === 'prepaid') {
-   post(input, input.paymentMonth, 0, input.amountCents, true, `Prepayment ${money(input.amountCents)} paid in ${input.paymentMonth}; service starts ${input.start}, ${input.amortizationMonths} monthly installments.`)
+   post(input, input.paymentMonth, 0, input.amountCents, true, `Prepayment ${money(input.amountCents)} paid in ${input.paymentMonth}; service starts ${input.start}, ${input.amortizationMonths} ${retail ? 'accounting-period' : 'monthly'} installments.`)
    const base = Number(BigInt(input.amountCents) / BigInt(input.amortizationMonths))
-   for (let k = 0; k < input.amortizationMonths; k++) post(input, addMonths(input.start, k), k === input.amortizationMonths - 1 ? input.amountCents - base * k : base, 0, true, `Total ${money(input.amountCents)} / ${input.amortizationMonths} months; floor installments ${money(base)}, final service month receives cent remainder.`)
+   for (let k = 0; k < input.amortizationMonths; k++) post(input, addMonths(input.start, k), k === input.amortizationMonths - 1 ? input.amountCents - base * k : base, 0, true, `Total ${money(input.amountCents)} / ${input.amortizationMonths} ${retail ? 'periods' : 'months'}; floor installments ${money(base)}, final service ${retail ? 'period' : 'month'} receives cent remainder.`)
   } else {
    const base = Number(BigInt(input.amountCents) / 3n)
    for (let k = 0; addMonths(input.start, k) <= months.at(-1)!; k++) {
     const month = addMonths(input.start, k)
-    post(input, month, k % 3 === 2 ? input.amountCents - base * 2 : base, 0, false, `Quarterly bonus ${money(input.amountCents)} accrues in three monthly installments; final month receives cent remainder. First settlement ${input.payMonth}, then every three months.`)
-    if (k % 3 === 0) post(input, addMonths(input.payMonth, k), 0, input.amountCents, false, `Quarterly bonus settles on ${monthEnd(addMonths(input.payMonth, k))}.`)
+    post(input, month, k % 3 === 2 ? input.amountCents - base * 2 : base, 0, false, `Quarterly bonus ${money(input.amountCents)} accrues in three ${retail ? 'accounting-period' : 'monthly'} installments; final ${retail ? 'period' : 'month'} receives cent remainder. First settlement ${input.payMonth}, then every three ${retail ? 'periods' : 'months'}.`)
+    if (k % 3 === 0) post(input, addMonths(input.payMonth, k), 0, input.amountCents, false, `Quarterly bonus settles on ${periodForKey(model.workspace, addMonths(input.payMonth, k)).endDate}.`)
    }
   }
  }
  const payroll = (input: Data, month: string, expense: number) => {
-  const date = payDate(month, input.payDay, input.payMonthOffset)
-  post(input, month, expense, 0, false, `Payroll earned ${month}; pay date ${date} (day clamped to calendar month end).`)
-  post(input, date.slice(0, 7), 0, expense, false, `Payroll earned ${month} settles ${date}.`)
+  const date = payDate(month, input.payDay, input.payMonthOffset, model.workspace)
+  post(input, month, expense, 0, false, `Payroll earned ${month}; pay date ${date} (${retail ? '1-based day within the target accounting period, clamped to period end' : 'day clamped to calendar month end'}).`)
+  post(input, datePeriod(model.workspace, date), 0, expense, false, `Payroll earned ${month} settles ${date}.`)
  }
  // Prior earned salaries seed explicitly estimated opening accruals, rather
  // than restarting a continuing position's payment calendar at plan start.

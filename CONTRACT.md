@@ -239,7 +239,13 @@ Finance sets any fiscal-year start month and a plan horizon from 12 to 60 months
 
 *Acceptance:* the API journey sets a 36-month horizon starting in a fiscal year that begins in October, and reads monthly, quarterly and annual totals that agree to the cent; a second plan on a 4-4-5 calendar reads periods of 4, 4 and 5 weeks in each quarter, with each quarter's total equal to the sum of its three periods and the year equal to its four quarters, to the cent.
 
-*Status:* partial.
+Calendar-month plans and retail plans share 12–60 consecutive accounting periods. Retail setup chooses an explicit first date within the first plan-month key. The 4-4-5 or 5-4-4 pattern repeats each quarter in consecutive 52-week years, with no inferred 53rd week. Period boundaries are inclusive UTC dates; retail `YYYY-MM` keys are sortable ordinal aliases, not Gregorian months. Monthly driver inputs apply once per accounting period. Fiscal years are named by the ending year of their twelve ordinal period keys. Partial quarter/year roll-ups are marked. Flow amounts sum integer cents without another rounding; cash takes the first opening and last closing, summing only collections and payments.
+
+Dated ledger rows, workforce observations, planned hire dates and Gauge date ranges use these accounting boundaries; explicit period-only CSV and workbook headings use period keys. Excel date-serial headings resolve their actual date. Contract service anniversaries and billing cadence remain Gregorian dates, with recognition split by actual service days at accounting-period boundaries and final-segment cent remainders preserved. DSO/DPO/curves use exact days from period-end invoices or dated contract invoices. Retail payroll pay days count from the target period's first day and clamp to its end; employer wage caps use the real calendar year of the earning period's end as a labelled planning convention. Calendar-month pay-day behavior is unchanged. The calendar and anchor are fixed after setup. A horizon edit advances affected working scenario revisions; approved budgets and kept versions retain their captured horizon, calendar and arithmetic, and opened forecasts inherit the approved horizon. Fiscal YTD resets after twelve periods.
+
+*Acceptance evidence:* `tests/fiscal-calendar.test.mjs` (MODEL-001) asserts the 36-month October monthly/quarter/year reconciliation, each fiscal start month, valid 12–60-month plans and invalid horizons, multi-year/frozen horizons, exact formula Excel, finance authority, both retail patterns and their dated imports/recognition/settlements. `tests/fiscal-calendar-browser.mjs` (MODEL-001) drives setup, populated fiscal totals and period boundaries, settings, a persisted horizon edit and formula Excel at 1440/390.
+
+*Status:* done.
 
 #### MODEL-002 — A rolling forecast that extends itself.
 Finance sets a rolling window (for example always 18 months ahead). Closing a month (`EASEL-013`) extends the forecast by one month and seeds the new month from its drivers, with the kept forecast snapshot taken first. Budgets keep their fixed fiscal horizon.
@@ -414,7 +420,9 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 *Status:* missing.
 
 #### PEOPLE-004 — US compensation assumptions.
-Each position or person carries salary or hourly rate with expected hours, W-2 or 1099 type, merit increases on a date, bonus (percent of salary, paid in a month), sales commission (rate on bookings from `REV-001`), benefits per head per month, 401(k) match, and employer taxes from `FIN-006`. On-cost defaults are set per department and overridden per position. Each cost traces to its components.
+Each position or person carries salary or hourly rate with expected hours, W-2 or 1099 type, merit increases on a date, bonus (percent of salary, paid in a month), sales commission (rate on REV-004 contract bookings now and weighted pipeline bookings from `REV-001` when it ships), benefits per head per month, 401(k) match, and employer taxes from `FIN-006`. On-cost defaults are set per department and overridden per position. Each cost traces to its components.
+
+Ct scope-review-61 (21 October 2026) also permits commission now on REV-004 bookings through an explicit contract `commissionPosition` link to a same-scenario position origin and that position's `commissionRateBps`. The planning estimate is contract cents × basis points ÷ 10000, rounded once half away from zero, expensed in the booking's start period on the position department/salary line, with existing payroll cash timing. W-2 commission enters FIN-006 taxable wages and caps; 1099 adds no employer tax; on-costs do not apply. Traces disclose that ASC 340-40 capitalisation is not modelled. Missing, cross-scenario or inactive position links and edits orphaning a link refuse with 409. Frozen captures retain link, rate and arithmetic. The rate, link, per-position amount and trace component are PEOPLE-005 pay detail; restricted readers see only department totals. Every surface labels it a planning estimate. Quota, attainment and tiered accelerators also belong to PEOPLE-004 and remain owed. A 401(k) match must state whether commission enters its base. These requirements remain partial until implemented and asserted; this wording does not claim commission ships.
 
 Before this capability ships, PEOPLE-004 inherits US-001: provide US statutory compensation, payroll and tax defaults for a new US company, with the effective tax year and every planning-estimate label; retain finance overrides.
 
@@ -463,6 +471,8 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold refresh creates a cited owned/due task, a second unchanged refresh does not duplicate it while open, and live task visibility, owner authority and blocked-source handling hold.
 
 *Status:* missing.
+
+Before REV-001 ships, it inherits PEOPLE-004 weighted-pipeline commission in the slipped booking period, through a finance-saved CRM-owner → position map, traced to the deal ID, under PEOPLE-005 pay filtering and the same planning-estimate/tax/rounding rules.
 
 #### REV-002 — Subscription metrics from Stripe Billing and Nectar.
 Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax).
@@ -1014,8 +1024,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 36 | 20 | 30 | 86 |
-| All | 53 | 20 | 30 | 103 |
+| Target and push further | 37 | 19 | 30 | 86 |
+| All | 54 | 19 | 30 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1047,7 +1057,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `CONNECT-008` | Drill-through to the ledger transaction | target | done | `src/easel/actuals-read.ts`, `src/easel/review.ts`, `tests/drillthrough.test.mjs`, `tests/mapping-rules-browser.mjs` | Every accepted CSV row is drillable under inherited department filtering; future connectors carry provider links and browser assertions before shipping |
 | `CONNECT-009` | Bank balances for current cash | target | missing |  | No Plaid connection or bank-balance cash view |
 | `CONNECT-010` | Connection custody and status | target | done | `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Sealed/excluded custody, native masked health inspection, audited remote self-revocation and deletion on every outcome |
-| `MODEL-001` | Configurable horizon and multi-year plans | target | partial | `src/easel/setup.ts` | Fiscal-year start is configurable and the workspace stores a horizon, but setup fixes it at twelve months; quarter and year roll-ups, multi-year plans and 4-4-5 or 5-4-4 calendars are missing |
+| `MODEL-001` | Configurable horizon and multi-year plans | target | done | `src/easel/fiscal-calendar.ts` `src/easel/fiscal-summary.ts` `tests/fiscal-calendar.test.mjs` `tests/fiscal-calendar-browser.mjs` | — |
 | `MODEL-002` | A rolling forecast that extends itself | target | done | `tests/rolling-forecast.test.mjs` (MODEL-002) |  |
 | `MODEL-003` | Custom dimensions and hierarchies | target | partial | `src/easel/setup.ts` `tests/easel.test.mjs` | Lines and departments are the only dimensions; user-defined dimensions, hierarchies and account roll-ups are missing |
 | `MODEL-004` | User-defined formulas and driver lines | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Fixed driver forms (revenue, positions, expenses, schedules, allocations) calculate exactly with traces; imported workbook formulas now have exact arithmetic, lookups and cycle refusal under SHEET-003; native formula-line authoring and REV-003 formula drivers remain missing |
@@ -1066,7 +1076,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `PEOPLE-001` | Roster and payroll actuals from Gusto | target | missing |  | No Gusto connector or roster reconciliation |
 | `PEOPLE-002` | Roster from Rippling, Willow, BambooHR and ADP | target | missing |  | No HRIS connectors |
 | `PEOPLE-003` | Open roles from the ATS | target | missing |  | No ATS connector or requisition-driven positions |
-| `PEOPLE-004` | US compensation assumptions | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Salary × (1 + on-costs) by start and end month ships; hourly, W-2 or 1099 type, merit increases, bonus, commission, benefits per head and 401(k) match are missing |
+| `PEOPLE-004` | US compensation assumptions | target | partial | `src/easel/engine.ts` `tests/easel.test.mjs` | Salary × (1 + on-costs), W-2/1099 type and FIN-006 employer taxes ship; hourly, merit, bonus, REV-004 commission planning estimates, benefits, 401(k) match, department on-cost defaults, quota, attainment and tiered accelerators remain |
 | `PEOPLE-005` | Compensation access separate from finance | target | done | `tests/compensation-access.test.mjs` `tests/compensation-access-browser.mjs` | — |
 | `PEOPLE-006` | Headcount plan against actual | target | partial | `src/easel/headcount.ts` `tests/headcount.test.mjs` `tests/headcount-browser.mjs` | Reviewed-file monthly headcount/hires/departures/payroll comparisons, explicit-date slippage history, backfill links and attrition assumptions ship; Gap: roster pull from a connected payroll/HR provider not built; reviewed files only |
 | `PEOPLE-007` | Roster and payroll-register file import | target | done | `src/easel/payroll-import.ts` `src/easel/payroll-file.ts` `src/easel/payroll-reconciliation.ts` `tests/payroll-files.test.mjs` `tests/payroll-erasure.test.mjs` `tests/payroll-files-browser.mjs` | — |

@@ -252,6 +252,12 @@
       "clauses": [
         "AGENT-006"
       ]
+    },
+    {
+      "id": "fiscal-calendar",
+      "clauses": [
+        "MODEL-001"
+      ]
     }
   ],
   "nonGoals": [

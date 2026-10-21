@@ -1,5 +1,6 @@
 import type { ActualCell, Model, Source } from './engine'
 import { addMonths, monthLabel, monthsBetween } from './months'
+import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { rampFactorBps } from './ramp'
 import { formatHundredths, formatMoney, mulDiv } from './units'
 import { requireThat, type Data } from './types'
@@ -7,7 +8,10 @@ import { requireThat, type Data } from './types'
 export type InventoryMonth = { month: string; opening: number; costOfSales: number; purchases: number; closing: number; trace: string }
 export type CommercialCost = { month: string; line: string; department: string; source: Source; inventory: boolean; purchases: number }
 const active = (p: Data, month: string) => p.start <= month && (!p.end || month <= p.end)
-const daysIn = (month: string) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate()
+const daysIn = (workspace: CalendarWorkspace, month: string) => {
+ const period = periodForKey(workspace, month)
+ return (Date.parse(period.endDate) - Date.parse(period.startDate)) / 86400000 + 1
+}
 const safe = (amount: number) => { requireThat(Number.isSafeInteger(amount) && amount >= 0 && amount <= 1e13, 'Linked cost exceeds the supported exact range'); return amount }
 
 /** Costs follow the live revenue assumptions; inventory is an actual asset,
@@ -16,6 +20,7 @@ export function commercialCosts(model: Model, months: string[], actuals: ActualC
  const { inputs, scenario, workspace } = model
  const costs: CommercialCost[] = [], inventory = months.map(month => ({ month, opening: 0, costOfSales: 0, purchases: 0, closing: 0, trace: '' }))
  const money = (n: number) => formatMoney(n, workspace.currency)
+ const label = (month: string) => workspace.calendar && workspace.calendar !== 'calendar-month' ? periodForKey(workspace, month).label : monthLabel(month)
  for (const e of inputs.expense.filter(e => ['acquisition', 'inventory'].includes(e.kind))) {
   const r = inputs.revenue.find(r => r.originId === e.revenueOrigin && r.department === e.department)
   requireThat(r && r.kind === (e.kind === 'inventory' ? 'volume' : 'customers'), 'A linked cost needs its original revenue driver', 409)
@@ -34,7 +39,7 @@ export function commercialCosts(model: Model, months: string[], actuals: ActualC
     const capacity = reps.reduce((sum, p) => sum + rampFactorBps(monthsBetween(p.start, month), r.rampMonths), 0)
     const count = safe(r.newPerMonth + mulDiv(r.newPerRep, capacity, 10000)), amount = safe(mulDiv(count, e.cacCents, 100))
     costs.push({ month, line: e.line, department: e.department, inventory: false, purchases: 0, source: { kind: 'expense', id: e.originId, label: e.name, amount,
-     trace: `${monthLabel(month)}: ${e.name}; new customers ${formatHundredths(count)} (including ramped acquisition capacity, before churn) × CAC ${money(e.cacCents)} = ${money(amount)}; revenue driver ${r.originId}; cost follows current acquisition inputs, not the existing customer base` } })
+     trace: `${label(month)}: ${e.name}; new customers ${formatHundredths(count)} (including ramped acquisition capacity, before churn) × CAC ${money(e.cacCents)} = ${money(amount)}; revenue driver ${r.originId}; cost follows current acquisition inputs, not the existing customer base` } })
     continue
    }
    const volumeValue = volumes.get(month)
@@ -44,11 +49,11 @@ export function commercialCosts(model: Model, months: string[], actuals: ActualC
    const recorded = actuals.filter(a => a.month === month && a.line === e.line && a.department === e.department)
    requireThat(!closed || recorded.length > 0, `Missing accepted inventory COGS for ${month}`, 409)
    const cost = closed ? safe(recorded.reduce((sum, a) => sum + a.amount, 0)) : expectedCost
-   const target = safe(mulDiv(cost, e.inventoryDays, daysIn(month)))
+   const target = safe(mulDiv(cost, e.inventoryDays, daysIn(workspace, month)))
    const purchases = safe(Math.max(0, cost + target - opening)), closing = safe(opening + purchases - cost)
    const summary = inventory[index]
    summary.opening += opening; summary.costOfSales += cost; summary.purchases += purchases; summary.closing += closing
-   const trace = `${monthLabel(month)}: ${e.name}; revenue driver ${r.originId}; units ${formatHundredths(quantity)} × unit cost ${money(e.unitCostCents)} = planned COGS ${money(expectedCost)}${closed ? `; recognized accepted COGS ${money(cost)} (inventory remains a planning estimate until balance-sheet actuals)` : ''}; target closing inventory ${money(cost)} × ${e.inventoryDays} inventory days ÷ ${daysIn(month)} calendar days = ${money(target)}, rounded half away from zero; opening stock ${money(opening)} + purchases ${money(purchases)} − COGS ${money(cost)} = closing inventory ${money(closing)}; purchases never negative and excess stock is consumed before replenishment; suppliers paid ${scenario.cash?.paymentLag ?? 0} month(s) later`
+   const trace = `${label(month)}: ${e.name}; revenue driver ${r.originId}; units ${formatHundredths(quantity)} × unit cost ${money(e.unitCostCents)} = planned COGS ${money(expectedCost)}${closed ? `; recognized accepted COGS ${money(cost)} (inventory remains a planning estimate until balance-sheet actuals)` : ''}; target closing inventory ${money(cost)} × ${e.inventoryDays} inventory days ÷ ${daysIn(workspace, month)} ${workspace.calendar && workspace.calendar !== 'calendar-month' ? 'accounting period days' : 'calendar days'} = ${money(target)}, rounded half away from zero; opening stock ${money(opening)} + purchases ${money(purchases)} − COGS ${money(cost)} = closing inventory ${money(closing)}; purchases never negative and excess stock is consumed before replenishment; suppliers paid ${scenario.cash?.paymentLag ?? 0} ${workspace.calendar && workspace.calendar !== 'calendar-month' ? 'period(s)' : 'month(s)'} later`
    costs.push({ month, line: e.line, department: e.department, inventory: true, purchases, source: { kind: 'expense', id: e.originId, label: e.name, amount: cost, trace } })
    opening = closing
   }
