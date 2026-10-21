@@ -10,11 +10,12 @@ const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playw
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/variance-commentary')
 await mkdir(evidence, { recursive: true })
 const root = await fresh()
-const browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
-let server, finance
+let server, browser, finance
 const settle = page => page.waitForLoadState('networkidle')
 try {
  server = await start(root, await freePort())
+ // Finish native setup before Chromium creates sandboxed helper processes.
+ browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
  finance = await session(browser, root, server.origin, 'owner', 1440)
  const { page, context } = finance
  const call = (path, body) => api(context, server.origin, path, body)
@@ -83,5 +84,5 @@ try {
  }
  console.log('AGENT-007: native draft/save/publish/confirm and immutable HTML downloads passed at 1440 and 390 without overflow')
 } finally {
- await finance?.context.close(); await browser.close(); await server?.close(); await rm(root, { recursive: true, force: true })
+ await finance?.context.close(); await browser?.close(); await server?.close(); await rm(root, { recursive: true, force: true })
 }
