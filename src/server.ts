@@ -10,6 +10,7 @@ import { setupStateResponse } from './base/setup-state'
 import { identity } from './identity'
 import { runCalendarSchedule } from './easel/calendar-dispatch'
 import { runActionChases } from './easel/decision-followup'
+import { runCashAlertSchedule } from './easel/cash-alert-schedule'
 
 export default withDemo({
   async fetch(request, env, execution) {
@@ -31,5 +32,6 @@ export default withDemo({
   async scheduled(_controller, env) {
     await runCalendarSchedule(env)
     await runActionChases(env)
+    await runCashAlertSchedule(env)
   },
 } satisfies ExportedHandler<Bindings>, { seed: seedDemo })

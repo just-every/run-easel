@@ -39,6 +39,8 @@ import { departmentStatements, departmentStatementList, departmentStatementView,
 import { dispatchDepartmentStatement } from './department-statement-mail'
 import { departmentStatementWorkbook } from './department-statement-documents'
 import { metricRules, metricTaskList } from './metric-rules'
+import { cashAlerts, cashAlertList } from './cash-alert-rules'
+import { evaluateCashAlerts, needsCashAlertCheck } from './cash-alert-check'
 import { evaluateMetricTasks, needsMetricRefresh } from './metric-tasks'
 import { longRange, longRangeList, longRangeView } from './long-range'
 import { longRangeWorkbook } from './long-range-workbook'
@@ -197,6 +199,7 @@ api.get('/api/easel/parallel-month/template/:file', async c => {
 api.get('/api/easel/parallel-month/:id', c => read(c, ctx => { requirePayDetail(ctx.x); return parallelView(ctx, c.req.param('id')) }))
 
 api.get('/api/easel/metric-tasks', c => read(c, metricTaskList))
+api.get('/api/easel/cash-alerts', c => read(c, cashAlertList))
 api.get('/api/easel/decisions', c => read(c, decisionFollowups))
 
 api.get('/api/easel/department-statements', c => read(c, ctx => departmentStatementList(ctx, c.req.query('month'))))
@@ -291,7 +294,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -304,6 +307,10 @@ api.post('/api/easel/command/:op', async c => {
  if (needsMetricRefresh(ctx)) {
   const evaluation = await evaluateMetricTasks(ctx)
   if (op === 'metric-refresh') result = evaluation
+ }
+ if (needsCashAlertCheck(ctx)) {
+  const evaluation = await evaluateCashAlerts(ctx)
+  if (op === 'cash-alert-check') result = { sent: evaluation.sent, blocked: evaluation.blocked }
  }
  const statementIds = op === 'close-month' && !result.alternativeBudget ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
@@ -333,6 +340,7 @@ api.post('/api/easel/import/:kit/:op', async c => {
  requireFinance(after.x)
  const result = step.record!(after, outcome)
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
+ if (needsCashAlertCheck(after)) await evaluateCashAlerts(after)
  await commit(after, structureBefore.state, structureBefore.revision)
  await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)
  return c.json(publicLedger(await erasedView(ctx.db, result)))

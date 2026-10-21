@@ -276,6 +276,12 @@
       "clauses": [
         "FIN-007"
       ]
+    },
+    {
+      "id": "cash-alerts",
+      "clauses": [
+        "REPORT-006"
+      ]
     }
   ],
   "nonGoals": [

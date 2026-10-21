@@ -42,7 +42,7 @@ export async function deliverNotifications(ids: string[], original: Bindings, op
   const channel = pref.mode === 'email' ? 'email' : pref.channel
   if (!(await canRead(c, n.recipient, n.department))) { record('blocked', { channel, reason: 'The recipient can no longer read this record', completedAt: c.now }); await commit(c); continue }
   if (channel !== 'email' && !(await chatReady(c, env, channel))) { record('blocked', { channel, reason: 'That chat channel is no longer connected', completedAt: c.now }); await commit(c); continue }
-  const message = n.message ?? (channel === 'email' ? { subject: `${EVENT_LABEL[n.event]}: ${n.title}`, text: [`${EVENT_LABEL[n.event]}.`, '', n.title, '', `Open it in Easel: ${link(env.AUTH_ORIGIN, n)}`].join('\n') } : { subject: NOTICE, text: NOTICE })
+  const message = n.message ?? (channel === 'email' ? { subject: `${EVENT_LABEL[n.event]}: ${n.title}`, text: [`${EVENT_LABEL[n.event]}.`, '', n.title, '', ...(n.body ? [n.body, ''] : []), `Open it in Easel: ${link(env.AUTH_ORIGIN, n)}`].join('\n') } : { subject: NOTICE, text: NOTICE })
   record('sending', { channel, message, attempts: n.attempts + 1, dispatchedAt: c.now })
   await commit(c)
   const outcome: Data = channel === 'email' ? await mail(env, n.key, n.recipient, message) : await sendChat(c, env, channel as ChatChannel, n.key, NOTICE)

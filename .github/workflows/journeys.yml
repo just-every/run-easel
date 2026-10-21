@@ -91,6 +91,10 @@ jobs:
         run: node tests/translation-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/translation
+      - name: REPORT-006 cash alerts at desktop and phone widths
+        run: node tests/cash-alerts-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/cash-alerts
       - name: AGENT-007 confirmed commentary and immutable packs
         run: node tests/variance-commentary-browser.mjs
         env:

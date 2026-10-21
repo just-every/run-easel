@@ -5,6 +5,7 @@ import { useDate } from './shared'
 import { ActualHistoryOverlay } from './history'
 import { FinancingSchedule } from './financing'
 import { CashAgreement, CashHealth } from './cash-health'
+import { CashAlerts } from './cash-alerts'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { revealHorizontally } from './scroll'
@@ -67,6 +68,7 @@ export function Overview({ state, refresh }: Shared) {
    <div className="overview-main">
     {!department && view?.cashHealth && <CashHealth health={view.cashHealth} currency={currency} />}
     {!department && <CashAgreement state={state} refresh={refresh} />}
+    {!department && <CashAlerts state={state} />}
     {view && <FiscalSummary view={view} department={department} />}
     {calc && !department && <section className="card">
      <ClosingCashChart ticks axis={calc.months.length > 12 ? 'years' : 'every'} months={calc.months} actualsThrough={calc.actualsThrough} currency={currency} series={series}

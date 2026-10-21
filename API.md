@@ -169,6 +169,21 @@ Commands use `/api/easel/command/<command>`. Finance alone can read
 Every write uses the current session and model revision fence. Stale content
 or revision returns 409, unauthorized access 403, invalid CSV 400.
 
+### Cash alerts (`REPORT-006`)
+
+Finance saves `cash-alert-rule-save` with `{name,kind,intervalDays,enabled}`.
+`kind: "floor"` checks forecast months against the agreed cash floor
+(`cash-constraints`); `kind: "below-plan"` takes `{basis:"amount",amount}` or
+`{basis:"percent",percent}` and compares the latest closed month's forecast
+cash on accepted actuals with the approved budget; `kind: "runway"` takes
+`{runway}` in months. Edit with `{id,revision}`; a revision or disable ends the
+rule's open alert. `GET /api/easel/cash-alerts` (finance only) returns
+`{zone,checkHour,rules,alerts,checks}`; each alert lists its sends with
+numbers, cause and recipients. `cash-alert-check` with `{}` checks explicitly
+and returns `{sent,blocked}`; `cash-alert-acknowledge` takes `{id,revision}`.
+Checks also run after accepted or undone actuals, closes and cash-floor saves,
+and daily at 08:00 company time from the scheduled handler.
+
 ### Metric-triggered tasks (`CYCLE-002`)
 
 Finance saves `metric-rule-save` with `{name,kind,owner,dueDays,enabled}`.
