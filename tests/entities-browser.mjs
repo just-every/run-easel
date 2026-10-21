@@ -81,5 +81,23 @@ try {
   await noOverflow(page, `Entity local plan ${width}`); await drivers.screenshot({ path: join(evidence, `entity-plan-${width}.png`) })
   console.log(`Entities ${width}: native binding, per-entity rates, reviewed fee/balance elimination, three statements, local currency plan, missing-rate state and formula Excel passed`)
  }
+ const template = await cmd('branch', { from: parent.id, name: 'British source template' })
+ await page.reload(); await page.getByRole('navigation', { name: 'Easel' }).waitFor(); await tab(page, 'Settings')
+ await form.getByLabel('Entity name', { exact: true }).fill('Northstar Britain')
+ await form.getByLabel('Source plan', { exact: true }).selectOption(template.id)
+ await form.getByLabel('Local currency', { exact: true }).fill('GBP')
+ await form.getByLabel('Consolidation group plan', { exact: true }).selectOption(template.id)
+ await form.getByLabel('Group reporting currency', { exact: true }).fill('USD')
+ const british = await saved(page, 'entity-save', () => form.getByRole('button', { name: 'Add entity', exact: true }).click())
+ const rebound = await api(finance.context, server.origin, `scenario/${template.id}`)
+ assert.equal(rebound.workspace.currency, 'GBP'); assert.equal(rebound.calculation.profit[0].revenue, 10000)
+ assert.ok(rebound.inputs.revenue.every(input => input.dimensions[british.dimension] === british.member))
+ assert.equal((await api(finance.context, server.origin, `scenario/${parent.id}`)).workspace.currency, 'CAD')
+ for (const width of [1440, 390]) {
+  await page.setViewportSize({ width, height: 1000 }); await noOverflow(page, `Bound entity template ${width}`)
+  await entities.getByRole('table', { name: 'Entity source plans', exact: true }).locator('..').screenshot({ path: join(evidence, `entity-template-${width}.png`) })
+ }
+ console.log('Copied entity template: native GBP binding retags its inputs and leaves the CAD source unchanged at 1440/390')
+
 } catch (error) { if (finance?.page && !finance.page.isClosed()) await finance.page.screenshot({ path: join(evidence, 'failed.png'), fullPage: true }).catch(() => {}); throw error }
 finally { await browser?.close(); await server?.close(); await rm(root, { recursive: true, force: true }) }
