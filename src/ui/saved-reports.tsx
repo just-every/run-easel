@@ -40,7 +40,7 @@ function ReportEditor({ state, definition, saved, cancel }: { state: D; definiti
   <Field label="Through month" name="through" type="month" defaultValue={report?.through ?? state.workspace.planStart} />
   <Field label="Report lines" name="lines" multiple options={options(state.lines)} defaultValue={report?.lines ?? state.lines.map((l: D) => l.id)} />
   <Field label="Department filter" name="department" required={!finance} defaultValue={definition?.department ?? departments[0]?.id} options={[...(finance ? [{ value: '', label: 'All departments' }] : []), ...options(departments)]} />
-  <Field label="Additional versions" name="comparisons" multiple defaultValue={report?.comparisons ?? []} options={options(scenarios)} />
+  <Field label="Additional versions" name="comparisons" multiple required={false} defaultValue={report?.comparisons ?? []} options={options(scenarios)} />
   <Field label="Comparison version" name="comparison" required={false} defaultValue={report?.comparison} options={[{ value: '', label: 'No additional comparison' }, ...options(scenarios)]} />
   {!!dimensions.length && <Field label="Row dimension" name="dimension" required={false} defaultValue={report?.dimension} options={options(dimensions)} />}
   {dimensions.map((d: D) => <Field key={d.id} label={`${d.name} filter`} name={`filter:${d.id}`} required={false} defaultValue={report?.dimensions?.[d.id]} options={[{ value: '', label: 'All permitted members' }, ...options(members.filter((m: D) => m.dimension === d.id))]} hint="Includes descendants of the selected member." />)}
