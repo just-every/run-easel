@@ -112,7 +112,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   if (nonCash || lineById.get(line)?.nonCash) return
   const type = lineById.get(line)?.type
   const input = source.id ? timedInputs.get(source.id) : undefined
- if (source.kind === 'position' && input?.payDay) { source.trace += `; ${input.bonusBps ? 'regular payroll, excluding position bonus and its incremental taxes,' : 'payroll'} accrues when earned and settles on day ${input.payDay} of the earned period + ${input.payMonthOffset} periods (clamped to period end)${input.bonusBps ? '; the position bonus and its incremental employer taxes settle on that pay day in the bonus period itself, with no month offset' : ''}; see working-capital pay-date reconciliation`; return }
+ if (source.kind === 'position' && input?.payDay) { source.trace += `; ${input.bonusBps ? 'regular payroll, excluding position bonus and its incremental taxes,' : 'payroll'} accrues when earned and settles on ${input.secondPayDay ? `days ${input.payDay} and ${input.secondPayDay} in two equal installments (first receives any cent remainder)` : `day ${input.payDay}`} of the earned period + ${input.payMonthOffset} periods (clamped to period end)${input.bonusBps ? '; the position bonus and its incremental employer taxes settle on the first pay day in the bonus period itself, with no month offset' : ''}; see working-capital pay-date reconciliation`; return }
   const timing = timedCash(input ?? {}, month, source.amount, type === 'revenue', type === 'revenue' ? lag ?? collectionLag : lineById.get(line)?.payroll ? 0 : lag ?? paymentLag, source.label, workspace)
   const tagged = timing.events.map(e => ({ ...e, line, department, source: source.id }))
   cash.push(...tagged)
@@ -185,7 +185,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
    if (p.payDay) {
     const paidBonus = components.bonus + (tax?.bonusTaxCents ?? 0)
     working.payroll(p, m, cost - paidBonus)
-    if (paidBonus) working.payroll({ ...p, payMonthOffset: 0 }, m, paidBonus)
+    if (paidBonus) working.payroll({ ...p, payMonthOffset: 0, secondPayDay: undefined }, m, paidBonus)
    }
    const componentTotal = p.meritBps || p.bonusBps || p.onCostSource ? ` Compensation components (planning estimate): base wages ${money(components.wages-components.merit)} + merit ${money(components.merit)} + on-costs ${money(components.onCosts)} + bonus ${money(components.bonus)} + commission ${money(commission?.amount??0)} + benefits ${money(components.benefits)} + employer match ${money(components.match)} + employer taxes ${money(tax?.totalCents??0)} = ${money(cost)}.` : ''
    add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${components.trace}${who}: ${p.payBasis === 'hourly' ? `hourly wages and entered on-costs ${money(baseCost)}` : `${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}`}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}${componentTotal}` })

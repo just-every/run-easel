@@ -1,6 +1,6 @@
 // FIN-007: real native sessions and Overview at desktop and phone widths.
 import assert from 'node:assert/strict'
-import { chromium } from '@playwright/test'
+const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 import { mkdir, rm, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { command, fresh, freePort, start } from './browser-runtime.mjs'
@@ -34,6 +34,26 @@ try {
  for (const width of [1440, 390]) {
   const owner = await session(browser, root, server.origin, 'owner', width), p = owner.page
   try {
+   await p.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Plan', exact: true }).click()
+   const positions = p.locator('section.card').filter({ has: p.getByRole('heading', { name: 'Positions', exact: true }) })
+   const edit = () => positions.getByRole('row').filter({ has: p.getByRole('cell', { name: 'Delivery team', exact: true }) }).getByRole('button', { name: 'Edit', exact: true }).click()
+   await edit()
+   const firstDay = width === 1440 ? '15' : '14', secondDay = width === 1440 ? '31' : '30'
+   await positions.getByLabel('Payroll pay day', { exact: true }).fill(firstDay)
+   await positions.getByLabel('Second payroll pay day', { exact: true }).fill(secondDay)
+   await Promise.all([p.waitForResponse(r => r.url().includes('/command/position') && r.ok()), positions.getByRole('button', { name: 'Save position', exact: true }).click()])
+   await p.reload()
+   await p.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Plan', exact: true }).click()
+   await edit()
+   assert.equal(await positions.getByLabel('Payroll pay day', { exact: true }).inputValue(), firstDay)
+   assert.equal(await positions.getByLabel('Second payroll pay day', { exact: true }).inputValue(), secondDay)
+   const scheduled = await api(owner.context, server.origin, `scenario/${scenario}`)
+   assert.equal(scheduled.calculation.dailyCash.find(r => r.date === `2026-01-${firstDay}`).payments, 1800000)
+   assert.equal(scheduled.calculation.dailyCash.find(r => r.date === `2026-01-${secondDay}`).payments, 1800000 + (secondDay === '31' ? 2400000 + 500000 : 0))
+   assert.equal(scheduled.calculation.dailyCash.find(r => r.date === '2026-02-28').payments, 1800000, 'second payroll date clamps to February end')
+   await noOverflow(p, `FIN-007 semimonthly Plan ${width}`)
+   await positions.getByLabel('Second payroll pay day', { exact: true }).scrollIntoViewIfNeeded()
+   await p.screenshot({ path: join(evidence, `semimonthly-plan-${width}.png`) })
    await overview(p)
    const c = card(p), table = c.getByRole('table', { name: 'Weekly planned cash', exact: true })
    await table.waitFor()
@@ -72,6 +92,6 @@ try {
    await noOverflow(board.page, `FIN-007 board ${width}`)
    await card(board.page).screenshot({ path: join(evidence, `weekly-board-${width}.png`) })
   } finally { await board.context.close() }
-  console.log(`FIN-007 ${width}: native adjustment persisted; weekly cash, month-end differences and read-only board view passed`)
+  console.log(`FIN-007 ${width}: native semimonthly pay schedule and adjustment persisted; weekly cash, month-end differences and read-only board view passed`)
  }
 } finally { await browser?.close(); await server?.close(); if (!existing) await rm(root, { recursive: true, force: true }) }

@@ -30,8 +30,11 @@ export function paymentInput(b: Data): Data {
  return method === 'dpo' ? { paymentMethod: method, dpoDays: integer(b.dpoDays, 'DPO (days)', 0, 365) } : { paymentMethod: method, paymentTermDays: integer(b.paymentTermDays, 'Days after invoice month end', 0, 365) }
 }
 export function payrollInput(b: Data): Data {
- if (!supplied(b.payDay) && !supplied(b.payMonthOffset)) return {}
- return { payDay: integer(b.payDay, 'Payroll pay day', 1, 31), payMonthOffset: integer(b.payMonthOffset ?? 0, 'Payroll pay month offset', 0, 3) }
+ if (!supplied(b.payDay) && !supplied(b.payMonthOffset) && !supplied(b.secondPayDay)) return {}
+ const payDay = integer(b.payDay, 'Payroll pay day', 1, 31)
+ const secondPayDay = supplied(b.secondPayDay) ? integer(b.secondPayDay, 'Second payroll pay day', 1, 31) : undefined
+ requireThat(secondPayDay === undefined || secondPayDay > payDay, 'The second payroll pay day must be later than the first')
+ return { payDay, ...(secondPayDay === undefined ? {} : { secondPayDay }), payMonthOffset: integer(b.payMonthOffset ?? 0, 'Payroll pay month offset', 0, 3) }
 }
 export function workingExpenseInput(b: Data, base: Data): Data | undefined {
  if (b.kind === 'prepaid') {

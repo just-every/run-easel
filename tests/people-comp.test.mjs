@@ -131,7 +131,7 @@ test('PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through tax
  const income = await h.command('line', { name: 'Tax estimate', type: 'operating-expense' })
  const revenue = await h.command('line', { name: 'Bookings', type: 'revenue' })
  const scenario = (await h.get('/api/easel/state')).scenarios[0].id
- const body = { scenario, department: dept.id, line: salary.id, title: 'Hourly engineer', holder: 'Private hourly sentinel', start: '2026-01', payBasis: 'hourly', annualSalary: '0', hourlyRate: '40', expectedHours: '120', onCostPercent: '10', benefits: '1200', retirementMatchPercent: '4', commissionPercent: '10', payDay: '15', payMonthOffset: '1' }
+ const body = { scenario, department: dept.id, line: salary.id, title: 'Hourly engineer', holder: 'Private hourly sentinel', start: '2026-01', payBasis: 'hourly', annualSalary: '0', hourlyRate: '40', expectedHours: '120', onCostPercent: '10', benefits: '1200', retirementMatchPercent: '4', commissionPercent: '10', payDay: '15', secondPayDay: '31', payMonthOffset: '1' }
  const hourly = await h.command('position', body)
  const view = (id = scenario, cookie = h.owner) => h.get(`/api/easel/scenario/${id}`, cookie)
  const source = (v, origin = hourly.originId, month = '2026-01') => v.calculation.cells.find(c => c.line === salary.id && c.month === month).sources.find(s => s.id === origin)
@@ -160,6 +160,8 @@ test('PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through tax
  current = await view()
  assert.equal(source(current, fractional.originId).amount, 3, 'half-cent wages, on-costs and match each round once half-away')
  assert.equal(current.calculation.headcount[dept.id]['2026-01'], 3)
+ assert.equal(current.calculation.dailyCash.find(r => r.date === '2026-02-15').payments, 436601 + 680000 + 2, 'FIN-007 first run includes wages, on-costs, benefits, match, commission and employer taxes with each position cent remainder')
+ assert.equal(current.calculation.dailyCash.find(r => r.date === '2026-02-28').payments, 436600 + 680000 + 1, 'FIN-007 second run clamps and conserves the full earned compensation')
  const before = current
  for (const changes of [{ payBasis: 'other' }, { annualSalary: '1' }, { hourlyRate: '-1' }, { expectedHours: '1.001' }, { benefits: '-1' }, { retirementMatchPercent: '100.01' }, { payBasis: 'salary', annualSalary: '100' }]) {
   await h.command('position', { ...body, id: hourly.id, ...changes }, h.owner, 400)

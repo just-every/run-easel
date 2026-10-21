@@ -37,8 +37,9 @@ export function PayrollFields({row}:{row:D|null}) {
   <label>Payroll cash timing<select aria-label="Payroll cash timing" value={scheduled?'date':'month'} onChange={e=>setScheduled(e.target.value==='date')}><option value="month">Paid in earned month</option><option value="date">Entered pay date</option></select></label>
   {scheduled&&<>
    <Field label="Payroll pay day" name="payDay" type="number" defaultValue={row?.payDay??5} hint="Day 1–31, clamped to the pay month's last day." />
+   <Field label="Second payroll pay day" name="secondPayDay" type="number" required={false} defaultValue={row?.secondPayDay} hint="Optional for semimonthly pay. Later than the first day, up to 31; both clamp to period end. Equal installments, first receives any cent remainder." />
    <Field label="Payroll pay month offset" name="payMonthOffset" options={[0,1,2,3].map(n=>({value:String(n),label:n===0?'Earned month':`${n} month${n===1?'':'s'} after earned`}))} defaultValue={String(row?.payMonthOffset??1)} />
-   <p className="muted wide">Base pay, entered on-costs, benefits, employer match and tax estimates accrue in the earned month and settle on this planned pay date. This does not run payroll or make a payment.</p>
+   <p className="muted wide">Base pay, entered on-costs, benefits, employer match and tax estimates accrue in the earned month and settle on the entered pay date or dates. A position bonus and its incremental taxes settle on the first pay day in its bonus period, without the month offset. This does not run payroll or make a payment.</p>
   </>}
  </>
 }

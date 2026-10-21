@@ -93,9 +93,11 @@ export function workingCapital(model: Model, months: string[], allocations: Data
   }
  }
  const payroll = (input: Data, month: string, expense: number) => {
-  const date = payDate(month, input.payDay, input.payMonthOffset, model.workspace)
-  post(input, month, expense, 0, false, `Payroll earned ${month}; pay date ${date} (${retail ? '1-based day within the target accounting period, clamped to period end' : 'day clamped to calendar month end'}).`)
-  post(input, datePeriod(model.workspace, date), 0, expense, false, `Payroll earned ${month} settles ${date}.`, date)
+  const days = input.secondPayDay ? [input.payDay, input.secondPayDay] : [input.payDay]
+  const dates = days.map(day => payDate(month, day, input.payMonthOffset, model.workspace))
+  const parts = apportion(expense, days.map(() => 1))
+  post(input, month, expense, 0, false, `Payroll earned ${month}; pay dates ${dates.join(', ')} (${retail ? '1-based days within the target accounting period, clamped to period end' : 'days clamped to calendar month end'}).${days.length === 2 ? ' Two equal installments; the first receives any cent remainder.' : ''}`)
+  dates.forEach((date, i) => post(input, datePeriod(model.workspace, date), 0, parts[i], false, `Payroll earned ${month} settles ${money(parts[i])} on ${date}${days.length === 2 ? ` (installment ${i + 1} of 2)` : ''}.`, date))
  }
  const commissions = commissionEstimates(model.inputs.revenue, model.inputs.position, model.workspace.currency)
  // Prior earned salaries seed explicitly estimated opening accruals, rather
@@ -105,7 +107,7 @@ export function workingCapital(model: Model, months: string[], allocations: Data
   const schedule = compensationSchedule(p, priorMonths, model.workspace.currency, model.workspace, false)
   for (let offset = 3; offset >= 1; offset--) {
    const month = addMonths(months[0], -offset)
-   if (p.start <= month && (!p.end || month <= p.end)) { const components = schedule.get(month)!; payroll(p, month, components.total - components.bonus + (commissions.get(`${p.originId}|${month}`)?.amount ?? 0)); if(components.bonus) payroll({...p,payMonthOffset:0},month,components.bonus) }
+   if (p.start <= month && (!p.end || month <= p.end)) { const components = schedule.get(month)!; payroll(p, month, components.total - components.bonus + (commissions.get(`${p.originId}|${month}`)?.amount ?? 0)); if(components.bonus) payroll({...p,payMonthOffset:0,secondPayDay:undefined},month,components.bonus) }
   }
  }
  let prepared = false
