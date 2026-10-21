@@ -70,6 +70,7 @@ try {
   const file = await download(published.id, `draft-excluded-${width}`)
   assert.ok(!(await readFile(file, 'utf8')).includes(narrative))
   const rendered = await context.newPage()
+  await rendered.setViewportSize({ width, height: 1000 })
   await rendered.goto(pathToFileURL(file).href)
   assert.equal(await rendered.getByText(narrative, { exact: true }).count(), 0)
   await shoot(`published-draft-excluded-${width}`, rendered); await rendered.close()
@@ -84,7 +85,7 @@ try {
   const secondFile = await download(second.id, `confirmed-included-${width}`)
   assert.ok((await readFile(secondFile, 'utf8')).includes(narrative))
   assert.ok(!(await readFile(file, 'utf8')).includes(narrative), 'Earlier immutable pack remains draft-free')
-  const visible = await context.newPage(); await visible.goto(pathToFileURL(secondFile).href)
+  const visible = await context.newPage(); await visible.setViewportSize({ width, height: 1000 }); await visible.goto(pathToFileURL(secondFile).href)
   await visible.getByText(new RegExp(narrative)).waitFor()
   await shoot(`published-confirmed-${width}`, visible); await visible.close()
  }

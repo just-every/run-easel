@@ -3663,7 +3663,7 @@
       "executable": false
     },
     "tests/variance-commentary-browser.mjs": {
-      "sha256": "55a45d61058de66d26a4483ae52b1e65aed62a86aafb0fb7169d1ed71129d074",
+      "sha256": "495e84d47fa7339592a054fca6e222da30d32958a52bed850f27becebe01e08c",
       "executable": false
     },
     "tests/variance-commentary.test.mjs": {
