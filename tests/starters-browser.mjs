@@ -88,7 +88,7 @@ try {
     await shoot(page, dimCard, `${starter}-dimensions-${width}`)
     const grid = card(page, 'Planning grid')
     await grid.getByText('Calculated cells and their traces (read-only)', { exact: true }).click()
-    const dimension = dimensionReport.dimensions[0], leaf = dimension.members.find(m => m.parent && !m.rollup)
+    const dimension = dimensionReport.dimensions[0], leaf = dimension.members.find(m => m.parent && !m.rollup && Object.values(m.amounts).some(amount => amount !== 0))
     const calculated = grid.getByRole('table', { name: 'Read-only calculated planning cells', exact: true })
     const firstLine = view.lines.find(line => dimensionReport.lineTotals[line.id]?.[view.calculation.months[0]])
     const gridRow = calculated.getByRole('row').filter({ has: page.getByRole('rowheader', { name: new RegExp(firstLine.name) }) }).first()
