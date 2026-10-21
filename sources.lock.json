@@ -3347,7 +3347,7 @@
       "executable": false
     },
     "tests/browser.mjs": {
-      "sha256": "4fb85f7da239998e4a304eb5e4b68c91a5a509aa09fe8c773ae3e5d7988e2160",
+      "sha256": "0694f946453aeef31d10b4536bc29e2d8094b5c48a449d616073e38f1ad7565b",
       "executable": false
     },
     "tests/calendar-browser.mjs": {

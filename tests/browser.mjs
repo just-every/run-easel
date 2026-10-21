@@ -67,9 +67,10 @@ try {
  assert.equal((await fetch(server.origin + '/health')).status, 200)
  assert.equal((await fetch(server.origin + '/api/easel/state')).status, 401)
  await server.close(); server = undefined
- // This local installation has no production mail or approved SSO delivery.
- // Base refuses its production deploy before building or contacting a provider.
- await command(root, ['deploy', '--dry-run'], { expected: 4 })
+ // The credential-free journey cannot inspect a hosted target's secret bindings.
+ // The dry run reports missing credentials rather than claiming deployment proof.
+ const deployRefusal = await command(root, ['deploy', '--dry-run'], { expected: 3 })
+ assert.match(deployRefusal, /without Cloudflare credentials/)
 
  const archive = join(evidence, 'installation.rer')
  await rm(archive, { force: true }); await rm(join(root, 'exports/installation.rer'), { force: true })
