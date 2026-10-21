@@ -755,7 +755,7 @@
       "executable": false
     },
     "src/easel/compensation.ts": {
-      "sha256": "dda9b2a9970d6d74c683949a9fb709ba20ca1d84f6748437932705346bf8bd5b",
+      "sha256": "1e21ab43309c73df2e3c6e57103f0e43275f65066a11153f78080a9dd1df922a",
       "executable": false
     },
     "src/easel/connection-seal.ts": {
@@ -3047,7 +3047,7 @@
       "executable": false
     },
     "src/ui/assumptions.ts": {
-      "sha256": "960d64707992b8d2ec1cb6ca098ed3106cd91e3a8413b70b1a9bff2fce7dfd21",
+      "sha256": "af13737bdb6586c91e461693c911738c90928a729f2feb5e3d6c72ace25e5426",
       "executable": false
     },
     "src/ui/balance-actuals.tsx": {
@@ -3563,7 +3563,7 @@
       "executable": false
     },
     "tests/people-comp.test.mjs": {
-      "sha256": "31a7200e6f7cc9e359edccb85b256fa3bef8422eed5936e1099e7f12c69ddfd7",
+      "sha256": "2d0b5735026d6b7f9d39d6f5e821bd1272ec4377465107e8c45e7b13ee70a029",
       "executable": false
     },
     "tests/reforecasts-browser-journey.mjs": {

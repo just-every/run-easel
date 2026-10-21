@@ -6,13 +6,14 @@ export function compensationInput(b: Data): Data {
  const payBasis = choice(b.payBasis ?? 'salary', ['salary', 'hourly'] as const, 'a pay basis')
  const hourlyRateCents = cents(payBasis === 'hourly' ? b.hourlyRate : b.hourlyRate || '0', 'Hourly pay rate')
  const expectedHours = hundredths(payBasis === 'hourly' ? b.expectedHours : b.expectedHours || '0', 'Expected hours per period')
- const annualSalaryCents = cents(b.annualSalary || '0', 'Annual salary')
+ const annualSalaryCents = cents(b.annualSalary, 'Annual salary')
  requireThat(payBasis === 'hourly' ? annualSalaryCents === 0 : hourlyRateCents === 0 && expectedHours === 0, 'Choose salary or hourly pay, without inputs for the other basis')
- // Preserve the existing requirement for explicit salary on the salary door.
- if (payBasis === 'salary') cents(b.annualSalary, 'Annual salary')
  const benefitsCents = cents(b.benefits || '0', 'Benefits per person per period')
  const retirementMatchBps = percentBps(b.retirementMatchPercent || '0', '401(k) employer match estimate %')
- return { payBasis, hourlyRateCents, expectedHours, annualSalaryCents, benefitsCents, retirementMatchBps }
+ const result = { payBasis, hourlyRateCents, expectedHours, annualSalaryCents, benefitsCents, retirementMatchBps }
+ // Refuse an unsafe product before saving it, even if no active period is read yet.
+ compensation({ ...result, onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }, Math.floor(annualSalaryCents / 12), 'USD')
+ return result
 }
 
 /** salaryWages is the existing cent-conserving monthly salary, before on-costs.

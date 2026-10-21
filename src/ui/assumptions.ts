@@ -28,7 +28,7 @@ function format(key: string, value: any, side: D): string {
 export function assumptionText(change: D, comparison: D) {
  const before = change.before ?? {}, after = change.after ?? {}
  const fields = Object.keys(labels).filter(key => (key in before || key in after) && !semanticEqual(before[key], after[key]))
- const details = fields.map(key => `${key === 'kind' && change.kind === 'expense' ? 'expense type' : labels[key]} ${format(key, before[key], comparison.left)} → ${format(key, after[key], comparison.right)}`)
+ const details = fields.map(key => `${key === 'kind' && change.kind === 'expense' ? 'expense type' : key === 'hourlyRateCents' && change.kind === 'position' ? 'hourly pay rate' : labels[key]} ${format(key, before[key], comparison.left)} → ${format(key, after[key], comparison.right)}`)
  const verb = change.change === 'added' ? 'Added' : change.change === 'removed' ? 'Removed' : 'Changed'
  return `${verb} ${change.kind}: ${change.name ?? 'Unnamed assumption'}${details.length ? `, ${details.join('; ')}` : ''}`
 }
