@@ -1,3 +1,4 @@
+import { WeeklyCash } from './weekly-cash'
 import { FiscalSummary } from './fiscal-summary'
 import { Headcount } from './headcount'
 import { useDate } from './shared'
@@ -90,6 +91,7 @@ export function Overview({ state, refresh }: Shared) {
      <p className="muted trace">{calc.cash[0]?.trace}</p>
      {calc.warnings.length > 0 && <><h3>Check these</h3><ul className="plain">{calc.warnings.map((w: string) => <li key={w}>{w}</li>)}</ul></>}
     </section>}
+    {view && !department && <WeeklyCash key={id} state={state} refresh={refresh} scenario={id} editable={sc?.status === 'working'} />}
     {calc && !department && <FinancingSchedule calculation={calc} currency={currency} />}
     {calc && !department && <Statements calculation={calc} currency={currency} />}
     {calc && !department && <ReportingCurrency state={state} refresh={refresh} scenario={id} />}

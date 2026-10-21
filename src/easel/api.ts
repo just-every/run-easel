@@ -1,3 +1,5 @@
+import { weeklyCashWorkbook } from './weekly-cash-workbook'
+import { weeklyCash, weeklyCashCommand } from './weekly-cash'
 import { publicLedger } from './ledger-public'
 import { ledgerAllocation } from './ledger-allocation'
 import { workbookDrivers } from './workbook-model'
@@ -215,6 +217,12 @@ api.get('/api/easel/dashboards/:id/document.xlsx', async c => {
 
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
+api.get('/api/easel/weekly-cash/:id/document.xlsx', async c => {
+ const ctx = await open(c), view = await weeklyCash(ctx, c.req.param('id'), c.req.query('start'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(weeklyCashWorkbook(view), 'easel-weekly-cash')
+})
+api.get('/api/easel/weekly-cash/:id', c => read(c, ctx => weeklyCash(ctx, c.req.param('id'), c.req.query('start'))))
 api.get('/api/easel/drivers/:id', c => read(c, ctx => driversView(ctx, c.req.param('id'))))
 api.get('/api/easel/translation/:scenario', c => read(c, ctx => translationView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/translation-variance/:month', c => read(c, ctx => constantCurrencyVariance(ctx, c.req.param('month'))))
@@ -283,7 +291,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
+const commands = [weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

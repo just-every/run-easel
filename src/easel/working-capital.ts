@@ -22,7 +22,7 @@ export const payDate = (month: string, date: number, offset = 0, workspace?: Cal
  }
  return `${target}-${String(Math.min(date, Number(monthEnd(target).slice(8)))).padStart(2, '0')}`
 }
-export type TimingCash = { month: string; date?: string; amount: number; collection: boolean; label: string; line?: string; department?: string; source?: string }
+export type TimingCash = { month: string; date?: string; assumedDate?: boolean; amount: number; collection: boolean; label: string; line?: string; department?: string; source?: string }
 export function timedCash(input: Data, month: string, amount: number, collection: boolean, legacyLag: number, label: string, workspace?: CalendarWorkspace): { events: TimingCash[]; trace: string } {
  const method = collection ? input.collectionMethod : input.paymentMethod
  const date = workspace ? periodForKey(workspace, month).endDate : monthEnd(month)
@@ -38,7 +38,7 @@ export function timedCash(input: Data, month: string, amount: number, collection
   return { events: [{ month: period(settlement), date: settlement, amount, collection, label }], trace: `Invoice dated ${date}; ${method === 'terms' ? `vendor terms after invoice ${workspace?.calendar && workspace.calendar !== 'calendar-month' ? 'accounting period' : 'month'} end` : method.toUpperCase()} ${days} exact calendar days; ${collection ? 'collect' : 'pay'} ${settlement}.` }
  }
  const target = addMonths(month, legacyLag)
- return { events: [{ month: target, date: workspace ? periodForKey(workspace, target).endDate : monthEnd(target), amount, collection, label }], trace: '' }
+ return { events: [{ month: target, assumedDate: true, date: workspace ? periodForKey(workspace, target).endDate : monthEnd(target), amount, collection, label }], trace: '' }
 }
 
 /** A contract curve applies to real planned invoice dates, never revenue dates. */
@@ -72,12 +72,12 @@ export function curveContracts(contracts: ContractCalculation, inputs: Data[], m
 export type WorkingCapitalMonth = { month: string; prepaid: number; accruedLiabilities: number; prepaidExpense: number; accruedExpense: number; prepaidPayments: number; accruedPayments: number; trace: string }
 export type WorkingCapitalRow = WorkingCapitalMonth & { originId: string; name: string; line: string; department: string; kind: string }
 export type WorkingCapitalCalculation = { opening: { prepaid: number; accruedLiabilities: number }; months: WorkingCapitalMonth[]; rows: WorkingCapitalRow[]; issues: { month: string; line: string; department: string; reason: string }[] }
-type Posting = { input: Data; month: string; expense: number; payment: number; prepaid: boolean; detail: string }
+type Posting = { input: Data; date?: string; month: string; expense: number; payment: number; prepaid: boolean; detail: string }
 export function workingCapital(model: Model, months: string[], allocations: Data[] = []) {
  const postings: Posting[] = [], cash: TimingCash[] = [], before = addMonths(months[0], -1)
  const money = (n: number) => formatMoney(n, model.workspace.currency)
  const retail = model.workspace.calendar && model.workspace.calendar !== 'calendar-month'
- const post = (input: Data, month: string, expense: number, payment: number, prepaid: boolean, detail: string) => postings.push({ input, month, expense, payment, prepaid, detail })
+ const post = (input: Data, month: string, expense: number, payment: number, prepaid: boolean, detail: string, date?: string) => postings.push({ input, month, expense, payment, prepaid, detail, date })
  for (const input of model.inputs.expense.filter(e => ['prepaid', 'bonus'].includes(e.kind))) {
   if (input.kind === 'prepaid') {
    post(input, input.paymentMonth, 0, input.amountCents, true, `Prepayment ${money(input.amountCents)} paid in ${input.paymentMonth}; service starts ${input.start}, ${input.amortizationMonths} ${retail ? 'accounting-period' : 'monthly'} installments.`)
@@ -95,7 +95,7 @@ export function workingCapital(model: Model, months: string[], allocations: Data
  const payroll = (input: Data, month: string, expense: number) => {
   const date = payDate(month, input.payDay, input.payMonthOffset, model.workspace)
   post(input, month, expense, 0, false, `Payroll earned ${month}; pay date ${date} (${retail ? '1-based day within the target accounting period, clamped to period end' : 'day clamped to calendar month end'}).`)
-  post(input, datePeriod(model.workspace, date), 0, expense, false, `Payroll earned ${month} settles ${date}.`)
+  post(input, datePeriod(model.workspace, date), 0, expense, false, `Payroll earned ${month} settles ${date}.`, date)
  }
  const commissions = commissionEstimates(model.inputs.revenue, model.inputs.position, model.workspace.currency)
  // Prior earned salaries seed explicitly estimated opening accruals, rather
@@ -135,7 +135,7 @@ export function workingCapital(model: Model, months: string[], allocations: Data
  const finish = (): WorkingCapitalCalculation => {
   prepare()
   cash.length = 0
-  for (const p of postings.filter(p => p.payment && p.month >= months[0])) cash.push({ month: p.month, amount: p.payment, collection: false, label: p.input.name ?? p.input.title, line: p.input.line, department: p.input.department, source: p.input.originId })
+  for (const p of postings.filter(p => p.payment && p.month >= months[0])) cash.push({ month: p.month, date: p.date, amount: p.payment, collection: false, label: p.input.name ?? p.input.title, line: p.input.line, department: p.input.department, source: p.input.originId })
   const inputs = [...new Map(postings.map(p => [p.input.originId, p.input])).values()]
   const balance = (input: Data, through: string) => postings.filter(p => p.input.originId === input.originId && p.month <= through).reduce((n, p) => n + (p.prepaid ? p.payment - p.expense : p.expense - p.payment), 0) + (through >= (openingDeltas.get(input.originId)?.month ?? '9999') ? openingDeltas.get(input.originId)!.delta : 0)
   const opening = { prepaid: 0, accruedLiabilities: 0 }

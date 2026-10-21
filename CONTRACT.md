@@ -388,7 +388,11 @@ A weekly direct cash view for the next 13 weeks is built from open receivables b
 
 *Acceptance:* with ledger, payroll and bank fakes holding open invoices and bills, a semimonthly pay schedule, a term-loan payment and a planned spend line, the API journey reads 13 weeks in which each invoice lands in the week its customer's paid-invoice history puts it (a customer averaging 12 days late lands 12 days after its due date), each bill on its due date, each payroll run on its run date, the loan payment in its scheduled week and the planned spend in its planned week; the month-end weeks agree with the monthly cash forecast, and an override keeps its note.
 
-*Status:* missing.
+The current planned-cash slice reads the same dated contract collections, collection curves, DSO/DPO and entered payroll pay days as the monthly forecast. It shows thirteen consecutive seven-day windows from an explicit first UTC date; dates are inclusive. Monthly-only cash assumptions use accounting-period end, except debt draws at period start, and weeks containing them say that dates are assumed. Opening cash rolls the plan opening through all earlier scheduled events. A finance override is a signed cent adjustment with a required note, settling on its selected week's final day; saving that same week replaces its prior adjustment, including an explicit zero to cancel. Later windows carry earlier adjustments. Overrides change only the weekly view; the accounting-period-end reconciliation displays monthly forecast, dated schedule, cumulative overrides, weekly closing and the difference rather than hiding a mismatch. Formula Excel exports carry the same weekly and reconciliation amounts, with live closing and difference formulas. Current scenario, membership, finance edit and immutable-version rules apply. All readers receive aggregate cash amounts without input identities or individual pay detail. Weeks beyond the captured horizon are unavailable, and older frozen versions without dated cash show an explicit unavailable message rather than invented zeroes.
+
+*Acceptance evidence for the partial slice:* `tests/weekly-cash.test.mjs` (FIN-007) asserts exact dates, thirteen-week arithmetic, dated payroll, contract DSO, monthly reconciliation, carried/replaced overrides and notes, invalid and unauthorized saves, horizon unavailability and unchanged frozen captures through HTTP. `tests/weekly-cash-browser.mjs` (FIN-007) enters and reloads an adjustment through Overview and reads weekly cash and month-end reconciliation at 1440/390, including viewer read-only access. Provider-fed open invoices/bills, customer paid-invoice lateness, semimonthly schedules and bank balances remain unbuilt; the view labels itself a planning estimate and claims none of those inputs.
+
+*Status:* partial.
 
 ### Headcount and compensation
 
@@ -1031,13 +1035,13 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa0780` (17 October 2026).
+Judged from the code and tests at commit `40113f96ea2ed4eb03afedad21b94837cd5ef9a1` (21 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 39 | 18 | 29 | 86 |
-| All | 56 | 18 | 29 | 103 |
+| Target and push further | 39 | 19 | 28 | 86 |
+| All | 56 | 19 | 28 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1084,7 +1088,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `FIN-004` | Capex and depreciation | target | done | `src/easel/assets.ts`, `tests/assets.test.mjs`, `tests/assets-browser-journey.mjs`, `tests/mapping-rules.test.mjs` | Category useful lives, purchased/opening/imported assets, cent-exact depreciation and book values, disposals, non-cash expense lines, explicit cash timing, immutable snapshots and formula exports |
 | `FIN-005` | Runway, burn and an agreed cash floor | target | done | `tests/cash-health.test.mjs` and `tests/cash-health-browser-journey.mjs` (FIN-005): monthly hand-computed burn/runway, floor and runway crossings, lowest cash, forecast cash-zero, current agreement on immutable cash, proposals/comparisons and Excel; 1440/390 finance and board journeys |  |
 | `FIN-006` | US tax estimates in the forecast | target | done | `src/easel/payroll-taxes.ts`, `src/easel/tax-input.ts`, `src/easel/tax-calculation.ts`, `tests/taxes.test.mjs`, `tests/taxes-browser.mjs` | Explicit effective-year payroll bases/rates, loss carryforward, invoice sales-tax cash/payable, linked statements, frozen captures, filtering and Excel |
-| `FIN-007` | 13-week cash forecast | target | missing |  | No weekly direct cash view |
+| `FIN-007` | 13-week cash forecast | target | partial | `src/easel/weekly-cash.ts` `tests/weekly-cash.test.mjs` `tests/weekly-cash-browser.mjs` | Dated plan schedules, monthly reconciliation and noted weekly overrides ship; provider open invoices/bills, customer paid-invoice lateness, semimonthly schedules and bank balances remain missing |
 | `PEOPLE-001` | Roster and payroll actuals from Gusto | target | missing |  | No Gusto connector or roster reconciliation |
 | `PEOPLE-002` | Roster from Rippling, Willow, BambooHR and ADP | target | missing |  | No HRIS connectors |
 | `PEOPLE-003` | Open roles from the ATS | target | missing |  | No ATS connector or requisition-driven positions |

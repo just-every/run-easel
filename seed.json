@@ -270,6 +270,12 @@
       "clauses": [
         "AGENT-007"
       ]
+    },
+    {
+      "id": "weekly-planned-cash",
+      "clauses": [
+        "FIN-007"
+      ]
     }
   ],
   "nonGoals": [

@@ -1,3 +1,4 @@
+import { dailyCash, type DailyCash } from './daily-cash'
 import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { ledgerStatements } from './ledger-statements'
 import { openContracts, scheduleAllocations } from './ledger-schedules'
@@ -67,6 +68,8 @@ export type Calculation = {
  financing?: FinancingCalculation
  /** Each month's cash split into collections, payroll, spend and financing (cash-drivers.ts); sums to `cash`. */
  cashDrivers?: CashDriver[]
+ /** Aggregate dated plan cash, without input identities or pay detail. */
+ dailyCash?: DailyCash[]
 }
 
 const active = (p: Data, m: string) => p.start <= m && (!p.end || m <= p.end)
@@ -374,6 +377,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   ...(taxes?{taxes}:{}),engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
   ...(inventoryLines.size ? { inventory: commercial.inventory } : {}),
   cells: [...cells.values()].sort((a, b) => a.line.localeCompare(b.line) || a.department.localeCompare(b.department) || a.month.localeCompare(b.month)),
+  dailyCash: dailyCash(model, months, cash, financing),
   lineTotals, profit, cash: cashMonths, headcount, warnings, assets, financing, cashDrivers: [...cashDrivers(cash, lines, interestLines, months), ...fundingDrivers], ...(workingCapitalCalculation.rows.length ? { workingCapital: workingCapitalCalculation } : {}), ...(contracts.rows.length ? { contracts } : {}),
  }
  const calculated = { ...result, ...statements(model, result) }

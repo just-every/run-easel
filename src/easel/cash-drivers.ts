@@ -6,7 +6,7 @@ import type { Line } from './engine'
 
 export type Driver = 'collections' | 'payroll' | 'spend' | 'financing'
 /** One cash event as the engine times it; `source` is the input's origin id where one input caused it. */
-export type TaggedCash = { month: string; amount: number; collection: boolean; label: string; line?: string; department?: string; source?: string }
+export type TaggedCash = { month: string; date?: string; assumedDate?: boolean; amount: number; collection: boolean; label: string; line?: string; department?: string; source?: string }
 /** Signed: collections and financing inflows positive, payments negative. */
 export type CashDriver = { month: string; driver: Driver; line: string; department: string; source: string; label: string; amount: number }
 

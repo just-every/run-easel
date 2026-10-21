@@ -100,3 +100,8 @@ jobs:
         with:
           name: easel-journeys-and-archives
           path: ${{ runner.temp }}/easel-proof
+
+      - name: FIN-007 weekly planned cash at desktop and phone widths
+        run: node tests/weekly-cash-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/weekly-cash
