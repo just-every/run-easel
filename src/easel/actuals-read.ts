@@ -74,11 +74,11 @@ export async function cashBalance(db: D1Database, s: State, before: string) {
 }
 
 export async function rowsFor(db: D1Database, s: State, month: string, line: string, department: string) {
- const { results } = await db.prepare('SELECT value, amount FROM e_actuals WHERE period=? ORDER BY ABS(amount) DESC, id').bind(month).all<any>()
+ const { results } = await db.prepare('SELECT id, value, amount FROM e_actuals WHERE period=? ORDER BY ABS(amount) DESC, id').bind(month).all<any>()
  const type = lines(s).find(l => l.id === line)?.type
  return results.flatMap(r => {
   const v = JSON.parse(r.value), mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })
   if (mapping.blocked || mapping.target !== line || mapping.department !== department) return []
-  return [{ file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
+  return [{ id: r.id, file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
  })
 }

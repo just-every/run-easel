@@ -264,6 +264,12 @@
       "clauses": [
         "PEOPLE-004"
       ]
+    },
+    {
+      "id": "source-checked-commentary",
+      "clauses": [
+        "AGENT-007"
+      ]
     }
   ],
   "nonGoals": [

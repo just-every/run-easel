@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "c267ef33536db3eb1b4b370a8fd097f4b1fd80cad5fb119a10592eb5fc3c0360",
+      "sha256": "a13fedd9847e0e2d985efaa961a6c5cc52d7409bbff630e5c21730451350f67d",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "9bcdd2a5e5090fd836fa1105003a14dff59087ff5d7c04c0e14e99bdf5891687",
+      "sha256": "299706552848f2b7603e90f50043233c306556ab5cea3a56409c1861eac050c3",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "933479868ec2a87e0c3adcc7a26063075d104c8bcaa69072337d806eca13ce7d",
+      "sha256": "6cacacdfb82eac17eeafa9202eadad70ddfe84ef30963a03541fd60df83cc1db",
       "executable": false
     },
     "DEMO.md": {
@@ -523,7 +523,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "c79ce0d8799d449d95d051734980f87bf70978eaa846564d30846c5e4cc0b5d9",
+      "sha256": "7140616a8f327be85a6e9803bd8f1f381a2b9eee2067a7a94465883571020960",
       "executable": false
     },
     "SOURCE.md": {
@@ -667,7 +667,7 @@
       "executable": false
     },
     "src/easel/actuals-read.ts": {
-      "sha256": "2445437631293965bc229aeab4c7fffc0e28eb65ee54c38e06a578dc53a32155",
+      "sha256": "50a6e4ec30e5a5cadb72f091e0588bbc59e94137cffe036e6fb50665911c1fa2",
       "executable": false
     },
     "src/easel/actuals.ts": {
@@ -999,7 +999,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "785cad49952dce341ab9c593c614ecddb14e3b5247eab9aeef156fc47686c5b4",
+      "sha256": "c4c03399436d7ba638b166778ffbf288af1a7b6cba8dd6b71f81a3b1b80a0b09",
       "executable": false
     },
     "src/easel/metric-rules.ts": {
@@ -1103,7 +1103,7 @@
       "executable": false
     },
     "src/easel/review.ts": {
-      "sha256": "b614560eb4276ce4b146cf5783a69735e704475fb5e62842007446bd42e35ba9",
+      "sha256": "a579ef8111679548403b7056b156109d5688648bc7da7b92c4258f721516da4b",
       "executable": false
     },
     "src/easel/sandboxes.ts": {
@@ -3660,6 +3660,14 @@
     },
     "tests/us-defaults.test.mjs": {
       "sha256": "318eaaa027813537dbe8537522dfdfbeddceb68bd2aa2c20679bf8c97079cca2",
+      "executable": false
+    },
+    "tests/variance-commentary-browser.mjs": {
+      "sha256": "1d99054c8a3ebbd03fe89408ae72e931e4bd67480394dc9d4fea1507d2e20b12",
+      "executable": false
+    },
+    "tests/variance-commentary.test.mjs": {
+      "sha256": "773d080de63ce08127301993114fad37eaaa14ef5186055f97647132fa0ad170",
       "executable": false
     },
     "tests/workbook-undo.test.mjs": {

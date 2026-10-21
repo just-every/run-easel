@@ -72,11 +72,24 @@ export async function variance(c: Context, month: string) {
    ...hypotheses,
   ].filter(Boolean).join(' ')
   const saved = find(s, 'explanation', `${month}|${k}`)
-  rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, payroll, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation: !payroll || seesPayDetail(c.x, department) ? saved ?? null : null, comparisons })
+  const explanation: Data | null = saved && (!payroll || seesPayDetail(c.x, department)) ? { ...saved, ...(saved.citationIds ? { citationIds: detail ? saved.citationIds : [] } : {}) } : null
+  rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, payroll, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation, comparisons })
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))
  const names = await actorNames(c.db, [budget.body.approvedBy?.email, ...rows.flatMap(row => [row.explanation?.writtenBy, row.explanation?.confirmedBy])])
  return { month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
+}
+
+/** AGENT-007: citations bind accepted rows visible in this exact variance, never client-supplied evidence. */
+async function explanationCitations(c: Context, month: string, line: string, department: string, ids: unknown): Promise<string[]> {
+ if (ids === undefined) return []
+ requireThat(Array.isArray(ids) && ids.length <= 100 && ids.every(id => typeof id === 'string' && id.length > 0), 'Citation IDs must be an array of at most 100 row IDs')
+ const unique = [...new Set(ids as string[])]
+ if (!unique.length) return []
+ const row = (await variance(c, month)).rows.find(row => row.line === line && row.department === department)
+ const visible = new Set(row?.citations.map(row => row.id) ?? [])
+ requireThat(unique.every(id => visible.has(id)), 'A citation is not an accepted row visible in this variance')
+ return unique
 }
 
 export async function review(c: Context, op: string, b: Data): Promise<Data | undefined> {
@@ -102,10 +115,12 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const prior = find(s, 'explanation', id)
   if (op === 'explanation') {
    requireThat(!prior || prior.status !== 'confirmed' || x.role === 'finance', 'This explanation is confirmed; finance can reopen it', 409)
-   put(s, 'explanation', id, { month, line, department, text: text(b.text, 'Explanation', 4000), status: 'draft', writtenBy: x.actor.email, at: c.now })
+   const citationIds = await explanationCitations(c, month, line, department, b.citationIds)
+   put(s, 'explanation', id, { month, line, department, text: text(b.text, 'Explanation', 4000), citationIds, status: 'draft', writtenBy: x.actor.email, at: c.now })
    await mentions(c, b.text, department, `Variance explanation · ${month} · ${get(s, 'line', line).name}`, 'review', id)
   } else {
    requireThat(prior, 'Write the explanation first', 409)
+   await explanationCitations(c, month, line, department, prior.citationIds)
    put(s, 'explanation', id, { ...prior, status: 'confirmed', confirmedBy: x.actor.email, confirmedAt: c.now })
   }
   c.activity.push({ action: op, record: id, detail: { month, line, department } })
@@ -161,7 +176,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
    assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),
    cash: forecastCalc.cash.map(m => ({ ...(m.incompleteReasons ? { incompleteReasons: m.incompleteReasons } : {}), month: m.month, closing: m.closing, budget: budget.body.calculation.cash.find((b: Data) => b.month === m.month)?.closing ?? null })),
    // Pack readers include viewers: individual pay detail never enters the pack.
-   variances: v.rows.map(r => ({ line: r.lineName, department: r.departmentName, actual: r.actual, budget: r.budget, priorForecast: r.priorForecast, variance: r.variance, favourable: r.favourable, explanation: !r.payroll && r.explanation ? { text: r.explanation.text, status: r.explanation.status, confirmedBy: r.explanation.confirmedBy ?? null } : null, evidence: [...lines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
+   variances: v.rows.map(r => ({ line: r.lineName, department: r.departmentName, actual: r.actual, budget: r.budget, priorForecast: r.priorForecast, variance: r.variance, favourable: r.favourable, explanation: !r.payroll && r.explanation?.status === 'confirmed' ? { text: r.explanation.text, status: r.explanation.status, citationIds: r.explanation.citationIds ?? [], confirmedBy: r.explanation.confirmedBy ?? null } : null, evidence: [...lines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
    sources: batches, decisions: pack.decisions, publishedBy: { email: x.actor.email, name: x.actor.name }, publishedAt: c.now,
   } })
   put(s, 'pack', pack.id, { ...pack, status: 'published', snapshot: snapshotId, publishedBy: x.actor.email, publishedAt: c.now })

@@ -39,7 +39,7 @@ That is evidence, not a permanent test.
 [CONTRACT.md](CONTRACT.md) defines the product Easel is being built towards:
 86 target and push-further clauses beyond the published loop, each with the
 acceptance evidence below. Status follows the clause evidence below and CONTRACT.md's Status table:
-37 done, 19 partial and 30 missing target/push-further clauses.
+38 done, 18 partial and 30 missing target/push-further clauses.
 A build round that starts a clause registers it in `seed.json → capabilities`,
 adds the flow test or journey named here through a public door (the HTTP API,
 the browser at 1440 and 390, a `rer` command, an add-in host, a native build
@@ -203,7 +203,7 @@ one recorded run against the provider's sandbox before acceptance.
 
 | Clause | Status | Acceptance evidence |
 |---|---|---|
-| `AGENT-007` — Variance commentary grounded in sources | partial | With a model fake at the API edge, the agent drafts an explanation that cites row IDs that exist; a citation to a row that does not exist is refused by the server; an unconfirmed draft is absent from the published pack. |
+| `AGENT-007` — Variance commentary grounded in sources | partial | With a model fake at the API edge, the agent drafts an explanation that cites row IDs that exist; a citation to a row that does not exist is refused by the server; an unconfirmed draft is absent from the published pack. Proven slice: `tests/variance-commentary.test.mjs` (AGENT-007) uses the real HTTP/MCP doors to assert accepted-row identity, same-month/line/department and current-detail visibility, deduplication, invalid-save atomicity, confirmation, draft exclusion from snapshot/HTML/CSV/Excel and immutable published captures. `tests/variance-commentary-browser.mjs` (AGENT-007) saves a draft, publishes, confirms and publishes again through native Review at 1440/390, checks downloaded HTML and page overflow. Structured IDs establish source membership, not claim truth. Remaining: in-product model drafting with evidence/hypothesis labels and connected-source coverage; the full model-edge acceptance is not claimed. |
 | `AGENT-008` — Modeler agent | partial | With a model fake, the request produces a proposal whose diff adds the named positions and drivers; promotion by a person without model-structure permission is refused. |
 | `AGENT-009` — Analyst with cited answers | missing | With a model fake, a viewer asks about payroll by department and receives totals only; a planted salary is absent from the request sent to the model fake and from the answer. |
 | `AGENT-010` — Recurring missions | missing | With a fake clock, mail and model fakes, a weekly cash brief runs Monday, is delivered to two people, and reports stale sources when a connector is stale. |

@@ -17,6 +17,7 @@ import { compareView, scenarioView, stateView } from './views'
 const versions = ['2025-11-25', '2025-06-18', '2025-03-26']
 const str = { type: 'string' }
 const fields: Record<string, Data> = {
+ citationIds: { type: 'array', items: str },
  collectionCurve: { type: 'array', items: { type: 'object', properties: { days: str, percent: str }, required: ['days','percent'], additionalProperties: false } },
  milestones: { type: 'array', items: { type: 'object', properties: { name: str, month: str, amount: str }, required: ['name', 'month', 'amount'], additionalProperties: false } },
  draws: { type: 'object', additionalProperties: str }, repayments: { type: 'object', additionalProperties: str }, baseRates: { type: 'object', additionalProperties: str },
@@ -48,7 +49,7 @@ const tools = [
  tool('equity', 'Finance: plan an equity raise in your own draft proposal.', ['scenario','name','month','amount'], ['id']),
  tool('input-delete', 'Remove an input from your own working proposal.', ['kind', 'id']),
  tool('comment', 'Comment on a visible scenario within your department authority.', ['scenario', 'department', 'text']),
- tool('explanation', 'Draft a variance explanation within your department authority.', ['month', 'line', 'department', 'text']),
+ tool('explanation', 'Draft a variance explanation within your department authority. Optional citationIds must name accepted rows visible in this variance; drafts require human confirmation before publication.', ['month', 'line', 'department', 'text'], ['citationIds']),
 ]
 
 // Validate the small schema vocabulary used by this closed tool catalogue.
