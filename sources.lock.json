@@ -3335,7 +3335,7 @@
       "executable": false
     },
     "tests/browser-journey.mjs": {
-      "sha256": "0dd1d5c7747c0a9659ff37a2d8cc0e7e9c356c9a92cd1a651149d62d63e81825",
+      "sha256": "4638f65bd0d249069cbaf2aebac66dd9baaeeca00f5560b255db5a2b3c08f176",
       "executable": false
     },
     "tests/browser-lobby.mjs": {

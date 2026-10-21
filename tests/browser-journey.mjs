@@ -36,7 +36,7 @@ const pick = (scope, label, value) => scope.getByLabel(label, { exact: true }).s
 const press = (scope, name) => scope.getByRole('button', { name, exact: true }).click()
 const confirmExplanation = async details => {
  const confirm = details.getByRole('button', { name: 'Confirm explanation', exact: true })
- await confirm.waitFor({ state: 'attached' })
+ await details.getByText('explanation draft', { exact: true }).waitFor()
  if (await details.getAttribute('open') === null) await details.locator('summary').click()
  await confirm.click()
  await details.getByText('explanation confirmed', { exact: true }).waitFor()
