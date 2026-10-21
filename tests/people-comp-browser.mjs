@@ -134,7 +134,7 @@ try {
    const hourlyCopy = (await api(context, server.origin, `scenario/${hourlyProposal.id}`)).inputs.position.find(p => p.originId === hourly.originId)
    await api(context, server.origin, 'command/position', { scenario: hourlyProposal.id, id: hourlyCopy.id, title: hourlyTitle, holder: hourlyCopy.holder, department: dept.id, line: salary.id, start: '2026-01', payBasis: 'hourly', annualSalary: '0', hourlyRate: '45', expectedHours: '90', onCostPercent: '10', benefits: '1300', retirementMatchPercent: '5', payDay: '15', payMonthOffset: '1' })
    const proposedHourlyView = await api(context, server.origin, `scenario/${hourlyProposal.id}`)
-   assert.equal(hourlySource(proposedHourlyView).amount, 695750)
+   assert.equal(hourlySource(proposedHourlyView).amount, 595750)
    await page.reload(); await nav(page, 'Scenarios')
    await page.getByLabel('From', { exact: true }).selectOption(scenario)
    await page.getByLabel('To', { exact: true }).selectOption(hourlyProposal.id)

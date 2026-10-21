@@ -3559,7 +3559,7 @@
       "executable": false
     },
     "tests/people-comp-browser.mjs": {
-      "sha256": "9275901e3e77a32f86d318e37a431114faf5a87ae7e90d9d4d1ad09579e546f2",
+      "sha256": "86582e6efd420fa94a4eb2b220935cb490e2bfcb8b26bc3b86dead374a6ae588",
       "executable": false
     },
     "tests/people-comp.test.mjs": {
