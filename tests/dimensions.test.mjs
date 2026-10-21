@@ -113,6 +113,8 @@ test('Source class, department and tracking rules preserve actual cuts and block
  assert.equal(report.dimensions[0].members.find(m => m.id === total.id).amounts['2026-01'], null)
  const independent = await h.get(`/api/easel/dimension-report/actuals?dimension=${channel.id}`)
  assert.equal(independent.lineTotals[events.id]['2026-01'], 3003)
+ assert.equal(independent.lineTotals[ads.id]['2026-01'], 3003)
+ assert.equal(independent.dimensions[0].members.find(m => m.id === direct.id).amounts['2026-01'], 6006)
  await h.command('dimension-map', { id: eastRule.id, dimension: region.id, member: east.id, sourceKind: 'class', source: 'East-1' })
  const conflicting = await map(region.id, west.id, 'class', 'East-', 'prefix')
  const second = { ...file, filename: 'synthetic-easel-2.csv', csv: file.csv.replaceAll('2026-01', '2026-02') }

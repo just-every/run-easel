@@ -16,7 +16,7 @@ export async function dimensionActuals(db: D1Database, s: State) {
   if (account.target === 'excluded' || account.target && !types.has(account.target)) continue
   if (!account.target || department === undefined || resolved.unresolved.length) {
    blocked.push({ month: value.period, line: account.target ?? null, department: department ?? null, dimensions: resolved.unresolved, reason: !account.target ? 'Account mapping unavailable' : department === undefined ? 'Department mapping unavailable' : 'Dimension mapping unavailable' })
-   continue
+   if (!account.target || department === undefined) continue
   }
   const amount = Number(row.amount) * (types.get(account.target) === 'revenue' ? -1 : 1)
   cells.push({ line: account.target, department, month: value.period, amount, basis: 'actual', sources: [{ kind: 'actual', label: 'Accepted actuals', amount, trace: 'Accepted source rows mapped by live dimension rules', dimensions: resolved.dimensions }] })
