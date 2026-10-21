@@ -1039,7 +1039,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `a51c1b916147ec4a39f7dc5253ade32424bb3cea` (21 October 2026).
+Judged from the code and tests at commit `b2fc16540ba46c0f2162c0f5a7985f9836fb91c9` (21 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
