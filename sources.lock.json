@@ -3091,7 +3091,7 @@
       "executable": false
     },
     "src/ui/fiscal-summary.tsx": {
-      "sha256": "bf540ea72a84c9a8c839e0ef64f6d06e752afc28e93ea7c50fe133a72a7a146a",
+      "sha256": "5a4498f8c8dc82e64a15bb5898288a95de03971650d043638e64e324c4823cca",
       "executable": false
     },
     "src/ui/gauge-connection.tsx": {
@@ -3183,7 +3183,7 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "e198c8ba93a38b424d036871262ea2323b3327191514aa445e73c8869702df6f",
+      "sha256": "365ff82567bf7061fac9a8c4d28835395473099bc7bccd8671d1c48f394d2758",
       "executable": false
     },
     "src/ui/shared.tsx": {
@@ -3627,7 +3627,7 @@
       "executable": false
     },
     "tests/taxes-browser.mjs": {
-      "sha256": "47883f9eb9d04f277bd9109f7926f52d93d4e4ce96a971b4868fa4ad8b80aa66",
+      "sha256": "e028eed21bd3c10fe6176271d07dff152b9222c5aee44f15b37bd2a35262b1ed",
       "executable": false
     },
     "tests/taxes.test.mjs": {
