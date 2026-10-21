@@ -1,4 +1,5 @@
-// The shared installed front door, before and after the same native owner claim.
+// The native owner claim is completed by rer setup. First-run confirmation
+// is a separate step: the anonymous Lobby stays claimed on both sides of it.
 import assert from 'node:assert/strict'
 import { join } from 'node:path'
 import { noOverflow } from './browser-journey.mjs'
@@ -6,7 +7,7 @@ import { noOverflow } from './browser-journey.mjs'
 export async function lobbyJourney(browser, { origin, openUrl }, evidence) {
  assert.ok(openUrl, 'rer dev prints the owner sign-in URL')
  const state = async () => { const response = await fetch(origin + '/setup/state'); assert.equal(response.status, 200); return (await response.json()).state }
- assert.equal(await state(), 'unclaimed')
+ assert.equal(await state(), 'claimed', 'rer setup has durably claimed the owner before first-run confirmation')
  for (const [path, type] of [['/rer-theme.css', 'text/css'], ['/fonts/fonts.css', 'text/css'], ['/brand/mark.svg', 'image/svg+xml'], ['/brand/band.svg', 'image/svg+xml'], ['/fonts/ibm-plex-sans/ibm-plex-sans-latin-wght-normal.woff2', 'font/woff2']]) {
   const response = await fetch(origin + path)
   assert.equal(response.status, 200, `Lobby asset ${path}`)
@@ -20,10 +21,10 @@ export async function lobbyJourney(browser, { origin, openUrl }, evidence) {
    try {
     const anonymous = await context.newPage()
     await anonymous.goto(origin)
-    const action = anonymous.getByRole('link', { name: 'Finish setup' })
-    await action.waitFor(); assert.equal(await action.getAttribute('href'), '/setup')
-    await noOverflow(anonymous, `Unclaimed Lobby at ${width}`)
-    await anonymous.screenshot({ path: join(evidence, `${width}-lobby-unclaimed.png`), fullPage: true })
+    const action = anonymous.getByRole('link', { name: 'Sign in', exact: true })
+    await action.waitFor(); assert.equal(new URL(await action.getAttribute('href'), origin).pathname, '/signin')
+    await noOverflow(anonymous, `Claimed Lobby before confirmation at ${width}`)
+    await anonymous.screenshot({ path: join(evidence, `${width}-lobby-before-confirmation.png`), fullPage: true })
 
    } finally { await context.close() }
    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
@@ -45,10 +46,10 @@ export async function lobbyJourney(browser, { origin, openUrl }, evidence) {
   try {
    const page = await context.newPage(); await page.goto(origin)
    const action = page.getByRole('link', { name: 'Sign in', exact: true })
-   await action.waitFor(); assert.equal(await action.getAttribute('href'), '/signin')
+   await action.waitFor(); assert.equal(new URL(await action.getAttribute('href'), origin).pathname, '/signin')
    await noOverflow(page, `Claimed Lobby at ${width}`)
    await page.screenshot({ path: join(evidence, `${width}-lobby-claimed.png`), fullPage: true })
   } finally { await context.close() }
  }
- return { widths: [1440, 390], steps: ['unclaimed-lobby', 'printed-owner-link', 'setup', 'claimed-lobby'] }
+ return { widths: [1440, 390], steps: ['claimed-lobby-before-confirmation', 'printed-owner-link', 'first-run-confirmation', 'claimed-lobby'] }
 }
