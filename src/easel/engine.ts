@@ -1,4 +1,5 @@
 import type { DimensionStructure, DimensionTags } from './dimensions'
+import { firstBy, groupBy, lineDepartmentKey, lineMonthKey, originMonthKey } from './engine-indexes'
 import { nativeRuntime, type NativeBase, type FormulaValue, type NativeGraph } from './native-calculation'
 import { dailyCash, type DailyCash } from './daily-cash'
 import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
@@ -90,7 +91,8 @@ export function prepareCalculation(model: Model, actuals: ActualCell[] = [], led
 
 export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: LedgerContext): Calculation {
  const prepared=prepareCalculation(model,actuals,ledger)
- const runtime=nativeRuntime(id=>{if(id!==model.scenario.id)throw new Fault(409,'Version references require prepared source context');return prepared},(line,department,month)=>{const cell=actuals.find(c=>c.line===line&&c.department===department&&c.month===month);if(!cell)throw new Fault(409,`Missing accepted actuals for ${month}`);return cell})
+ const actualByCell = firstBy(actuals, a => JSON.stringify([a.line, a.department, a.month]))
+ const runtime=nativeRuntime(id=>{if(id!==model.scenario.id)throw new Fault(409,'Version references require prepared source context');return prepared},(line,department,month)=>{const cell=actualByCell.get(JSON.stringify([line, department, month]));if(!cell)throw new Fault(409,`Missing accepted actuals for ${month}`);return cell})
  return prepared.finish(runtime.resolve(model.scenario.id))
 }
 
@@ -106,22 +108,39 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  const deptName = new Map(departments.map(d => [d.id, d.name]))
  const warnings: string[] = []
  const cells = new Map<string, Cell>()
+ const cellsByMonth = new Map<string, Cell[]>()
+ const cellsByDepartmentMonth = new Map<string, Cell[]>()
  const cash: TaggedCash[] = []
  const allocations = scheduleAllocations(ledger, actualsThrough)
- const origins = new Set(Object.values(inputs).flat().map(input => input.originId))
+ const allInputs = Object.values(inputs).flat()
+ const origins = new Set(allInputs.map(input => input.originId))
  for (const allocation of allocations) if (!origins.has(allocation.originId)) throw new Fault(409, 'An allocated schedule origin was removed; review and reallocate its accepted balance before using the forecast')
  const working = workingCapital(model, months, allocations)
  const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;date?:string;amount:number}[]=[]
  const commissions = commissionEstimates(inputs.revenue, inputs.position, currency)
  const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency,workspace,commissions):null
- const dimensionInputs = new Map(Object.values(inputs).flat().map(i => [i.originId, i]))
+ const taxByOriginMonth = firstBy(employerTaxes?.rows ?? [], originMonthKey)
+ const positionsByDepartment = groupBy(inputs.position, p => p.department)
+ const formulaByOrigin = firstBy(inputs.formula ?? [], f => f.originId)
+ const formulaSet = new Set(inputs.formula ?? [])
+ const revenueTiming = groupBy([...inputs.revenue, ...(inputs.formula ?? [])], lineDepartmentKey)
+ const expenseTiming = groupBy([...inputs.expense, ...(inputs.formula ?? [])], lineDepartmentKey)
+ const dimensionInputs = new Map(allInputs.map(i => [i.originId, i]))
  const timedInputs = new Map([...inputs.revenue, ...inputs.expense, ...inputs.position, ...(inputs.formula ?? [])].map(i => [i.originId, i]))
  const collectionLag = Number(scenario.cash?.collectionLag ?? 0), paymentLag = Number(scenario.cash?.paymentLag ?? 0)
 
  const cell = (line: string, department: string, month: string, basis: 'plan' | 'actual') => {
   const k = `${line}|${department}|${month}`
   let c = cells.get(k)
-  if (!c) { c = { line, department, month, amount: 0, basis, sources: [] }; cells.set(k, c) }
+  if (!c) {
+   c = { line, department, month, amount: 0, basis, sources: [] }; cells.set(k, c)
+   const monthCells = cellsByMonth.get(month)
+   if (monthCells) monthCells.push(c)
+   else cellsByMonth.set(month, [c])
+   const departmentMonth = JSON.stringify([department, month]), departmentCells = cellsByDepartmentMonth.get(departmentMonth)
+   if (departmentCells) departmentCells.push(c)
+   else cellsByDepartmentMonth.set(departmentMonth, [c])
+  }
   return c
  }
  const add = (line: string, department: string, month: string, source: Source, lag?: number, nonCash = false) => {
@@ -130,11 +149,12 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   const c = cell(line, department, month, 'plan')
   c.amount += source.amount
   c.sources.push(source)
-  if (nonCash || lineById.get(line)?.nonCash) return
-  const type = lineById.get(line)?.type
+  const definition = lineById.get(line)
+  if (nonCash || definition?.nonCash) return
+  const type = definition?.type
   const input = source.id ? timedInputs.get(source.id) : undefined
  if (source.kind === 'position' && input?.payDay) { source.trace += `; ${input.bonusBps ? 'regular payroll, excluding position bonus and its incremental taxes,' : 'payroll'} accrues when earned and settles on ${input.secondPayDay ? `days ${input.payDay} and ${input.secondPayDay} in two equal installments (first receives any cent remainder)` : `day ${input.payDay}`} of the earned period + ${input.payMonthOffset} periods (clamped to period end)${input.bonusBps ? '; the position bonus and its incremental employer taxes settle on the first pay day in the bonus period itself, with no month offset' : ''}; see working-capital pay-date reconciliation`; return }
-  const timing = timedCash(input ?? {}, month, source.amount, type === 'revenue', type === 'revenue' ? lag ?? collectionLag : lineById.get(line)?.payroll ? 0 : lag ?? paymentLag, source.label, workspace)
+  const timing = timedCash(input ?? {}, month, source.amount, type === 'revenue', type === 'revenue' ? lag ?? collectionLag : definition?.payroll ? 0 : lag ?? paymentLag, source.label, workspace)
   const tagged = timing.events.map(e => ({ ...e, line, department, source: source.id }))
   cash.push(...tagged)
   if(type==='revenue')taxableCollections.push(...tagged)
@@ -169,12 +189,13 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
    for (let k = 0, m = r.start; m <= months[months.length - 1]; k++, m = addMonths(m, 1)) {
     const prior = customers
     const churned = mulDiv(prior, r.churnBps, 10000)
-    const reps = r.repDepartment ? inputs.position.filter(p => p.department === r.repDepartment && active(p, m)) : []
-    const capacity = reps.reduce((sum, p) => sum + rampFactorBps(monthsBetween(p.start, m), r.rampMonths), 0)
+    const reps = r.repDepartment ? (positionsByDepartment.get(r.repDepartment) ?? []).filter(p => active(p, m)) : []
+    const rampFactors = reps.map(p => rampFactorBps(monthsBetween(p.start, m), r.rampMonths))
+    const capacity = rampFactors.reduce((sum, factor) => sum + factor, 0)
     const fromReps = mulDiv(r.newPerRep, capacity, 10000)
     customers = prior - churned + r.newPerMonth + fromReps
     const amount = mulDiv(customers, r.arpaCents, 100)
-    const repText = reps.length ? ` + ${formatHundredths(fromReps)} from ${reps.length} hire${reps.length > 1 ? 's' : ''} in ${deptName.get(r.repDepartment)} at ${reps.map(p => formatBps(rampFactorBps(monthsBetween(p.start, m), r.rampMonths))).join(', ')} of ${formatHundredths(r.newPerRep)} each` : ''
+    const repText = reps.length ? ` + ${formatHundredths(fromReps)} from ${reps.length} hire${reps.length > 1 ? 's' : ''} in ${deptName.get(r.repDepartment)} at ${rampFactors.map(formatBps).join(', ')} of ${formatHundredths(r.newPerRep)} each` : ''
     add(r.line, r.department, m, { kind: 'revenue', id: r.originId, label: r.name, amount, trace: `${monthLabel(m)}: customers ${formatHundredths(prior)} − churn ${formatHundredths(churned)} (${formatBps(r.churnBps)}) + new ${formatHundredths(r.newPerMonth)}${repText} = ${formatHundredths(customers)} × ${money(r.arpaCents)} per customer = ${money(amount)}` }, lag)
    }
   }
@@ -193,12 +214,13 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   // difference is assigned to its final active month.
   const target = mulDiv(p.annualSalaryCents, rate * positionMonths.length, 120000)
   const who = p.holder ? `${p.title} (${p.holder})` : `${p.title} (to be hired)`
+  const salaryText = p.payBasis === 'hourly' ? '' : `${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents`
   for (const [index, m] of positionMonths.entries()) {
    const last = index === positionMonths.length - 1
    const amount = last ? target - monthly * (positionMonths.length - 1) : monthly
    const adjustment = amount - monthly
    const remainder = last ? `; target for ${monthCount(positionMonths.length)} is ${money(target)}; final active month rounding adjustment ${adjustment < 0 ? '−' : '+'}${money(Math.abs(adjustment))} sets this month's cost to ${money(amount)}` : ''
-   const tax=employerTaxes?.rows.find(r=>r.originId===p.originId&&r.month===m)
+   const tax=taxByOriginMonth.get(originMonthKey({ originId: p.originId, month: m }))
    const commission = commissions.get(`${p.originId}|${m}`)
    const components = schedule.get(m)!
    const baseCost = components.wages + components.onCosts
@@ -209,19 +231,23 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
     if (paidBonus) working.payroll({ ...p, payMonthOffset: 0, secondPayDay: undefined }, m, paidBonus)
    }
    const componentTotal = p.meritBps || p.bonusBps || p.onCostSource ? ` Compensation components (planning estimate): base wages ${money(components.wages-components.merit)} + merit ${money(components.merit)} + on-costs ${money(components.onCosts)} + bonus ${money(components.bonus)} + commission ${money(commission?.amount??0)} + benefits ${money(components.benefits)} + employer match ${money(components.match)} + employer taxes ${money(tax?.totalCents??0)} = ${money(cost)}.` : ''
-   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${components.trace}${who}: ${p.payBasis === 'hourly' ? `hourly wages and entered on-costs ${money(baseCost)}` : `${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}`}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}${componentTotal}` })
+   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${components.trace}${who}: ${p.payBasis === 'hourly' ? `hourly wages and entered on-costs ${money(baseCost)}` : `${salaryText}${remainder}`}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}${componentTotal}` })
   }
  }
 
  for (const e of inputs.expense.filter(e => !['acquisition', 'inventory', 'prepaid', 'bonus'].includes(e.kind))) {
   if (e.kind === 'one-off') add(e.line, e.department, e.start, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace: `${e.name}: one-off ${money(e.amountCents)} in ${monthLabel(e.start)}` })
-  else for (const m of months) if (active(e, m)) add(e.line, e.department, m, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace: `${e.name}: recurring ${money(e.amountCents)} a month from ${monthLabel(e.start)}${e.end ? ` to ${monthLabel(e.end)}` : ''}` })
+  else {
+   const trace = `${e.name}: recurring ${money(e.amountCents)} a month from ${monthLabel(e.start)}${e.end ? ` to ${monthLabel(e.end)}` : ''}`
+   for (const m of months) if (active(e, m)) add(e.line, e.department, m, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace })
+  }
  }
 
  for (const row of working.expenseRows()) add(row.input.line, row.input.department, row.month, row.source, 0, true)
  const workingCapitalCalculation = working.finish()
  cash.push(...working.cash)
- const specialKeys = new Set(workingCapitalCalculation.rows.map(r => `${r.line}|${r.department}|${r.month}`))
+ const specialRows = groupBy(workingCapitalCalculation.rows, lineMonthKey)
+ const specialKeys = new Set(specialRows.keys())
 
  const commercial = commercialCosts(model, months, actuals)
  for (const row of commercial.costs) {
@@ -236,9 +262,10 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  const inventoryLines = new Set(inputs.expense.filter(e => e.kind === 'inventory').map(e => `${e.line}|${e.department}`))
 
  const workbookValues = workbookScheduleValues(inputs)
+ const openMonths = months.filter(m => !closed(m))
  for (const s of inputs.schedule) {
   if (s.history) {
-   for (const row of historySchedule(s, actuals, months.filter(m => !closed(m)), currency)) add(s.line, s.department, row.month, { kind: 'schedule', id: s.originId, label: s.name, amount: row.amount, trace: row.trace })
+   for (const row of historySchedule(s, actuals, openMonths, currency)) add(s.line, s.department, row.month, { kind: 'schedule', id: s.originId, label: s.name, amount: row.amount, trace: row.trace })
    continue
   }
   for (const [m, amount] of Object.entries((workbookValues.get(s.originId) ?? s.values) as Record<string, number>)) {
@@ -266,13 +293,15 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  // Aggregate ledger revenue is not invoice/receipt actuals. Retain the known
  // invoice plan and explicitly disclose cells that cannot reconcile its source.
  const contractActualKeys = new Set<string>()
+ const contractRowsByCell = groupBy(contracts.rows, lineMonthKey)
+ const actualsByCell = groupBy(actuals, lineMonthKey)
  contracts.actualsIssues = []
  for (const row of contracts.rows.filter(r => closed(r.month) && (r.revenue || r.billings || r.receivables || r.deferredRevenue))) {
   const key = `${row.line}|${row.department}|${row.month}`
   if (contractActualKeys.has(key)) continue
   contractActualKeys.add(key)
-  const scheduledRevenue = contracts.rows.filter(r => `${r.line}|${r.department}|${r.month}` === key).reduce((n, r) => n + r.revenue, 0)
-  const acceptedRevenue = actuals.filter(a => `${a.line}|${a.department}|${a.month}` === key).reduce((n, a) => n + a.amount, 0)
+  const scheduledRevenue = (contractRowsByCell.get(key) ?? []).reduce((n, r) => n + r.revenue, 0)
+  const acceptedRevenue = (actualsByCell.get(key) ?? []).reduce((n, a) => n + a.amount, 0)
   const mixed = (inputs.formula??[]).some(f=>f.line===row.line&&f.department===row.department&&f.start<=row.month&&(!f.end||f.end>=row.month)) || inputs.revenue.some(r => r.kind !== 'contract' && r.line === row.line && r.department === row.department && r.start <= row.month) || inputs.schedule.some(r => r.line === row.line && r.department === row.department && (r.history || r.values?.[row.month] !== undefined))
   if (mixed || acceptedRevenue !== scheduledRevenue) {
    const reason = `${row.month}: incomplete cash and receivables reconciliation on line ${lineById.get(row.line)?.name ?? row.line}, department ${deptName.get(row.department) ?? row.department}: accepted revenue ${money(acceptedRevenue)} versus scheduled contract recognition ${money(scheduledRevenue)}${mixed ? '; aggregate cell mixes contract and other revenue sources' : ''}. Accepted P&L is retained; contract invoices and collections remain planning assumptions, not billing actuals. Unresolved receipt allocation is not inferred from revenue.`
@@ -288,8 +317,8 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   if (lineById.get(a.line)?.nonCash || inventoryLines.has(`${a.line}|${a.department}`)) continue
   if (type === 'revenue' && contractActualKeys.has(`${a.line}|${a.department}|${a.month}`)) continue
   if (specialKeys.has(`${a.line}|${a.department}|${a.month}`)) continue
-  const candidates = [...(type === 'revenue' ? inputs.revenue : inputs.expense), ...(inputs.formula ?? [])].filter(i => i.line === a.line && i.department === a.department)
-  const hasDayTiming = candidates.some(i => i.collectionMethod || i.paymentMethod || (inputs.formula??[]).includes(i))
+  const candidates = (type === 'revenue' ? revenueTiming : expenseTiming).get(lineDepartmentKey(a)) ?? []
+  const hasDayTiming = candidates.some(i => i.collectionMethod || i.paymentMethod || formulaSet.has(i))
   if (hasDayTiming) {
    const policies = new Set(candidates.map(i => JSON.stringify(type === 'revenue' ? [i.collectionMethod ?? 'lag', i.dsoDays ?? null, i.collectionCurve ?? null, i.collectionLag ?? collectionLag] : [i.paymentMethod ?? 'lag', i.dpoDays ?? null, i.paymentTermDays ?? null])))
    if (policies.size > 1) throw new Fault(409, `${a.month}: accepted aggregate rows on line ${lineById.get(a.line)?.name ?? a.line} have drivers with different cash timing. Review this line's timing or supply attributed source data; no receipt or payment allocation is inferred.`)
@@ -301,33 +330,34 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  for (const key of specialKeys) {
   const [line, department, month] = key.split('|')
   if (!closed(month)) continue
-  const scheduled = workingCapitalCalculation.rows.filter(r => r.line === line && r.department === department && r.month === month).reduce((n, r) => n + r.prepaidExpense + r.accruedExpense, 0)
-  const accepted = [...cells.values()].filter(c => c.line === line && c.department === department && c.month === month).reduce((n, c) => n + c.amount, 0)
+  const scheduled = (specialRows.get(key) ?? []).filter(r => r.line === line && r.department === department && r.month === month).reduce((n, r) => n + r.prepaidExpense + r.accruedExpense, 0)
+  const accepted = (cellsByMonth.get(month) ?? []).filter(c => c.line === line && c.department === department).reduce((n, c) => n + c.amount, 0)
   const mixed = (inputs.formula??[]).some(f=>f.line===line&&f.department===department) || inputs.schedule.some(s => s.line === line && s.department === department) || inputs.expense.some(e => e.line === line && e.department === department && !['prepaid', 'bonus'].includes(e.kind)) || inputs.position.some(p => p.line === line && p.department === department && !p.payDay)
   if (accepted !== scheduled || mixed) {
    const reason = `${month}, line ${line}, department ${department}: accepted expense ${money(accepted)} versus working-capital recognition ${money(scheduled)}${mixed ? '; aggregate cell mixes other expense sources' : ''}. Accepted P&L retained; this historical schedule difference is not an inferred settlement. Reviewed CONNECT-007 allocations replace future opening estimates when available. No liability plug or invented settlement is applied.`
    workingCapitalCalculation.issues.push({ month, line, department, reason }); warnings.push(reason)
   }
  }
- for (const m of months) if (closed(m) && ![...cells.values()].some(c => c.month === m)) warnings.push(`${monthLabel(m)} is closed but has no accepted actuals`)
+ for (const m of months) if (closed(m) && !cellsByMonth.has(m)) warnings.push(`${monthLabel(m)} is closed but has no accepted actuals`)
 
  const formulaValues = yield { model, cells: [...cells.values()].map(c=>({...c,sources:[...c.sources]})), headcount }
  for (const row of formulaValues) if (row.line) {
-  const input=(inputs.formula??[]).find(f=>f.originId===row.originId)!
+  const input=formulaByOrigin.get(row.originId)!
   add(row.line,row.department,row.month,{kind:'formula',id:row.originId,label:row.name,amount:row.value,trace:row.trace},lineById.get(row.line)?.type==='revenue'?input.collectionLag:undefined)
  }
 
  let taxes:Calculation['taxes']
  if(taxPolicy) {
-  const preTax=months.map(month=>({month,profit:[...cells.values()].filter(c=>c.month===month && c.line!==taxPolicy.line).reduce((n,c)=>n+(lineById.get(c.line)?.type==='revenue'?c.amount:-c.amount),0)}))
+  const preTax=months.map(month=>({month,profit:(cellsByMonth.get(month) ?? []).filter(c=>c.line!==taxPolicy.line).reduce((n,c)=>n+(lineById.get(c.line)?.type==='revenue'?c.amount:-c.amount),0)}))
   const incomeRows=incomeTaxes(preTax,taxPolicy,currency)
   for(const row of incomeRows) {
    if(!closed(row.month))add(taxPolicy.line,taxPolicy.department,row.month,{kind:'tax',label:'Income tax planning estimate',amount:row.taxCents,trace:row.trace},0)
-   else Object.assign(row,{recognizedTaxCents:[...cells.values()].filter(c=>c.line===taxPolicy.line&&c.month===row.month).reduce((n,c)=>n+c.amount,0),basis:'Estimate alongside accepted income-tax expense; closed P&L and cash retain the accepted amount'})
+   else Object.assign(row,{recognizedTaxCents:(cellsByMonth.get(row.month) ?? []).filter(c=>c.line===taxPolicy.line).reduce((n,c)=>n+c.amount,0),basis:'Estimate alongside accepted income-tax expense; closed P&L and cash retain the accepted amount'})
   }
   const sales=salesTaxes(taxableCollections,months,taxPolicy,currency,workspace)
   for(const row of sales)cash.push({month:row.month,amount:row.collectedCents,collection:true,label:'Sales tax collected'},{month:row.month,amount:row.remittedCents,collection:false,label:'Sales tax remitted'})
-  taxes={label:`US tax planning estimates — assumption year ${taxPolicy.year}; no filings`,payrollRows:employerTaxes!.rows,payrollTotals:months.map(month=>({month,totalCents:employerTaxes!.rows.filter(r=>r.month===month).reduce((n,r)=>n+r.totalCents,0)})),incomeRows,openingSalesTaxPayableCents:sales.length?sales[0].payableCents-sales[0].collectedCents+sales[0].remittedCents:0,sales}
+  const payrollByMonth = groupBy(employerTaxes!.rows, r => r.month)
+  taxes={label:`US tax planning estimates — assumption year ${taxPolicy.year}; no filings`,payrollRows:employerTaxes!.rows,payrollTotals:months.map(month=>({month,totalCents:(payrollByMonth.get(month) ?? []).reduce((n,r)=>n+r.totalCents,0)})),incomeRows,openingSalesTaxPayableCents:sales.length?sales[0].payableCents-sales[0].collectedCents+sales[0].remittedCents:0,sales}
  }
 
  // Shared-cost allocation: costs in a shared department move to the target
@@ -335,7 +365,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  for (const rule of inputs.allocation) {
   for (const m of months) {
    const weights = rule.basis === 'headcount' ? rule.targets.map((t: Data) => headcount[t.department]?.[m] ?? 0) : rule.targets.map((t: Data) => t.bps)
-   for (const c of [...cells.values()].filter(c => c.department === rule.sourceDepartment && c.month === m && lineById.get(c.line)?.type !== 'revenue' && c.amount !== 0)) {
+   for (const c of (cellsByDepartmentMonth.get(JSON.stringify([rule.sourceDepartment, m])) ?? []).filter(c => lineById.get(c.line)?.type !== 'revenue' && c.amount !== 0)) {
     if (weights.every((w: number) => w === 0)) { warnings.push(`${rule.name}: no headcount in the target departments in ${monthLabel(m)}, so ${money(c.amount)} of ${lineById.get(c.line)?.name} stays in ${deptName.get(rule.sourceDepartment)}`); continue }
     const total = c.amount
     const parts = apportion(total, weights)
@@ -366,8 +396,9 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   lineTotals[c.line] ??= {}
   lineTotals[c.line][c.month] = (lineTotals[c.line][c.month] ?? 0) + c.amount
  }
+ const linesByType = groupBy(lines, l => l.type)
  const profit = months.map(m => {
-  const sum = (type: LineType) => lines.filter(l => l.type === type).reduce((s, l) => s + (lineTotals[l.id]?.[m] ?? 0), 0)
+  const sum = (type: LineType) => (linesByType.get(type) ?? []).reduce((s, l) => s + (lineTotals[l.id]?.[m] ?? 0), 0)
   const revenue = sum('revenue'), costOfSales = sum('cost-of-sales'), operatingExpenses = sum('operating-expense')
   return { month: m, revenue, costOfSales, operatingExpenses, grossMargin: revenue - costOfSales, profit: revenue - costOfSales - operatingExpenses }
  })
@@ -381,10 +412,11 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   ...financing.rows.filter(r => inHorizon.has(r.month) && r.draw - r.repayment !== 0).map(r => ({ month: r.month, driver: 'financing' as const, line: '', department: '', source: r.originId, label: r.name, amount: r.draw - r.repayment })),
   ...financing.equityRows.map(r => ({ month: r.month, driver: 'financing' as const, line: '', department: '', source: r.originId, label: r.name, amount: r.amount })),
  ]
+ const cashByMonth = groupBy(cash, e => e.month)
  let opening = opening0
  const cashMonths = months.map((m, i) => {
-  let collections = cash.filter(e => e.collection && e.month === m).reduce((s, e) => s + e.amount, 0)
-  let payments = cash.filter(e => !e.collection && e.month === m).reduce((s, e) => s + e.amount, 0)
+  let collections = (cashByMonth.get(m) ?? []).filter(e => e.collection).reduce((s, e) => s + e.amount, 0)
+  let payments = (cashByMonth.get(m) ?? []).filter(e => !e.collection).reduce((s, e) => s + e.amount, 0)
   const extra: string[] = []
   if (i === 0 && scenario.cash?.receivablesCents) { collections += scenario.cash.receivablesCents; extra.push(`opening receivables ${money(scenario.cash.receivablesCents)} collected`) }
   if (i === 0 && scenario.cash?.payablesCents) { payments += scenario.cash.payablesCents; extra.push(`opening payables ${money(scenario.cash.payablesCents)} paid`) }
@@ -407,7 +439,8 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   Object.assign(row, { recognizedInterest: recognized })
   if (recognized !== row.interest) warnings.push(`${row.month}: accepted interest ${money(recognized)} differs from scheduled financing interest ${money(row.interest)}. Closed profit and operating cash use accepted interest; borrowing and principal remain planned schedules until balance-sheet actuals (CONNECT-007).`)
  }
- const nonCashByMonth = Object.fromEntries(months.map(m => [m, lines.filter(l => l.nonCash).reduce((sum, l) => sum + (lineTotals[l.id]?.[m] ?? 0), 0)]))
+ const nonCashLines = lines.filter(l => l.nonCash)
+ const nonCashByMonth = Object.fromEntries(months.map(m => [m, nonCashLines.reduce((sum, l) => sum + (lineTotals[l.id]?.[m] ?? 0), 0)]))
  financing.covenants = evaluateCovenants(financing, inputs.debt ?? [], profit, cashMonths, nonCashByMonth)
  const result: Calculation = {
   ...(formulaValues.length?{formulaValues}:{}),...(taxes?{taxes}:{}),engine: ENGINE, rampRule: RAMP_RULE, currency, months, actualsThrough,
