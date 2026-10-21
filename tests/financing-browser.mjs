@@ -68,6 +68,7 @@ try {
  for (const width of [1440, 390]) for (const as of ['owner', 'board']) {
   const reader = await session(browser, root, server.origin, as, width), page = reader.page
   try {
+   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Overview', exact: true }).click()
    const view = await api(reader.context, server.origin, `scenario/${budget.id}`), calc = view.calculation
    const section = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Financing', exact: true }) })
    const totals = section.getByRole('table', { name: 'Monthly financing totals', exact: true })
