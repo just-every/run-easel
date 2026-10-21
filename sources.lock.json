@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "fabcada64b3bd1193d5c52e8c56fb79cb9b787af4558625b842a53287830f318",
+      "sha256": "96ad7cd4dc0dfbd4a1d4beafb7cd2309e9d379d23016dd3c222e6a76f23c86bc",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3e06c23891ee59fbc9b1f632156787573a1c1729cd29360c283f609efad2b66e",
+      "sha256": "f1594b82325369a7063671b5f26df773a373835fc70a50704f888424e3e1aca7",
       "executable": false
     },
     "DEMO.md": {
@@ -3615,7 +3615,7 @@
       "executable": false
     },
     "tests/native-formula-flow.mjs": {
-      "sha256": "8d5a06d0ac925c731f9e90aca7e45d1b4dcb927d0f86cc0a5d4fc1599af1b138",
+      "sha256": "8de951304f1e4fbf49ffd3cb107a95434a60994387850e8d9888f3e1e1c25e5f",
       "executable": false
     },
     "tests/native-formulas-journey.mjs": {

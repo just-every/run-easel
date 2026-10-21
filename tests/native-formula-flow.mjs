@@ -149,7 +149,9 @@ async function nativeHistoryAndFrozen(h, f) {
  const privatePackPath = Object.keys(archive.files).find(p => p.includes(published.snapshot) && p.endsWith('.json'))
  assert.ok(privatePackPath)
  const privatePack = JSON.parse(await archive.file(privatePackPath).async('string'))
- assert.match(JSON.stringify(privatePack), /Customers.*120|120.*Customers/, 'complete export retains the pack’s captured native definitions')
+ const definitions = privatePack.body.nativeDefinitions.inputs
+ assert.equal(definitions.find(f => f.name === 'Customers').formula, '120', 'complete export retains the exact definition captured for publication')
+ assert.deepEqual(definitions.find(f => f.name === 'Cost per ticket').members.map(m => ({ name: m.name, formula: m.formula })), [{ name: 'East', formula: '2.22' }, { name: 'West', formula: '3.33' }])
  current = await view(forecast.id)
  const row = current.inputs.formula.find(f => f.originId === customers.originId)
  await save({ id: row.id, name: row.name, formula: '150' }, forecast.id)
@@ -159,6 +161,10 @@ async function nativeHistoryAndFrozen(h, f) {
  assert.deepEqual(await view(frozenBudget.scenario.id), frozenBudget)
  assert.deepEqual(await view(kept.id), frozenKept)
  for (const snapshot of snapshots) assert.deepEqual(await h.get(`/api/easel/snapshot/${snapshot.id}`), snapshot)
+ const exportAfter = await h.mf.dispatchFetch(`${h.origin}/api/easel/export`, { headers: { cookie: h.owner } })
+ assert.equal(exportAfter.status, 200)
+ const changedArchive = await JSZip.loadAsync(await exportAfter.arrayBuffer())
+ assert.deepEqual(JSON.parse(await changedArchive.file(privatePackPath).async('string')), privatePack, 'published private formula definitions and arithmetic remain byte-equivalent after working edits and global renames')
  const workbook = await h.mf.dispatchFetch(`${h.origin}/api/easel/scenario/${forecast.id}/document.xlsx`, { headers: { cookie: h.owner } })
  assert.equal(workbook.status, 200); proveFormulas(await readWorkbook(await workbook.arrayBuffer()))
 }
