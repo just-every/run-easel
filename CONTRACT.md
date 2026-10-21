@@ -1045,7 +1045,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Current native dimension evidence updated from code commit `3a7f66e` (22 October 2026); unchanged clauses retain their cited evidence.
+Judged from the code and tests at commit `3a7f66edba49cd566e94391265462abc29d1981c` (22 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
