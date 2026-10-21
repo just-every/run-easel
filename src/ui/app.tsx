@@ -67,7 +67,7 @@ export function App() {
   {state.workspace.calendar && state.workspace.calendar !== 'calendar-month' && <p className="note">{state.workspace.calendar} retail calendar. YYYY-MM inputs and headings are consecutive accounting-period keys, not Gregorian months. See Overview → Fiscal summaries → Accounting periods for dates.</p>}
   {tab !== 'cash' && <PageHead state={state} />}
   {error && <p role="alert" className="error">{error}</p>}
-  {calculation && <CalculationState state={state} job={calculation} reload={async () => { setCalculation(null); await refresh() }} />}
+  {calculation && <CalculationState state={state} job={calculation} continueImport={() => { setCalculation(null); setTab('actuals') }} reload={async () => { setCalculation(null); await refresh() }} />}
   {!calculation && <>
   {tab === 'cash' && <CashDrivers {...shared} />}
   {tab === 'overview' && <Overview {...shared} />}

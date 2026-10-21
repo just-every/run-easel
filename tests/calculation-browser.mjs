@@ -34,6 +34,12 @@ try {
   assert.equal(await section.count(), 0, 'Old figures are removed while a large change runs')
   await noOverflow(page, `Background calculation ${width}`); await pending.screenshot({ path: join(evidence, `recalculating-${width}.png`) })
   await pending.waitFor({ state: 'hidden' }); await settle(page)
+  const startedState = await api(finance.context, server.origin, 'state'), startedImport = startedState.workbooks.find(w => w.rows === rows)
+  await tab(page, 'Plan'); await page.getByLabel('Scenario', { exact: true }).selectOption(startedImport.scenario)
+  await page.getByRole('heading', { name: 'Finish the source import', exact: true }).waitFor()
+  const paused = page.getByRole('region', { name: 'Background calculation', exact: true })
+  await noOverflow(page, `Paused source import ${width}`); await paused.screenshot({ path: join(evidence, `calculation-continue-${width}.png`) })
+  await paused.getByRole('button', { name: 'Continue workbook import', exact: true }).click(); await settle(page)
   const imports = page.getByRole('table', { name: 'Workbook imports', exact: true })
   const row = imports.getByRole('row').filter({ has: page.getByRole('cell', { name: String(rows), exact: true }) })
   for (let steps = 0; (await row.innerText()).includes('importing'); steps++) {

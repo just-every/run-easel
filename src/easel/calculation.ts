@@ -1,5 +1,6 @@
 import { activeCalculationJob } from './calculation-jobs'
-import { requireThat } from './types'
+import { CalculationPending } from './calculation-status'
+import { unfinishedWorkbook } from './calculation-dispatch'
 import { calculateNativeContext } from './native-context'
 import { ledgerContext } from './ledger-context'
 import { actualCells } from './actuals-read'
@@ -12,7 +13,8 @@ import { model } from './model'
  * Frozen models continue to read their immutable captured arithmetic. */
 export async function workingCalculation(c: Context, scenario: string, through?: string) {
  const pending = await activeCalculationJob(c, scenario, c.calculationJob)
- requireThat(!pending || pending.id === c.calculationJob, 'This scenario is recalculating in the background; affected values are unavailable until it completes', 425)
+ if (pending) throw new CalculationPending([scenario], pending)
+ if (!c.calculationJob && unfinishedWorkbook(c.s, scenario)) throw new CalculationPending([scenario])
  const m = model(c.s, scenario)
  if (m.inputs.formula?.length) return calculateNativeContext(c,scenario,through)
  const consumed = historySourceMonths(m)

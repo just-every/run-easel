@@ -23,10 +23,12 @@ export function Plan({ state, refresh }: Shared) {
  const [editing, setEditing] = useState<D | null>(null)
  const [newDimensions, setNewDimensions] = useState<D>({})
  const [round, setRound] = useState(0)
+ const [loadError, setLoadError] = useState('')
  // Only the latest request for the scenario on screen may fill the view.
  const [ticket] = useState({ n: 0 })
- const load = async () => { const mine = ++ticket.n; const value = await api(`scenario/${id}`); if (mine === ticket.n) setView(value) }
+ const load = async () => { const mine = ++ticket.n; try { const value = await api(`scenario/${id}`); if (mine === ticket.n) { setView(value); setLoadError('') } } catch (error) { if (mine === ticket.n) { setView(null); setLoadError((error as Error).message) } } }
  useEffect(() => { setView(null); if (id) void load() }, [id, state])
+ if (loadError && !view) return <section className="card"><h2>Plan unavailable</h2><p role="alert">{loadError}</p><button type="button" onClick={() => void load()}>Reload plan</button></section>
  if (!editable.length) return <section className="card"><p>There is nothing for you to edit right now. Contributors edit the budget once finance requests their department's submission, and their own proposals.</p></section>
  const save = async (op: string, body: D) => { await command(op, { ...body, ...(!body.id ? { dimensions: body.dimensions ?? newDimensions } : {}), scenario: id }); setEditing(null); setRound(r => r + 1); await load(); await refresh() }
  const remove = async (kind: string, inputId: string) => { await command('input-delete', { kind, id: inputId }); await load(); await refresh() }

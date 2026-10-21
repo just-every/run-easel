@@ -14,6 +14,9 @@ try {
  const firstJob = response.value.calculationJob
  assert.equal(firstJob.status, 'running')
  let result = await finishJob(h, response.value)
+ const incomplete = await h.send(`/api/easel/scenario/${result.import.scenario}`, undefined, h.owner)
+ assert.equal(incomplete.status, 425); assert.equal(incomplete.value.calculation.status, 'awaiting-continuation')
+ assert.equal(incomplete.value.calculation.cells, undefined)
  while (result.import.status === 'importing') {
   const next = await h.send('/api/easel/import/workbook/resume', { id: result.import.id }, h.owner)
   assert.equal(next.status, 202, JSON.stringify(next.value)); result = await finishJob(h, next.value)

@@ -1,3 +1,4 @@
+import { CalculationPending } from './calculation-status'
 import { canSeeScenario } from './scenario-access'
 import { backgroundScenario, INLINE_INPUT_ROWS } from './calculation-dispatch'
 import { activeCalculationJob, readCalculationJob, startCalculationJob } from './calculation-jobs'
@@ -101,6 +102,7 @@ api.use('/api/easel/*', async (c, next) => {
  finally { await tokenUse(c.env.DB, person, c.req.raw, status) }
 })
 api.onError((e, c) => {
+ if (e instanceof CalculationPending) return e.job ? c.json({ calculationJob: e.job }, 202) : c.json({ error: e.message, calculation: { scenarios: e.scenarios, status: 'awaiting-continuation' } }, 425)
  if (e instanceof Fault) return c.json({ error: e.message }, e.status as 400)
  const message = String((e as Error).message ?? e)
  if (/IMPORT_|PlanTooLarge/.test(message)) return c.json({ error: message }, 409)
