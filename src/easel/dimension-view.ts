@@ -1,3 +1,5 @@
+import { dimensionAllowed, seesDepartmentDetail } from './access'
+import { scopedReader } from './group-projections'
 import { requireMember } from './access'
 import { dimensionActuals } from './dimension-actuals'
 import { dimensionReport } from './dimensions-report'
@@ -31,6 +33,10 @@ export async function dimensionView(c: Context, scenario: string, dimension?: st
   requireThat(members.some(m => m.id === member), 'Member not found', 404)
   const included = descendants(members, member)
   calc = { ...calc, cells: calc.cells.map(cell => ({ ...cell, sources: cell.sources.filter(source => included.has(source.dimensions?.[dimension!] ?? '')) })).map(cell => ({ ...cell, amount: cell.sources.reduce((sum, source) => sum + source.amount, 0) })) }
+ }
+ if (scopedReader(c.x)) {
+  calc = { ...calc, cells: calc.cells.filter(cell => seesDepartmentDetail(c.x, cell.department)).map(cell => ({ ...cell, sources: cell.sources.filter(source => dimensionAllowed(c.s, c.x, source.dimensions)) })).map(cell => ({ ...cell, amount: cell.sources.reduce((sum, source) => sum + source.amount, 0) })) }
+  blocked = blocked.filter(issue => issue.department && seesDepartmentDetail(c.x, issue.department))
  }
  const report = dimensionReport(calc, structure as DimensionStructure, dimension)
  // An unresolved class may belong to any member of that dimension. Block that

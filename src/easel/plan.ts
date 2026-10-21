@@ -8,7 +8,7 @@ import { assertHistorySources } from './history-sources'
 import { referenceMonths, historySchedule } from './history-schedules'
 import { range } from './months'
 import { scenarioAccess, requireScenarioEdit } from './scenario-access'
-import { requireDepartment, requirePayDetail, requireFinance, requireMember } from './access'
+import { requireCapability, requireDepartment, requirePayDetail, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { INPUT_KINDS, inputDepartment, model, requireEditable, scenarioInputs, validateInput, workspace, type InputKind } from './model'
 import { cents } from './units'
@@ -193,7 +193,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   return get(s, 'scenario', p.id)
  }
  if (op === 'proposal-promote') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
   const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
@@ -214,7 +214,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   return { target: get(s, 'scenario', target.id), proposal: get(s, 'scenario', p.id) }
  }
  if (op === 'proposal-decline') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted' || p.proposalStatus === 'draft', 'This proposal is already closed', 409)
   put(s, 'scenario', p.id, { ...p, status: 'closed', proposalStatus: 'declined', declinedBy: x.actor.email, reason: text(b.reason, 'Reason', 2000) })

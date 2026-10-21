@@ -1,3 +1,4 @@
+import { Groups } from './groups'
 import { Dimensions } from './dimensions'
 import { BALANCE_TARGETS, balanceTarget } from '../easel/balance-targets'
 import { AccountRules } from './account-rules'
@@ -73,9 +74,11 @@ export function Settings({ state, refresh }: Shared) {
     <Field label="Name" name="name" />
     <Field label="Email" name="email" type="email" />
     <Field label="Role" name="role" options={[{ value: 'contributor', label: 'Contributor' }, { value: 'viewer', label: 'Viewer' }, { value: 'finance', label: 'Finance' }]} />
+    <Field label="Group-managed access only" name="groupOnly" type="checkbox" required={false} hint="Use only current group grants. Direct department choices are ignored." />
     <Field label="Departments (contributors)" name="departments" multiple required={false} options={state.departments.map((d: D) => ({ value: d.id, label: d.name }))} />
    </Form>
   </section>
+  <Groups state={state} refresh={refresh} />
   <Dimensions state={state} refresh={refresh} />
   <AccountRules state={state} refresh={refresh} />
   {state.me.role === 'finance' && <GaugeConnection />}

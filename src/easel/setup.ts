@@ -4,7 +4,7 @@ import { balanceTarget } from './balance-targets'
 // Installation-level commands: the planning calendar, departments, planning
 // lines, people and their roles, and how source accounts map to lines.
 import { accountRules } from './account-rules'
-import { requireFinance, requirePayDetail } from './access'
+import { requireCapability, requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
 import { cents, hundredths, percentBps } from './units'
 import { fiscalYearLabel, month } from './months'
@@ -57,7 +57,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   return get(s, 'workspace', 'main')
  }
  if (op === 'department') {
-  requireFinance(x)
+  requireCapability(x, 'model-structure')
   const id = b.id ?? uid()
   if (b.id) get(s, 'department', id)
   const name = text(b.name, 'Department name')
@@ -67,7 +67,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   return get(s, 'department', id)
  }
  if (op === 'department-delete') {
-  requireFinance(x)
+  requireCapability(x, 'model-structure')
   const d = get(s, 'department', b.id)
   requireThat(!usesDepartment(s, d.id), 'This department is used by plans, mappings or people; move those first', 409)
   remove(s, 'department', d.id)
@@ -75,7 +75,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   return { removed: d.id }
  }
  if (op === 'line') {
-  requireFinance(x)
+  requireCapability(x, 'model-structure')
   const id = b.id ?? uid()
   const prior = b.id ? get(s, 'line', id) : undefined
   const type = choice(b.type, LINE_TYPES, 'a line type')
@@ -93,7 +93,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   return get(s, 'line', id)
  }
  if (op === 'line-delete') {
-  requireFinance(x)
+  requireCapability(x, 'model-structure')
   const l = get(s, 'line', b.id)
   requireThat(!usesLine(s, l.id), 'This line is used by plans or account mappings; move those first', 409)
   remove(s, 'line', l.id)
@@ -116,13 +116,13 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   requireThat(email !== x.actor.email, 'You already plan as finance')
   const role = choice(b.role, ['finance', 'contributor', 'viewer'] as const, 'a role')
   const depts: string[] = role === 'contributor' ? (Array.isArray(b.departments) ? b.departments : [b.departments]).filter(Boolean).map((d: unknown) => get(s, 'department', d).id) : []
-  requireThat(role !== 'contributor' || depts.length > 0, 'Choose the departments this contributor plans for')
-  put(s, 'member', email, { email, name: text(b.name, 'Name'), role, departments: depts, ...(b.dimensionMembers !== undefined ? { dimensionMembers: validateDimensionGrants(s, b.dimensionMembers) } : find(s, 'member', email)?.dimensionMembers ? { dimensionMembers: find(s, 'member', email)!.dimensionMembers } : {}), active: b.active !== false && b.active !== 'false' })
+  requireThat(role !== 'contributor' || depts.length > 0 || b.groupOnly === true, 'Choose the departments this contributor plans for')
+  put(s, 'member', email, { email, name: text(b.name, 'Name'), role, groupOnly: b.groupOnly === undefined ? find(s, 'member', email)?.groupOnly === true : b.groupOnly === true, departments: depts, ...(b.dimensionMembers !== undefined ? { dimensionMembers: validateDimensionGrants(s, b.dimensionMembers) } : find(s, 'member', email)?.dimensionMembers ? { dimensionMembers: find(s, 'member', email)!.dimensionMembers } : {}), active: b.active !== false && b.active !== 'false' })
   c.activity.push({ action: op, record: email, detail: { role, departments: depts } })
   return get(s, 'member', email)
  }
  if (op === 'account-map') {
-  requireFinance(x)
+  requireCapability(x, 'model-structure')
   const account = text(b.account, 'Source account', 100)
   const target = b.target === 'excluded' || balanceTarget(b.target) ? b.target : get(s, 'line', b.target, 'planning line').id
   put(s, 'account-map', account, { target, name: typeof b.name === 'string' ? b.name.slice(0, 200) : find(s, 'account-map', account)?.name ?? '' })
@@ -130,7 +130,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   return get(s, 'account-map', account)
  }
  if (op === 'department-map') {
-  requireFinance(x)
+  requireCapability(x, 'model-structure')
   const source = typeof b.source === 'string' ? b.source.trim().slice(0, 100) : ''
   const target = b.department ? get(s, 'department', b.department).id : ''
   put(s, 'department-map', source || '(blank)', { department: target })

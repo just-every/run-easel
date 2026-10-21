@@ -17,6 +17,7 @@ import { compareView, scenarioView, stateView } from './views'
 const versions = ['2025-11-25', '2025-06-18', '2025-03-26']
 const str = { type: 'string' }
 const fields: Record<string, Data> = {
+ dimensions: { type: 'object', additionalProperties: str },
  members: { type: 'array', items: {type:'object',properties:{name:str,formula:str},required:['name','formula'],additionalProperties:false} },
  citationIds: { type: 'array', items: str },
  collectionCurve: { type: 'array', items: { type: 'object', properties: { days: str, percent: str }, required: ['days','percent'], additionalProperties: false } },
@@ -28,6 +29,7 @@ const fields: Record<string, Data> = {
  targets: { type: 'array', items: { type: 'object', properties: { department: str, percent: str }, required: ['department'] } },
 }
 function tool(name: string, description: string, required: string[], optional: string[] = [], readOnly = false) {
+ if ((INPUT_KINDS as readonly string[]).includes(name)) optional = [...optional, 'dimensions']
  return { name, description, inputSchema: { type: 'object', properties: Object.fromEntries([...required, ...optional].map(k => [k, fields[k] ?? str])), required, additionalProperties: false }, annotations: { readOnlyHint: readOnly, openWorldHint: false } }
 }
 const tools = [

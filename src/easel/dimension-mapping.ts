@@ -1,4 +1,4 @@
-import { requireFinance } from './access'
+import { requireCapability } from './access'
 import type { Context } from './context'
 import { validateDimensions, type DimensionTags } from './dimensions'
 import { all, get, put, remove, requireThat, text, uid, type Data, type State } from './types'
@@ -24,7 +24,7 @@ export function resolveDimensions(s: State, source: Record<string, string> = {})
 }
 export function dimensionMapping(c: Context, op: string, b: Data): Data | undefined {
  if (!['dimension-map', 'dimension-map-delete'].includes(op)) return
- requireFinance(c.x)
+ requireCapability(c.x, 'model-structure')
  if (op.endsWith('-delete')) {
   const rule = get(c.s, 'dimension-map', b.id); remove(c.s, 'dimension-map', rule.id)
   c.activity.push({ action: op, record: rule.id, detail: rule }); return { removed: rule.id }

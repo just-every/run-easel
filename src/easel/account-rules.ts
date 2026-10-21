@@ -2,7 +2,7 @@ import { balanceTarget } from './balance-targets'
 // Reusable source-account decisions. Exact picks override reusable rules;
 // conflicting rule targets stay unresolved rather than choosing by accident.
 import { all, find, get, put, remove, choice, requireThat, text, uid, type Data, type State } from './types'
-import { requireFinance } from './access'
+import { requireCapability } from './access'
 import type { Context } from './context'
 
 const numeric = (v: string) => /^\d+$/.test(v)
@@ -16,7 +16,7 @@ export function resolveAccount(s: State, account: string, accountType = '') {
 
 export function accountRules(c: Context, op: string, b: Data): Data | undefined {
  if (op !== 'account-rule' && op !== 'account-rule-delete') return undefined
- requireFinance(c.x)
+ requireCapability(c.x, 'model-structure')
  if (op === 'account-rule-delete') {
   const rule = get(c.s, 'account-rule', b.id)
   remove(c.s, 'account-rule', rule.id)

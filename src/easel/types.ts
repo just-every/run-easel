@@ -4,12 +4,14 @@ export type Data = Record<string, any>
 export type Row = { destination: string; kind: string; id: string; revision: string; value: Data }
 export type State = Map<string, Row>
 
+export type Capability = 'compensation' | 'connections' | 'model-structure' | 'approvals' | 'publishing'
+export type GrantCeiling = { readDepartments: string[]; dimensionRead: Record<string, string[]>; dimensionEdit: Record<string, string[]>; capabilities: Capability[]; groups: string[]; scenarioGrants: Record<string, 'read' | 'edit'>; groupOnly: boolean }
 export type Role = 'finance' | 'contributor' | 'viewer'
 export type Actor = {
  id: string
  email: string
  name: string
- token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; payDetail: boolean; write: boolean }
+ token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; payDetail: boolean; write: boolean; grants?: GrantCeiling }
  agent?: { name: string; via: string }
  /** The cron scheduler acting for the owner/admin who configured it. */
  scheduler?: { operator: string; email: string }
@@ -19,7 +21,7 @@ export type Actor = {
  baseRole: 'owner' | 'admin' | 'member'
 }
 /** What the actor may do in this installation, resolved from Base role and Easel membership. */
-export type Access = { actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean }
+export type Access = { actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean; readDepartments?: string[]; dimensionRead?: Record<string, string[]>; dimensionEdit?: Record<string, string[]>; capabilities?: Capability[]; groups?: string[]; scenarioGrants?: Record<string, 'read' | 'edit'>; groupOnly?: boolean; statementDepartments?: string[] }
 
 export class Fault extends Error {
  constructor(public status: number, message: string) { super(message) }

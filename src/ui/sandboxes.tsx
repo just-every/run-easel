@@ -24,6 +24,11 @@ export function Sandboxes({ state, refresh }: Shared) {
     <Field label={`Share ${sc.name} with email`} name="email" type="email" />
     <Field label={`Access to ${sc.name}`} name="mode" options={[{ value: 'read', label: 'Read' }, { value: 'edit', label: 'Edit' }]} />
    </Form>
+   {!!state.accessGroups?.length && <Form submit="Save group sharing" onSubmit={v => run('scenario-share', { ...v, scenario: sc.id, revision: sc.revision })}>
+    <Field label={`Share ${sc.name} with group`} name="group" options={state.accessGroups.map((g: D) => ({ value: g.id, label: g.name }))} />
+    <Field label={`Group access to ${sc.name}`} name="mode" options={[{ value: 'read', label: 'Read' }, { value: 'edit', label: 'Edit' }, { value: 'remove', label: 'Remove' }]} />
+   </Form>}
+   <Table caption={`Group sharing for ${sc.name}`} heads={['Group', 'Access']}>{Object.entries(sc.sandbox.groupGrants ?? {}).map(([id, mode]) => <tr key={id}><td>{state.accessGroups?.find((g: D) => g.id === id)?.name ?? 'Group'}</td><td>{String(mode)}</td></tr>)}</Table>
    <Form submit="Submit sandbox to finance" onSubmit={v => run('sandbox-submit', { ...v, scenario: sc.id, revision: sc.revision, targetRevision: state.scenarios.find((s: D) => s.id === v.into)?.revision })}>
     <Field label={`Submit ${sc.name} into`} name="into" defaultValue={sc.branchedFrom?.scenario} options={plans.filter((s: D) => !s.sandbox && s.status === 'working').map((s: D) => ({ value: s.id, label: s.name }))} />
     <Field label={`Request for ${sc.name}`} name="request" type="textarea" />

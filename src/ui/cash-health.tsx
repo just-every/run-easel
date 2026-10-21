@@ -3,7 +3,8 @@ import { command, decimalText, Field, Form, money, monthLabel, Table, type D } f
 import { Dots } from './dots'
 
 /** The same current agreement checks saved and working cash, including proposals. */
-export function CashHealth({ health, currency, title = 'Cash health' }: { health: D; currency: string; title?: string }) {
+export function CashHealth({ health, currency, title = 'Cash health' }: { health: D | null; currency: string; title?: string }) {
+ if (!health) return <section className="card"><h2>{title}</h2><p>Company cash diagnostics are unavailable for this grant.</p></section>
  const crossing = health.months.find((m: D) => m.month === health.firstFloorBreach)
  const crossingRunway = crossing?.runwayHundredths === null ? (crossing.runwayBasis === 'cash-exhausted' ? 'Cash exhausted' : 'Not burning') : `${decimalText(crossing?.runwayHundredths)} months`
  const check = (value: boolean | null) => value === null ? 'Not assessed' : value ? 'Below minimum' : 'Meets minimum'

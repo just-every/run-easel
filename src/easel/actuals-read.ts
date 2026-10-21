@@ -84,6 +84,6 @@ export async function rowsFor(db: D1Database, s: State, month: string, line: str
  return results.flatMap(r => {
   const v = JSON.parse(r.value), mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })
   if (mapping.blocked || mapping.target !== line || mapping.department !== department) return []
-  return [{ id: r.id, file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
+  return [{ dimensions: resolveDimensions(s, v.sourceDimensions ?? { department: v.department }).dimensions, id: r.id, file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
  })
 }

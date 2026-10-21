@@ -21,20 +21,29 @@ export async function sandboxes(c: Context, op: string, b: Data): Promise<Data |
  if (op === 'scenario-share') {
   requireThat(sc.sandbox && sc.createdBy === x.actor.email, 'Only the sandbox creator changes sharing', 403)
   requireThat(sc.revision === Number(b.revision), 'The scenario changed; review sharing again', 409)
-  const email = text(b.email, 'Person email', 320).toLowerCase()
-  requireThat(email !== sc.createdBy, 'The creator already owns this sandbox')
+  requireThat(!b.group || !b.email, 'Choose a person or a group')
   const mode = choice(b.mode, ['read', 'edit', 'remove'] as const, 'read, edit or remove')
-  if (mode !== 'remove') {
-   const native = await c.db.prepare("SELECT role FROM oa_operators WHERE email=? AND status='active'").bind(email).first<{ role: string }>()
-   const member = find(s, 'member', email)
-   const finance = native && ['owner', 'admin'].includes(native.role)
-   requireThat(native && (finance || member?.active), 'Choose an active member')
-   requireThat(mode !== 'edit' || finance || member?.role !== 'viewer', 'A viewer can receive read access only', 403)
+  if (b.group) {
+   const group = get(s, 'access-group', b.group, 'group')
+   const groupGrants = { ...sc.sandbox.groupGrants }
+   if (mode === 'remove') delete groupGrants[group.id]; else groupGrants[group.id] = mode
+   put(s, 'scenario', sc.id, { ...sc, revision: sc.revision + 1, sandbox: { ...sc.sandbox, groupGrants } })
+   c.activity.push({ action: op, record: sc.id, scenario: sc.id, before: sc.revision, after: sc.revision + 1, detail: { group: group.id, mode } })
+  } else {
+   const email = text(b.email, 'Person email', 320).toLowerCase()
+   requireThat(email !== sc.createdBy, 'The creator already owns this sandbox')
+   if (mode !== 'remove') {
+    const native = await c.db.prepare("SELECT role FROM oa_operators WHERE email=? AND status='active'").bind(email).first<{ role: string }>()
+    const member = find(s, 'member', email)
+    const finance = native && ['owner', 'admin'].includes(native.role)
+    requireThat(native && (finance || member?.active), 'Choose an active member')
+    requireThat(mode !== 'edit' || finance || member?.role !== 'viewer', 'A viewer can receive read access only', 403)
+   }
+   const grants = { ...sc.sandbox.grants }
+   if (mode === 'remove') delete grants[email]; else grants[email] = mode
+   put(s, 'scenario', sc.id, { ...sc, revision: sc.revision + 1, sandbox: { ...sc.sandbox, grants } })
+   c.activity.push({ action: op, record: sc.id, scenario: sc.id, before: sc.revision, after: sc.revision + 1, detail: { email, mode } })
   }
-  const grants = { ...sc.sandbox.grants }
-  if (mode === 'remove') delete grants[email]; else grants[email] = mode
-  put(s, 'scenario', sc.id, { ...sc, revision: sc.revision + 1, sandbox: { ...sc.sandbox, grants } })
-  c.activity.push({ action: op, record: sc.id, scenario: sc.id, before: sc.revision, after: sc.revision + 1, detail: { email, mode } })
   return get(s, 'scenario', sc.id)
  }
  if (op === 'sandbox-submit') {

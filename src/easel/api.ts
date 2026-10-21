@@ -1,3 +1,5 @@
+import { groups, accessReport } from './groups'
+import { scopedReader } from './group-projections'
 import { dimensionCommands } from './dimensions'
 import { dimensionMapping } from './dimension-mapping'
 import { dimensionView, dimensionWorkbook } from './dimension-view'
@@ -100,7 +102,9 @@ api.onError((e, c) => {
 async function open(c: HonoContext<Env>): Promise<Context & { revision: number; before: Map<string, any> }> {
  const a = c.get('apiActor') ?? await actor(c.req.raw, c.env)
  const { state, revision } = await load(c.env.DB)
- if (a.token) requireMember(access(state, a))
+ const current = access(state, a)
+ if (a.token) requireMember(current)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -235,6 +239,7 @@ api.get('/api/easel/dimension-report/:scenario/document.xlsx', async c => {
 })
 api.get('/api/easel/dimension-report/:scenario', c => read(c, ctx => dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'))))
 
+api.get('/api/easel/access-report', c => read(c, accessReport))
 api.get('/api/easel/state', c => read(c, stateView))
 api.get('/api/easel/scenario/:id', c => read(c, ctx => scenarioView(ctx, c.req.param('id'))))
 api.get('/api/easel/weekly-cash/:id/document.xlsx', async c => {
@@ -302,6 +307,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  const ctx = await open(c)
  requireThat(ctx.x.role, 'Finance has not added you to this plan yet', 403)
  const pack = get(ctx.s, 'pack', c.req.param('id'), 'pack')
+ requireThat(!scopedReader(ctx.x), 'This aggregate pack is unavailable for dimension-scoped access', 403)
  requireThat(pack.status === 'published', 'This pack is not published yet', 409)
  const sn = paySafePack(await snapshot(ctx.db, pack.snapshot))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
@@ -311,7 +317,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

@@ -1,3 +1,4 @@
+import { scopedCalculation, scopedReader } from './group-projections'
 import { dimensionStructure } from './dimensions'
 import { visibleNativeDependencies, visibleNativeInput } from './native-visibility'
 import { fiscalSummary } from './fiscal-summary'
@@ -12,7 +13,7 @@ import { restrictDrivers } from './cash-drivers'
 // server, by the reader's role: individual positions, salaries and the rows
 // and traces behind other departments' numbers never leave for people who
 // may not see them.
-import { requireFinance, requireMember, seesDepartmentDetail, seesPayDetail, visibleInput } from './access'
+import { dimensionAllowed, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail, visibleInput } from './access'
 import { reconciliation } from './actuals'
 import { actorNames } from './actor-names'
 import type { Context } from './context'
@@ -26,12 +27,13 @@ import { all, find, get, requireThat, type Access, type Data, type State } from 
 export { canSeeScenario } from './scenario-access'
 
 export function filterCalculation(x: Access, calc: Calculation, payrollLines: string[] = [], state?: State): Calculation {
+ if (state) calc = scopedCalculation(state, x, calc, all(state, 'line') as any)
  const { nativeSources: _privateSources, ...publicCalculation } = calc
  const formulaRows=calc.formulaValues??[]
  const visibleFormula=(id:string|undefined)=>formulaRows.filter(r=>r.originId===id).every(r=>visibleNativeDependencies(x,r.dependencies??[],state))
  calc={...publicCalculation, ...(calc.cashDrivers?{cashDrivers:calc.cashDrivers.map(d=>!visibleFormula(d.source)?{...d,source:'',label:'Formula detail restricted'}:d)}:{}), ...(calc.formulaValues?{formulaValues:formulaRows.filter(r=>visibleNativeDependencies(x,r.dependencies??[],state)).map(r=>({...r,dependencies:[]}))}:{}),cells:calc.cells.map(cell=>({...cell,sources:cell.sources.map(source=>source.kind==='formula'&&!visibleFormula(source.id)?{kind:'restricted',label:'Formula detail restricted',amount:source.amount,trace:'Formula detail restricted to its source departments and permissions'}:source)}))}
  const restricted = (department: string) => !seesPayDetail(x, department)
- calc = { ...calc, ...(calc.taxes?{taxes:{...calc.taxes,payrollRows:calc.taxes.payrollRows.filter(row=>seesPayDetail(x,row.department))}}:{}), warnings: x.payDetail ? calc.warnings : calc.warnings.map(() => 'Calculation warning; source detail requires Pay detail permission'), cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? [{ kind: 'restricted', label: 'Compensation detail restricted', amount: cell.amount, trace: 'Compensation detail restricted' }] : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
+ calc = { ...calc, ...(calc.taxes?{taxes:{...calc.taxes,payrollRows:calc.taxes.payrollRows.filter(row=>seesPayDetail(x,row.department))}}:{}), warnings: x.payDetail ? calc.warnings : calc.warnings.map(() => 'Calculation warning; source detail requires Pay detail permission'), cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? cell.sources.map(source => ({ kind: 'restricted', label: 'Compensation detail restricted', amount: source.amount, trace: 'Compensation detail restricted', ...(source.dimensions ? { dimensions: source.dimensions } : {}) })) : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
  if (x.role === 'finance') return calc
  return { ...calc, ...(calc.cashDrivers ? { cashDrivers: restrictDrivers(calc.cashDrivers, false, department => seesDepartmentDetail(x, department)) } : {}), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(r => seesDepartmentDetail(x, r.department)), issues: calc.workingCapital.issues.filter(r => seesDepartmentDetail(x, r.department)) } } : {}), ...(calc.contracts ? { contracts: { ...calc.contracts, rows: calc.contracts.rows.filter(r => seesDepartmentDetail(x, r.department)), invoices: calc.contracts.invoices.filter(r => seesDepartmentDetail(x, r.department)) } } : {}), ...(calc.financing ? { financing: aggregateFinancing(calc.financing) } : {}), assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? { ...c, sources: c.sources.map(source => source.kind === 'financing' ? { kind: 'financing', label: 'Financing interest', amount: source.amount, trace: 'Interest expense; instrument terms restricted to finance' } : source) } : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
 }
@@ -45,17 +47,18 @@ const paySafeInput = (x: Access, input: Data, positions: Data[]) => {
  return safe
 }
 const filterInputs = (x: Access, inputs: Record<string, Data[]>, payrollLines: string[] = [], state?: State) =>
- Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => (k !== 'formula' || !state || visibleNativeInput(state,x,i,new Set(),inputs.formula??[])) && (k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department)))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
+ Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => (!state || dimensionAllowed(state, x, i.dimensions)) && (k !== 'formula' || !state || visibleNativeInput(state,x,i,new Set(),inputs.formula??[])) && (k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department)))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
 
 export async function stateView(c: Context) {
  const { s, x } = c
  const finance = x.role === 'finance'
  const workspace = find(s, 'workspace', 'main') ?? null
- const me = { email: x.actor.email, name: x.actor.name, role: x.role, departments: x.departments, payDetail: x.payDetail === true, owner: x.actor.baseRole === 'owner' && !x.actor.token }
+ const me = { email: x.actor.email, name: x.actor.name, role: x.role, departments: x.departments, payDetail: x.payDetail === true, capabilities: x.capabilities ?? [], readDepartments: x.readDepartments ?? [], groupOnly: x.groupOnly === true, owner: x.actor.baseRole === 'owner' && !x.actor.token }
  if (!x.role) return { me, workspace: null }
  const snapshots = (await snapshotList(c.db)).filter(sn => (!sn.scenario || canSeeScenario(x, get(s, 'scenario', sn.scenario))) && ( finance || sn.kind !== 'forecast' || x.role === 'contributor'))
  const view = {
-  me, workspace, lines: lines(s), departments: departments(s), dimensions: all(s, 'dimension'), dimensionMembers: all(s, 'dimension-member'), lineGroups: all(s, 'line-group'), dimensionMaps: finance ? all(s, 'dimension-map') : [],
+  accessGroups: finance ? all(s, 'access-group').map(g => ({ id: g.id, name: g.name })) : [],
+  me, workspace, lines: lines(s), departments: departments(s), dimensions: all(s, 'dimension'), dimensionMembers: all(s, 'dimension-member').filter(m => x.role === 'finance' || !x.dimensionRead?.[m.dimension] || x.dimensionRead[m.dimension].includes(m.id)), lineGroups: all(s, 'line-group'), dimensionMaps: finance ? all(s, 'dimension-map') : [],
   members: finance ? all(s, 'member').map((m): Data => ({ ...m, payDetail: m.role !== 'viewer' && find(s, 'pay-grant', m.email)?.granted === true })) : [],
   scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async (sc): Promise<Data> => sc.status === 'frozen' ? { ...(await frozenModel(c, sc)).scenario, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) } : { ...sc, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) })),
   submissions: all(s, 'submission'),
@@ -82,7 +85,7 @@ export async function stateView(c: Context) {
   ...view.packs.flatMap(pack => [pack.createdBy, pack.publishedBy, ...Object.values(pack.progress ?? {}).map((entry: any) => entry.by)]),
   ...view.snapshots.map(sn => sn.actor),
  ]
- view.scenarios = view.scenarios.map(sc => ({ ...sc, ledgerAllocations: undefined }))
+ view.scenarios = view.scenarios.map(sc => ({ ...sc, ledgerAllocations: undefined, effectiveAccess: sc.sandbox ? (sc.createdBy === x.actor.email || sc.sandbox.grants?.[x.actor.email] === 'edit' || x.scenarioGrants?.[sc.id] === 'edit' ? 'edit' : 'read') : x.role === 'viewer' ? 'read' : 'edit' }))
  return { ...view, actorNames: await actorNames(c.db, emails) }
 }
 
@@ -94,8 +97,8 @@ export async function scenarioView(c: Context, id: string) {
  const m = frozen ?? model(c.s, id)
  const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
  const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
- const visibleHistory = filterHistory(c.x, actualsHistory)
- return { dimensionStructure: (m as Data).dimensionStructure ?? dimensionStructure(c.s), fiscal: fiscalSummary(m.workspace, calc, m.lines), actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id), c.s), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id), c.s) }
+ const visibleHistory = scopedReader(c.x) ? { cells: [], months: [], blockedMonths: [], missingMonths: [], status: 'unavailable-for-scope' } : filterHistory(c.x, actualsHistory)
+ return { dimensionStructure: (m as Data).dimensionStructure ?? dimensionStructure(c.s), fiscal: fiscalSummary(m.workspace, scopedCalculation(c.s, c.x, calc, m.lines), m.lines), actualsHistory: visibleHistory, cashHealth: scopedReader(c.x) ? null : cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id), c.s), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id), c.s) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }
@@ -131,7 +134,7 @@ export async function snapshotView(c: Context, id: string) {
  requireMember(c.x)
  const sn = await snapshot(c.db, id)
  if (sn.scenario) scenarioAccess(c.s, c.x, sn.scenario)
- if (sn.kind === 'pack') return paySafePack(sn)
+ if (sn.kind === 'pack') { requireThat(!scopedReader(c.x), 'This aggregate pack is unavailable for dimension-scoped access', 403); return paySafePack(sn) }
  requireThat(sn.kind === 'approval' || sn.kind === 'reforecast' || c.x.role === 'finance' || c.x.role === 'contributor', 'Snapshot not found', 404)
  const { nativeSources: _privateSources, ...safeBody } = sn.body
  const body = { ...safeBody, ...(sn.body.actualsHistory ? { actualsHistory: filterHistory(c.x, sn.body.actualsHistory) } : {}), calculation: filterCalculation(c.x, sn.body.calculation, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id), c.s), inputs: filterInputs(c.x, sn.body.inputs ?? {}, (sn.body.lines ?? []).filter((l: Data) => l.payroll).map((l: Data) => l.id), c.s) }

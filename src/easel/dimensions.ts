@@ -1,4 +1,4 @@
-import { requireFinance } from './access'
+import { dimensionAllowed, requireCapability } from './access'
 import type { Context } from './context'
 import { all, find, get, put, remove, requireThat, text, uid, type Access, type Data, type State } from './types'
 
@@ -31,16 +31,8 @@ export function validateDimensions(s: State, value: unknown): DimensionTags {
 
 /** Live grants are intersected with department authority by each caller. A grant
  * on a group includes its descendants, and follows later hierarchy changes. */
-export function dimensionAccess(s: State, x: Access, tags: DimensionTags = {}) {
- if (x.role === 'finance') return true
- if (x.role !== 'contributor') return false
- const grants = find(s, 'member', x.actor.email)?.dimensionMembers
- if (!grants) return true
- return Object.entries(grants).every(([dimension, ids]) => tags[dimension] && Array.isArray(ids) && ids.some(id => descendants(all(s, 'dimension-member').filter(m => m.dimension === dimension), id).has(tags[dimension])))
-}
-export function requireDimensionAccess(s: State, x: Access, tags: DimensionTags = {}) {
- requireThat(dimensionAccess(s, x, tags), 'You can only change your assigned dimension members', 403)
-}
+export function dimensionAccess(s: State, x: Access, tags: DimensionTags = {}) { return dimensionAllowed(s, x, tags) }
+export function requireDimensionAccess(s: State, x: Access, tags: DimensionTags = {}) { requireThat(dimensionAllowed(s, x, tags, true), 'You can only change your assigned dimension members', 403) }
 export function validateDimensionGrants(s: State, value: unknown) {
  if (value === undefined || value === null) return undefined
  requireThat(typeof value === 'object' && !Array.isArray(value), 'Dimension grants must name member lists')
@@ -66,7 +58,7 @@ function unused(s: State, kind: string, id: string) {
 
 export function dimensionCommands(c: Context, op: string, b: Data): Data | undefined {
  if (!['dimension', 'dimension-delete', 'dimension-member', 'dimension-member-delete', 'line-group', 'line-group-delete', 'line-hierarchy'].includes(op)) return undefined
- requireFinance(c.x)
+ requireCapability(c.x, 'model-structure')
  const { s } = c
  if (op === 'line-hierarchy') {
   const line = get(s, 'line', b.line ?? b.id)

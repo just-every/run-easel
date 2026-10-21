@@ -10,7 +10,7 @@ export async function tokenActor(request: Request, env: Bindings): Promise<Actor
   JOIN oa_credentials cr ON cr.id=t.id JOIN oa_operators o ON o.id=cr.operator_id WHERE t.id=? AND o.id=?`).bind(credential.id, credential.personId).first<any>()
  requireThat(row, 'Invalid API token', 401)
  return { id: credential.personId, email: row.email, name: row.display_name, session: '', version: credential.fence, baseRole: row.base_role,
-  token: { id: row.id, label: row.label, kind: row.kind, scope: row.scope, role: row.issuing_role, departments: JSON.parse(row.departments), payDetail: row.pay_detail === 1, write: !['GET', 'HEAD'].includes(request.method) },
+  token: { id: row.id, label: row.label, kind: row.kind, scope: row.scope, role: row.issuing_role, departments: JSON.parse(row.departments), payDetail: row.pay_detail === 1, ...(row.grants ? { grants: JSON.parse(row.grants) } : {}), write: !['GET', 'HEAD'].includes(request.method) },
   ...(row.kind === 'service' ? { agent: { name: row.label, via: 'api-token' } } : {}),
  }
 }

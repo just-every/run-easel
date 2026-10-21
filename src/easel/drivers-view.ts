@@ -3,7 +3,7 @@
 // by department, the agreed floor, and the few input fields a driver card names. It is projected from the same
 // role-filtered scenario view as everything else, so a reader sees exactly the detail scenarioView allows.
 import type { Context } from './context'
-import type { Data } from './types'
+import { requireThat, type Data } from './types'
 import { scenarioView } from './views'
 
 const pick = (input: Data, keys: string[]) => Object.fromEntries(keys.filter(k => input[k] !== undefined).map(k => [k, input[k]]))
@@ -17,6 +17,7 @@ const FIELDS: Record<string, string[]> = {
 
 export async function driversView(c: Context, id: string) {
  const view = await scenarioView(c, id)
+ requireThat(view.cashHealth, 'Company cash is unavailable for dimension-scoped grants', 403)
  const calc = view.calculation
  const sc = view.scenario
  const inputs = Object.entries(FIELDS).flatMap(([kind, keys]) => (view.inputs[kind] ?? []).map((i: Data) => ({

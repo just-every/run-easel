@@ -5,7 +5,7 @@ import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 // revise and submit their own scope, finance returns or approves. Approval
 // freezes the budget into an immutable snapshot and opens the forecast.
 // Closing a month keeps the prior forecast before actuals replace the plan.
-import { requireDepartment, requireFinance, requireMember } from './access'
+import { requireCapability, requireDepartment, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { departments, model, scenarioInputs, workspace, INPUT_KINDS } from './model'
 import { addMonths, fiscalYearLabel, monthLabel, monthsBetween } from './months'
@@ -16,7 +16,7 @@ import { all, find, get, put, requireThat, text, uid, integer, type Data } from 
 export async function cycle(c: Context, op: string, b: Data): Promise<Data | undefined> {
  const { s, x } = c
  if (op === 'request-submissions') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const budget = scenarioAccess(s, x, b.scenario)
   requireThat(budget.kind === 'budget' && budget.status === 'working', 'Submissions are requested for a working budget', 409)
   const ids: string[] = Array.isArray(b.departments) ? b.departments : [b.departments]
@@ -56,7 +56,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   return get(s, 'submission', sub.id)
  }
  if (op === 'return-submission') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const sub = get(s, 'submission', `${b.scenario}|${b.department}`, 'submission')
   requireThat(sub.status === 'submitted', 'Only a submitted department can be returned', 409)
   const reason = text(b.reason, 'Reason', 2000)
@@ -66,7 +66,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   return get(s, 'submission', sub.id)
  }
  if (op === 'approve-budget') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const budget = scenarioAccess(s, x, b.scenario)
   requireThat(budget.kind === 'budget' && budget.status === 'working', 'Only a working budget can be approved', 409)
   requireThat(Number(b.revision) === budget.revision, 'The budget changed after you reviewed it; review its current revision', 409)
@@ -90,7 +90,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
  }
  if (op === 'forecast-window') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const forecast = scenarioAccess(s, x, b.scenario)
   requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Set the window on the working forecast', 409)
   requireThat(Number(b.revision) === forecast.revision, 'The forecast changed; reload before changing its window', 409)
@@ -102,7 +102,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   return get(s, 'scenario', forecast.id)
  }
  if (op === 'close-month') {
-  requireFinance(x)
+  requireCapability(x, 'approvals')
   const forecast = scenarioAccess(s, x, b.scenario)
   requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Months close on the working forecast', 409)
   const w = workspace(s)
