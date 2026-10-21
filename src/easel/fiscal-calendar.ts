@@ -131,3 +131,11 @@ export function fiscalPeriods(w: CalendarWorkspace, keys?: readonly string[]): F
   ? Array.from({ length: w.horizon }, (_, index) => describe(w, keyAt(w, index)))
   : keys.map(key => describe(w, key))
 }
+
+/** Gregorian month lag from a real date, clamping the original day at month end. */
+export function addCalendarMonths(date: string, count: number): string {
+ parseDate(date)
+ const target = addMonths(date.slice(0, 7), count)
+ const end = isoDate(utc(Number(target.slice(0,4)), Number(target.slice(5,7)), 0))
+ return `${target}-${String(Math.min(Number(date.slice(8)), Number(end.slice(8)))).padStart(2, '0')}`
+}

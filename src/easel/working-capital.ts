@@ -20,7 +20,7 @@ export const payDate = (month: string, date: number, offset = 0, workspace?: Cal
  }
  return `${target}-${String(Math.min(date, Number(monthEnd(target).slice(8)))).padStart(2, '0')}`
 }
-export type TimingCash = { month: string; amount: number; collection: boolean; label: string }
+export type TimingCash = { month: string; date?: string; amount: number; collection: boolean; label: string }
 export function timedCash(input: Data, month: string, amount: number, collection: boolean, legacyLag: number, label: string, workspace?: CalendarWorkspace): { events: TimingCash[]; trace: string } {
  const method = collection ? input.collectionMethod : input.paymentMethod
  const date = workspace ? periodForKey(workspace, month).endDate : monthEnd(month)
@@ -28,14 +28,15 @@ export function timedCash(input: Data, month: string, amount: number, collection
  if (collection && method === 'curve') {
   const parts = apportion(amount, input.collectionCurve.map((r: Data) => r.bps))
   const dates = input.collectionCurve.map((r: Data) => afterDays(date, r.days))
-  return { events: parts.map((n, i) => ({ month: period(dates[i]), amount: n, collection, label })), trace: `Invoice dated ${date}; collection curve ${input.collectionCurve.map((r: Data, i: number) => `${r.bps} basis points at ${r.days} exact calendar days (${dates[i]}, ${parts[i]} minor units)`).join('; ')}. Cents apportioned by largest remainder, earliest installment wins ties.` }
+  return { events: parts.map((n, i) => ({ month: period(dates[i]), date: dates[i], amount: n, collection, label })), trace: `Invoice dated ${date}; collection curve ${input.collectionCurve.map((r: Data, i: number) => `${r.bps} basis points at ${r.days} exact calendar days (${dates[i]}, ${parts[i]} minor units)`).join('; ')}. Cents apportioned by largest remainder, earliest installment wins ties.` }
  }
  if (method === 'dso' || method === 'dpo' || method === 'terms') {
   const days = method === 'dso' ? input.dsoDays : method === 'dpo' ? input.dpoDays : input.paymentTermDays
   const settlement = afterDays(date, days)
-  return { events: [{ month: period(settlement), amount, collection, label }], trace: `Invoice dated ${date}; ${method === 'terms' ? `vendor terms after invoice ${workspace?.calendar && workspace.calendar !== 'calendar-month' ? 'accounting period' : 'month'} end` : method.toUpperCase()} ${days} exact calendar days; ${collection ? 'collect' : 'pay'} ${settlement}.` }
+  return { events: [{ month: period(settlement), date: settlement, amount, collection, label }], trace: `Invoice dated ${date}; ${method === 'terms' ? `vendor terms after invoice ${workspace?.calendar && workspace.calendar !== 'calendar-month' ? 'accounting period' : 'month'} end` : method.toUpperCase()} ${days} exact calendar days; ${collection ? 'collect' : 'pay'} ${settlement}.` }
  }
- return { events: [{ month: addMonths(month, legacyLag), amount, collection, label }], trace: '' }
+ const target = addMonths(month, legacyLag)
+ return { events: [{ month: target, date: workspace ? periodForKey(workspace, target).endDate : monthEnd(target), amount, collection, label }], trace: '' }
 }
 
 /** A contract curve applies to real planned invoice dates, never revenue dates. */

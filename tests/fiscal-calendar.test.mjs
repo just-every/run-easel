@@ -56,6 +56,8 @@ test('MODEL-001: October 36-month budgets reconcile monthly, fiscal-quarter and 
  await h.command('workspace',{...settings,horizon:37})
  await h.command('approve-budget',{scenario:budget.id,revision:stale},h.owner,409)
  const extended=await view(h,budget.id);assert.equal(extended.calculation.months.length,37);assert.equal(extended.fiscal.years.at(-1).complete,false);assert.equal(extended.fiscal.quarters.at(-1).complete,false);reconcile(extended)
+ await h.command('workspace',{...settings,horizon:60})
+ assert.equal((await view(h,budget.id)).calculation.months.length,60)
  await h.command('workspace',settings)
  current=await view(h,budget.id)
  const {forecast}=await h.command('approve-budget',{scenario:budget.id,revision:current.scenario.revision})
@@ -66,6 +68,18 @@ test('MODEL-001: October 36-month budgets reconcile monthly, fiscal-quarter and 
  const branch=await h.command('branch',{from:forecast.id,name:'Three-year downside'})
  assert.equal((await view(h,branch.id)).calculation.months.length,36)
  await h.command('workspace',{...settings,horizon:12})
+ assert.deepEqual(await view(h,budget.id),frozen)
+ // A published review in the second fiscal year resets YTD, even after changing the default horizon.
+ await h.command('account-map',{account:'4000',target:rev.id});await h.command('department-map',{source:'Advisory',department:d.id})
+ const ledger={filename:'year-two-ledger.csv',dateFormat:'YYYY-MM-DD',csv:'Date,Account,Department,Amount\n'+months.slice(0,13).map(m=>`${m}-01,4000,Advisory,-${values[m]}`).join('\n')+'\n'}
+ await h.kit('actuals','commit',{...ledger,fingerprint:(await h.kit('actuals','preview',ledger)).fingerprint})
+ for(const month of months.slice(0,13))await h.command('close-month',{scenario:forecast.id,month})
+ const pack=await h.command('pack-create',{month:months[12]})
+ const published=await h.command('pack-publish',{pack:pack.id})
+ const captured=await h.get(`/api/easel/snapshot/${published.snapshot}`)
+ const retainer=captured.body.lines.find(l=>l.line==='Retainers')
+ assert.equal(retainer.ytdActual,Math.round(Number(values[months[12]])*100))
+ assert.equal(retainer.ytdBudget,retainer.ytdActual)
  assert.deepEqual(await view(h,budget.id),frozen)
  // Each possible fiscal start has a real API-created plan and complete fiscal groups.
  for(let start=1;start<=12;start++){
@@ -98,7 +112,7 @@ test('MODEL-001: real 4-4-5 and 5-4-4 accounting dates drive imports, contract r
    assert.equal(periods[12].fromDate,dateAdd(settings.retailStartDate,364))
    const monthly=Object.fromEntries(periods.map((p,i)=>[p.key,`${1000+i}.01`]))
    await h.command('schedule',{scenario:budget.id,name:'Store sales',line:rev.id,department:d.id,values:monthly})
-   await h.command('position',{scenario:budget.id,title:'Store manager',line:payroll.id,department:d.id,start:periods[0].key,plannedStartDate:periods[0].fromDate,annualSalary:'60000',onCostPercent:'0',payDay:31,payMonthOffset:1})
+   const manager=await h.command('position',{scenario:budget.id,title:'Store manager',line:payroll.id,department:d.id,start:periods[0].key,plannedStartDate:periods[0].fromDate,annualSalary:'60000',onCostPercent:'0',payDay:31,payMonthOffset:1})
    await h.command('position',{scenario:budget.id,title:'Wrong period',line:payroll.id,department:d.id,start:periods[1].key,plannedStartDate:periods[0].throughDate,annualSalary:'60000'},h.owner,400)
    await h.command('revenue',{scenario:budget.id,name:'After-period receipts',kind:'volume',line:rev.id,department:d.id,start:periods[0].key,end:periods[0].key,startVolume:'1',rate:'123.45',collectionMethod:'dso',dsoDays:1})
    await h.command('revenue',{scenario:budget.id,name:'Service agreement',kind:'contract',line:rev.id,department:d.id,start:periods[0].key,startDate:dateAdd(periods[0].throughDate,-1),contractValue:'100.01',termMonths:1,billingCadence:'monthly',dsoDays:2})
@@ -112,6 +126,28 @@ test('MODEL-001: real 4-4-5 and 5-4-4 accounting dates drive imports, contract r
    const q=v.fiscal.quarters[0];assert.equal(q.periods.length,3);assert.equal(sum(periods.slice(0,3).map(p=>p.weeks)),13)
    assert.equal(v.fiscal.years[0].periods.length,12)
    const book=await workbook(h,budget.id);assert.equal(book.getWorksheet('Accounting periods').getCell('E3').value,settings.retailStartDate)
+   // Real workforce dates on the retail boundary retain their explicit observations.
+   const roster={scenario:budget.id,kind:'roster',provider:'Reviewed payroll',asOf:periods[0].throughDate,filename:'store-roster.csv',positionMap:{M:manager.originId},departmentMap:{Stores:d.id},csv:`Employee ID,Name,Department,Title,Employment Type,Salary,Start,Termination\nM,Store manager,Stores,Manager,W-2,60000,${periods[0].fromDate},\n`}
+   await h.kit('payroll','commit',{...roster,fingerprint:(await h.kit('payroll','preview',roster)).fingerprint})
+   const people=await h.get(`/api/easel/headcount/${budget.id}`)
+   assert.equal(people.months.find(m=>m.month===periods[0].key).actualHires,1)
+   assert.equal(people.months.find(m=>m.month===periods[0].key).actualHeadcount,1)
+   const taxLine=await h.command('line',{name:'Income tax planning estimate',type:'operating-expense'})
+   const policy={line:taxLine.id,department:d.id,sutaPercent:'0',sutaBase:'0',stateIncomePercent:'0',federalIncomePercent:'0',salesTaxPercent:'10',salesTaxRemitLagMonths:1}
+   await h.command('tax-policy',{...policy,scenario:budget.id,salesTaxPercent:'0'})
+   const wages=(await view(h,budget.id)).calculation.taxes.payrollRows
+   assert.equal(wages[1].ytdWagesCents,1000000)
+   assert.equal(wages[2].ytdWagesCents,500000,'January 3 period end resets real calendar-year caps even though its ordinal key is December')
+   assert.match(wages[2].trace,/retail planning convention/)
+   // Calendar-month tax lags can settle inside one five-week accounting period.
+   const taxBranch=await h.command('branch',{from:budget.id,name:'Calendar remittance dates'})
+   const branchView=await view(h,taxBranch.id)
+   for(const kind of ['revenue','position','schedule','tax-policy'])for(const input of branchView.inputs[kind]??[])await h.command('input-delete',{kind,id:input.id})
+   const long=periods.find(p=>p.weeks===5)
+   await h.command('revenue',{scenario:taxBranch.id,name:'Tax-date agreement',kind:'contract',line:rev.id,department:d.id,start:long.key,startDate:long.fromDate,contractValue:'100',termMonths:1,billingCadence:'monthly',dsoDays:0})
+   await h.command('tax-policy',{...policy,scenario:taxBranch.id})
+   const taxPeriod=(await view(h,taxBranch.id)).calculation.taxes.sales.find(r=>r.month===long.key)
+   assert.equal(taxPeriod.collectedCents,1000);assert.equal(taxPeriod.remittedCents,1000)
    await h.command('account-map',{account:'4000',target:rev.id});await h.command('department-map',{source:'Stores',department:d.id})
    const body={filename:'retail-ledger.csv',dateFormat:'YYYY-MM-DD',csv:`Date,Account,Department,Amount\n${periods[0].throughDate},4000,Stores,-10.01\n${periods[1].fromDate},4000,Stores,-20.02\n`}
    const before=await h.get('/api/easel/actuals'),p=await h.kit('actuals','preview',body)

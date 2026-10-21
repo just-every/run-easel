@@ -60,7 +60,7 @@ export function Overview({ state, refresh }: Shared) {
     {!department && <CashAgreement state={state} refresh={refresh} />}
     {view && <FiscalSummary view={view} department={department} />}
     {calc && !department && <section className="card">
-     <ClosingCashChart ticks months={calc.months} actualsThrough={calc.actualsThrough} currency={currency} series={series}
+     <ClosingCashChart ticks axis={calc.months.length > 12 ? 'years' : 'every'} months={calc.months} actualsThrough={calc.actualsThrough} currency={currency} series={series}
       label={`Closing cash by month, ${series.map(s => s.name).join(' and ')}${last === undefined ? '' : `; ${money(last, currency)} at ${monthLabel(calc.months.at(-1))}`}.`} />
     </section>}
     {calc && <section className="card">

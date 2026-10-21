@@ -84,7 +84,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
  const origins = new Set(Object.values(inputs).flat().map(input => input.originId))
  for (const allocation of allocations) if (!origins.has(allocation.originId)) throw new Fault(409, 'An allocated schedule origin was removed; review and reallocate its accepted balance before using the forecast')
  const working = workingCapital(model, months, allocations)
- const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;amount:number}[]=[]
+ const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;date?:string;amount:number}[]=[]
  const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency,workspace):null
  const timedInputs = new Map([...inputs.revenue, ...inputs.expense, ...inputs.position].map(i => [i.originId, i]))
  const collectionLag = Number(scenario.cash?.collectionLag ?? 0), paymentLag = Number(scenario.cash?.paymentLag ?? 0)
@@ -121,7 +121,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
  curveContracts(contracts, inputs.revenue, months, workspace)
  openContracts(contracts, allocations)
  for (const row of contracts.rows) add(row.line, row.department, row.month, { kind: 'revenue', id: row.originId, label: row.name, amount: row.revenue, trace: row.trace }, 0, true)
- for (const invoice of contracts.invoices) { const event={ month: datePeriod(workspace, invoice.collectionDate), amount: invoice.amount, collection: true, label: 'Planned contract invoice collection' };cash.push(event);taxableCollections.push(event) }
+ for (const invoice of contracts.invoices) { const event={ month: datePeriod(workspace, invoice.collectionDate), date: invoice.collectionDate, amount: invoice.amount, collection: true, label: 'Planned contract invoice collection' };cash.push(event);taxableCollections.push(event) }
  for (const r of inputs.revenue.filter(r => r.kind !== 'contract')) {
   const lag = Number(r.collectionLag ?? collectionLag)
   if (libraryRevenue(r, inputs.position, months[months.length - 1], currency, (month, source) => add(r.line, r.department, month, source, lag))) continue
@@ -278,7 +278,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
    if(!closed(row.month))add(taxPolicy.line,taxPolicy.department,row.month,{kind:'tax',label:'Income tax planning estimate',amount:row.taxCents,trace:row.trace},0)
    else Object.assign(row,{recognizedTaxCents:[...cells.values()].filter(c=>c.line===taxPolicy.line&&c.month===row.month).reduce((n,c)=>n+c.amount,0),basis:'Estimate alongside accepted income-tax expense; closed P&L and cash retain the accepted amount'})
   }
-  const sales=salesTaxes(taxableCollections,months,taxPolicy,currency)
+  const sales=salesTaxes(taxableCollections,months,taxPolicy,currency,workspace)
   for(const row of sales)cash.push({month:row.month,amount:row.collectedCents,collection:true,label:'Sales tax collected'},{month:row.month,amount:row.remittedCents,collection:false,label:'Sales tax remitted'})
   taxes={label:`US tax planning estimates — assumption year ${taxPolicy.year}; no filings`,payrollRows:employerTaxes!.rows,payrollTotals:months.map(month=>({month,totalCents:employerTaxes!.rows.filter(r=>r.month===month).reduce((n,r)=>n+r.totalCents,0)})),incomeRows,openingSalesTaxPayableCents:sales.length?sales[0].payableCents-sales[0].collectedCents+sales[0].remittedCents:0,sales}
  }
