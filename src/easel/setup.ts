@@ -85,6 +85,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   requireThat(!all(s, 'line').some(l => l.id !== id && l.name.toLowerCase() === name.toLowerCase()), 'A line with this name exists')
   if (prior?.payroll && !checked(b.payroll)) requirePayDetail(x)
   requireThat(!(checked(b.nonCash) && checked(b.payroll)), 'A payroll line cannot be non-cash')
+  requireThat(!checked(b.nonCash) || !all(s, 'position').some(p => p.line === id && all(s, 'revenue').some(r => r.scenario === p.scenario && r.commissionPosition === p.originId)), 'A linked commission position requires a cash salary line', 409)
   requireThat(!all(s, 'debt').some(debt => debt.line === id) || (type !== 'revenue' && !checked(b.nonCash) && !checked(b.payroll)), 'An interest line in use must remain a cash, non-payroll expense line', 409)
   put(s, 'line', id, { name, type, nonCash: type !== 'revenue' && (b.nonCash === true || b.nonCash === 'on' || b.nonCash === 'true'), payroll: type !== 'revenue' && (b.payroll === true || b.payroll === 'on' || b.payroll === 'true'), order: prior?.order ?? all(s, 'line').length })
   c.activity.push({ action: op, record: id, detail: { name, type } })

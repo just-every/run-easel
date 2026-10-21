@@ -19,7 +19,7 @@ export function RevenueSummary({ row: r, currency }: { row: D; currency: string 
  return <>Opening backlog {money(r.openingBacklogCents, currency)}, additions {money(r.monthlyAdditionsCents, currency)}/month, recognition {decimalText(r.burnBps)}%</>
 }
 
-export function RevenueForm({ row, lines, depts, allDepts, onSave }: { row: D | null; lines: Option[]; depts: Option[]; allDepts: Option[]; onSave: (b: D) => Promise<void> }) {
+export function RevenueForm({ row, lines, depts, allDepts, positions = [], payDetail = false, onSave }: { row: D | null; lines: Option[]; depts: Option[]; allDepts: Option[]; positions?: D[]; payDetail?: boolean; onSave: (b: D) => Promise<void> }) {
  const [kind, setKind] = useState(row?.kind ?? 'customers')
  const [milestoneCount, setMilestoneCount] = useState(row?.milestones?.length ?? 1)
  const value = (key: string, fallback?: string) => row?.[key] === undefined ? fallback : decimalText(row[key])
@@ -35,6 +35,7 @@ export function RevenueForm({ row, lines, depts, allDepts, onSave }: { row: D | 
   <CollectionFields key={kind} row={row} contract={kind === 'contract'} />
   {kind === 'contract' && <>
    <Field label="Contract start date" name="startDate" type="date" defaultValue={row?.startDate} hint="Use a date in the start month. Service runs from this date to its anniversary after the term." />
+   {payDetail && <Field label="Commission position (planning estimate)" name="commissionPosition" required={false} options={[{value:'',label:'No commission link'}, ...positions.map(p => ({value:p.originId,label:p.title}))]} defaultValue={row?.commissionPosition ?? ''} hint="Explicitly link this booking to an active position. Uses its commission rate and payroll cash timing." />}
    <Field label="Total contract value" name="contractValue" defaultValue={value('contractValueCents')} />
    <Field label="Contract term (months)" name="termMonths" type="number" defaultValue={String(row?.termMonths ?? 12)} />
    <Field label="Upfront billing cadence" name="billingCadence" options={['monthly', 'quarterly', 'annual'].map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} defaultValue={row?.billingCadence ?? 'annual'} />

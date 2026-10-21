@@ -1,4 +1,5 @@
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
+import { commissionPosition } from './commissions'
 import { headcountInput } from './headcount-input'
 import { taxInput, positionTaxInput } from './tax-input'
 import { collectionInput, paymentInput, payrollInput, workingExpenseInput } from './working-capital-input'
@@ -74,6 +75,12 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
    requireThat(cost.department === base.department && b.kind === (cost.kind === 'inventory' ? 'volume' : 'customers'), 'Update or remove linked costs before changing this revenue driver kind or department', 409)
   }
   const library = libraryRevenueInput(b, base, workspace(s))
+  if (b.commissionPosition) {
+   requireThat(b.kind === 'contract', 'Commission links require a contract booking')
+   const position = commissionPosition(scenarioInputs(s, scenario, 'position'), { ...base, commissionPosition: b.commissionPosition })
+   requireThat(!get(s, 'line', position.line).nonCash, 'Commission requires a cash salary line', 409)
+   Object.assign(library!, { commissionPosition: position.originId })
+  }
   if (library) return library
   const kindOf = choice(b.kind, ['volume', 'customers'] as const, 'a driver')
   if (kindOf === 'volume') return { ...base, kind: kindOf, startVolume: hundredths(b.startVolume, 'Starting volume'), growthBps: decimal(b.growthPercent ?? '0', 'Monthly growth %', 2, { negative: true, max: 100000n }), rateCents: cents(b.rate, 'Rate per unit') }
@@ -87,7 +94,12 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
   const policy=all(s,'tax-policy').find(p=>p.scenario===scenario)
   if(policy && periodForKey(workspace(s), workspace(s).planStart).startDate.slice(5) !== '01-01' && start<workspace(s).planStart && b.employmentType!=='1099') requireThat(b.taxYtdWages!==undefined && b.taxYtdWages!=='','Enter prior year-to-date wages for a continuing W-2 position',409)
   if (b.payDay !== undefined && b.payDay !== '') requireThat(!get(s, 'line', b.line).nonCash, 'Accrued payroll requires a cash salary line')
-  return { ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
+  const end = optionalEnd(s, b.end, start, 'End month')
+  for (const contract of scenarioInputs(s, scenario, 'revenue').filter(r => r.commissionPosition === b.originId)) {
+   commissionPosition([{ originId: b.originId, start, end }], contract)
+   requireThat(!get(s, 'line', b.line).nonCash, 'Commission requires a cash salary line', 409)
+  }
+  return { commissionRateBps: percentBps(b.commissionPercent ?? '0', 'Commission planning estimate %'), ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end, annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
   const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory', 'prepaid', 'bonus'] as const, 'an expense kind')

@@ -31,8 +31,14 @@ export function filterCalculation(x: Access, calc: Calculation, payrollLines: st
 
 const filterHistory = (x: Access, history: Data) => ({ ...history, cells: history.cells.map((cell: Data) => seesDepartmentDetail(x, cell.department) ? cell : { ...cell, rows: 0, batches: [] }) })
 
+const paySafeInput = (x: Access, input: Data, positions: Data[]) => {
+ const position = positions.find(p => p.originId === input.commissionPosition)
+ if (!input.commissionPosition || position && seesPayDetail(x, position.department)) return input
+ const { commissionPosition: _link, ...safe } = input
+ return safe
+}
 const filterInputs = (x: Access, inputs: Record<string, Data[]>, payrollLines: string[] = []) =>
- Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department)))]))
+ Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
 
 export async function stateView(c: Context) {
  const { s, x } = c
@@ -130,7 +136,7 @@ export async function actualsView(c: Context) {
 
 export { activityView } from './audit'
 
-export const visibleScenarioInputs = (s: State, x: Access, id: string) => Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, id, k).filter(i => visibleInput(x, k, i) && (!lines(s).some(l => l.id === i.line && l.payroll) || seesPayDetail(x, i.department)))]))
+export const visibleScenarioInputs = (s: State, x: Access, id: string) => filterInputs(x, Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, id, k)])), lines(s).filter(l => l.payroll).map(l => l.id))
 
 /** Published packs have an aggregate audience, including their older snapshots. */
 export function paySafePack(sn: Data): Data {

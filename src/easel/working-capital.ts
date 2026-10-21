@@ -1,3 +1,4 @@
+import { commissionEstimates } from './commissions'
 // Working-capital subledger. Dates are UTC calendar dates; all amounts are cents.
 import type { ContractCalculation } from './contract-revenue'
 import type { Model, Source } from './engine'
@@ -95,13 +96,14 @@ export function workingCapital(model: Model, months: string[], allocations: Data
   post(input, month, expense, 0, false, `Payroll earned ${month}; pay date ${date} (${retail ? '1-based day within the target accounting period, clamped to period end' : 'day clamped to calendar month end'}).`)
   post(input, datePeriod(model.workspace, date), 0, expense, false, `Payroll earned ${month} settles ${date}.`)
  }
+ const commissions = commissionEstimates(model.inputs.revenue, model.inputs.position, model.workspace.currency)
  // Prior earned salaries seed explicitly estimated opening accruals, rather
  // than restarting a continuing position's payment calendar at plan start.
  for (const p of model.inputs.position.filter(p => p.payDay)) {
   const monthly = Number(BigInt(p.annualSalaryCents) * BigInt(10000 + p.onCostBps) / 120000n)
   for (let offset = 3; offset >= 1; offset--) {
    const month = addMonths(months[0], -offset)
-   if (p.start <= month && (!p.end || month <= p.end)) payroll(p, month, monthly)
+   if (p.start <= month && (!p.end || month <= p.end)) payroll(p, month, monthly + (commissions.get(`${p.originId}|${month}`)?.amount ?? 0))
   }
  }
  let prepared = false

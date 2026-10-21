@@ -3,6 +3,7 @@ import { ledgerStatements } from './ledger-statements'
 import { openContracts, scheduleAllocations } from './ledger-schedules'
 import type { LedgerContext } from './ledger-context'
 import { workbookScheduleValues } from './workbook-calculation'
+import { commissionEstimates } from './commissions'
 import { payrollTaxes } from './payroll-taxes'
 import { incomeTaxes, salesTaxes } from './tax-calculation'
 import { workingCapital, timedCash, curveContracts, type WorkingCapitalCalculation } from './working-capital'
@@ -85,7 +86,8 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
  for (const allocation of allocations) if (!origins.has(allocation.originId)) throw new Fault(409, 'An allocated schedule origin was removed; review and reallocate its accepted balance before using the forecast')
  const working = workingCapital(model, months, allocations)
  const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;date?:string;amount:number}[]=[]
- const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency,workspace):null
+ const commissions = commissionEstimates(inputs.revenue, inputs.position, currency)
+ const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency,workspace,commissions):null
  const timedInputs = new Map([...inputs.revenue, ...inputs.expense, ...inputs.position].map(i => [i.originId, i]))
  const collectionLag = Number(scenario.cash?.collectionLag ?? 0), paymentLag = Number(scenario.cash?.paymentLag ?? 0)
 
@@ -166,9 +168,10 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
    const adjustment = amount - monthly
    const remainder = last ? `; target for ${monthCount(positionMonths.length)} is ${money(target)}; final active month rounding adjustment ${adjustment < 0 ? '−' : '+'}${money(Math.abs(adjustment))} sets this month's cost to ${money(amount)}` : ''
    const tax=employerTaxes?.rows.find(r=>r.originId===p.originId&&r.month===m)
-   const cost=amount+(tax?.totalCents??0)
+   const commission = commissions.get(`${p.originId}|${m}`)
+   const cost=amount+(commission?.amount??0)+(tax?.totalCents??0)
    if (p.payDay) working.payroll(p, m, cost)
-   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${who}: ${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}${tax?`; ${tax.trace}`:''}` })
+   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${who}: ${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}` })
   }
  }
 
