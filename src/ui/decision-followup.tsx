@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, Person, Table, useDate, type D } from './shared'
+import { Dots } from './dots'
 
 const MEASURES: [string, string][] = [['payroll', 'Payroll'], ['revenue', 'Revenue'], ['cash', 'Closing cash'], ['headcount', 'Headcount'], ['capacityHundredths', 'Capacity (hours)']]
 const HISTORY: Record<string, string> = { revised: 'Due date revised', stopped: 'Stopped', 'change-proposed': 'Change proposed', 'change-approved': 'Change approved', 'change-rejected': 'Change rejected' }
@@ -30,8 +31,8 @@ export function DecisionFollowup({ state }: { state: D }) {
    const key = `${d.pack}|${d.decision}`, mine = d.owner.trim().toLowerCase() === me.email, follows = finance || mine
    const saving = d.outcome?.payrollSaving
    return <article key={key} className="pack" aria-label={d.text}>
-    <h3>{d.text} · {d.status}</h3>
-    <p className="muted">{monthLabel(d.month)} pack · owner {d.owner ? <Person state={state} email={d.owner} /> : 'not set'}{d.due && <> · due <span className="date-token">{displayDate(d.due)}</span></>}</p>
+    <Dots as="h3">{d.text}{d.status}</Dots>
+    <Dots as="p" className="muted">{`${monthLabel(d.month)} pack`}<>owner {d.owner ? <Person state={state} email={d.owner} /> : 'not set'}</>{d.due && <>due <span className="date-token">{displayDate(d.due)}</span></>}</Dots>
     {d.chases.length > 0 && <ul className="plain">{d.chases.map((ch: D, i: number) => <li key={i}>Chased <Person state={state} email={ch.recipient} /> for the <span className="date-token">{displayDate(ch.due)}</span> due date at <span className="date-token">{displayDate(ch.at)}</span> ({ch.zone})</li>)}</ul>}
     {d.history.length > 0 && <ul className="plain">{d.history.map((h: D, i: number) => <li key={i}>{HISTORY[h.kind] ?? h.kind}{h.kind === 'revised' && <> from <span className="date-token">{displayDate(h.from)}</span> to <span className="date-token">{displayDate(h.to)}</span></>} by <Person state={state} email={h.by} />{h.reason ? `: ${h.reason}` : ''}</li>)}</ul>}
     {d.changes.filter((ch: D) => ch.status === 'pending').map((ch: D) => <div key={ch.id} className="card-row">

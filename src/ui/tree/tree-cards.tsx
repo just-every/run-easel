@@ -85,7 +85,8 @@ export function ExceptionCard({ leaf, change, changedBy, moved, baseName }: { le
 }
 
 export function Sticky({ text, label }: { text: string; label: string }) {
- return <aside className="t-sticky" data-node="sticky" aria-label={label}>
+ // A longer note gets a wider sticky rather than a taller one, so the tree keeps its height.
+ return <aside className={`t-sticky${text.length > 28 ? ' t-sticky-wide' : ''}`} data-node="sticky" aria-label={label}>
   <svg className="t-sparks t-sparks-a" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 4l5 9M3 17l10 2M19 3l-1 9" /></svg>
   <p>{text}</p>
   <svg className="t-sparks t-sparks-b" viewBox="0 0 40 40" aria-hidden="true"><path d="M32 36l-5-9M37 23l-10-2M21 37l1-9" /></svg>

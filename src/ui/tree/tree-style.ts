@@ -94,6 +94,7 @@ export const treeStyle = `
 .t-moved{margin-top:6px;font-size:15.5px;letter-spacing:-.01em}
 .t-since{margin-top:5px;font-size:13.5px;color:var(--muted)}
 .t-sticky{position:relative;width:156px;margin:4px 44px 4px auto;padding:20px 16px 22px;background:var(--sticky);font-family:var(--hand);font-size:27px;line-height:1.08;font-weight:600;text-align:center;color:var(--ink);transform:rotate(-6deg);box-shadow:0 12px 20px -12px rgba(80,60,0,.5),0 1px 1px rgba(0,0,0,.06)}
+.t-sticky-wide{width:200px}
 .t-sticky p{margin:0}
 .t-sparks{position:absolute;width:34px;height:34px;overflow:visible}
 .t-sparks path{fill:none;stroke:var(--magenta);stroke-width:3.2;stroke-linecap:round}
@@ -122,6 +123,7 @@ export const treeStyle = `
  .t-old{font-size:24px}.t-new,.t-now{font-size:21px}.t-floor{font-size:15px}
  .t-amount{font-size:19px}
  .t-sticky{font-size:23px;width:150px;margin-left:24px}
+ .t-sticky-wide{width:190px}
 }
 @media (max-width:1100px){
  .t-head h1{line-height:1.22}
