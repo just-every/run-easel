@@ -19,7 +19,7 @@ export async function starterModels(c: Context, op: string, b: Data): Promise<Da
  requireThat(planStart.endsWith('-01'), 'Starter models use a January fiscal year; choose YYYY-01')
  const openingCash = b.openingCash ?? starter.openingCash
  cents(openingCash, 'Opening cash', { negative: true })
- setup(c, 'workspace', { name: b.name, currency: 'USD', timeZone: b.timeZone, locale: b.locale, dateFormat: b.dateFormat, fiscalYearStart: 1, planStart })
+ setup(c, 'workspace', { name: b.name, currency: 'USD', timeZone: b.timeZone, locale: b.locale, dateFormat: b.dateFormat, fiscalYearStart: 1, planStart, horizon: b.horizon, calendar: b.calendar, retailStartDate: b.retailStartDate })
  const scenario = all(c.s, 'scenario').find(s => s.kind === 'budget')!
  const departments: Record<string, string> = {}, lines: Record<string, string> = {}, origins: Record<string, string> = {}
  for (const [key, name] of Object.entries(starter.departments)) departments[key] = setup(c, 'department', { name })!.id

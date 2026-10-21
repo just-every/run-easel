@@ -2,13 +2,14 @@
 // percentages basis points; explicit forms never masquerade as customers.
 import { contractDate } from './contract-revenue'
 import { month } from './months'
+import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { cents, decimal, hundredths, percentBps } from './units'
 import { choice, integer, requireThat, text, type Data } from './types'
 
-export function libraryRevenueInput(b: Data, base: Data): Data | undefined {
+export function libraryRevenueInput(b: Data, base: Data, workspace: CalendarWorkspace): Data | undefined {
  if (b.kind === 'contract') {
   const startDate = contractDate(b.startDate)
-  requireThat(startDate.slice(0, 7) === base.start, 'Contract start date must be in the start month')
+  requireThat(datePeriod(workspace, startDate) === base.start, workspace.calendar && workspace.calendar !== 'calendar-month' ? 'Contract start date must be in the selected start period' : 'Contract start date must be in the start month')
   return { ...base, kind: 'contract', startDate, contractValueCents: cents(b.contractValue, 'Total contract value'), termMonths: integer(b.termMonths, 'Contract term (months)', 1, 120), billingCadence: choice(b.billingCadence, ['monthly', 'quarterly', 'annual'] as const, 'an upfront billing cadence'), dsoDays: integer(b.dsoDays ?? 0, 'DSO (days)', 0, 365) }
  }
  if (b.kind === 'seats') return { ...base, kind: 'seats', startSeats: hundredths(b.startSeats, 'Starting seats'), expansionBps: percentBps(b.expansionPercent ?? '0', 'Monthly seat expansion %', 1000), priceCents: cents(b.price, 'Monthly price per seat') }

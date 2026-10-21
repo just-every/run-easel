@@ -1,3 +1,4 @@
+import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { balanceTarget } from './balance-targets'
 // The Excel-first CSV actuals kit: a general-ledger detail export (one row
 // per posted line) becomes accepted actuals through a no-write preview, a
@@ -42,7 +43,7 @@ const money = (v: string, label: string) => {
 }
 
 /** Reads the file with the person's column choices. Never writes. */
-export async function readActuals(b: Data) {
+export async function readActuals(b: Data, calendar?: CalendarWorkspace) {
  requireThat(typeof b.csv === 'string' && b.csv.length > 0, 'Choose a CSV file')
  const bytes = new TextEncoder().encode(b.csv)
  requireThat(bytes.length <= MAX_BYTES, `The file is larger than ${MAX_BYTES / 1_000_000} MB; split it by month`)
@@ -75,7 +76,7 @@ export async function readActuals(b: Data) {
     requireThat(!(debit !== 0 && credit !== 0), 'has both a debit and a credit')
     amount = debit - credit
    } else amount = money(at(cells, cols.amount), 'Amount') * (amountMode === 'credit-positive' ? -1 : 1)
-   const row = { date: when.date, period: when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
+   const row = { date: when.date, period: calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
    const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference]))
    const earlier = seen.get(fingerprint) ?? []
    if (earlier.length && !allowRepeats) { rejected.push({ line, reason: `repeats line ${earlier[0]} exactly` }); continue }
@@ -92,7 +93,7 @@ export async function readActuals(b: Data) {
 export async function previewActuals(c: Context, b: Data) {
  requireFinance(c.x)
  workspace(c.s)
- const read = await readActuals({ ...b, dateFormat: b.dateFormat ?? workspace(c.s).dateFormat ?? 'MM/DD/YYYY' })
+ const read = await readActuals({ ...b, dateFormat: b.dateFormat ?? workspace(c.s).dateFormat ?? 'MM/DD/YYYY' }, workspace(c.s))
  const { s } = c
  // Rows already accepted in another import are refused rather than counted twice.
  const prior = new Map<string, string>()

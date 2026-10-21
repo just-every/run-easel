@@ -1,3 +1,4 @@
+import { fiscalSummary } from './fiscal-summary'
 import { historyOverlay } from './history-sources'
 import { addMonths } from './months'
 import { workingCalculation } from './calculation'
@@ -81,7 +82,7 @@ export async function scenarioView(c: Context, id: string) {
  const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
  const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
  const visibleHistory = filterHistory(c.x, actualsHistory)
- return { actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id)), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id)) }
+ return { fiscal: fiscalSummary(m.workspace, calc, m.lines), actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id)), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id)) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }

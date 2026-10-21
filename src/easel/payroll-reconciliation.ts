@@ -4,6 +4,8 @@ import { requireMember, seesPayDetail } from './access'
 import type { Context } from './context'
 import { actualCells, reconciliation as ledgerReconciliation } from './actuals-read'
 import { canSeeScenario } from './scenario-access'
+import { datePeriod } from './fiscal-calendar'
+import { workspace } from './model'
 import { all, get, requireThat, type Data, type State } from './types'
 
 export function rosterBuckets(s: State, scenario: string, roster: Data[]) {
@@ -42,7 +44,7 @@ export async function payrollView(c: Context, scenario: string) {
  const cells = await actualCells(c.db, c.s), ledger = await ledgerReconciliation(c.db, c.s)
  const groups = new Map<string, Data>()
  for (const run of payroll) {
-  const month = run.payDate.slice(0, 7), key = `${month}|${run.department}|${run.line}`
+  const month = datePeriod(workspace(c.s), run.payDate), key = `${month}|${run.department}|${run.line}`
   const row = groups.get(key) ?? { month, department: run.department, line: run.line, grossWagesCents: 0, employerTaxesCents: 0, benefitsCents: 0, feesCents: 0, totalCents: 0, runs: 0 }
   for (const field of ['grossWagesCents','employerTaxesCents','benefitsCents','feesCents','totalCents']) row[field] += run[field]
   row.runs++

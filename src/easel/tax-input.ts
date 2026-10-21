@@ -1,4 +1,5 @@
 // US tax estimates are explicit scenario assumptions, never filings.
+import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { cents, percentBps } from './units'
 import { all, choice, get, integer, requireThat, text, type Data, type State } from './types'
 export const US_TAX_DEFAULTS = { year:2026, socialSecurityPercent:'6.2',socialSecurityBase:'184500',medicarePercent:'1.45',futaPercent:'6',futaBase:'7000',federalIncomePercent:'21',lossOffsetPercent:'80' }
@@ -13,7 +14,7 @@ export function taxInput(s:State,b:Data,scenario:string):Data {
  requireThat(settings.federalIncomeBps+settings.stateIncomeBps<=10000,'Combined income tax rates cannot exceed 100%')
  for(const kind of ['revenue','position','expense','schedule','debt','asset'])requireThat(!all(s,kind).some(r=>r.scenario===scenario&&r.line===line.id),'Use a dedicated income-tax expense line without other planned inputs',409)
  const w=get(s,'workspace','main')
- if(w.planStart.slice(5)!=='01') for(const p of all(s,'position').filter(p=>p.scenario===scenario&&p.start<w.planStart&&p.employmentType!=='1099')) requireThat(p.taxYtdWagesCents!==undefined,'Enter prior-year-to-date wages for each continuing W-2 position before enabling taxes in a partial calendar year',409)
+ if(periodForKey(w as Data & CalendarWorkspace, w.planStart).startDate.slice(5)!=='01-01') for(const p of all(s,'position').filter(p=>p.scenario===scenario&&p.start<w.planStart&&p.employmentType!=='1099')) requireThat(p.taxYtdWagesCents!==undefined,'Enter prior-year-to-date wages for each continuing W-2 position before enabling taxes in a partial calendar year',409)
  return settings
 }
 export function positionTaxInput(b:Data):Data {

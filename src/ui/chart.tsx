@@ -19,7 +19,7 @@ type Props = {
  label: string
  title?: string
  /** Month labels under the plot: every month, each quarter's first and the last, or the first two and the last. */
- axis?: 'every' | 'quarters' | 'ends'
+ axis?: 'every' | 'quarters' | 'ends' | 'years'
  ticks?: boolean
  size?: 'app' | 'hero' | 'small'
  /** Decorative: hidden from assistive technology, no series needed. */
@@ -49,7 +49,7 @@ export function ClosingCashChart({ months, series, actualsThrough, currency = 'A
  const tickValues = Array.from({ length: Math.round((top - bottom) / step) + 1 }, (_, i) => bottom + i * step)
  const closed = actualsThrough ? months.filter(m => m <= actualsThrough).length : 0
  const bandEnd = closed === 0 ? 0 : closed >= n ? 100 : (x(closed - 1, n) + x(closed, n)) / 2
- const shown = (axis === 'every' ? months.map((_, i) => i) : axis === 'quarters' ? months.map((_, i) => i).filter(i => i % 3 === 0 || i === n - 1) : [0, 1, n - 1]).filter((i, k, list) => i >= 0 && i < n && list.indexOf(i) === k)
+ const shown = (axis === 'every' ? months.map((_, i) => i) : axis === 'years' ? [...months.map((_, i) => i).filter(i => i % 12 === 0), n - 1] : axis === 'quarters' ? months.map((_, i) => i).filter(i => i % 3 === 0 || i === n - 1) : [0, 1, n - 1]).filter((i, k, list) => i >= 0 && i < n && list.indexOf(i) === k)
  // Every month sits under its point. The short axes mark edges instead: the first month at the plot's left, the
  // last closed month at the band's end, the last month at the plot's right.
  const axisPlace = (i: number) => axis === 'every' || (i > 0 && i < n - 1 && !(axis === 'ends' && bandEnd > 0)) ? { className: axis !== 'every' ? 'cc-axis-mid' : (n - 1 - i) % 2 ? 'cc-axis-odd' : i === n - 1 ? 'cc-axis-end' : undefined, style: { left: `${x(i, n)}%` } }

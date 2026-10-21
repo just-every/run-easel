@@ -1,5 +1,6 @@
 // Contract subledger: exact calendar dates, integer cents and conserved remainders.
 import { addMonths } from './months'
+import { datePeriod, periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { formatMoney } from './units'
 import { requireThat, type Data } from './types'
 
@@ -27,10 +28,11 @@ const sum = (values: number[]) => {
  requireThat(total <= BigInt(Number.MAX_SAFE_INTEGER), 'Contract calculation exceeds the supported exact range')
  return Number(total)
 }
-export function contractRevenue(inputs: Data[], months: string[], currency: string): ContractCalculation {
+export function contractRevenue(inputs: Data[], months: string[], currency: string, workspace?: CalendarWorkspace): ContractCalculation {
  const rows: ContractRow[] = [], invoices: ContractInvoice[] = []
  const opening: ContractBalances = { receivables: 0, deferredRevenue: 0, unbilledRevenue: 0 }
  const money = (n: number) => formatMoney(n, currency)
+ const period = (date: string) => workspace ? datePeriod(workspace, date) : date.slice(0, 7)
  for (const r of inputs.filter(r => r.kind === 'contract')) {
   const amounts = Array.from({ length: r.termMonths }, (_, i) => i === r.termMonths - 1 ? r.contractValueCents - Number(BigInt(r.contractValueCents) / BigInt(r.termMonths)) * i : Number(BigInt(r.contractValueCents) / BigInt(r.termMonths)))
   const earned = new Map<string, number>()
@@ -39,7 +41,9 @@ export function contractRevenue(inputs: Data[], months: string[], currency: stri
    let cursor = stamp(start), left = amounts[i]
    const duration = (stamp(end) - cursor) / day
    while (cursor < stamp(end)) {
-    const month = iso(cursor).slice(0, 7), until = Math.min(stamp(`${addMonths(month, 1)}-01`), stamp(end))
+    const month = period(iso(cursor))
+    const next = workspace ? stamp(periodForKey(workspace, month).endDate) + day : stamp(`${addMonths(month, 1)}-01`)
+    const until = Math.min(next, stamp(end))
     const amount = until === stamp(end) ? left : Number(BigInt(amounts[i]) * BigInt((until - cursor) / day) / BigInt(duration))
     earned.set(month, sum([earned.get(month) ?? 0, amount])); left -= amount; cursor = until
    }
@@ -52,20 +56,20 @@ export function contractRevenue(inputs: Data[], months: string[], currency: stri
   }
   invoices.push(...bills)
   const balances = (through: string): ContractBalances => {
-   const billed = sum(bills.filter(b => b.date.slice(0, 7) <= through).map(b => b.amount))
-   const collected = sum(bills.filter(b => b.collectionDate.slice(0, 7) <= through).map(b => b.amount))
+   const billed = sum(bills.filter(b => period(b.date) <= through).map(b => b.amount))
+   const collected = sum(bills.filter(b => period(b.collectionDate) <= through).map(b => b.amount))
    const revenue = sum([...earned].filter(([m]) => m <= through).map(([, n]) => n))
    return { receivables: billed - collected, deferredRevenue: Math.max(0, billed - revenue), unbilledRevenue: Math.max(0, revenue - billed) }
   }
   const prior = balances(addMonths(months[0], -1))
   for (const key of ['receivables', 'deferredRevenue', 'unbilledRevenue'] as const) opening[key] = sum([opening[key], prior[key]])
   for (const month of months) {
-   const bookings = month === r.start ? r.contractValueCents : 0
-   const billings = sum(bills.filter(b => b.date.slice(0, 7) === month).map(b => b.amount))
-   const collections = sum(bills.filter(b => b.collectionDate.slice(0, 7) === month).map(b => b.amount))
+   const bookings = month === (workspace ? period(r.startDate) : r.start) ? r.contractValueCents : 0
+   const billings = sum(bills.filter(b => period(b.date) === month).map(b => b.amount))
+   const collections = sum(bills.filter(b => period(b.collectionDate) === month).map(b => b.amount))
    const revenue = earned.get(month) ?? 0
    rows.push({ originId: r.originId, name: r.name, line: r.line, department: r.department, month, bookings, billings, revenue, collections, ...balances(month),
-    trace: `${r.name}: contract ${money(r.contractValueCents)} starts ${r.startDate}, ${r.termMonths} service months; ${r.billingCadence} upfront billing; DSO ${r.dsoDays} exact calendar days after invoice date. Service-month installments floor total cents / term; final installment receives the cent remainder. Anniversaries clamp the original day to month end. Calendar-month recognition splits installments by actual service days (end exclusive), floors first segment and assigns remaining cents to the final segment. ${month}: bookings ${money(bookings)}, billings ${money(billings)}, revenue ${money(revenue)}, collections ${money(collections)}.` })
+    trace: `${r.name}: contract ${money(r.contractValueCents)} starts ${r.startDate}, ${r.termMonths} service months; ${r.billingCadence} upfront billing; DSO ${r.dsoDays} exact calendar days after invoice date. Service-month installments floor total cents / term; final installment receives the cent remainder. Anniversaries clamp the original day to Gregorian month end. ${workspace?.calendar && workspace.calendar !== 'calendar-month' ? 'Accounting-period' : 'Calendar-month'} recognition splits installments by actual service days (end exclusive), floors each non-final segment and assigns remaining cents to the final segment. Invoice, collection and booking dates map to their accounting periods. ${month}: bookings ${money(bookings)}, billings ${money(billings)}, revenue ${money(revenue)}, collections ${money(collections)}.` })
   }
  }
  const totals = months.map(month => {

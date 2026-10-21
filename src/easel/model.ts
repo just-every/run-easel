@@ -1,3 +1,4 @@
+import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { headcountInput } from './headcount-input'
 import { taxInput, positionTaxInput } from './tax-input'
 import { collectionInput, paymentInput, payrollInput, workingExpenseInput } from './working-capital-input'
@@ -19,7 +20,7 @@ export type InputKind = typeof INPUT_KINDS[number]
 export function workspace(s: State) {
  const w = find(s, 'workspace', 'main')
  requireThat(w, 'Finance has not set up the plan yet', 409)
- return w
+ return w as Data & CalendarWorkspace
 }
 
 export const lines = (s: State) => all(s, 'line').sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name)) as Line[]
@@ -33,7 +34,7 @@ export function model(s: State, scenarioId: string): Model {
  const w = workspace(s)
  const scenario = get(s, 'scenario', scenarioId)
  return {
-  workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon },
+  workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon, fiscalYearStart: w.fiscalYearStart, calendar: w.calendar ?? 'calendar-month', ...(w.retailStartDate ? { retailStartDate: w.retailStartDate } : {}) },
   lines: lines(s), departments: departments(s), scenario,
   inputs: { revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
@@ -72,7 +73,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
   for (const cost of all(s, 'expense').filter(e => e.scenario === scenario && e.revenueOrigin === b.originId && b.originId)) {
    requireThat(cost.department === base.department && b.kind === (cost.kind === 'inventory' ? 'volume' : 'customers'), 'Update or remove linked costs before changing this revenue driver kind or department', 409)
   }
-  const library = libraryRevenueInput(b, base)
+  const library = libraryRevenueInput(b, base, workspace(s))
   if (library) return library
   const kindOf = choice(b.kind, ['volume', 'customers'] as const, 'a driver')
   if (kindOf === 'volume') return { ...base, kind: kindOf, startVolume: hundredths(b.startVolume, 'Starting volume'), growthBps: decimal(b.growthPercent ?? '0', 'Monthly growth %', 2, { negative: true, max: 100000n }), rateCents: cents(b.rate, 'Rate per unit') }
@@ -84,7 +85,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
  if (kind === 'position') {
   const start = planMonth(s, b.start, 'Start month', scenario)
   const policy=all(s,'tax-policy').find(p=>p.scenario===scenario)
-  if(policy && workspace(s).planStart.slice(5)!=='01' && start<workspace(s).planStart && b.employmentType!=='1099') requireThat(b.taxYtdWages!==undefined && b.taxYtdWages!=='','Enter prior year-to-date wages for a continuing W-2 position',409)
+  if(policy && periodForKey(workspace(s), workspace(s).planStart).startDate.slice(5) !== '01-01' && start<workspace(s).planStart && b.employmentType!=='1099') requireThat(b.taxYtdWages!==undefined && b.taxYtdWages!=='','Enter prior year-to-date wages for a continuing W-2 position',409)
   if (b.payDay !== undefined && b.payDay !== '') requireThat(!get(s, 'line', b.line).nonCash, 'Accrued payroll requires a cash salary line')
   return { ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end: optionalEnd(s, b.end, start, 'End month'), annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }

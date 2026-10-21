@@ -1,3 +1,4 @@
+import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { ledgerStatements } from './ledger-statements'
 import { openContracts, scheduleAllocations } from './ledger-schedules'
 import type { LedgerContext } from './ledger-context'
@@ -35,7 +36,7 @@ export type CashMonth = { month: string; opening: number; collections: number; p
 export type ProfitMonth = { month: string; revenue: number; costOfSales: number; operatingExpenses: number; grossMargin: number; profit: number }
 
 export type Model = {
- workspace: { currency: string; planStart: string; horizon: number }
+ workspace: CalendarWorkspace & { currency: string }
  lines: Line[]
  departments: Department[]
  scenario: Data
@@ -86,8 +87,8 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
  const origins = new Set(Object.values(inputs).flat().map(input => input.originId))
  for (const allocation of allocations) if (!origins.has(allocation.originId)) throw new Fault(409, 'An allocated schedule origin was removed; review and reallocate its accepted balance before using the forecast')
  const working = workingCapital(model, months, allocations)
- const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;amount:number}[]=[]
- const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency):null
+ const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;date?:string;amount:number}[]=[]
+ const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency,workspace):null
  const timedInputs = new Map([...inputs.revenue, ...inputs.expense, ...inputs.position].map(i => [i.originId, i]))
  const collectionLag = Number(scenario.cash?.collectionLag ?? 0), paymentLag = Number(scenario.cash?.paymentLag ?? 0)
 
@@ -105,8 +106,8 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   if (nonCash || lineById.get(line)?.nonCash) return
   const type = lineById.get(line)?.type
   const input = source.id ? timedInputs.get(source.id) : undefined
-  if (source.kind === 'position' && input?.payDay) { source.trace += `; payroll accrues when earned and settles on day ${input.payDay} of the earned month + ${input.payMonthOffset} months (clamped to calendar month end); see working-capital pay-date reconciliation`; return }
-  const timing = timedCash(input ?? {}, month, source.amount, type === 'revenue', type === 'revenue' ? lag ?? collectionLag : lineById.get(line)?.payroll ? 0 : lag ?? paymentLag, source.label)
+ if (source.kind === 'position' && input?.payDay) { source.trace += `; payroll accrues when earned and settles on day ${input.payDay} of the earned period + ${input.payMonthOffset} periods (clamped to period end); see working-capital pay-date reconciliation`; return }
+  const timing = timedCash(input ?? {}, month, source.amount, type === 'revenue', type === 'revenue' ? lag ?? collectionLag : lineById.get(line)?.payroll ? 0 : lag ?? paymentLag, source.label, workspace)
   const tagged = timing.events.map(e => ({ ...e, line, department, source: source.id }))
   cash.push(...tagged)
   if(type==='revenue')taxableCollections.push(...tagged)
@@ -120,12 +121,12 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   headcount[p.department][m] = (headcount[p.department][m] ?? 0) + 1
  }
 
- const contracts = contractRevenue(inputs.revenue, months, currency)
- curveContracts(contracts, inputs.revenue, months)
+ const contracts = contractRevenue(inputs.revenue, months, currency, workspace)
+ curveContracts(contracts, inputs.revenue, months, workspace)
  openContracts(contracts, allocations)
  for (const row of contracts.rows) add(row.line, row.department, row.month, { kind: 'revenue', id: row.originId, label: row.name, amount: row.revenue, trace: row.trace }, 0, true)
  const revenueByOrigin = new Map(inputs.revenue.map(r => [r.originId, r]))
- for (const invoice of contracts.invoices) { const event={ month: invoice.collectionDate.slice(0, 7), amount: invoice.amount, collection: true, label: 'Planned contract invoice collection', line: revenueByOrigin.get(invoice.originId)?.line, department: revenueByOrigin.get(invoice.originId)?.department, source: invoice.originId };cash.push(event);taxableCollections.push(event) }
+ for (const invoice of contracts.invoices) { const event={ month: datePeriod(workspace, invoice.collectionDate), date: invoice.collectionDate, amount: invoice.amount, collection: true, label: 'Planned contract invoice collection', line: revenueByOrigin.get(invoice.originId)?.line, department: revenueByOrigin.get(invoice.originId)?.department, source: invoice.originId };cash.push(event);taxableCollections.push(event) }
  for (const r of inputs.revenue.filter(r => r.kind !== 'contract')) {
   const lag = Number(r.collectionLag ?? collectionLag)
   if (libraryRevenue(r, inputs.position, months[months.length - 1], currency, (month, source) => add(r.line, r.department, month, source, lag))) continue
@@ -191,7 +192,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   add(row.line, row.department, row.month, row.source, undefined, row.inventory)
   if (row.inventory) {
    const input = timedInputs.get(row.source.id!)!
-   const timing = timedCash(input, row.month, row.purchases, false, paymentLag, row.source.label)
+   const timing = timedCash(input, row.month, row.purchases, false, paymentLag, row.source.label, workspace)
    cash.push(...timing.events.map(e => ({ ...e, line: row.line, department: row.department, source: row.source.id })))
    if (timing.trace) row.source.trace += `; purchases: ${timing.trace}`
   }
@@ -258,7 +259,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
    if (policies.size > 1) throw new Fault(409, `${a.month}: accepted aggregate rows on line ${lineById.get(a.line)?.name ?? a.line} have drivers with different cash timing. Review this line's timing or supply attributed source data; no receipt or payment allocation is inferred.`)
   }
   const input = candidates.length === 1 || hasDayTiming ? candidates[0] : {}
-  const events=timedCash(input, a.month, a.amount, type === 'revenue', type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll || interestLines.has(a.line) ? 0 : paymentLag, 'Actuals').events.map(e => ({ ...e, line: a.line, department: a.department }))
+  const events=timedCash(input, a.month, a.amount, type === 'revenue', type === 'revenue' ? collectionLag : lineById.get(a.line)?.payroll || interestLines.has(a.line) ? 0 : paymentLag, 'Actuals', workspace).events.map(e => ({ ...e, line: a.line, department: a.department }))
   cash.push(...events);if(type==='revenue')taxableCollections.push(...events)
  }
  for (const key of specialKeys) {
@@ -282,7 +283,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
    if(!closed(row.month))add(taxPolicy.line,taxPolicy.department,row.month,{kind:'tax',label:'Income tax planning estimate',amount:row.taxCents,trace:row.trace},0)
    else Object.assign(row,{recognizedTaxCents:[...cells.values()].filter(c=>c.line===taxPolicy.line&&c.month===row.month).reduce((n,c)=>n+c.amount,0),basis:'Estimate alongside accepted income-tax expense; closed P&L and cash retain the accepted amount'})
   }
-  const sales=salesTaxes(taxableCollections,months,taxPolicy,currency)
+  const sales=salesTaxes(taxableCollections,months,taxPolicy,currency,workspace)
   for(const row of sales)cash.push({month:row.month,amount:row.collectedCents,collection:true,label:'Sales tax collected'},{month:row.month,amount:row.remittedCents,collection:false,label:'Sales tax remitted'})
   taxes={label:`US tax planning estimates — assumption year ${taxPolicy.year}; no filings`,payrollRows:employerTaxes!.rows,payrollTotals:months.map(month=>({month,totalCents:employerTaxes!.rows.filter(r=>r.month===month).reduce((n,r)=>n+r.totalCents,0)})),incomeRows,openingSalesTaxPayableCents:sales.length?sales[0].payableCents-sales[0].collectedCents+sales[0].remittedCents:0,sales}
  }

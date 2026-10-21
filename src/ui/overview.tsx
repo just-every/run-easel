@@ -1,3 +1,4 @@
+import { FiscalSummary } from './fiscal-summary'
 import { Headcount } from './headcount'
 import { useDate } from './shared'
 import { ActualHistoryOverlay } from './history'
@@ -64,8 +65,9 @@ export function Overview({ state, refresh }: Shared) {
    <div className="overview-main">
     {!department && view?.cashHealth && <CashHealth health={view.cashHealth} currency={currency} />}
     {!department && <CashAgreement state={state} refresh={refresh} />}
+    {view && <FiscalSummary view={view} department={department} />}
     {calc && !department && <section className="card">
-     <ClosingCashChart ticks months={calc.months} actualsThrough={calc.actualsThrough} currency={currency} series={series}
+     <ClosingCashChart ticks axis={calc.months.length > 12 ? 'years' : 'every'} months={calc.months} actualsThrough={calc.actualsThrough} currency={currency} series={series}
       label={`Closing cash by month, ${series.map(s => s.name).join(' and ')}${last === undefined ? '' : `; ${money(last, currency)} at ${monthLabel(calc.months.at(-1))}`}.`} />
     </section>}
     {calc && <section className="card">

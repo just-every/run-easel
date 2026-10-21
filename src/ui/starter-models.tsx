@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { STARTER_IDS, STARTERS, type StarterId } from '../easel/starter-catalog'
+import { CalendarFields } from './fiscal-summary'
 import { command, Field, Form, US_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS } from './shared'
 import { Dots } from './dots'
 
@@ -22,8 +23,8 @@ export function SetupPlan({ refresh }: { refresh: () => Promise<void> }) {
    <p className="muted">These are editable estimates, not imported business actuals. Review revenue, positions and costs under Plan; departments and lines under Settings. A leadership dashboard and three statements are ready when you create the plan.</p>
   </div>}
   <Form className="form form-rows" submit="Create the plan" onSubmit={async v => {
-   if (selected === 'blank') await command('workspace', { name: v.name, currency: v.currency, timeZone: v.timeZone, locale: v.locale, dateFormat: v.dateFormat, fiscalYearStart: Number(v.fiscalYearStart), planStart: v.planStart })
-   else await command('starter-model', { name: v.name, starter: selected, timeZone: v.timeZone, locale: v.locale, dateFormat: v.dateFormat, planStart: v.planStart, openingCash: v.openingCash })
+   if (selected === 'blank') await command('workspace', { name: v.name, currency: v.currency, timeZone: v.timeZone, locale: v.locale, dateFormat: v.dateFormat, fiscalYearStart: Number(v.fiscalYearStart), planStart: v.planStart, horizon: v.horizon, calendar: v.calendar, retailStartDate: v.retailStartDate })
+   else await command('starter-model', { name: v.name, starter: selected, timeZone: v.timeZone, locale: v.locale, dateFormat: v.dateFormat, planStart: v.planStart, openingCash: v.openingCash, horizon: v.horizon, calendar: v.calendar, retailStartDate: v.retailStartDate })
    await refresh()
   }}>
    <Field label="Company name" name="name" />
@@ -31,6 +32,7 @@ export function SetupPlan({ refresh }: { refresh: () => Promise<void> }) {
     <Field label="Reporting currency" name="currency" defaultValue="USD" hint="One currency; Easel does no currency conversion." />
     <Field label="Fiscal year starts in month" name="fiscalYearStart" defaultValue="1" options={['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, i) => ({ value: String(i + 1), label: m }))} />
    </>}
+   <CalendarFields />
    <Field label="Language and region" name="locale" defaultValue="en-US" options={ENGLISH_LOCALES} />
    <Field label="Date display" name="dateFormat" defaultValue="MM/DD/YYYY" options={DATE_FORMATS} />
    <Field label="Company time zone" name="timeZone" defaultValue="America/New_York" options={US_TIME_ZONES} hint="Schedules use local wall time, including daylight saving time." />

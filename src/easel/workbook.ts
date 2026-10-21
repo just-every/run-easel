@@ -1,3 +1,4 @@
+import { datePeriod } from './fiscal-calendar'
 import { compileWorkbook, evaluateWorkbook, workbookCellKey } from './workbook-formula'
 // The Excel-first planning workbook kit. A budget sheet with one row per line
 // and department and one column per month becomes a new, separate scenario of
@@ -43,7 +44,7 @@ export async function previewWorkbook(c: Context, b: Data) {
  const col = (name: string) => header.find(x => typeof x.value === 'string' && x.value.trim().toLowerCase() === name)?.col
  const lineCol = col('line')!, deptCol = col('department')
  requireThat(deptCol, `Sheet ${sheet.name} needs a "Department" column`)
- const monthCols = header.flatMap(x => { const m = x.value === null || typeof x.value === 'boolean' || x.col === lineCol || x.col === deptCol ? null : parseMonthHeader(x.value); return m ? [{ col: x.col, month: m, ref: x.ref }] : [] })
+ const monthCols = header.flatMap(x => { const m = typeof x.value === 'number' && w.calendar && w.calendar !== 'calendar-month' && x.value > 20000 && x.value < 80000 ? datePeriod(w, new Date(Date.UTC(1899, 11, 30) + Math.floor(x.value) * 86400000).toISOString().slice(0,10)) : x.value === null || typeof x.value === 'boolean' || x.col === lineCol || x.col === deptCol ? null : parseMonthHeader(x.value); return m ? [{ col: x.col, month: m, ref: x.ref }] : [] })
  requireThat(monthCols.length > 0, 'No month columns found: use headings like Jul-26, Jul 2026 or 2026-07')
  requireThat(new Set(monthCols.map(m => m.month)).size === monthCols.length, 'Two columns name the same month')
  const planMonths = new Set(range(w.planStart, w.horizon))

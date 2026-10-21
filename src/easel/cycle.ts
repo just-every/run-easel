@@ -84,7 +84,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   put(s, 'scenario', budget.id, { ...budget, status: 'frozen', approval: { snapshot: snapshotId, by: x.actor.email, at: c.now, revision: budget.revision } })
   c.activity.push({ action: op, record: budget.id, scenario: budget.id, before: budget.revision, after: budget.revision, detail: { snapshot: snapshotId } })
   const forecastId = uid()
-  put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
+  put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, horizon: m.workspace.horizon, parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
   copyInputs(s, budget.id, forecastId)
   c.activity.push({ action: 'forecast-opened', record: forecastId, scenario: forecastId, after: 1, detail: { from: budget.id } })
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }

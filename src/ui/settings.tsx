@@ -21,6 +21,8 @@ export function Settings({ state, refresh }: Shared) {
     <Field label="Company name" name="name" defaultValue={w.name} />
     <Field label="Reporting currency" name="currency" defaultValue={w.currency} />
     <Field label="Fiscal year starts in month" name="fiscalYearStart" defaultValue={String(w.fiscalYearStart)} options={fiscalMonths} />
+    <Field label="Plan horizon (months)" name="horizon" type="number" defaultValue={w.horizon} hint="12–60 accounting periods. Frozen plans and existing forecast windows keep their captured horizon." />
+    <p className="muted">Accounting calendar: {w.calendar ?? 'calendar-month'}{w.retailStartDate ? ` · first period starts ${w.retailStartDate}` : ''}. Fixed after setup.</p>
     <Field label="Language and region" name="locale" defaultValue={w.locale ?? 'en-US'} options={ENGLISH_LOCALES} />
     <Field label="Date display" name="dateFormat" defaultValue={w.dateFormat ?? 'MM/DD/YYYY'} options={DATE_FORMATS} />
     <Field label="Company time zone" name="timeZone" defaultValue={w.timeZone ?? 'America/New_York'} options={[...US_TIME_ZONES, ...(!US_TIME_ZONES.some(z => z.value === w.timeZone) && w.timeZone ? [{value:w.timeZone,label:w.timeZone}] : [])]} />

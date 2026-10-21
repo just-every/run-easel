@@ -13,7 +13,7 @@ import { mentions } from './notify'
 import type { Context } from './context'
 import { type Calculation, type Cell } from './engine'
 import { departments, lines, model, workspace } from './model'
-import { addMonths, monthLabel, range } from './months'
+import { addMonths, monthLabel, monthsBetween, range } from './months'
 import { snapshot } from './store'
 import { versionComparison } from './version-comparison'
 import { formatMoney } from './units'
@@ -140,7 +140,8 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const forecast = get(s, 'scenario', pack.forecast)
   const forecastCalc = await workingCalculation(c, forecast.id, forecast.actualsThrough)
   const budget = await snapshot(c.db, forecast.budgetSnapshot)
-  const ytd = range(w.planStart, w.horizon).filter(m => m <= pack.month)
+  const fiscalStart = addMonths(w.planStart, Math.floor(monthsBetween(w.planStart, pack.month) / 12) * 12)
+  const ytd = range(fiscalStart, 12).filter(m => m <= pack.month)
   const reportLines: Data[] = [...new Map([...lines(s), ...budget.body.lines].map(l => [l.id, l])).values()]
   const lineRows = reportLines.map(l => ({
    line: l.name, type: l.type,
