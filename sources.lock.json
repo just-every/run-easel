@@ -3703,7 +3703,7 @@
       "executable": false
     },
     "tests/sandboxes-browser.mjs": {
-      "sha256": "90a4e69a19ff070af10569ee17ea465fce4aa3172e425f06c158dd61cbd666e4",
+      "sha256": "dbd96841a9152637adbb72b1b3f6980d2293199b21f07144ebf7a8521819f7cb",
       "executable": false
     },
     "tests/sandboxes.test.mjs": {
