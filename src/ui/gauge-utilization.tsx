@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Action, api, Field, Form, money, monthLabel, options, Table, type D } from './shared'
+import { Dots } from './dots'
 
 type Props = { scenario: string; revision: number; drivers: D[]; currency: string; onChange: () => Promise<void> }
 
@@ -36,7 +37,7 @@ export function GaugeUtilization({ scenario, revision, drivers, currency, onChan
   </div>}
   {preview && <>
    <h3>Review {monthLabel(preview.month)}</h3>
-   <p>{drivers.find(d => d.id === preview.driver)?.name} · scenario revision {preview.scenarioRevision}</p>
+   <Dots as="p">{drivers.find(d => d.id === preview.driver)?.name}{`scenario revision ${preview.scenarioRevision}`}</Dots>
    <Table caption="Gauge utilization preview" heads={['Measure', 'Value']}>
     <tr><td>Participants</td><td>{preview.source.participantCount}</td></tr>
     <tr><td>Available seconds</td><td>{preview.source.availableSeconds}</td></tr>

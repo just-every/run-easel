@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, decimalText, money, monthLabel, Table, useDate, type D } from './shared'
+import { glue } from './dots'
 
 export function Headcount({scenario,state,department}: {scenario:string;state:D;department:string}) {
  const [view,setView] = useState<D|null>(null),[error,setError]=useState(''),[month,setMonth]=useState('')
@@ -18,7 +19,7 @@ export function Headcount({scenario,state,department}: {scenario:string;state:D;
   <Table caption="Headcount comparison" heads={['Department','Plan headcount','Actual headcount','Difference','Plan hires','Actual hires','Plan departures','Actual departures','Backfills','Expected attrition','Plan payroll','Actual payroll','Cost difference']}>
    {rows.map((r:D)=><tr key={r.department}><th scope="row">{r.name}</th>{[r.plannedHeadcount,r.actualHeadcount,r.headcountDifference,r.plannedHires,r.actualHires,r.plannedDepartures,r.actualDepartures,r.backfills].map((v,i)=><td className="num" key={i}>{value(v)}</td>)}<td className="num">{decimalText(r.expectedAttritionHundredths)} people</td><td className="num">{cost(r.plannedCostCents)}</td><td className="num">{cost(r.actualCostCents)}</td><td className="num">{cost(r.costDifferenceCents)}</td></tr>)}
   </Table>
-  <p className="muted">{rows[0]?.observations.map((r:D)=>`${r.provider}: ${date(r.asOf)}`).join(' · ') || 'No reviewed roster observation for this month'}. Planned departures are the month after an inclusive end month. Attrition is an assumption only; it does not change headcount or costs.</p>
+  <p className="muted">{glue(rows[0]?.observations.map((r:D)=>`${r.provider}: ${date(r.asOf)}`).join(' · ') || 'No reviewed roster observation for this month')}. Planned departures are the month after an inclusive end month. Attrition is an assumption only; it does not change headcount or costs.</p>
   {rows.filter((r:D)=>r.issue).map((r:D)=><p role="alert" key={r.department}>{r.name}: {r.issue}</p>)}
   {history.length>0 && <Table caption="Hiring slippage history" heads={['Person','Position','Observed','Planned date','Actual date','Slippage','Backfill']}>
    {history.map((r:D,i:number)=><tr key={i}><td>{r.name}</td><td>{r.title}</td><td>{date(r.asOf)}</td><td>{r.plannedStartDate?date(r.plannedStartDate):'Unavailable'}</td><td>{date(r.actualStartDate)}</td><td>{r.slippageDays===null?'Unavailable':`${r.slippageDays} days`}</td><td>{view.positions.find((p:D)=>p.originId===r.backfillOrigin)?.title ?? '—'}</td></tr>)}

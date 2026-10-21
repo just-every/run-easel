@@ -23,6 +23,11 @@ p{margin:8px 0}
 .muted{color:var(--muted)}
 .error{color:var(--red-ink)}
 .date-token{white-space:nowrap}
+@property --dots{syntax:'<length>';inherits:true;initial-value:0px}
+.dots{--dots:.8em;display:flex;flex-wrap:wrap;align-items:baseline;margin-left:calc(-1 * var(--dots))!important;clip-path:inset(-.6em -.6em -.6em calc(var(--dots) - 2px))}
+.dots>span{position:relative;min-width:0;padding-left:var(--dots)}
+.dots>span+span::before{content:"·";content:"·"/"";position:absolute;left:0;top:0;width:var(--dots);text-align:center}
+.dot{font-size:0}
 `
 
 const shell = `
@@ -68,6 +73,15 @@ ul.plain{list-style:none;padding:0;margin:8px 0}
 ul.plain li{padding:8px 0;border-bottom:1px solid var(--rule)}
 ul.plain li:last-child{border-bottom:0}
 .trace{white-space:normal;font-size:14px}
+/* Disclosures and downloads are real targets: at least 32 px tall (44 px on a phone), apart from their neighbours. */
+details>summary:not([class]){display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 0;list-style:none}
+details>summary:not([class])::-webkit-details-marker{display:none}
+details>summary:not([class])::before{content:"";flex:none;width:0;height:0;margin:0 1px;border-style:solid;border-width:5px 0 5px 7px;border-color:transparent transparent transparent currentColor;transition:transform .12s}
+details[open]>summary:not([class])::before{transform:rotate(90deg)}
+details>summary:not([class])>.dots{flex:1 1 auto}
+details:not(.card-row)+details:not(.card-row){margin-top:4px}
+a[download]{display:inline-flex;align-items:center;min-height:32px}
+.downloads{row-gap:4px}
 details.card-row{border:1px solid var(--rule);border-radius:var(--radius-field);margin:8px 0;padding:0 16px;background:var(--surface)}
 details.card-row>summary{cursor:pointer;padding:12px 0;line-height:1.5}
 details.card-row[open]>summary{margin:0 -16px;padding:12px 16px;background:var(--pink-soft);border-bottom:1px solid var(--rule);border-radius:var(--radius-field) var(--radius-field) 0 0}
@@ -196,6 +210,7 @@ const phone = `
  .form-rows button,.form-end>button{width:100%;min-height:46px}
  button{min-height:44px}
  button.quiet,button.danger{min-height:44px}
+ details>summary:not([class]),a[download]{min-height:44px}
  .overview.has-trace{grid-template-columns:minmax(0,1fr)}
  .trace-panel{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:10;max-height:70vh;overflow:auto;border-radius:16px 16px 0 0;border-width:1px 0 0;box-shadow:0 -10px 28px rgba(18,16,16,.16)}
  .trace-panel h2{font-size:20px;border:0;padding:0;margin-bottom:12px}

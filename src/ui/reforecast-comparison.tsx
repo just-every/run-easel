@@ -1,5 +1,6 @@
 import { ClosingCashChart } from './chart'
 import { money, monthLabel, Table, type D } from './shared'
+import { Dots } from './dots'
 
 /** Align by month: a frozen version can end before the current forecast. */
 export function ScenarioComparison({ comparison: cmp }: { comparison: D }) {
@@ -36,7 +37,7 @@ export function ReforecastComparison({ versions, rows, currency }: { versions: V
  return <section className="card">
   <h2>Actual against every version</h2>
   <p className="muted">Each column shows the version amount and Δ (actual minus that version). An amount of — means the month is outside that version's horizon. Δ is also — when currencies differ.</p>
-  <Table caption="Actual, budget, reforecasts and current forecast" heads={['Line', 'Department', `Actual (${currency})`, ...versions.map(version => <><span>{version.name}</span><div className="muted">{version.kind === 'forecast' ? 'Current forecast' : version.kind === 'reforecast' ? 'Frozen reforecast' : 'Approved budget'} · revision {version.revision} · {version.currency}</div></>)]}>
+  <Table caption="Actual, budget, reforecasts and current forecast" heads={['Line', 'Department', `Actual (${currency})`, ...versions.map(version => <><span>{version.name}</span><Dots as="div" className="muted">{version.kind === 'forecast' ? 'Current forecast' : version.kind === 'reforecast' ? 'Frozen reforecast' : 'Approved budget'}{`revision ${version.revision}`}{version.currency}</Dots></>)]}>
    {rows.map(row => {
     const comparisons = new Map(row.comparisons.map(c => [c.id, c]))
     return <tr key={row.key}><td>{row.lineName}</td><td>{row.departmentName}</td><td className="num">{money(row.actual, currency)}</td>{versions.map(version => {

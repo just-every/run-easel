@@ -1,6 +1,7 @@
 import { useDate } from './shared'
 import { useEffect, useState } from 'react'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 type MetricRule = {
  id: string; name: string; kind: 'overspend' | 'runway'; department?: string; owner: string
@@ -68,8 +69,8 @@ export function MetricTasks({ state }: { state: D }) {
    {error && <Action label="Reload metric tasks" kind="quiet" run={reload} />}
    {list && (list.tasks.length ? <ul className="plain">{list.tasks.map(task => <li key={task.id}>
     <h3>{task.name} <span className="pill">{task.status}</span></h3>
-    <p>{monthLabel(task.month)} · <Person state={state} email={task.owner} /> · Due <span className="date-token">{displayDate(task.due)}</span> (UTC)</p>
-    <p className="muted">{state.scenarios.find((s: D) => s.id === task.scenario)?.name ?? task.scenario} · Rule revision {task.ruleRevision}</p>
+    <Dots as="p">{monthLabel(task.month)}<Person state={state} email={task.owner} /><>Due <span className="date-token">{displayDate(task.due)}</span> (UTC)</></Dots>
+    <Dots as="p" className="muted">{glue(state.scenarios.find((s: D) => s.id === task.scenario)?.name ?? task.scenario)}{`Rule revision ${task.ruleRevision}`}</Dots>
     <p>{task.evidence.summary}</p>
     <details><summary>Evidence sources</summary><ul>{task.evidence.sources.map((source, i) => <li key={i} style={{ overflowWrap: 'anywhere' }}>{source}</li>)}</ul></details>
     {task.status === 'done' && <p>Completed by <Person state={state} email={task.completedBy} />{task.completedAt && <> at <span className="date-token">{displayDate(task.completedAt)}</span></>}.</p>}

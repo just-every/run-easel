@@ -10,6 +10,7 @@ import { AssetSchedule } from './assets'
 import { Statements } from './statements'
 import { ClosingCashChart } from './chart'
 import { api, kindLabel, money, monthLabel, ScenarioPicker, Person, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 export const defaultScenario = (scenarios: D[]) => (scenarios.find(s => s.kind === 'forecast' && !s.alternativeBudget) ?? scenarios.find(s => s.kind === 'budget' && !s.alternativeBudget) ?? scenarios[0])?.id ?? ''
 
@@ -50,7 +51,13 @@ export function Overview({ state, refresh }: Shared) {
     <a href={`/api/easel/scenario/${id}/document.xlsx${department ? `?department=${encodeURIComponent(department)}` : ''}`} download>Download Excel</a>
     <a href={`/api/easel/scenario/${id}/document.csv`} download>Download CSV</a>
    </div>
-   {sc && <p className="muted">Revision {sc.revision} · {sc.status === 'frozen' ? sc.kind === 'reforecast' ? <>frozen · saved by <Person state={state} email={sc.reforecast?.by} /> at <span className="date-token">{displayDate(sc.reforecast?.at)}</span></> : <>approved by <Person state={state} email={sc.approval?.by} /> at <span className="date-token">{displayDate(sc.approval?.at)}</span></> : sc.status}{sc.actualsThrough ? ` · actuals through ${monthLabel(sc.actualsThrough)}` : ''}{sc.branchedFrom ? ` · branched from ${sc.branchedFrom.name} at revision ${sc.branchedFrom.revision}` : ''}</p>}
+   {sc && <Dots as="p" className="muted">
+    {`Revision ${sc.revision}`}
+    {sc.status === 'frozen' ? sc.kind === 'reforecast' ? 'frozen' : <>approved by <Person state={state} email={sc.approval?.by} /> at <span className="date-token">{displayDate(sc.approval?.at)}</span></> : sc.status}
+    {sc.status === 'frozen' && sc.kind === 'reforecast' && <>saved by <Person state={state} email={sc.reforecast?.by} /> at <span className="date-token">{displayDate(sc.reforecast?.at)}</span></>}
+    {sc.actualsThrough && `actuals through ${monthLabel(sc.actualsThrough)}`}
+    {sc.branchedFrom && `branched from ${glue(sc.branchedFrom.name)} at revision ${sc.branchedFrom.revision}`}
+   </Dots>}
   </div>
   {error && <p role="alert" className="error">{error}</p>}
   <div className={trace ? 'overview has-trace' : 'overview'}>
@@ -98,7 +105,7 @@ function TracePanel({ heading, sources, currency, onClose }: { heading: string; 
   <span className="grab" aria-hidden="true" />
   <h2>{heading}</h2>
   <ul>{sources.map((s, i) => { const at = s.trace.lastIndexOf(' = '); return <li key={i}>
-   <p className="trace-from"><span>{s.department} · {s.label}</span><span>{money(s.amount, currency)}</span></p>
+   <p className="trace-from"><Dots>{s.department}{s.label}</Dots><span>{money(s.amount, currency)}</span></p>
    <p className="trace-math">{at < 0 ? s.trace : <>{s.trace.slice(0, at + 3)}<strong>{s.trace.slice(at + 3)}</strong></>}</p>
   </li> })}</ul>
   <button type="button" className="quiet" onClick={onClose}>Close</button>

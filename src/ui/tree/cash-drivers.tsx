@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Shared } from '../app'
 import { api, command, monthLabel, type D } from '../shared'
+import { Dots } from '../dots'
 import { defaultScenario } from '../overview'
 import { TreeLinks, type Edge } from './tree-links'
 import { buildTree, changeText, closingAt, momentText, zoneText, type Leaf, type Tree } from './tree-model'
@@ -115,12 +116,15 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
  const compare = () => { const url = new URL(window.location.href); url.searchParams.set('compareFrom', home.id); url.searchParams.set('compareTo', option!.id); window.history.replaceState(window.history.state, '', url); go('scenarios') }
  const runway = homeView.health.runway.find((m: D) => m.month === tree.from)
  const now = momentText(new Date().toISOString(), timeZone)
- const lastLeaves = tree.drivers.at(-1)?.leaves ?? []
- const decisionBelow = !!(sticky && optionLeaf && lastLeaves.some(l => l.key === optionLeaf.key)) || !!(exception && lastLeaves.some(l => l.key === exception.key))
+ const rowOf = (leaf: Leaf | null | undefined) => leaf ? tree.drivers.findIndex(d => d.leaves.some(l => l.key === leaf.key)) : -1
+ const last = tree.drivers.length - 1, exceptionRow = rowOf(exception), optionRow = sticky ? rowOf(optionLeaf) : -1
+ // The decision keeps the bottom right on a desktop: a note for the last driver's leaf sits one row up when that row is free.
+ const stickyRow = !phone && optionRow === last && last > 0 && exceptionRow !== last - 1 ? last - 1 : optionRow
+ const decisionBelow = stickyRow === last || exceptionRow === last
  return <>
   <div className="page-head t-head">
    <h1>What drives {fullMonth(tree.month)} cash</h1>
-   <p>{monthLabel(tree.month)} · <span title={home.name}>{shortName(home)} rev {home.revision}</span> · <span className="date-token">{now.day}, {now.time} {zoneText(timeZone)}</span></p>
+   <Dots as="p">{monthLabel(tree.month)}<span title={home.name}>{shortName(home)} rev {home.revision}</span><span className="date-token">{now.day}, {now.time} {zoneText(timeZone)}</span></Dots>
   </div>
   <div className="t-switch" role="group" aria-label="Compare responses">
    {[home, ...options].map((s: D) => {
@@ -141,7 +145,7 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
    {tree.drivers.flatMap((d, i) => {
     const expanded = isOpen(d), list = `t-leaves-${d.driver}`
     const hasException = exception && d.leaves.some(l => l.key === exception.key)
-    const hasSticky = optionLeaf && sticky && d.leaves.some(l => l.key === optionLeaf.key)
+    const hasSticky = i === stickyRow
     return [
      <div key={`${d.driver}-driver`} className="t-driver-cell" style={{ gridRow: i + 1 }}><DriverCard node={d} tree={tree} baseName={baseName} optionName={optionName} open={expanded} controls={list} onToggle={() => setOpen(o => ({ ...o, [d.driver]: !expanded }))} /></div>,
      <div key={`${d.driver}-leaves`} className="t-leaves" id={list} hidden={!expanded} style={{ gridRow: i + 1 }}>
@@ -157,11 +161,11 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
     <Decision options={options} option={option} optionName={optionName} proposedAt={proposedAt} cells={cells} finance={state.me.role === 'finance'} busy={busy} failure={failure} pick={pick} compare={compare} />
    </div>
   </div>
-  <p className="t-foot">
-   {homeView.actualsThrough ? <span>Actuals through {monthLabel(homeView.actualsThrough)}</span> : <span>No months closed yet</span>}
-   {runway && <span>runway {runway.runwayHundredths === null ? (runway.basis === 'cash-exhausted' ? 'exhausted' : 'not burning') : `${(runway.runwayHundredths / 100).toFixed(1)} months`} in {monthLabel(tree.from)}</span>}
-   {tree.floor !== null && <span>floor {cash(tree.floor)}{homeView.health.agreement?.by ? ` agreed ${momentText(homeView.health.agreement.at, timeZone).day}` : ''}</span>}
-  </p>
+  <Dots as="p" className="t-foot">
+   {homeView.actualsThrough ? `Actuals through ${monthLabel(homeView.actualsThrough)}` : 'No months closed yet'}
+   {runway && `runway ${runway.runwayHundredths === null ? (runway.basis === 'cash-exhausted' ? 'exhausted' : 'not burning') : `${(runway.runwayHundredths / 100).toFixed(1)} months`} in ${monthLabel(tree.from)}`}
+   {tree.floor !== null && `floor ${cash(tree.floor)}${homeView.health.agreement?.by ? ` agreed ${momentText(homeView.health.agreement.at, timeZone).day}` : ''}`}
+  </Dots>
  </>
 }
 

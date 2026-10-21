@@ -1,5 +1,6 @@
 import type { Shared } from './app'
 import { Action, command, Field, Form, Table, type D } from './shared'
+import { Dots } from './dots'
 
 export function Sandboxes({ state, refresh }: Shared) {
  const me = state.me
@@ -15,7 +16,7 @@ export function Sandboxes({ state, refresh }: Shared) {
   </Form>}
   {mine.map((sc: D) => <article key={sc.id} aria-label={`Sandbox ${sc.name}`}>
    <h3>{sc.name}</h3>
-   <p>Private · revision {sc.revision}. Submit a copy to finance for approval; the sandbox stays private.</p>
+   <Dots as="p">Private{`revision ${sc.revision}. Submit a copy to finance for approval; the sandbox stays private.`}</Dots>
    <Table caption={`Sharing for ${sc.name}`} heads={['Person', 'Access', '']}>
     {Object.entries(sc.sandbox.grants).map(([email, mode]) => <tr key={email}><td>{email}</td><td>{String(mode)}</td><td><Action label={`Remove ${email}`} kind="quiet" run={() => run('scenario-share', { scenario: sc.id, revision: sc.revision, email, mode: 'remove' })} /></td></tr>)}
    </Table>

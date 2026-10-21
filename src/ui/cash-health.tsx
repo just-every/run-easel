@@ -1,5 +1,6 @@
 import type { Shared } from './app'
 import { command, decimalText, Field, Form, money, monthLabel, Table, type D } from './shared'
+import { Dots } from './dots'
 
 /** The same current agreement checks saved and working cash, including proposals. */
 export function CashHealth({ health, currency, title = 'Cash health' }: { health: D; currency: string; title?: string }) {
@@ -9,7 +10,7 @@ export function CashHealth({ health, currency, title = 'Cash health' }: { health
  return <section className="card" aria-label={title}>
   <h2>{title}</h2>
   {health.incompleteReasons?.length > 0 && <p role="status">Incomplete: these diagnostics describe the known cash planning schedule. Actual contract receipt allocation is unresolved.</p>}
-  <p>Lowest cash: {monthLabel(health.lowestCash?.month)} · {money(health.lowestCash?.closing, currency)}. Cash-zero month: {health.cashZeroMonth ? monthLabel(health.cashZeroMonth) : 'None in forecast'}.</p>
+  <Dots as="p">{`Lowest cash: ${monthLabel(health.lowestCash?.month)}`}{`${money(health.lowestCash?.closing, currency)}. Cash-zero month: ${health.cashZeroMonth ? monthLabel(health.cashZeroMonth) : 'None in forecast'}.`}</Dots>
   {health.agreementStatus === 'not-agreed' ? <p>No finance-agreed cash floor or runway minimum yet.</p> : health.agreementStatus === 'different-currency' ? <p className="error">The agreement is in {health.agreement.currency}; these {currency} amounts cannot be checked against it.</p> : <>
    <p>Current agreed cash floor: {money(health.agreement.floorCents, currency)}. Runway minimum: {decimalText(health.agreement.runwayMinimumHundredths)} months.</p>
    <p>First below cash floor: {health.incompleteReasons?.length ? 'Not assessed: incomplete cash' : health.firstFloorBreach ? monthLabel(health.firstFloorBreach) : 'None'}. First below runway minimum: {health.incompleteReasons?.length ? 'Not assessed: incomplete cash' : health.firstRunwayBreach ? monthLabel(health.firstRunwayBreach) : 'None'}.</p>

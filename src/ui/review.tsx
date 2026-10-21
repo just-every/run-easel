@@ -6,6 +6,7 @@ import { ParallelMonth } from './parallel-month'
 import { DepartmentStatements } from './department-statements'
 import { PackActionDepartment } from './pack-action-departments'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 /** Closing months, variance explanations and review packs. */
 export function Review({ state, refresh }: Shared) {
@@ -32,8 +33,8 @@ export function Review({ state, refresh }: Shared) {
    <h2>Monthly review</h2>
    {v && <p><a href={`/api/easel/variance/${month}/document.xlsx`} download>Download variances (Excel)</a></p>}
    {!forecast && <p>The forecast opens when the budget is approved.</p>}
-   {forecast && <p className="muted">{forecast.name} · revision {forecast.revision} · actuals through {monthLabel(forecast.actualsThrough)}</p>}
-   {forecast && <p className="muted">Forecast through {monthLabel(addMonths(state.workspace.planStart, (forecast.horizon ?? state.workspace.horizon) - 1))}{forecast.rollingWindow ? ` · always ${forecast.rollingWindow} months ahead` : ' · fixed horizon'}. Approved budgets keep their original months.</p>}
+   {forecast && <Dots as="p" className="muted">{glue(forecast.name)}{`revision ${forecast.revision}`}{`actuals through ${monthLabel(forecast.actualsThrough)}`}</Dots>}
+   {forecast && <Dots as="p" className="muted">{`Forecast through ${monthLabel(addMonths(state.workspace.planStart, (forecast.horizon ?? state.workspace.horizon) - 1))}`}{`${forecast.rollingWindow ? `always ${forecast.rollingWindow} months ahead` : 'fixed horizon'}. Approved budgets keep their original months.`}</Dots>}
    {forecast && me.role === 'finance' && <Form key={`window-${forecast.revision}`} submit="Save rolling window" onSubmit={async values => { await command('forecast-window', { scenario: forecast.id, revision: forecast.revision, months: values.months }); await refresh() }}>
     <Field label="Months ahead" name="months" defaultValue={String(forecast.rollingWindow ?? 18)} hint="12 to 60 future months. Each close keeps the current forecast, then extends its end by one month using its drivers." />
    </Form>}
@@ -48,7 +49,7 @@ export function Review({ state, refresh }: Shared) {
    <p className="muted">Against the approved budget (revision {v.budget.revision}, approved by <span title={v.budget.approvedBy?.email}>{v.budget.approvedBy?.name ?? <Person state={state} email={v.budget.approvedBy?.email} />}</span>) and the forecast kept before the month closed. Drafts cite accepted rows; anything else is marked as a hypothesis.</p>
    <div className="variance-head" aria-hidden="true"><span>Line</span><span>Actual</span><span>Budget</span><span>Variance</span><span className="variance-prior">Prior forecast</span><span>Explanation</span></div>
    {v.rows.map((r: D) => <details key={r.key} className="card-row">
-    <summary className="variance-summary"><strong className="variance-line">{r.lineName} · {r.departmentName}</strong><span className="variance-number"><small>Actual</small>{money(r.actual, currency)}</span><span className="variance-number"><small>Budget</small>{money(r.budget, currency)}</span><span className={`variance-number${r.favourable === false ? ' variance-unfavourable' : ''}`} aria-label={`Variance ${money(r.variance, currency)}${r.favourable === null ? '' : r.favourable ? ', favourable' : ', unfavourable'}`}><small>Variance</small>{money(r.variance, currency)}</span><span className="variance-number variance-prior">{money(r.priorForecast, currency)}</span><span className="variance-status">{r.explanation ? <span className="pill">explanation {r.explanation.status}</span> : <span className="muted">No explanation</span>}</span></summary>
+    <summary className="variance-summary"><strong className="variance-line"><Dots>{r.lineName}{r.departmentName}</Dots></strong><span className="variance-number"><small>Actual</small>{money(r.actual, currency)}</span><span className="variance-number"><small>Budget</small>{money(r.budget, currency)}</span><span className={`variance-number${r.favourable === false ? ' variance-unfavourable' : ''}`} aria-label={`Variance ${money(r.variance, currency)}${r.favourable === null ? '' : r.favourable ? ', favourable' : ', unfavourable'}`}><small>Variance</small>{money(r.variance, currency)}</span><span className="variance-number variance-prior">{money(r.priorForecast, currency)}</span><span className="variance-status">{r.explanation ? <span className="pill">explanation {r.explanation.status}</span> : <span className="muted">No explanation</span>}</span></summary>
     <p className="trace">{r.draft}</p>
     {r.citations.length > 0 && <Table caption="Accepted rows" heads={['File', 'Line', 'Date', 'Description', 'Reference', 'Amount']}>{r.citations.map((c: D, i: number) => <tr key={i}><td>{c.file}</td><td className="num">{c.line}</td><td><span className="date-token">{displayDate(c.date)}</span></td><td>{c.description}</td><td>{c.reference}</td><td className="num">{money(c.amount, currency)}</td></tr>)}</Table>}
     {r.explanation && <p><strong>Explanation ({r.explanation.status}{r.explanation.confirmedBy && <> by <Person state={reviewState} email={r.explanation.confirmedBy} /></>}):</strong> {r.explanation.text}</p>}
@@ -67,7 +68,7 @@ export function Review({ state, refresh }: Shared) {
    <h2>Review packs</h2>
    {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}
    {packs.map((p: D) => <div key={p.id} className="pack">
-    <h3>{p.title} · {p.status}</h3>
+    <Dots as="h3">{p.title}{p.status}</Dots>
     {p.decisions.length > 0 && <ul className="plain">{p.decisions.map((d: D) => <li key={d.id}>{d.text}{d.owner ? ` — ${d.owner}` : ''}{d.due && <>, due <span className="date-token">{displayDate(d.due)}</span></>}{p.progress?.[d.id] ? ` (${p.progress[d.id].status})` : ''}
      {p.status === 'published' && me.role === 'finance' && p.progress?.[d.id]?.status !== 'done' && <Action kind="quiet" label="Mark done" run={async () => { await command('action-status', { pack: p.id, decision: d.id, status: 'done' }); await refresh() }} />}
      <PackActionDepartment state={state} pack={p} decision={d} refresh={refresh} /></li>)}</ul>}
@@ -80,7 +81,7 @@ export function Review({ state, refresh }: Shared) {
      </Form>
      <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id }); await refresh() }} />
     </>}
-    {p.status === 'published' && <p>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span> · <a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a> · <a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a> · <a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a></p>}
+    {p.status === 'published' && <Dots as="p" className="downloads"><>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span></><a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a><a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a><a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a></Dots>}
    </div>)}
    {!packs.length && <p className="muted">No packs for this month yet.</p>}
   </section>

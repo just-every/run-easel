@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { STARTER_IDS, STARTERS, type StarterId } from '../easel/starter-catalog'
 import { command, Field, Form, US_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS } from './shared'
+import { Dots } from './dots'
 
 export function SetupPlan({ refresh }: { refresh: () => Promise<void> }) {
  const [selected, setSelected] = useState<StarterId | 'blank'>('blank')
@@ -14,7 +15,7 @@ export function SetupPlan({ refresh }: { refresh: () => Promise<void> }) {
    {STARTER_IDS.map(id => <option key={id} value={id}>{STARTERS[id].name}</option>)}
   </select></label>
   {starter && <div className="note">
-   <p><strong>{starter.name} · USD · January fiscal year</strong></p>
+   <Dots as="p" className="starter-name">{starter.name}USD{'January fiscal year'}</Dots>
    <p>{starter.description}</p>
    <p><strong>Starter assumptions:</strong> {starter.assumptions}</p>
    <p><strong>Cash timing:</strong> {starter.cashTiming}</p>

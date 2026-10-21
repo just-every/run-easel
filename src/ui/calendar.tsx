@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Action, api, command, Field, Form, Person, Table, useDate, type D } from './shared'
+import { Dots, DotText } from './dots'
 
 const STATUS: Record<string, string> = { pending: 'Pending', sending: 'Sending', accepted: 'Accepted', suppressed: 'Suppressed', uncertain: 'Outcome unknown', blocked: 'Blocked', canceled: 'Canceled' }
 const CHANNEL: Record<string, string> = { email: 'Email', slack: 'Slack', teams: 'Microsoft Teams', nook: 'Nook', none: '—' }
@@ -18,13 +19,13 @@ export function PlanningCalendar({ state }: { state: D }) {
   {!view && !error && <p role="status">Loading the planning calendar…</p>}
   {view && <>
    <p className="muted">Times are in the company zone, {view.zone}. Owners get a reminder at 09:00 the day before a task is due; an open task escalates to finance at 09:00 on the first weekday after its due date. Shared chat channels get only a generic reminder and a sign-in link.</p>
-   {view.tasks.length ? <Table caption="Planning tasks" heads={['Task', 'Owner', 'Due', 'Reminder · escalation', 'Status', '']}>
+   {view.tasks.length ? <Table caption="Planning tasks" heads={['Task', 'Owner', 'Due', <Dots>Reminder{'escalation'}</Dots>, 'Status', '']}>
     {view.tasks.map((t: D) => <tr key={t.id}>
-     <td className="wrap">{t.name}<small style={{ display: 'block' }}>{deptName(t.department)} · {t.kind === 'submission' ? 'Department submission' : view.kinds[t.kind]}</small></td>
+     <td className="wrap"><DotText text={t.name} /><Dots as="small">{deptName(t.department)}{t.kind === 'submission' ? 'Department submission' : view.kinds[t.kind]}</Dots></td>
      <td className="wrap">{t.owners.length ? t.owners.map((o: string) => <span key={o} style={{ display: 'block' }}><Person state={state} email={o} /></span>) : 'No active owner'}</td>
      <td><span className="date-token">{displayDate(t.due)}</span></td>
      <td className="wrap">{t.reminderLabel}<small style={{ display: 'block' }}>Escalates {t.escalationLabel}</small></td>
-     <td className="wrap"><span className="pill">{t.open ? 'Open' : t.doneLabel}</span>{t.completedAt && <small style={{ display: 'block' }}><Person state={state} email={t.completedBy} /> · <span className="date-token">{displayDate(t.completedAt)}</span></small>}</td>
+     <td className="wrap"><span className="pill">{t.open ? 'Open' : t.doneLabel}</span>{t.completedAt && <Dots as="small"><Person state={state} email={t.completedBy} /><span className="date-token">{displayDate(t.completedAt)}</span></Dots>}</td>
      <td>{t.open && t.source === 'calendar' && (finance || t.owners.includes(state.me.email)) && <Action label="Mark complete" run={async () => { await command('calendar-task-complete', { id: t.id, revision: t.revision }); await reload() }} />}</td>
     </tr>)}
    </Table> : <p>No planning tasks for you.</p>}

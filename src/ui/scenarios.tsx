@@ -7,6 +7,7 @@ import type { Shared } from './app'
 import { ScenarioComparison } from './reforecast-comparison'
 import { SaveReforecast } from './reforecast-save'
 import { Action, api, command, Field, Form, money, monthLabel, ScenarioPicker, Person, Table, type D } from './shared'
+import { glue } from './dots'
 
 /** Branches, proposals and side-by-side comparison. */
 export function Scenarios({ state, refresh }: Shared) {
@@ -33,7 +34,7 @@ export function Scenarios({ state, refresh }: Shared) {
   <section className="card">
    <h2>Scenarios</h2>
    <Table caption="Scenarios" heads={['Name', 'Kind', 'Status', 'Revision', 'Made from', '']}>
-    {plans.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{s.sandbox ? 'Private sandbox' : s.kind}{s.official ? ` · Official ${s.official}` : ''}</td><td>{s.status === 'frozen' && s.kind === 'budget' ? 'approved' : s.status}</td><td className="num">{s.revision}</td><td>{s.branchedFrom ? `${s.branchedFrom.name} r${s.branchedFrom.revision}` : s.imported ? `${s.imported.file} (${s.imported.sheet})` : '—'}</td><td>
+    {plans.map((s: D) => <tr key={s.id}><td>{glue(s.name)}</td><td>{s.sandbox ? 'Private sandbox' : s.kind}{s.official ? ` · Official ${s.official}` : ''}</td><td>{s.status === 'frozen' && s.kind === 'budget' ? 'approved' : s.status}</td><td className="num">{s.revision}</td><td>{s.branchedFrom ? `${s.branchedFrom.name} r${s.branchedFrom.revision}` : s.imported ? `${s.imported.file} (${s.imported.sheet})` : '—'}</td><td>
      {me.role === 'finance' && !s.sandbox && s.kind === 'scenario' && working.filter((w: D) => w.id !== s.id && w.kind !== 'scenario').map((w: D) => <Action key={w.id} kind="quiet" label={`Use as ${w.name}`} confirm={`Replace every assumption in ${w.name} (revision ${w.revision}) with ${s.name}?`} run={async () => { await command('scenario-adopt', { from: s.id, into: w.id, revision: w.revision }); await refresh() }} />)}
      {me.role === 'finance' && !s.sandbox && s.kind === 'scenario' && <Action kind="danger" label="Delete" confirm={`Delete ${s.name}?`} run={async () => { await command('scenario-delete', { id: s.id }); await refresh() }} />}
     </td></tr>)}

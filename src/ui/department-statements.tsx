@@ -1,6 +1,7 @@
 import { useDate } from './shared'
 import { useEffect, useRef, useState } from 'react'
 import { Action, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
+import { Dots } from './dots'
 
 type Summary = { id: string; month: string; label: string; department: string; departmentName: string; createdAt: string }
 type Citation = { file: string; line: number; date: string; description: string; reference: string; amount: number }
@@ -74,16 +75,16 @@ function SavedStatement({ id, state, refresh }: { id: string; state: D; refresh:
  if (!statement) return <p role="status">Loading statement…</p>
  const canRetry = statement.deliveries.some(delivery => ['pending', 'suppressed', 'blocked'].includes(delivery.status))
  return <>
-  <h3>{statement.departmentName} · {statement.label}</h3>
+  <Dots as="h3">{statement.departmentName}{statement.label}</Dots>
   <p><a href={`/api/easel/department-statements/${encodeURIComponent(id)}/document.xlsx`} download>Download department statement (Excel)</a></p>
   <StatementAmounts caption="Department statement amounts" rows={statement.rows} currency={statement.currency} />
   <h3>Top variances</h3>
   {statement.topVariances.length ? <StatementAmounts caption="Top department variances" rows={statement.topVariances} currency={statement.currency} /> : <p className="muted">No variances.</p>}
   <h3>Explanations needing confirmation</h3>
-  {statement.toConfirm.length ? <ul className="plain">{statement.toConfirm.map(row => <li key={row.key}><a href={`#${encodeURIComponent(rowAnchor(id, row.key))}`}>{row.lineName}</a> · {row.explanation ? row.explanation.status : 'No explanation'}</li>)}</ul> : <p className="muted">No explanations need confirmation.</p>}
+  {statement.toConfirm.length ? <ul className="plain">{statement.toConfirm.map(row => <li key={row.key}><Dots><a href={`#${encodeURIComponent(rowAnchor(id, row.key))}`}>{row.lineName}</a>{row.explanation ? row.explanation.status : 'No explanation'}</Dots></li>)}</ul> : <p className="muted">No explanations need confirmation.</p>}
   <h3>Accepted sources and explanations</h3>
   {statement.rows.map(row => <details id={rowAnchor(id, row.key)} key={row.key} className="card-row" open={statement.toConfirm.some(pending => pending.key === row.key)}>
-   <summary>{row.lineName} · variance {money(row.variance, statement.currency)} · {row.explanation ? `explanation ${row.explanation.status}` : 'No explanation'}</summary>
+   <summary><Dots>{row.lineName}{`variance ${money(row.variance, statement.currency)}`}{row.explanation ? `explanation ${row.explanation.status}` : 'No explanation'}</Dots></summary>
    {row.citations.length ? <Table caption={`Accepted rows for ${row.lineName}`} heads={['File', 'Line', 'Date', 'Description', 'Reference', 'Amount']}>
     {row.citations.map((citation, index) => <tr key={index}><td>{citation.file}</td><td className="num">{citation.line}</td><td><span className="date-token">{displayDate(citation.date)}</span></td><td>{citation.description}</td><td>{citation.reference}</td><td className="num">{money(citation.amount, statement.currency)}</td></tr>)}
    </Table> : <p className="muted">No accepted source rows for this line.</p>}

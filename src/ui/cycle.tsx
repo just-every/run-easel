@@ -5,6 +5,7 @@ import { MetricTasks } from './metric-tasks'
 import { PlanningCalendar } from './calendar'
 import { Notifications } from './notifications'
 import { Action, command, Field, Form, monthLabel, Person, Table, type D } from './shared'
+import { Dots } from './dots'
 
 /** Department submissions for the working budget, then approval. */
 export function Cycle({ state, refresh }: Shared) {
@@ -23,13 +24,13 @@ export function Cycle({ state, refresh }: Shared) {
   {budgets.length > 1 && <label className="inline">Budget<select aria-label="Budget" value={budget.id} onChange={e => setSelected(e.target.value)}>{budgets.map((b: D) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>}
   <section className="card">
    <h2>{budget.name}</h2>
-   <p>{budget.status === 'frozen' ? <>Approved by <Person state={state} email={budget.approval.by} /> at <span className="date-token">{displayDate(budget.approval.at)}</span> (revision {budget.approval.revision}). The approved numbers are kept exactly as approved.</> : `Working · revision ${budget.revision}`}</p>
+   <p>{budget.status === 'frozen' ? <>Approved by <Person state={state} email={budget.approval.by} /> at <span className="date-token">{displayDate(budget.approval.at)}</span> (revision {budget.approval.revision}). The approved numbers are kept exactly as approved.</> : <Dots>Working{`revision ${budget.revision}`}</Dots>}</p>
    {me.role === 'finance' && budget.status === 'working' && <Form submit="Request submissions" onSubmit={async v => { await command('request-submissions', { scenario: budget.id, departments: v.departments, due: v.due }); await refresh() }}>
     <Field label="Departments" name="departments" multiple options={state.departments.filter((d: D) => !d.shared).map((d: D) => ({ value: d.id, label: d.name }))} />
     <Field label="Due date" name="due" type="date" required={false} />
    </Form>}
    <Table caption="Department submissions" heads={['Department', 'Status', 'Due', 'Last change', '']}>
-    {subs.map((s: D) => { const last = s.history[s.history.length - 1]; return <tr key={s.id}><td>{deptName(s.department)}</td><td><span className="pill">{s.status}</span></td><td><span className="date-token">{displayDate(s.due)}</span></td><td className="wrap"><Person state={state} email={last.by} /> · <span className="date-token">{displayDate(last.at)}</span>{last.reason ? ` — ${last.reason}` : ''}</td><td>
+    {subs.map((s: D) => { const last = s.history[s.history.length - 1]; return <tr key={s.id}><td>{deptName(s.department)}</td><td><span className="pill">{s.status}</span></td><td><span className="date-token">{displayDate(s.due)}</span></td><td className="wrap"><Dots><Person state={state} email={last.by} /><><span className="date-token">{displayDate(last.at)}</span>{last.reason ? ` — ${last.reason}` : ''}</></Dots></td><td>
      {budget.status === 'working' && me.role === 'contributor' && me.departments.includes(s.department) && s.status !== 'submitted' && <Action label={`Submit ${deptName(s.department)}`} run={act('submit', { department: s.department })} />}
      {budget.status === 'working' && me.role === 'finance' && s.status === 'submitted' && <Form className="row" submit="Return" onSubmit={async v => { await command('return-submission', { scenario: budget.id, department: s.department, reason: v.reason }); await refresh() }}><Field label="Reason to return" name="reason" /></Form>}
     </td></tr> })}
@@ -41,7 +42,7 @@ export function Cycle({ state, refresh }: Shared) {
   </section>
   <section className="card">
    <h2>Comments</h2>
-   <ul className="plain">{state.comments.filter((c: D) => c.scenario === budget.id).map((c: D) => <li key={c.id}><strong>{deptName(c.department)}</strong> · <span title={c.author}>{c.authorName}</span> (<span className="date-token">{displayDate(c.at)}</span>, revision {c.revision}): {c.text}</li>)}</ul>
+   <ul className="plain">{state.comments.filter((c: D) => c.scenario === budget.id).map((c: D) => <li key={c.id}><Dots><strong>{deptName(c.department)}</strong><><span title={c.author}>{c.authorName}</span> (<span className="date-token">{displayDate(c.at)}</span>, revision {c.revision}): {c.text}</></Dots></li>)}</ul>
    {me.role !== 'viewer' && <Form submit="Add comment" onSubmit={async (v, form) => { await command('comment', { scenario: budget.id, department: v.department, text: v.text }); form.reset(); await refresh() }}>
     <Field label="Department" name="department" options={state.departments.filter((d: D) => mine(d.id)).map((d: D) => ({ value: d.id, label: d.name }))} />
     <Field label="Comment" name="text" type="textarea" />

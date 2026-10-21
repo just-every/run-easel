@@ -1,6 +1,7 @@
 import { useRef, useState, type ClipboardEvent } from 'react'
 import { addMonths, command, decimalText, Field, Form, money, monthLabel, Table, type D } from './shared'
 import './planning-grid.css'
+import { Dots, glue } from './dots'
 
 type Address = { schedule: string; month: string }
 type Split = { name: string; amount: string }
@@ -133,7 +134,7 @@ export function PlanningGrid({ state, view, refresh }: Props) {
      <Field label="Total, percent or amount change" name="amount" required={false} hint="Ignored when copying the focused value" />
     </Form>
    </details>
-   {chosen && chosenRow && <details className="card-row" key={cellKey(chosen)}><summary>Note and split: {chosenRow.name} · {monthLabel(chosen.month)}</summary>
+   {chosen && chosenRow && <details className="card-row" key={cellKey(chosen)}><summary><Dots>{`Note and split: ${glue(chosenRow.name)}`}{monthLabel(chosen.month)}</Dots></summary>
     <p>Named sub-rows become this cell’s total. Detail is available to finance and this department’s contributors.</p>
     <label>Cell note<textarea aria-label="Grid cell note" rows={3} value={note} disabled={busy} onChange={event => { invalidate(); setNote(event.target.value) }} /></label>
     {splits.map((split, index) => <div className="form planning-grid-split" key={index}>

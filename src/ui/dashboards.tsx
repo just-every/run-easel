@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { ClosingCashChart } from './chart'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, options, Person, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 type Metric = 'runway' | 'arr' | 'headcount' | 'revenue' | 'grossMargin' | 'burn' | 'closingCash'
 type Display = 'tile' | 'chart' | 'table'
@@ -101,7 +102,7 @@ export function Dashboards({ state, refresh }: Shared) {
   {editor && (editor === 'new' || creator) && <DefinitionEditor key={editor === 'new' ? 'new' : `${definition.id}:${definition.revision}`} state={state} definition={editor === 'new' ? null : definition} saved={changed} cancel={() => setEditor(null)} />}
   {selected && !view && !error && <section className="card"><p role="status">Loading dashboard…</p></section>}
   {view && <>
-   <section className="card"><h2>{definition.name}</h2><p>{view.scenarioName}{view.departmentName ? ` · ${view.departmentName}` : ' · Company-wide'} · {audiences.find(a => a.value === definition.audience)?.label} · Revision {definition.revision}</p><p>Created by <Person state={state} email={definition.createdBy} /></p>
+   <section className="card"><h2>{definition.name}</h2><Dots as="p">{glue(view.scenarioName)}{view.departmentName || 'Company-wide'}{audiences.find(a => a.value === definition.audience)?.label}{`Revision ${definition.revision}`}</Dots><p>Created by <Person state={state} email={definition.createdBy} /></p>
     {creator && <div className="row"><button type="button" className="quiet" onClick={() => setEditor('edit')}>Edit and share</button><Action kind="danger" label="Delete dashboard" confirm={`Delete ${definition.name} for everyone who can read it?`} run={async () => { await command('dashboard-delete', { id: definition.id, revision: definition.revision }); setView(null); await changed() }} /></div>}
     <p><a href={`/api/easel/dashboards/${encodeURIComponent(definition.id)}/document.xlsx`} download>Download dashboard (Excel)</a></p>
     {view.blocked && <p role="alert" className="error">{view.blocked}</p>}
@@ -112,7 +113,7 @@ export function Dashboards({ state, refresh }: Shared) {
     {widget.metric === 'arr' && <p className="muted">Planned recurring revenue × 12. Closed months are unavailable because accepted actuals do not classify recurring revenue.</p>}
     {widget.metric === 'grossMargin' && <p className="muted">Revenue less cost of sales, in {view.currency}.</p>}
     {widget.metric === 'runway' && <p className="muted">Closing cash divided by the current and up to two preceding months’ average net burn.</p>}
-    {!view.rows.length ? <p>No months are available for this scenario.</p> : widget.display === 'tile' ? <><p className="lead">{valueText(view.rows[view.rows.length - 1], widget.metric, view.currency)}</p><p>{monthLabel(view.rows[view.rows.length - 1].month)}{basis(view.rows[view.rows.length - 1], widget.metric) ? ` · ${basis(view.rows[view.rows.length - 1], widget.metric)}` : ''}</p></> : <>{widget.display === 'chart' && <MetricChart rows={view.rows} metric={widget.metric} currency={view.currency} />}<MetricTable rows={view.rows} metric={widget.metric} currency={view.currency} /></>}
+    {!view.rows.length ? <p>No months are available for this scenario.</p> : widget.display === 'tile' ? <><p className="lead">{valueText(view.rows[view.rows.length - 1], widget.metric, view.currency)}</p><Dots as="p">{monthLabel(view.rows[view.rows.length - 1].month)}{basis(view.rows[view.rows.length - 1], widget.metric)}</Dots></> : <>{widget.display === 'chart' && <MetricChart rows={view.rows} metric={widget.metric} currency={view.currency} />}<MetricTable rows={view.rows} metric={widget.metric} currency={view.currency} /></>}
    </section>)}
   </>}
  </>

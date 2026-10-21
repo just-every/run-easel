@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FilePicker } from './file-picker'
 import { Action, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
+import { Dots } from './dots'
 
 type Classification = { kind: 'mapping' | 'timing' | 'formula' | 'source-data'; explanation: string }
 type Difference = { key: string; measure: string; easel: number; old: number; delta: number; classification: Classification | null }
@@ -90,7 +91,7 @@ function NewComparison({ month, currency, onSave }: { month: string; currency: s
   {preview && <>
    <h3>Preview: {preview.comparison.name}</h3>
    <p className="muted">Nothing is saved yet. Save this exact preview to classify its differences.</p>
-   <p className="trace">Source: {preview.comparison.source.file} · SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{preview.comparison.source.sha256}</span></p>
+   <Dots as="p" className="trace">{`Source: ${preview.comparison.source.file}`}<>SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{preview.comparison.source.sha256}</span></></Dots>
    <ComparisonRows comparison={preview.comparison} />
    <p className="trace">Comparison SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{preview.comparison.sha256}</span></p>
    <div className="row">
@@ -118,17 +119,17 @@ function SavedComparison({ id, state, onUpdate }: { id: string; state: D; onUpda
  const differences = comparison.rows.flatMap(row => row.differences.map(difference => ({ row, difference })))
  const remaining = differences.filter(({ difference }) => !difference.classification?.explanation.trim()).length
  return <>
-  <h3>{comparison.name} · {comparison.status}</h3>
-  <p className="muted">{monthLabel(comparison.month)} · revision {comparison.revision} · {comparison.currency}</p>
+  <Dots as="h3">{comparison.name}{comparison.status}</Dots>
+  <Dots as="p" className="muted">{monthLabel(comparison.month)}{`revision ${comparison.revision}`}{comparison.currency}</Dots>
   <ComparisonRows comparison={comparison} />
-  <p className="trace">Source: {comparison.source.file} · SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{comparison.source.sha256}</span></p>
+  <Dots as="p" className="trace">{`Source: ${comparison.source.file}`}<>SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{comparison.source.sha256}</span></></Dots>
   <p className="trace">Comparison SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{comparison.sha256}</span></p>
   {signed ? <p role="status">Signed off by <Person state={state} email={comparison.signedBy} />{comparison.signedAt && <> at <span style={{ overflowWrap: 'anywhere' }}>{comparison.signedAt.slice(0, 19).replace('T', ' ')}</span></>}. This comparison is frozen.</p> : <>
    <h3>Classify differences</h3>
    <p role="status">{remaining ? `${remaining} of ${differences.length} differences still need a classification and explanation.` : 'Every difference is classified. Ready for finance sign-off.'}</p>
    {differences.map(({ row, difference }) => <details key={difference.key} className="card-row" open={!difference.classification}>
-    <summary>{row.lineName} · {row.departmentName || 'No department'} · {difference.measure} · {difference.classification ? classificationLabel(difference.classification.kind) : 'Unclassified'}</summary>
-    <p>Easel {money(difference.easel, comparison.currency)} · old tool {money(difference.old, comparison.currency)} · difference {money(difference.delta, comparison.currency)}</p>
+    <summary><Dots>{row.lineName}{row.departmentName || 'No department'}{difference.measure}{difference.classification ? classificationLabel(difference.classification.kind) : 'Unclassified'}</Dots></summary>
+    <Dots as="p">{`Easel ${money(difference.easel, comparison.currency)}`}{`old tool ${money(difference.old, comparison.currency)}`}{`difference ${money(difference.delta, comparison.currency)}`}</Dots>
     <Form key={`${difference.key}-${difference.classification?.kind ?? ''}-${difference.classification?.explanation ?? ''}`} submit="Save classification" onSubmit={async values => {
      update(await command('parallel-month-classify', { id: comparison.id, revision: comparison.revision, key: difference.key, kind: values.kind, explanation: values.explanation }))
     }}>
@@ -147,7 +148,7 @@ function ComparisonRows({ comparison }: { comparison: Comparison }) {
  const { currency, rows } = comparison
  const count = rows.reduce((total, row) => total + row.differences.length, 0)
  return <>
-  <p>{rows.length} line and department rows · {count} differences. Differences are Easel minus the old tool.</p>
+  <Dots as="p">{`${rows.length} line and department rows`}{`${count} differences. Differences are Easel minus the old tool.`}</Dots>
   <Table caption="Parallel month amounts" heads={['Line', 'Department', 'Easel actual', 'Old actual', 'Easel budget', 'Old budget', 'Easel forecast', 'Old forecast']}>
    {rows.map(row => <tr key={row.key}><th scope="row">{row.lineName}<div className="muted">{row.line}</div></th><td>{row.departmentName || 'No department'}{row.department && <div className="muted">{row.department}</div>}</td>{[row.actual, row.oldActual, row.budget, row.oldBudget, row.forecast, row.oldForecast].map((amount, index) => <td key={index} className="num">{money(amount, currency)}</td>)}</tr>)}
   </Table>

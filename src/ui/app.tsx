@@ -34,7 +34,12 @@ export function App() {
  const strip = useScrollEdges()
  const [state, setState] = useState<D | null>(null)
  const [error, setError] = useState('')
- const [tab, setTab] = useState(() => typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('departmentStatement') ? 'review' : new URL(window.location.href).searchParams.has('calendar') ? 'cycle' : TABS.find(t => t.id === new URL(window.location.href).searchParams.get('tab'))?.id ?? 'cash')
+ const [tab, setTab] = useState(() => {
+  // The server renders the loading state with no URL; the tab is read once the browser has one.
+  if (typeof window === 'undefined') return 'cash'
+  const params = new URL(window.location.href).searchParams
+  return params.has('departmentStatement') ? 'review' : params.has('calendar') ? 'cycle' : TABS.find(t => t.id === params.get('tab'))?.id ?? 'cash'
+ })
  const refresh = useCallback(async () => { try { setState(await api('state')); setError('') } catch (e) { setError((e as Error).message) } }, [])
  useEffect(() => { void refresh() }, [refresh])
  useEffect(() => {

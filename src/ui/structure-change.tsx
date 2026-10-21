@@ -1,4 +1,5 @@
 import { decimalText, money, monthLabel, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 function FieldValue({ field, value, currency }: { field: string; value: unknown; currency: string }) {
  if (value == null) return 'Not set'
@@ -30,7 +31,7 @@ export function StructureChange({ state, detail }: { state: D; detail: D }) {
   <summary>Model structure version</summary>
   <p>Source model revision: {detail.modelRevisionBefore}</p>
   {changes.length === 0 ? <p>No structure records changed.</p> : changes.map(change => <div key={`${change.kind}:${change.id}`}>
-   <p><strong>{change.name}</strong> · {change.kind} · {change.before === null ? 'Added' : change.after === null ? 'Removed' : 'Changed'}</p>
+   <Dots as="p"><strong>{change.name}</strong>{change.kind}{change.before === null ? 'Added' : change.after === null ? 'Removed' : 'Changed'}</Dots>
    {change.fields.length > 0 ? <Table caption={`Changed fields: ${change.name}`} heads={['Field', 'Before', 'After']}>
     {change.fields.map((field: D) => <tr key={field.field}>
      <td>{field.field.replace(/(?:Cents|Bps)$/, '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c: string) => c.toUpperCase())}{field.field.endsWith('Bps') ? ' %' : ''}</td><td style={{ whiteSpace: 'normal', overflowWrap: 'anywhere', minWidth: '10rem' }}><FieldValue field={field.field} value={field.before} currency={currencyBefore} /></td><td style={{ whiteSpace: 'normal', overflowWrap: 'anywhere', minWidth: '10rem' }}><FieldValue field={field.field} value={field.after} currency={currencyAfter} /></td>
@@ -39,7 +40,7 @@ export function StructureChange({ state, detail }: { state: D; detail: D }) {
   </div>)}
   {scenarios.length === 0 && <p>No working scenarios were compared.</p>}
   {scenarios.map(scenario => <div key={scenario.id}>
-   <p><strong>{scenario.name}</strong> · Revision {scenario.revisionBefore} → {scenario.revisionAfter}</p>
+   <Dots as="p"><strong>{glue(scenario.name)}</strong>{`Revision ${scenario.revisionBefore} → ${scenario.revisionAfter}`}</Dots>
    {scenario.currencyBefore && scenario.currencyAfter && scenario.currencyBefore !== scenario.currencyAfter && <p>Difference unavailable because the currencies differ.</p>}
    {scenario.blockedBefore && <p>Before calculation unavailable: {scenario.blockedBefore}</p>}
    {scenario.blockedAfter && <p>After calculation unavailable: {scenario.blockedAfter}</p>}

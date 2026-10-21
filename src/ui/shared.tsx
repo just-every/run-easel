@@ -1,5 +1,6 @@
 import { createContext, useContext, useId, useState, type ReactNode } from 'react'
 import { useScrollEdges, revealHorizontally } from './scroll'
+import { DotText } from './dots'
 
 export type D = Record<string, any>
 
@@ -33,7 +34,8 @@ export function Field({ label, name, defaultValue, type = 'text', required = tru
   : type === 'checkbox' ? <input aria-label={label} name={name} type="checkbox" defaultChecked={!!defaultValue} />
   : type === 'month' ? <span className="month-control"><input aria-label={label} name={name} type="month" defaultValue={initial} required={required} onChange={e => setMonthValue(e.target.value)} />{!monthValue && <span className="month-hint">Choose a month</span>}</span>
   : <input aria-label={label} name={name} type={type} defaultValue={initial} required={required} inputMode={type === 'text' && /amount|salary|rate|arpa|percent|volume|customers|opening/i.test(name) ? 'decimal' : undefined} />
- const field = <label className={type === 'checkbox' ? 'check' : options?.some(o => o.label.length > 26) ? 'wide-select' : undefined}>{type === 'checkbox' ? <>{control} {label}</> : <>{label}{control}</>}</label>
+ const text = label.includes(' · ') ? <DotText text={label} /> : label
+ const field = <label className={type === 'checkbox' ? 'check' : options?.some(o => o.label.length > 26) ? 'wide-select' : undefined}>{type === 'checkbox' ? <>{control} {text}</> : <>{text}{control}</>}</label>
  return hint ? <div className="field">{field}<small>{hint}</small></div> : field
 }
 
@@ -58,12 +60,12 @@ export function Action({ label, run, confirm: question, kind }: { label: string;
   if (question && !window.confirm(question)) return
   setBusy(true); setError('')
   try { await run() } catch (err) { setError((err as Error).message) } finally { setBusy(false) }
- }}>{busy ? 'Working…' : label}</button>{error && <span role="alert" className="error">{error}</span>}</span>
+ }}>{busy ? 'Working…' : label.includes(' · ') ? <DotText text={label} /> : label}</button>{error && <span role="alert" className="error">{error}</span>}</span>
 }
 
 export function Table({ heads, children, caption, className }: { heads: ReactNode[]; children: ReactNode; caption?: string; className?: string }) {
  const { ref, edges } = useScrollEdges()
- return <div className="scroll-frame" data-before={edges.before} data-after={edges.after}><div ref={ref} className="table-scroll" tabIndex={0} role="region" aria-label={caption ?? 'Table'} onFocusCapture={e => revealHorizontally(e.target as HTMLElement, true)}><table className={className}>{caption && <caption>{caption}</caption>}<thead><tr>{heads.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>{edges.after && <span className="scroll-cue" aria-hidden="true" />}</div>
+ return <div className="scroll-frame" data-before={edges.before} data-after={edges.after}><div ref={ref} className="table-scroll" tabIndex={0} role="region" aria-label={caption ?? 'Table'} onFocusCapture={e => revealHorizontally(e.target as HTMLElement, true)}><table className={className}>{caption && <caption>{caption.includes(' · ') ? <DotText text={caption} /> : caption}</caption>}<thead><tr>{heads.map((h, i) => <th key={i} scope="col">{h}</th>)}</tr></thead><tbody>{children}</tbody></table></div>{edges.after && <span className="scroll-cue" aria-hidden="true" />}</div>
 }
 
 export const options = (rows: D[], label = 'name'): { value: string; label: string }[] => rows.map(r => ({ value: String(r.id), label: String(r[label] ?? r.id) }))
@@ -73,7 +75,7 @@ export function ScenarioPicker({ scenarios, value, onChange, label = 'Scenario' 
  const description = (s: D) => `${s.name} · ${s.kind}${s.status === 'frozen' ? s.kind === 'reforecast' ? ' (frozen)' : ' (approved)' : s.status === 'closed' ? ' (closed)' : ''}`
  const selected = scenarios.find(s => s.id === value)
  const longName = selected && description(selected).length > 32 ? description(selected) : ''
- return <label className="scenario-picker">{label}<select aria-label={label} aria-describedby={longName ? selectedId : undefined} value={value} onChange={e => onChange(e.target.value)}>{scenarios.map(s => <option key={s.id} value={s.id}>{description(s)}</option>)}</select>{longName && <small id={selectedId} className="selected-option">{longName}</small>}</label>
+ return <label className="scenario-picker">{label}<select aria-label={label} aria-describedby={longName ? selectedId : undefined} value={value} onChange={e => onChange(e.target.value)}>{scenarios.map(s => <option key={s.id} value={s.id}>{description(s)}</option>)}</select>{longName && <DotText as="small" id={selectedId} className="selected-option" text={longName} />}</label>
 }
 
 export const kindLabel: Record<string, string> = { revenue: 'Revenue', 'cost-of-sales': 'Cost of sales', 'operating-expense': 'Operating expenses' }

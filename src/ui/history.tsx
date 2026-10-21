@@ -1,4 +1,5 @@
 import { addMonths, command, decimalText, Field, Form, money, monthLabel, options, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 type HistoryProps = { state: D; view: D; save: (op: string, body: D) => Promise<void>; refresh: () => Promise<void> }
 const named = (rows: D[], id: string, absent: string) => rows.find(row => row.id === id)?.name ?? absent
@@ -30,15 +31,15 @@ function EnteredSchedule({ view, row, save }: { view: D; row: D; save: HistoryPr
     <ActualPair view={view} line={row.line} department={row.department} month={month} />
    </td>)}</tr>
   </Table>
-  {row.provenance && <p className="muted">Source: {row.provenance.file} · {row.provenance.sheet}{row.provenance.row == null ? '' : ` · row ${row.provenance.row}`}</p>}
+  {row.provenance && <Dots as="p" className="muted">{`Source: ${row.provenance.file}`}{row.provenance.sheet}{row.provenance.row != null && `row ${row.provenance.row}`}</Dots>}
  </Form>
 }
 
 function DerivedSchedule({ view, row }: { view: D; row: D }) {
  const history = row.history
- const sourceName = `${lineName(view, history.sourceLine)} · ${departmentName(view, history.sourceDepartment)}`
+ const sourceName = glue(`${lineName(view, history.sourceLine)} · ${departmentName(view, history.sourceDepartment)}`)
  return <>
-  <h3>{row.name}</h3><p>{lineName(view, row.line)} · {departmentName(view, row.department)}. {history.window} actual month(s), starting {history.offset} month(s) earlier from {sourceName}, growth {decimalText(history.growthBps)}%.</p>
+  <h3>{row.name}</h3><p>{glue(`${lineName(view, row.line)} · ${departmentName(view, row.department)}`)}. {history.window} actual month(s), starting {history.offset} month(s) earlier from {sourceName}, growth {decimalText(history.growthBps)}%.</p>
   <Table caption={`${row.name} calculated monthly amounts`} heads={['Month', 'Calculated amount', 'Actual', 'Prior-year actual', 'Calculation and sources']}>
    {view.calculation.months.map((month: string) => {
     const sources: D[] = view.calculation.cells.filter((cell: D) => cell.line === row.line && cell.department === row.department && cell.month === month).flatMap((cell: D) => cell.sources.filter((source: D) => source.kind === 'schedule' && source.id === row.originId))

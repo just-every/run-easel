@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, Form, useDate, type D } from './shared'
+import { Dots } from './dots'
 
 const MODE: Record<string, string> = { email: 'Email each notification', digest: 'Daily email digest at 08:00', chat: 'Chat only (generic notice)' }
 const CHANNEL: Record<string, string> = { slack: 'Slack', teams: 'Microsoft Teams', nook: 'Nook' }
@@ -22,7 +23,7 @@ export function Notifications({ state }: { state: D }) {
    </Form>
    {view.notifications.length ? <ul className="plain">{view.notifications.map((n: D) => <li key={n.id}>
     <strong>{EVENT[n.event] ?? n.event}</strong>: <a href={`/app?tab=${encodeURIComponent(n.tab)}&record=${encodeURIComponent(n.record)}`} style={{ overflowWrap: 'anywhere' }}>{n.title}</a>
-    <small style={{ display: 'block' }}><span className="date-token">{displayDate(n.createdAt)}</span> · {n.status === 'digest-queued' ? 'Waiting for the daily digest' : n.status === 'digested' ? 'Sent in the daily digest' : n.label ?? n.reason ?? n.status}</small>
+    <Dots as="small"><span className="date-token">{displayDate(n.createdAt)}</span>{n.status === 'digest-queued' ? 'Waiting for the daily digest' : n.status === 'digested' ? 'Sent in the daily digest' : n.label ?? n.reason ?? n.status}</Dots>
    </li>)}</ul> : <p>No notifications yet.</p>}
   </>}
  </section>

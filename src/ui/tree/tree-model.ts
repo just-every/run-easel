@@ -9,8 +9,9 @@ import { addMonths, monthLabel } from '../shared'
 export const DRIVERS = ['collections', 'payroll', 'spend', 'financing'] as const
 export type DriverKind = (typeof DRIVERS)[number]
 export const driverLabel: Record<DriverKind, string> = { collections: 'Collections', payroll: 'Payroll', spend: 'Spend', financing: 'Financing' }
-/** How many leaves a driver shows before the rest join one "other" leaf, so every driver still adds up. */
-const SHOWN: Record<DriverKind, number> = { collections: 3, payroll: 2, spend: 2, financing: 2 }
+/** How many leaves a driver shows before the rest join one "other" leaf, so every driver still adds up. Spend shows the
+ * line a plan moves first, the rest as one leaf, so the whole tree and its decision fit one desktop screen. */
+const SHOWN: Record<DriverKind, number> = { collections: 3, payroll: 2, spend: 1, financing: 2 }
 
 export type View = D
 export type Leaf = {
@@ -49,6 +50,9 @@ function sums(view: View | null, from: string, to: string) {
  }
  return out
 }
+
+/** A month that never breaks across lines inside a leaf: "Dec 2027". */
+const monthText = (m: string) => monthLabel(m).replace(' ', '\u00a0')
 
 export const closingAt = (view: View | null, month: string) => view?.cash.find((m: D) => m.month === month)?.closing ?? null
 
@@ -90,20 +94,19 @@ export function buildTree(home: View, baseline: View | null, option: View | null
   if (id.startsWith('dept:')) {
    department = id.slice(5)
    label = departments.get(department) ?? 'Payroll'
-   detail = `${headcountAt(home, department, from)} → ${headcountAt(home, department, end)} people by ${monthLabel(end)}`
+   detail = `${headcountAt(home, department, from)}\u00a0→\u00a0${headcountAt(home, department, end)} by\u00a0${monthText(end)}`
    behind = home.inputs.filter((i: D) => i.kind === 'position' && i.department === department)
   } else if (id.startsWith('line:') && driver === 'spend') {
    const line = id.slice(5)
    label = lines.get(line)?.name ?? label
    behind = home.inputs.filter((i: D) => i.kind === 'expense' && i.line === line)
-   detail = behind.length ? behind.map((i: D) => i.name).slice(0, 3).join(', ') + (behind.length > 3 ? ` and ${behind.length - 3} more` : '') : ''
   } else if (id.startsWith('input:')) {
    const input = inputs.get(id.slice(6))
    if (input) { label = input.name; behind = [input]; detail = inputDetail(input, home, option, money) }
   } else if (id.startsWith('actuals:')) {
    const [line, dept] = id.slice(8).split('|')
    label = `${lines.get(line)?.name ?? 'Actuals'}${departments.get(dept) ? ` · ${departments.get(dept)}` : ''}`
-   detail = 'from months already closed'
+   detail = 'from closed months'
   } else if (id.startsWith('line:')) {
    const [line, dept] = id.slice(5).split('|')
    label = `${lines.get(line)?.name ?? 'Line'}${departments.get(dept) ? ` · ${departments.get(dept)}` : ''}`
@@ -122,7 +125,7 @@ export function buildTree(home: View, baseline: View | null, option: View | null
    const changed = ranked.filter(moved).slice(0, SHOWN.payroll)
    const others = ranked.filter(l => !changed.includes(l))
    shown = changed
-   if (others.length) shown = [{ ...merge(others, 'payroll', 'Headcount'), detail: `${headcountAt(home, null, from)} → ${headcountAt(home, null, end)} people by ${monthLabel(end)}` }, ...changed]
+   if (others.length) shown = [{ ...merge(others, 'payroll', 'Headcount'), detail: `${headcountAt(home, null, from)}\u00a0→\u00a0${headcountAt(home, null, end)} by\u00a0${monthText(end)}` }, ...changed]
   } else if (rest.length) shown = [...shown, merge(rest, driver, `${rest.length} other ${driver === 'spend' ? (rest.length === 1 ? 'line' : 'lines') : (rest.length === 1 ? 'source' : 'sources')}`)]
   const sum = (pick: (l: Leaf) => number | null) => all.some(l => pick(l) === null) ? null : all.reduce((n, l) => n + pick(l)!, 0)
   return { driver, value: sum(l => l.value)!, base: b ? sum(l => l.base) : null, option: o ? sum(l => l.option) : null, leaves: shown }
@@ -135,7 +138,7 @@ export function buildTree(home: View, baseline: View | null, option: View | null
 
 function merge(list: Leaf[], driver: DriverKind, label: string): Leaf {
  const sum = (pick: (l: Leaf) => number | null) => list.some(l => pick(l) === null) ? null : list.reduce((n, l) => n + pick(l)!, 0)
- return { key: `${driver}|merged`, driver, label, detail: list.map(l => l.label).slice(0, 3).join(', ') + (list.length > 3 ? ` and ${list.length - 3} more` : ''), value: sum(l => l.value)!, base: sum(l => l.base), option: sum(l => l.option), inputs: list.flatMap(l => l.inputs), alternatives: [...new Set(list.flatMap(l => l.alternatives))], other: list.length }
+ return { key: `${driver}|merged`, driver, label, detail: list.length > 2 ? `${list[0].label} and ${list.length - 1} more` : list.map(l => l.label).join(' and '), value: sum(l => l.value)!, base: sum(l => l.base), option: sum(l => l.option), inputs: list.flatMap(l => l.inputs), alternatives: [...new Set(list.flatMap(l => l.alternatives))], other: list.length }
 }
 
 const pct = (bps: number) => `${(bps / 100).toFixed(bps % 100 ? (bps % 10 ? 2 : 1) : 0)}%`
@@ -161,7 +164,7 @@ export function changeText(before: D[], after: D[]) {
   if (!now) { parts.push(`${old.name} removed`); continue }
   const fields: string[] = []
   if (old.startDate && now.startDate && old.startDate !== now.startDate) fields.push(`Starts ${dateText(old.startDate)} → ${dateText(now.startDate)}`)
-  else if (old.start !== now.start) fields.push(`Start ${monthLabel(old.start)} → ${monthLabel(now.start)}`)
+  else if (old.start !== now.start) fields.push(`Start ${monthText(old.start)} →\u00a0${monthText(now.start)}`)
   if (old.dsoDays !== now.dsoDays) fields.push(`Net ${old.dsoDays} → Net ${now.dsoDays}`)
   if (old.amountCents !== now.amountCents) fields.push(`amount changed`)
   if (JSON.stringify(old.drawsCents ?? {}) !== JSON.stringify(now.drawsCents ?? {})) fields.push(Object.entries(now.drawsCents ?? {}).map(([m, v]) => `draw ${monthLabel(m)}`).join(', ') || 'draws removed')

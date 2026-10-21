@@ -1,4 +1,6 @@
-/* The run site's frame: Easel's tokens (src/ui/tokens.ts), ink on paper, Plex Sans. */
+/* The run site's frame: Easel's tokens (src/ui/tokens.ts), ink on paper, Plex Sans. Its hairlines keep the values the
+   homepage landed with, so the app's own token changes never move the homepage. */
+:root { --frame-rule: #e3e2dc; --frame-border: #cfccc3; }
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 400 17px/1.5 var(--font); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
@@ -10,7 +12,7 @@ a { color: inherit; }
 .site-skip:focus { top: 8px; }
 
 .site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 92px; position: relative; }
-.site-header::after { content: ""; position: absolute; left: 64px; right: 64px; bottom: 0; border-bottom: 1px solid var(--rule); }
+.site-header::after { content: ""; position: absolute; left: 64px; right: 64px; bottom: 0; border-bottom: 1px solid var(--frame-rule); }
 .site-brand { display: inline-flex; align-items: center; gap: 14px; font-family: Inter, var(--font); font-size: 36px; line-height: 1; font-weight: 850; letter-spacing: -.045em; text-decoration: none; color: #121010; }
 .site-brand img { width: auto; height: 48px; }
 .site-header nav, .site-footer nav { display: flex; gap: 40px; font-size: 19px; }
@@ -27,11 +29,11 @@ a { color: inherit; }
 .eyebrow { font-size: 13px; line-height: 1; font-weight: 500; letter-spacing: .28em; text-transform: uppercase; color: var(--ink); }
 
 .site-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-top: 32px; padding-bottom: 40px; position: relative; }
-.site-footer::before { content: ""; position: absolute; left: 64px; right: 64px; top: 0; border-top: 1px solid var(--rule); }
+.site-footer::before { content: ""; position: absolute; left: 64px; right: 64px; top: 0; border-top: 1px solid var(--frame-rule); }
 .site-footer-brand { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
 .site-footer .site-brand { font-size: 26px; }
 .site-footer .site-brand img { width: auto; height: 34px; }
-.site-footer-line { padding-left: 20px; border-left: 1px solid var(--border); color: var(--muted); font-size: 15px; }
+.site-footer-line { padding-left: 20px; border-left: 1px solid var(--frame-border); color: var(--muted); font-size: 15px; }
 .site-footer nav { font-size: 15px; gap: 28px; }
 
 @media (max-width: 760px) {

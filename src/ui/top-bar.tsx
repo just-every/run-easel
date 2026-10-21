@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { monthLabel, type D } from './shared'
+import { Dots, glue } from './dots'
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]!.toUpperCase()).join('') || '?'
 const forecastOf = (state: D) => state.scenarios?.find((s: D) => s.kind === 'forecast' && !s.alternativeBudget && s.status === 'working')
@@ -26,6 +27,6 @@ export function PageHead({ state }: { state: D }) {
  const forecast = forecastOf(state)
  return <div className="page-head">
   <h1>{state.workspace.name}</h1>
-  {forecast && <p>{forecast.name} · rev {forecast.revision}{forecast.actualsThrough ? ` · actuals through ${monthLabel(forecast.actualsThrough)}` : ''}</p>}
+  {forecast && <Dots as="p">{glue(forecast.name)}{`rev ${forecast.revision}`}{forecast.actualsThrough && `actuals through ${monthLabel(forecast.actualsThrough)}`}</Dots>}
  </div>
 }

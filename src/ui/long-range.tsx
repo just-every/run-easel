@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api, command, decimalText, Field, Form, money, monthLabel, Table, type D } from './shared'
+import { Dots, glue } from './dots'
 
 /** Annual strategy alongside the scenario comparison, using the existing form
  * and scrollable statement components. No position-level inputs are needed. */
@@ -19,7 +20,7 @@ export function LongRange({ state, refresh }: { state: D; refresh: () => Promise
   {error && <p role="alert" className="error">{error}</p>}
   {view && <>
    <h3>{view.plan.name}</h3>
-   <p>{view.source.name} · revision {view.source.revision} · {view.source.status === 'frozen' ? 'approved, frozen arithmetic' : 'live working budget'}. {view.source.sha256 && <span className="muted">Snapshot SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{view.source.sha256}</span></span>}</p>
+   <Dots as="p">{glue(view.source.name)}{`revision ${view.source.revision}`}<>{view.source.status === 'frozen' ? 'approved, frozen arithmetic' : 'live working budget'}. {view.source.sha256 && <span className="muted">Snapshot SHA-256: <span style={{ overflowWrap: 'anywhere' }}>{view.source.sha256}</span></span>}</></Dots>
    <p><a href={`/api/easel/long-range/${selected}/document.xlsx`} download>Download long-range plan (Excel)</a></p>
    <Table caption="Annual plan and target reconciliation" heads={['Metric', ...view.rows.map((r: D) => <span key={r.year}>Year {r.year}<small style={{ display: 'block', whiteSpace: 'nowrap' }}>{monthLabel(r.start)} – {monthLabel(r.end)}</small></span>)]}>
     {[
