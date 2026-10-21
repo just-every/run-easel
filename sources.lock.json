@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "932f99306f66040378fa8f23a4c0c0b933dc0cce6518c534419f85f856cf10a7",
+      "sha256": "48827cc76be694ca957c90e7e5e69c06de34100e98a6108c943fea958c85e60e",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "b07249ae28c6e5536aa6f6e5ed09a3bf7b980abdddba98bac2540969bc0ffe18",
+      "sha256": "2e77d5d7693afff6aea266af4cf1498551dabec9112b2bf82d9aba097f028949",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "437359604ca0521fea67b67443b4c82d392d7b7eb3f41e9c7311e6ffb4a2916e",
+      "sha256": "dc80061abc43b783c0df7a27883adc847a9d5e7bd98bb08725ef9fd518d9dd29",
       "executable": false
     },
     "DEMO.md": {
@@ -523,7 +523,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "1a4cafcce7e1e1e5770bc1cfb9dc6d7fdfac182c2b28b0fb93dca4bc8199dd0c",
+      "sha256": "c79ce0d8799d449d95d051734980f87bf70978eaa846564d30846c5e4cc0b5d9",
       "executable": false
     },
     "SOURCE.md": {
@@ -754,6 +754,10 @@
       "sha256": "70c3720bef98141d3bc191c567f7718a8f97a32a8f36213a28ad837ea9523870",
       "executable": false
     },
+    "src/easel/compensation.ts": {
+      "sha256": "dda9b2a9970d6d74c683949a9fb709ba20ca1d84f6748437932705346bf8bd5b",
+      "executable": false
+    },
     "src/easel/connection-seal.ts": {
       "sha256": "dde1cf7939625c70345a3fbf2f3fa8716dbcd4b72f619ad28f4ff9470a33910e",
       "executable": false
@@ -823,7 +827,7 @@
       "executable": false
     },
     "src/easel/engine.ts": {
-      "sha256": "eaedb0e7cd62e1d41dbf0ed8c59c06f2c43f81e3c3656c7c35e7dd9a2eec5c8e",
+      "sha256": "8918a288151fc335702a33058b79974c3378617b351886bec5dd1dc78a7330ea",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -995,7 +999,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "fadd7d82c23e9e342b561ee4bf9e48f4bb0f9cdfa91051a880ec8d3f019135c7",
+      "sha256": "321a822f7acfbb658c7a39ffa08ae0aee0be4753f4c12b23283f9b1715c4b602",
       "executable": false
     },
     "src/easel/metric-rules.ts": {
@@ -1007,7 +1011,7 @@
       "executable": false
     },
     "src/easel/model.ts": {
-      "sha256": "82d376d347ab1ae7a04d5cfe5c1dca19de0b7583c130560a38bf50cf9125e496",
+      "sha256": "23a4ce7496bc75739ae269ab4c4798558b078e8e1e2bc7414aab4a3f29ab74cd",
       "executable": false
     },
     "src/easel/months.ts": {
@@ -1071,7 +1075,7 @@
       "executable": false
     },
     "src/easel/payroll-taxes.ts": {
-      "sha256": "fe80add3e8ddf404136766a0075e5ea478b854f8923bf842f4b70be02990cb81",
+      "sha256": "8ccdf17aad24ccba9734a15a2663cc67229d0bc0ce9ada6a6ae93a1bfbb36ab7",
       "executable": false
     },
     "src/easel/plan.ts": {
@@ -1223,7 +1227,7 @@
       "executable": false
     },
     "src/easel/working-capital.ts": {
-      "sha256": "a82ec25e604d25fd70aa6dcac39a1ffd0d7cdb3621f7f8be1b7d755d5299bd3a",
+      "sha256": "f1af9f7704c4fdd91e20823b58d8334c7cb85abbea922992a760f14e75d16ea9",
       "executable": false
     },
     "src/easel/xlsx-formulas.ts": {
@@ -3043,7 +3047,7 @@
       "executable": false
     },
     "src/ui/assumptions.ts": {
-      "sha256": "487f0f945a3ce5ab8860c2f0b16e164060cf7ae5f519ae5ef7a9c9813d016e35",
+      "sha256": "960d64707992b8d2ec1cb6ca098ed3106cd91e3a8413b70b1a9bff2fce7dfd21",
       "executable": false
     },
     "src/ui/balance-actuals.tsx": {
@@ -3139,7 +3143,7 @@
       "executable": false
     },
     "src/ui/plan.tsx": {
-      "sha256": "b6766d6dd2423d4d655fda67daf15cd65e6286683cf382dfc34426833f5df55b",
+      "sha256": "ef1e5cf15c828eda304048b733fb3e61d23e2f88d39d67655502324d554f2864",
       "executable": false
     },
     "src/ui/planning-grid.css": {
@@ -3247,7 +3251,7 @@
       "executable": false
     },
     "src/ui/working-capital-inputs.tsx": {
-      "sha256": "0da63a85e65c6dc01be28cc05ac29ee72e2a0aa7437eff681f3eea0cb623475a",
+      "sha256": "2a0efa5310aac2f0f88979010bf75894bbabd226c3912301a62014db0aa92d6c",
       "executable": false
     },
     "src/ui/working-capital.tsx": {
@@ -3555,11 +3559,11 @@
       "executable": false
     },
     "tests/people-comp-browser.mjs": {
-      "sha256": "adc415173c88a83122f0a68d0f2f7b489fe15a34a59ebd2f8344abe6867be957",
+      "sha256": "2fae584c09fe7915184e4250240c6f017560624b7ff75bb16d727f06fbae1028",
       "executable": false
     },
     "tests/people-comp.test.mjs": {
-      "sha256": "c1ca1a0cbd59773f9cdc5f806f94984e84e9a1fc52d42fc67246ad87575b9ae5",
+      "sha256": "31a7200e6f7cc9e359edccb85b256fa3bef8422eed5936e1099e7f12c69ddfd7",
       "executable": false
     },
     "tests/reforecasts-browser-journey.mjs": {

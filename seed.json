@@ -258,6 +258,12 @@
       "clauses": [
         "MODEL-001"
       ]
+    },
+    {
+      "id": "compensation-estimates",
+      "clauses": [
+        "PEOPLE-004"
+      ]
     }
   ],
   "nonGoals": [

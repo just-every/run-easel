@@ -121,3 +121,89 @@ test('PEOPLE-004 REV-004 linked commission planning estimates round once, follow
  assert.deepEqual((await view(kept.id)).calculation, frozen.calculation)
  assert.deepEqual((await h.get('/api/easel/state')).snapshots, snapshots, 'immutable captures and hashes do not change after promotion')
 })
+
+
+test('PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through taxes, payroll timing, proposals, captures and PEOPLE-005', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Base compensation estimates', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const dept = await h.command('department', { name: 'Engineering' })
+ const salary = await h.command('line', { name: 'Compensation', type: 'operating-expense' })
+ const income = await h.command('line', { name: 'Tax estimate', type: 'operating-expense' })
+ const revenue = await h.command('line', { name: 'Bookings', type: 'revenue' })
+ const scenario = (await h.get('/api/easel/state')).scenarios[0].id
+ const body = { scenario, department: dept.id, line: salary.id, title: 'Hourly engineer', holder: 'Private hourly sentinel', start: '2026-01', payBasis: 'hourly', annualSalary: '0', hourlyRate: '40', expectedHours: '120', onCostPercent: '10', benefits: '1200', retirementMatchPercent: '4', commissionPercent: '10', payDay: '15', payMonthOffset: '1' }
+ const hourly = await h.command('position', body)
+ const view = (id = scenario, cookie = h.owner) => h.get(`/api/easel/scenario/${id}`, cookie)
+ const source = (v, origin = hourly.originId, month = '2026-01') => v.calculation.cells.find(c => c.line === salary.id && c.month === month).sources.find(s => s.id === origin)
+ let current = await view()
+ assert.equal(source(current).amount, 480000 + 48000 + 120000 + 19200)
+ assert.match(source(current).trace, /Hourly pay planning estimate:.*40.00.*120.00.*4,800.00/)
+ assert.match(source(current).trace, /benefits per person per period.*1,200.00.*401\(k\).*4.00%.*192.00.*excluding commission/)
+ assert.equal(current.calculation.cash[0].payments, 0)
+ assert.equal(current.calculation.cash[1].payments, 667200)
+ const policy = { scenario, line: income.id, department: dept.id, socialSecurityPercent: '10', socialSecurityBase: '1000000', medicarePercent: '10', futaPercent: '10', futaBase: '1000000', sutaPercent: '10', sutaBase: '1000000', federalIncomePercent: '0', stateIncomePercent: '0' }
+ await h.command('tax-policy', policy)
+ current = await view()
+ const tax = current.calculation.taxes.payrollRows.find(r => r.originId === hourly.originId && r.month === '2026-01')
+ assert.deepEqual([tax.wagesCents, tax.socialSecurityCents, tax.medicareCents, tax.futaCents, tax.sutaCents], [480000, 48000, 48000, 48000, 48000])
+ assert.equal(source(current).amount, 859200, 'hourly wages + on-costs + benefits + match + each employer tax')
+ await h.command('revenue', { scenario, name: 'Explicit hourly commission', kind: 'contract', department: dept.id, line: revenue.id, start: '2026-01', startDate: '2026-01-01', termMonths: '12', contractValue: '1000.05', billingCadence: 'annual', dsoDays: '0', commissionPosition: hourly.originId })
+ current = await view()
+ assert.equal(source(current).amount, 873201, 'commission enters taxable wages but does not increase on-costs or retirement match')
+ assert.equal(current.calculation.taxes.payrollRows.find(r => r.originId === hourly.originId).wagesCents, 490001)
+ const salariedBody = { ...body, title: 'Salary with benefits', holder: 'Private salary sentinel', payBasis: 'salary', annualSalary: '120000', hourlyRate: '0', expectedHours: '0', onCostPercent: '20', employmentType: '1099', commissionPercent: '0' }
+ const salaried = await h.command('position', salariedBody)
+ current = await view()
+ assert.equal(source(current, salaried.originId).amount, 1000000 + 200000 + 120000 + 40000)
+ assert.equal(current.calculation.taxes.payrollRows.find(r => r.originId === salaried.originId).totalCents, 0, '1099 still has zero employer taxes')
+ const fractional = await h.command('position', { ...body, title: 'Fractional hourly rounding', holder: '', hourlyRate: '0.05', expectedHours: '0.10', onCostPercent: '50', benefits: '0', retirementMatchPercent: '50', employmentType: '1099', end: '2026-01' })
+ current = await view()
+ assert.equal(source(current, fractional.originId).amount, 3, 'half-cent wages, on-costs and match each round once half-away')
+ assert.equal(current.calculation.headcount[dept.id]['2026-01'], 3)
+ const before = current
+ for (const changes of [{ payBasis: 'other' }, { annualSalary: '1' }, { hourlyRate: '-1' }, { expectedHours: '1.001' }, { benefits: '-1' }, { retirementMatchPercent: '100.01' }, { payBasis: 'salary', annualSalary: '100' }]) {
+  await h.command('position', { ...body, id: hourly.id, ...changes }, h.owner, 400)
+ }
+ assert.deepEqual(await view(), before, 'invalid compensation never changes the model or revision')
+ for (const [i, row] of current.calculation.balanceSheet.entries()) {
+  assert.equal(row.balanceDifference, 0); assert.equal(current.calculation.cashFlow[i].difference, 0)
+ }
+ const analyst = await h.person('comp-analyst@example.test', 'finance', [], false)
+ const board = await h.person('comp-board@example.test', 'viewer')
+ const forbidden = /Private hourly sentinel|Private salary sentinel|expectedHours|retirementMatchBps|benefitsCents|Hourly pay planning estimate|match base is salary/
+ for (const cookie of [analyst, board]) {
+  const safe = await view(scenario, cookie)
+  assert.equal(safe.calculation.cells.find(c => c.line === salary.id && c.month === '2026-01').amount, 873201 + 1360000 + 3)
+  assert.doesNotMatch(JSON.stringify(safe), forbidden)
+  await h.command('position', { ...body, id: hourly.id, benefits: '1' }, cookie, 403)
+ }
+ for (const cookie of [h.owner, analyst, board]) {
+  const response = await h.mf.dispatchFetch(`${h.origin}/api/easel/scenario/${scenario}/document.xlsx`, { headers: { cookie } })
+  assert.equal(response.status, 200)
+  const book = await readWorkbook(await response.arrayBuffer()); proveFormulas(book)
+  const data = JSON.stringify(book.worksheets.map(s => s.getSheetValues()))
+  if (cookie === h.owner) assert.match(data, /Hourly pay planning estimate/)
+  else assert.doesNotMatch(data, forbidden)
+ }
+ const approval = await h.command('approve-budget', { scenario, revision: current.scenario.revision })
+ const frozen = await view()
+ const proposal = await h.command('proposal-create', { from: approval.forecast.id, name: 'Hourly hours change', request: 'Review 100 hours' })
+ const copied = (await view(proposal.id)).inputs.position.find(p => p.originId === hourly.originId)
+ const rpc = await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'position', arguments: { ...body, scenario: proposal.id, id: copied.id, expectedHours: '100' } } }, h.owner)
+ assert.equal(rpc.status, 200); assert.equal(rpc.value.result.isError, undefined)
+ const proposed = await view(proposal.id)
+ assert.equal(source(proposed).amount, 750001)
+ const comparison = await h.get(`/api/easel/compare?a=${approval.forecast.id}&b=${proposal.id}`)
+ assert.match(JSON.stringify(comparison), /expectedHours/)
+ assert.doesNotMatch(JSON.stringify(await h.get(`/api/easel/compare?a=${approval.forecast.id}&b=${proposal.id}`, analyst)), forbidden)
+ await h.command('proposal-submit', { id: proposal.id })
+ await h.command('proposal-promote', { id: proposal.id, revision: proposed.scenario.revision })
+ assert.equal(source(await view(approval.forecast.id)).amount, 750001)
+ assert.deepEqual(await view(), frozen, 'approved estimates and their component arithmetic remain immutable')
+ // Continuing hourly service uses the same components in estimated opening payroll accruals.
+ const prior = await h.command('branch', { from: approval.forecast.id, name: 'Prior hourly accrual' })
+ const priorPosition = (await view(prior.id)).inputs.position.find(p => p.originId === hourly.originId)
+ await h.command('position', { ...body, scenario: prior.id, id: priorPosition.id, start: '2025-12', employmentType: '1099' })
+ const priorView = await view(prior.id)
+ assert.equal(priorView.calculation.workingCapital.opening.accruedLiabilities, 667200)
+})

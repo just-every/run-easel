@@ -2,6 +2,7 @@ import { decimalText, money, monthLabel, type D } from './shared'
 import { semanticEqual } from '../easel/semantic'
 
 const labels: Record<string, string> = {
+ payBasis: 'pay basis', expectedHours: 'expected hours per period', benefitsCents: 'benefits per person per period', retirementMatchBps: '401(k) employer match estimate',
  commissionPosition: 'commission position (planning estimate)', commissionRateBps: 'commission rate (planning estimate)', startDate: 'contract start date', contractValueCents: 'total contract value', termMonths: 'contract term', billingCadence: 'upfront billing cadence', dsoDays: 'DSO',
  startSeats: 'starting seats', expansionBps: 'monthly seat expansion', priceCents: 'monthly price per seat', startUsage: 'starting monthly usage', unitPriceCents: 'price per usage unit', monthlyHours: 'monthly available hours per position', utilizationBps: 'billable utilization', hourlyRateCents: 'billable hourly rate', milestones: 'project milestones', openingBacklogCents: 'opening backlog', monthlyAdditionsCents: 'monthly backlog additions', burnBps: 'monthly backlog recognition',
  name: 'name', title: 'title', holder: 'person', line: 'planning line', department: 'department', sourceDepartment: 'shared department', repDepartment: 'hiring department', kind: 'driver', start: 'start month', end: 'end month', collectionLag: 'collection timing', startVolume: 'starting volume', growthBps: 'monthly growth', rateCents: 'rate per unit', startCustomers: 'starting customers', newPerMonth: 'new customers per month', newPerRep: 'new customers per ramped hire', rampMonths: 'ramp months', churnBps: 'monthly churn', arpaCents: 'monthly revenue per customer', annualSalaryCents: 'annual salary', onCostBps: 'on-costs', amountCents: 'amount', basis: 'allocation basis', targets: 'receiving departments', values: 'monthly amounts',
@@ -15,7 +16,7 @@ function format(key: string, value: any, side: D): string {
  if (key === 'start' || key === 'end') return monthLabel(value)
  if (key.endsWith('Cents')) return money(value, side.workspace.currency)
  if (key.endsWith('Bps')) return `${decimalText(value)}%`
- if (['startVolume', 'startCustomers', 'newPerMonth', 'newPerRep', 'startSeats', 'startUsage', 'monthlyHours'].includes(key)) return decimalText(value)
+ if (['startVolume', 'startCustomers', 'newPerMonth', 'newPerRep', 'startSeats', 'startUsage', 'monthlyHours', 'expectedHours'].includes(key)) return decimalText(value)
  if (key === 'milestones') return value.map((m: D) => `${m.name}: ${monthLabel(m.month)} ${money(m.amountCents, side.workspace.currency)}`).join('; ')
  if (key === 'collectionLag' || key === 'rampMonths' || key === 'termMonths') return `${value} ${value === 1 ? 'month' : 'months'}`
  if (key === 'dsoDays') return `${value} ${value === 1 ? 'day' : 'days'}`

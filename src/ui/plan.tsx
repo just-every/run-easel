@@ -58,8 +58,8 @@ export function Plan({ state, refresh }: Shared) {
    <h2>Positions</h2>
    {me.payDetail ? <>
    <p className="muted">On-costs are your own additional assumption. An enabled tax policy adds employer-tax estimates separately; review on-costs to avoid counting the same tax twice. Easel never runs payroll.</p>
-   <Table caption="Positions" heads={['Title', 'Person', 'Department', 'From', 'To', 'Salary a year', 'On-costs', '']}>
-    {(inputs.position ?? []).map((p: D) => <tr key={p.id}><td>{p.title}</td><td>{p.holder || 'To be hired'}</td><td>{deptName(p.department)}</td><td>{monthLabel(p.start)}</td><td>{p.end ? monthLabel(p.end) : '—'}</td><td className="num">{money(p.annualSalaryCents, currency)}</td><td className="num">{decimalText(p.onCostBps)}%</td><td><Action label="Edit" kind="quiet" run={async () => edit('position', p)} /><Action label="Remove" kind="danger" run={() => remove('position', p.id)} /></td></tr>)}
+   <Table caption="Positions" heads={['Title', 'Person', 'Department', 'From', 'To', 'Base compensation', 'On-costs', '']}>
+    {(inputs.position ?? []).map((p: D) => <tr key={p.id}><td>{p.title}</td><td>{p.holder || 'To be hired'}</td><td>{deptName(p.department)}</td><td>{monthLabel(p.start)}</td><td>{p.end ? monthLabel(p.end) : '—'}</td><td className="num">{p.payBasis === 'hourly' ? `${money(p.hourlyRateCents, currency)} × ${decimalText(p.expectedHours)} hours/period` : `${money(p.annualSalaryCents, currency)} a year`}</td><td className="num">{decimalText(p.onCostBps)}%</td><td><Action label="Edit" kind="quiet" run={async () => edit('position', p)} /><Action label="Remove" kind="danger" run={() => remove('position', p.id)} /></td></tr>)}
    </Table>
    {(() => { const p = form('position'); return <Form key={p?.id ?? `new-position-${round}`} submit={p ? 'Save position' : 'Add position'} onSubmit={v => save('position', { ...v, id: p?.id })}>
     <Field label="Position title" name="title" defaultValue={p?.title} />
@@ -71,7 +71,12 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Backfills position" name="backfillOrigin" required={false} options={[{value:"",label:"No backfill"},...(inputs.position ?? []).filter((q: D) => q.id !== p?.id).map((q: D) => ({value:q.originId,label:q.title}))]} defaultValue={p?.backfillOrigin} />
     <Field label="Monthly attrition assumption %" name="attritionPercent" defaultValue={decimalText(p?.attritionBps ?? 0)} hint="Shown as expected departures; does not remove positions or change payroll" />
     <Field label="End month" name="end" type="month" required={false} defaultValue={p?.end} />
-    <Field label="Annual salary" name="annualSalary" defaultValue={decimalText(p?.annualSalaryCents)} />
+    <Field label="Pay basis" name="payBasis" options={[{value:'salary',label:'Annual salary'},{value:'hourly',label:'Hourly rate × expected hours'}]} defaultValue={p?.payBasis ?? 'salary'} />
+    <Field label="Hourly pay rate" name="hourlyRate" defaultValue={decimalText(p?.hourlyRateCents ?? 0)} hint="Use zero for salary positions" />
+    <Field label="Expected hours per period" name="expectedHours" defaultValue={decimalText(p?.expectedHours ?? 0)} hint="Fixed expected hours in each active accounting period; use zero for salary positions" />
+    <Field label="Benefits per person per period" name="benefits" defaultValue={decimalText(p?.benefitsCents ?? 0)} hint="Additional employer cost estimate, excluded from taxable wages and on-costs" />
+    <Field label="401(k) employer match estimate %" name="retirementMatchPercent" defaultValue={decimalText(p?.retirementMatchBps ?? 0)} hint="Salary or hourly wages only, excluding commission. No eligibility, employee deferral or statutory-limit calculation." />
+    <Field label="Annual salary" name="annualSalary" defaultValue={decimalText(p?.annualSalaryCents)} hint="Use zero for hourly positions" />
     <Field label="Employment type" name="employmentType" options={[{value:'W-2',label:'W-2 employee'},{value:'1099',label:'1099 contractor'}]} defaultValue={p?.employmentType ?? 'W-2'} />
     <Field label="Prior year-to-date taxable wages" name="taxYtdWages" required={false} defaultValue={p?.taxYtdWagesCents === undefined ? '' : decimalText(p.taxYtdWagesCents)} hint="Before the first plan month; required for a continuing W-2 position when tax estimates start midyear" />
     <PayrollFields row={p} />

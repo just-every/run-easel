@@ -38,7 +38,7 @@ export function PayrollFields({row}:{row:D|null}) {
   {scheduled&&<>
    <Field label="Payroll pay day" name="payDay" type="number" defaultValue={row?.payDay??5} hint="Day 1–31, clamped to the pay month's last day." />
    <Field label="Payroll pay month offset" name="payMonthOffset" options={[0,1,2,3].map(n=>({value:String(n),label:n===0?'Earned month':`${n} month${n===1?'':'s'} after earned`}))} defaultValue={String(row?.payMonthOffset??1)} />
-   <p className="muted wide">Salary and entered on-costs accrue in the earned month and settle on this planned pay date. This does not run payroll or make a payment.</p>
+   <p className="muted wide">Base pay, entered on-costs, benefits, employer match and tax estimates accrue in the earned month and settle on this planned pay date. This does not run payroll or make a payment.</p>
   </>}
  </>
 }

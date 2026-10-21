@@ -1,3 +1,4 @@
+import { compensation } from './compensation'
 import { commissionEstimates } from './commissions'
 // Working-capital subledger. Dates are UTC calendar dates; all amounts are cents.
 import type { ContractCalculation } from './contract-revenue'
@@ -100,7 +101,8 @@ export function workingCapital(model: Model, months: string[], allocations: Data
  // Prior earned salaries seed explicitly estimated opening accruals, rather
  // than restarting a continuing position's payment calendar at plan start.
  for (const p of model.inputs.position.filter(p => p.payDay)) {
-  const monthly = Number(BigInt(p.annualSalaryCents) * BigInt(10000 + p.onCostBps) / 120000n)
+  const components = compensation(p, Number(BigInt(p.annualSalaryCents) / 12n), model.workspace.currency)
+  const monthly = (p.payBasis === 'hourly' ? components.wages + components.onCosts : Number(BigInt(p.annualSalaryCents) * BigInt(10000 + p.onCostBps) / 120000n)) + components.extra
   for (let offset = 3; offset >= 1; offset--) {
    const month = addMonths(months[0], -offset)
    if (p.start <= month && (!p.end || month <= p.end)) payroll(p, month, monthly + (commissions.get(`${p.originId}|${month}`)?.amount ?? 0))

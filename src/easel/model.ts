@@ -1,4 +1,5 @@
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
+import { compensationInput } from './compensation'
 import { commissionPosition } from './commissions'
 import { headcountInput } from './headcount-input'
 import { taxInput, positionTaxInput } from './tax-input'
@@ -99,7 +100,7 @@ export function validateInput(s: State, kind: InputKind, b: Data, scenario: stri
    commissionPosition([{ originId: b.originId, start, end }], contract)
    requireThat(!get(s, 'line', b.line).nonCash, 'Commission requires a cash salary line', 409)
   }
-  return { commissionRateBps: percentBps(b.commissionPercent ?? '0', 'Commission planning estimate %'), ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end, annualSalaryCents: cents(b.annualSalary, 'Annual salary'), onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
+  return { ...compensationInput(b), commissionRateBps: percentBps(b.commissionPercent ?? '0', 'Commission planning estimate %'), ...payrollInput(b), ...positionTaxInput(b), ...headcountInput(s,b,scenario,start), title: text(b.title, 'Position title'), holder: optionalText(b.holder, 'Person', 200), department: department(s, b.department), line: line(s, b.line, ['cost-of-sales', 'operating-expense'], 'salary line'), start, end, onCostBps: percentBps(b.onCostPercent ?? '0', 'On-costs %') }
  }
  if (kind === 'expense') {
   const kindOf = choice(b.kind, ['recurring', 'one-off', 'acquisition', 'inventory', 'prepaid', 'bonus'] as const, 'an expense kind')

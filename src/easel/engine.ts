@@ -3,6 +3,7 @@ import { ledgerStatements } from './ledger-statements'
 import { openContracts, scheduleAllocations } from './ledger-schedules'
 import type { LedgerContext } from './ledger-context'
 import { workbookScheduleValues } from './workbook-calculation'
+import { compensation } from './compensation'
 import { commissionEstimates } from './commissions'
 import { payrollTaxes } from './payroll-taxes'
 import { incomeTaxes, salesTaxes } from './tax-calculation'
@@ -166,6 +167,8 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   // for this position's active plan months is known. Any monthly rounding
   // difference is assigned to its final active month.
   const target = mulDiv(p.annualSalaryCents, rate * positionMonths.length, 120000)
+  const salaryMonthly = Number(BigInt(p.annualSalaryCents) / 12n)
+  const salaryTarget = mulDiv(p.annualSalaryCents, positionMonths.length, 12)
   const who = p.holder ? `${p.title} (${p.holder})` : `${p.title} (to be hired)`
   for (const [index, m] of positionMonths.entries()) {
    const last = index === positionMonths.length - 1
@@ -174,9 +177,11 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
    const remainder = last ? `; target for ${monthCount(positionMonths.length)} is ${money(target)}; final active month rounding adjustment ${adjustment < 0 ? '−' : '+'}${money(Math.abs(adjustment))} sets this month's cost to ${money(amount)}` : ''
    const tax=employerTaxes?.rows.find(r=>r.originId===p.originId&&r.month===m)
    const commission = commissions.get(`${p.originId}|${m}`)
-   const cost=amount+(commission?.amount??0)+(tax?.totalCents??0)
+   const components = compensation(p, last ? salaryTarget - salaryMonthly * (positionMonths.length - 1) : salaryMonthly, currency)
+   const baseCost = p.payBasis === 'hourly' ? components.wages + components.onCosts : amount
+   const cost=baseCost+components.extra+(commission?.amount??0)+(tax?.totalCents??0)
    if (p.payDay) working.payroll(p, m, cost)
-   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${who}: ${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}` })
+   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${components.trace}${who}: ${p.payBasis === 'hourly' ? `hourly wages and entered on-costs ${money(baseCost)}` : `${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}`}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}` })
   }
  }
 
