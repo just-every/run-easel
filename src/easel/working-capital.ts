@@ -102,7 +102,7 @@ export function workingCapital(model: Model, months: string[], allocations: Data
  // than restarting a continuing position's payment calendar at plan start.
  for (const p of model.inputs.position.filter(p => p.payDay)) {
   const priorMonths = [3,2,1].map(offset => addMonths(months[0],-offset))
-  const schedule = compensationSchedule(p, priorMonths, model.workspace.currency, model.workspace)
+  const schedule = compensationSchedule(p, priorMonths, model.workspace.currency, model.workspace, false)
   for (let offset = 3; offset >= 1; offset--) {
    const month = addMonths(months[0], -offset)
    if (p.start <= month && (!p.end || month <= p.end)) { const components = schedule.get(month)!; payroll(p, month, components.total - components.bonus + (commissions.get(`${p.originId}|${month}`)?.amount ?? 0)); if(components.bonus) payroll({...p,payMonthOffset:0},month,components.bonus) }

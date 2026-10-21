@@ -755,7 +755,7 @@
       "executable": false
     },
     "src/easel/compensation.ts": {
-      "sha256": "80019273f39d5593c87ded252bde1e6dde1f8e5e4194951c282151f0e0aa6b99",
+      "sha256": "d6160cadb4a340f43a94cf53db183f3470cfd759e16780239889c74a1b713986",
       "executable": false
     },
     "src/easel/connection-seal.ts": {
@@ -827,7 +827,7 @@
       "executable": false
     },
     "src/easel/engine.ts": {
-      "sha256": "7156460200a420132ad0d755d4a002a1d9abdd514bb5537dde937db2d138eebe",
+      "sha256": "391adba66959b92d02e6ccde08d7d10236ce256e39945e8dd613a6d09e7b6cba",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -1075,7 +1075,7 @@
       "executable": false
     },
     "src/easel/payroll-taxes.ts": {
-      "sha256": "d7ea444e55cbd1b8bea5f37eb212e53ee3e3470aca4bd193b27384dc17a5d1cb",
+      "sha256": "977f549e8285604786d91c8c80398e3e9a4a3b3a515a9e335d541d349d978444",
       "executable": false
     },
     "src/easel/plan.ts": {
@@ -1227,7 +1227,7 @@
       "executable": false
     },
     "src/easel/working-capital.ts": {
-      "sha256": "d1e051de71963525c4e180ef1ffd8595be866cbd50476ea9c80ec76e6f501246",
+      "sha256": "33fd290f85a5411951c159eba7b15602b9778fbe5c924a3569fe155eb24bc7f2",
       "executable": false
     },
     "src/easel/xlsx-formulas.ts": {

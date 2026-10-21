@@ -168,8 +168,6 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   // for this position's active plan months is known. Any monthly rounding
   // difference is assigned to its final active month.
   const target = mulDiv(p.annualSalaryCents, rate * positionMonths.length, 120000)
-  const salaryMonthly = Number(BigInt(p.annualSalaryCents) / 12n)
-  const salaryTarget = mulDiv(p.annualSalaryCents, positionMonths.length, 12)
   const who = p.holder ? `${p.title} (${p.holder})` : `${p.title} (to be hired)`
   for (const [index, m] of positionMonths.entries()) {
    const last = index === positionMonths.length - 1
@@ -186,7 +184,8 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
     working.payroll(p, m, cost - paidBonus)
     if (paidBonus) working.payroll({ ...p, payMonthOffset: 0 }, m, paidBonus)
    }
-   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${components.trace}${who}: ${p.payBasis === 'hourly' ? `hourly wages and entered on-costs ${money(baseCost)}` : `${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}`}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}` })
+   const componentTotal = p.meritBps || p.bonusBps || p.onCostSource ? ` Compensation components (planning estimate): base wages ${money(components.wages-components.merit)} + merit ${money(components.merit)} + on-costs ${money(components.onCosts)} + bonus ${money(components.bonus)} + commission ${money(commission?.amount??0)} + benefits ${money(components.benefits)} + employer match ${money(components.match)} + employer taxes ${money(tax?.totalCents??0)} = ${money(cost)}.` : ''
+   add(p.line, p.department, m, { kind: 'position', id: p.originId, label: who, amount:cost, trace: `${components.trace}${who}: ${p.payBasis === 'hourly' ? `hourly wages and entered on-costs ${money(baseCost)}` : `${money(p.annualSalaryCents)} a year × (1 + ${formatBps(p.onCostBps)} on-costs, owner-supplied) ÷ 12 = ${money(monthly)} a month, rounded down to cents${remainder}`}${commission ? `; ${commission.traces.join(' ')}` : ''}${tax?`; ${tax.trace}`:''}${componentTotal}` })
   }
  }
 

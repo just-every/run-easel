@@ -49,12 +49,12 @@ export function compensation(p: Data, salaryWages: number, currency: string) {
 
 /** PEOPLE-004: one explicit dated raise and one explicitly dated salary bonus.
  * Inclusive UTC calendar-day proration; no inferred eligibility or pay execution. */
-export function compensationSchedule(p: Data, months: string[], currency: string, workspace?: CalendarWorkspace) {
+export function compensationSchedule(p: Data, months: string[], currency: string, workspace?: CalendarWorkspace, conserve = true) {
  const active = months.filter(m => p.start <= m && (!p.end || m <= p.end))
  const monthly = Number(BigInt(p.annualSalaryCents) / 12n)
- const target = mulDiv(p.annualSalaryCents, active.length, 12)
+ const target = conserve ? mulDiv(p.annualSalaryCents, active.length, 12) : monthly * active.length
  const costMonthly = Number(BigInt(p.annualSalaryCents) * BigInt(10000 + p.onCostBps) / 120000n)
- const costTarget = mulDiv(p.annualSalaryCents, (10000 + p.onCostBps) * active.length, 120000)
+ const costTarget = conserve ? mulDiv(p.annualSalaryCents, (10000 + p.onCostBps) * active.length, 120000) : costMonthly * active.length
  return new Map(active.map((m, i) => {
   const last = i === active.length - 1
   const salary = last ? target - monthly * (active.length - 1) : monthly
