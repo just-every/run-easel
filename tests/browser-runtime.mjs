@@ -47,7 +47,10 @@ export async function start(root, port, mode = 'dev') {
  const deadline = Date.now() + 20 * 60 * 1000
  const ready = () => output.includes('RER_READY') && (mode !== 'dev' || /^RER_OPEN \S+/m.test(output))
  while (!ready() && Date.now() < deadline) {
-  if (child.exitCode !== null) throw new Error(`${mode} exited: ${clean(output).slice(-4000)}`)
+  if (child.exitCode !== null) {
+   try { process.kill(-child.pid, 'SIGTERM') } catch (error) { if (error.code !== 'ESRCH') throw error }
+   throw new Error(`${mode} exited: ${clean(output).slice(-4000)}`)
+  }
   await new Promise(r => setTimeout(r, 250))
  }
  if (!ready()) { process.kill(-child.pid, 'SIGTERM'); throw new Error(`${mode} readiness timed out`) }
