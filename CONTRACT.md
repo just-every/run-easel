@@ -140,6 +140,8 @@ Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, las
 
 *Status:* missing.
 
+Before provider entity/subsidiary imports ship, inherit ENTITY-001 stable entity-to-source-plan mapping, per-entity currency/rates, entity-partitioned actuals and live entity/department access. Its multi-entity consolidation journey must prove the provider sources as well as the native sum-less-elimination result.
+
 #### CONNECT-004 — Pantry actuals connector.
 A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`.
 
@@ -169,6 +171,8 @@ Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, las
 *Acceptance:* the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
 *Status:* missing.
+
+Before provider entity/subsidiary imports ship, inherit ENTITY-001 stable entity-to-source-plan mapping, per-entity currency/rates, entity-partitioned actuals and live entity/department access. Its multi-entity consolidation journey must prove the provider sources as well as the native sum-less-elimination result.
 
 #### CONNECT-005 — Scheduled refresh with visible freshness.
 Each connection refreshes on a schedule finance sets (hourly, nightly or weekly, in the company's US time zone) and on demand. Refresh pulls data and metadata together. Every view shows each source's last successful refresh, and a source older than its schedule is marked stale wherever its numbers appear. A failed refresh keeps the previous data, shows the provider error and notifies finance (`CYCLE-003`). Before this capability ships, CONNECT-005 inherits CYCLE-003's notification rules for restatement notices and refresh failures to finance (each person's preference, record link, once per event and recipient). A provider-side change to a month that is already closed never silently changes closed numbers: it opens a restatement notice that lists the affected lines, packs and kept forecasts, and finance accepts or rejects it.
@@ -774,7 +778,11 @@ A company plans several entities (for example a US C-corp and a services subsidi
 
 *Acceptance:* two entities with an intercompany management fee; the API journey reads entity and consolidated statements in which the fee and the intercompany balance are eliminated and consolidated totals equal the sum less eliminations; the same holds when both entities arrive from one Sage Intacct multi-entity connection fake (`CONNECT-011`).
 
-*Status:* missing.
+Current native management-consolidation semantics: a native owner/admin session binds each entity to its own official working source plan and fixed local currency, and assigns the entities to an explicit reporting-currency group. Derived proposals, branches, approved budgets and kept forecasts retain their entity/currency boundary. Entity is a stable custom dimension member; input entry cannot relabel an input into another entity, and ordinary scenario reads, comparisons and exports check the live entity grant. Whole-entity statements require every department in that entity; narrower grants use the scoped Plan view. A reader with only some entities sees only those entities, and full consolidated totals remain unavailable.
+
+Each entity has its own budget/average/month-end rate table. Translation happens once per entity before summation; P&L uses average rates and balance sheets month-end rates with a visible translation adjustment. Local cash-flow statements retain local currency. The consolidated cash bridge uses prior month-end opening cash, average-rate receipts/payments and month-end closing cash with a separate cash translation effect. Missing rates, unbalanced or incomplete source statements, and stale/overlapping eliminations make the affected consolidated month unavailable. Finance explicitly reviews both input origins and local charge, receivable/payable and settlement amounts; each side must agree after translation and cannot exceed the selected source or aggregate outstanding balance. No matching or amounts are inferred. Workbook totals use the same authorized sum-less-elimination formulas.
+
+*Status:* partial. Gap: CONNECT-001/002/003/004/011 ledger connections and entity-scoped actuals remain unavailable; the Sage Intacct multi-entity connection-fake acceptance point requires the account-blocked CONNECT-011 adapter. Bound entity forecast close refuses the unpartitioned installation ledger. Live group/entity composition follows ACCESS-001's adopted conservative default pending ct approval.
 
 Before entity consolidation ships, inherit ACCESS-001 entity-member grants and live department/dimension intersections on ordinary and consolidated reads and exports.
 
@@ -1063,13 +1071,13 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `8a3a4c660b25aa695ea5e2de0e1d5257fb26306b` (22 October 2026).
+Judged from the code and tests at commit `4bf376239ec2156d06af765bdd10ec729054110e` (22 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 42 | 17 | 27 | 86 |
-| All | 59 | 17 | 27 | 103 |
+| Target and push further | 42 | 18 | 26 | 86 |
+| All | 59 | 18 | 26 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1154,7 +1162,7 @@ Judged from the code and tests at commit `8a3a4c660b25aa695ea5e2de0e1d5257fb2630
 | `API-001` | Public API with scoped tokens | target | done | `src/easel/token-admin.ts` `src/easel/token-auth.ts` `tests/api-tokens.test.mjs` `API.md` | Personal and named service bearers use Base credentials, read/write scopes, expiry, revocation, issuer role and department ceilings, durable rate limits, atomic write fences and token-use audit events; credentials stay out of exports |
 | `API-002` | Webhooks and automation apps | target | missing |  | No webhooks or published automation apps |
 | `API-003` | MCP endpoint for outside agents | target | done | `tests/mcp.test.mjs` (API-003) |  |
-| `ENTITY-001` | Multiple entities and management consolidation | target | missing |  | One entity per installation; no consolidation or eliminations |
+| `ENTITY-001` | Multiple entities and management consolidation | target | partial | `tests/entities.test.mjs` (ENTITY-001 local entity plans translate independently and eliminate reviewed source-backed charges, balances and settlements); `tests/entities-browser.mjs` (native entity binding, separate rates, reviewed charge/balance elimination, local and consolidated statements, formula Excel and unavailable months at 1440/390) | Native entity plans, per-entity translation, exact reviewed eliminations and live entity/department authority are proven. BLOCKED: CONNECT-011 account-blocked Sage Intacct adapter for the required multi-entity connection-fake journey; all ledger entity sources and entity-scoped actual close remain unavailable. ACCESS-001 group composition awaits ct approval |
 | `ENTITY-002` | Multi-currency planning | target | done | `src/easel/translation.ts` `src/easel/currency-rates.ts` `tests/translation.test.mjs` `tests/translation-browser.mjs` |  |
 | `US-001` | US defaults | target | done | `tests/us-defaults.test.mjs` `tests/us-defaults-browser.mjs` | Current default/format/import doors complete; future statutory and scheduled obligations inherited by their named clauses |
 | `MOVE-001` | Move in from Adaptive Planning | target | missing |  | No Adaptive Planning import, including personnel modeled-sheet rows as positions |

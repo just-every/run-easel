@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "17d9ea5fd5ec4921f60a26980f1222a26f4bcc283e4ce41ec1f9dcae75bc78f6",
+      "sha256": "6e534df8d74252a20ea2dec2e7cc01a2048421089b970c82e307ba0091a1d3f9",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "91a0676fca613f8c91ed6ac85eb7fb3f56d3f8f0e81b9a412c0b21a9ed95a5a2",
+      "sha256": "00a773e94b26a2d091d17d6e156bd6fa890ead7e2319dd05ad3ffff36b5b4f75",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "23162024be2745a89169d427cccd676db009373a273e3293565488273a8b3e00",
+      "sha256": "8eafd40bf2c1d628ac3291b5f7bb6fd579c27e462985724f80df82f6975700e3",
       "executable": false
     },
     "DEMO.md": {
@@ -659,7 +659,7 @@
       "executable": false
     },
     "src/easel/access.ts": {
-      "sha256": "bafb6860dd70dce1179429144d45c844c6d55719fa6e3854132f3abe34338515",
+      "sha256": "7e74bae5503dafe8c6d2c205626275ac8755f519868efe7587132361abae3e15",
       "executable": false
     },
     "src/easel/account-rules.ts": {
@@ -679,7 +679,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "cc35dd0b5556caff8f780567a3aa98fd032ec2deb675725be89ea10729e13766",
+      "sha256": "5280c14d2eba4ccb493fee96ab16401c88be5f718d58e46a882611448c809cd5",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -799,7 +799,7 @@
       "executable": false
     },
     "src/easel/cycle.ts": {
-      "sha256": "ffee63840698ad52995edc882c6881fa1ebd6aaffea72bd5af07d78bebb18206",
+      "sha256": "773a817eb346823c941702dc1cf8c872f07d717d72f4e79b5d273ef6933bc2ab",
       "executable": false
     },
     "src/easel/daily-cash.ts": {
@@ -872,6 +872,38 @@
     },
     "src/easel/engine.ts": {
       "sha256": "f3fd764dbf1d4f8859e8b96c5d7f0384caed28f70a71c1cdc8496784136b9cbc",
+      "executable": false
+    },
+    "src/easel/entity-access.ts": {
+      "sha256": "079624ba0173a3e7422a08a5c7099a9cf225b200c3956d62e232ff47119de01b",
+      "executable": false
+    },
+    "src/easel/entity-calculation.ts": {
+      "sha256": "f2ebbd049e10356a7d52d95ff84c7aa36916a4d213faef3d46ba25d1f1a59693",
+      "executable": false
+    },
+    "src/easel/entity-consolidation.ts": {
+      "sha256": "52be26bb6da399a103559d9724eb17742832170f33a0b1966b1c6a90e96d2c56",
+      "executable": false
+    },
+    "src/easel/entity-eliminations.ts": {
+      "sha256": "ad1f0ec14192074d4ce2687c25d9982980d3b92c1a988da76c2c277c07dd8d8f",
+      "executable": false
+    },
+    "src/easel/entity-rates.ts": {
+      "sha256": "bc69260ee8bf06f5d79c3262dc75c8eec4387e7d136138763f78a2a333765491",
+      "executable": false
+    },
+    "src/easel/entity-scope.ts": {
+      "sha256": "2997711e98925641cf282850d51461e2b4747f4ff6f0d8835e5992d559c03dc0",
+      "executable": false
+    },
+    "src/easel/entity-workbook.ts": {
+      "sha256": "4ebb3aac3a2e8962a47b51af80ff1c7444db7a488ec649b7bf69a40a07b7b31b",
+      "executable": false
+    },
+    "src/easel/entity.ts": {
+      "sha256": "ea847535853dce089e55e1e16ac955616bf01925b48d2b72c68904d0c6ba40f2",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -979,7 +1011,7 @@
       "executable": false
     },
     "src/easel/grid.ts": {
-      "sha256": "5ed7cfbcd216a06f16e62a587691526661374c1694b074bbabf2000ea186b4dc",
+      "sha256": "c448cd51062dddb99acf7e3b0d6a2292e51e7b85b587ca17624c20fd79760314",
       "executable": false
     },
     "src/easel/group-projections.ts": {
@@ -1063,7 +1095,7 @@
       "executable": false
     },
     "src/easel/model.ts": {
-      "sha256": "c82fd7c17ad485e188b4eccec196bffc91d9c021e4013eae096d355e07662667",
+      "sha256": "b743126df1c35a14af8f2fec64796fd5b91a7adedaa34eab3e264060fbb5a750",
       "executable": false
     },
     "src/easel/months.ts": {
@@ -1159,7 +1191,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "70cd6d8900ea6424ea2586bb74ae7f76a427d1a7a88c8ee2b1afe0fc9b262415",
+      "sha256": "ab835c72150183ed14727edfceb535801f5502f3a6613e74d64af33d44cad51a",
       "executable": false
     },
     "src/easel/ramp.ts": {
@@ -1167,7 +1199,7 @@
       "executable": false
     },
     "src/easel/reforecasts.ts": {
-      "sha256": "412c1e815f22dff19fd024213901cb0e4b54f7a8c9ddbc427ad0a50a94c06590",
+      "sha256": "ee08a7478af56a1945d4390abc3739ba224d2af3dcc7879d18c50d18f4838cee",
       "executable": false
     },
     "src/easel/report-workbooks.ts": {
@@ -1215,7 +1247,7 @@
       "executable": false
     },
     "src/easel/scenario-access.ts": {
-      "sha256": "cfc57abe71700ae1c75c68814069a7ecadbd6765d9d2ee85c8bddca1a701e174",
+      "sha256": "5b73658289335fe04d6912f152634c43c34240623bef118e14c294a54d0a2740",
       "executable": false
     },
     "src/easel/semantic.ts": {
@@ -1279,7 +1311,7 @@
       "executable": false
     },
     "src/easel/types.ts": {
-      "sha256": "6b5e0abe3ef067895d39618eebf1d2f034df0b54b7caeff559643d56ca8294c3",
+      "sha256": "8b41ec5a8bce66dd53b5cefd19313953ae46da23a82e41dff13de8eb7f81eb97",
       "executable": false
     },
     "src/easel/units.ts": {
@@ -3218,6 +3250,10 @@
       "sha256": "86d74fa55e7f6b3aa8dab7f39a787baba10b93486ad4d51a3142ddf0953ef721",
       "executable": false
     },
+    "src/ui/entities.tsx": {
+      "sha256": "667f3da0027163b163d9393a9c74eef2238f3e8450df30d5ed949a0852ad8276",
+      "executable": false
+    },
     "src/ui/file-picker.tsx": {
       "sha256": "0816fedf644987f9cc898a4477844fa64288cc803bda9ae9dd703f9f883594d7",
       "executable": false
@@ -3335,7 +3371,7 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "79c94d4f38d4ce5675555a071e5e548a49977a68f33c3e539eb542979cec5823",
+      "sha256": "427664b9b1ac972851126d381b58f095e769a32dca4432c200e61de2da8a3036",
       "executable": false
     },
     "src/ui/shared.tsx": {
@@ -3548,6 +3584,14 @@
     },
     "tests/easel.test.mjs": {
       "sha256": "d4e4c12a36e33690d746783d356c6d2af103019b16cf48d1506ff69f7301ac62",
+      "executable": false
+    },
+    "tests/entities-browser.mjs": {
+      "sha256": "c78c03cb4f991f36531ec9c8c5c313b675c98cfd3d1ef916217eaf833c853aec",
+      "executable": false
+    },
+    "tests/entities.test.mjs": {
+      "sha256": "80878884394fe8303cc6c91f5e6cc04553940420f230e4015198fd64e10eb671",
       "executable": false
     },
     "tests/erasure-browser.mjs": {
