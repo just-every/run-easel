@@ -8,6 +8,7 @@ import { PackActionDepartment } from './pack-action-departments'
 import { DecisionFollowup } from './decision-followup'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 import { Dots, glue } from './dots'
+import { ConstantCurrency } from './translation'
 
 /** Closing months, variance explanations and review packs. */
 export function Review({ state, refresh }: Shared) {
@@ -62,6 +63,7 @@ export function Review({ state, refresh }: Shared) {
     </>}
    </details>)}
   </section>}
+  {v && <ConstantCurrency month={month} />}
   {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
   {(me.role === 'finance' || me.role === 'contributor') && closedMonths.includes(month) && <DepartmentStatements state={state} month={month} setMonth={setMonth} refresh={refresh} />}
   {me.role === 'finance' && closedMonths.includes(month) && <ParallelMonth key={month} state={state} month={month} />}

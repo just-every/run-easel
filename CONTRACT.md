@@ -749,9 +749,13 @@ A company plans several entities (for example a US C-corp and a services subsidi
 #### ENTITY-002 — Multi-currency planning.
 An entity plans in its local currency and reports in USD, using rate tables that finance keeps (budget rate, monthly average and month-end rates). Profit and loss converts at average rates, the balance sheet at month-end rates, and the translation difference is shown. Constant-currency comparisons are available.
 
+Current semantics (sx-easel-r31). This installation's plan is the entity: its plan currency is the local currency, and finance names one reporting currency (USD by default; never the plan currency). Finance keeps one rate row per month with a budget, an average and a month-end rate, each the reporting-currency amount of one unit of plan currency, a decimal above zero with at most six places, stored as integer millionths. Rates are read when a view is built, so revising a rate changes every scenario view (working or frozen) but never rewrites a stored calculation, approved budget, kept forecast or published pack. Every amount is translated once from the plan's own integer cents, rounding half away from zero, and totals are sums of translated parts, so each statement foots. Profit and loss translates each month at that month's average rate. The balance sheet translates every line at the month-end rate; opening equity at the month-end rate of the month before the plan; retained earnings as the running sum of translated monthly profit; contributed equity as the running sum of each month's change at that month's average rate. The translation adjustment is translated assets minus liabilities minus equity, less the plan's own balance difference (which is translated and carried visibly, never absorbed), shown as a running balance and as the month's movement. A month lacking the rate it needs (average for profit, month-end for the balance sheet, the month-end before the plan for opening equity, or an earlier average for the running sums) is listed as unavailable with the missing rate and is never zero or guessed. Cash-flow statements are not translated. For a closed month the constant-currency variance translates the approved budget at the budget rate and actual at the average rate and again at the budget rate: variance = actual − budget, constant-currency variance = actual at the budget rate − budget, and currency effect = actual − actual at the budget rate, so variance = constant-currency variance + currency effect; totals are profit (revenue minus costs) from rounded rows. A reader sees translated amounts only from the same scenario and variance views their role already reads; only finance edits rates, and the rate table is in the open export. Plan-currency changes after rates are entered mark the table as for another currency until finance enters new rates. ENTITY-001 inherits a rate table per entity, and each entity's translated statements before consolidation ships.
+
 *Acceptance:* a CAD entity with budget and actual rates; the API journey reads USD statements, a translation adjustment, and a constant-currency variance.
 
-*Status:* missing.
+*Acceptance evidence:* `tests/translation.test.mjs` (ENTITY-002) sets CAD rates through the finance-only door (refusing contributors, viewers, the plan currency, zero, over-precise and empty entries), reads average-rate profit and loss, month-end balance sheets, the translation adjustment checked by hand from the plan's equity, unavailable months, the closed-month constant-currency variance with its currency effect, frozen snapshots unchanged by a rate revision, and viewer/contributor reads. `tests/translation-browser.mjs` (ENTITY-002) enters rates in the app and reads the tables and the Review variance as finance and a board viewer at 1440/390 without page overflow.
+
+*Status:* done. Acceptance: `tests/translation.test.mjs` and `tests/translation-browser.mjs` (ENTITY-002).
 
 #### US-001 — US defaults.
 A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYYY dates, a January fiscal year with any other start month available, US time zones for schedules and reminders, and the US payroll and tax assumptions of `FIN-006` and `PEOPLE-004`. Files with US date and number formats import without extra choices.
@@ -1032,8 +1036,8 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 38 | 18 | 30 | 86 |
-| All | 55 | 18 | 30 | 103 |
+| Target and push further | 39 | 18 | 29 | 86 |
+| All | 56 | 18 | 29 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1119,7 +1123,7 @@ Judged from the code and tests at commit `1086527233bf9ee39094c8b6c60c3e7257fa07
 | `API-002` | Webhooks and automation apps | target | missing |  | No webhooks or published automation apps |
 | `API-003` | MCP endpoint for outside agents | target | done | `tests/mcp.test.mjs` (API-003) |  |
 | `ENTITY-001` | Multiple entities and management consolidation | target | missing |  | One entity per installation; no consolidation or eliminations |
-| `ENTITY-002` | Multi-currency planning | target | missing |  | One reporting currency; no rate tables or translation |
+| `ENTITY-002` | Multi-currency planning | target | done | `src/easel/translation.ts` `src/easel/currency-rates.ts` `tests/translation.test.mjs` `tests/translation-browser.mjs` |  |
 | `US-001` | US defaults | target | done | `tests/us-defaults.test.mjs` `tests/us-defaults-browser.mjs` | Current default/format/import doors complete; future statutory and scheduled obligations inherited by their named clauses |
 | `MOVE-001` | Move in from Adaptive Planning | target | missing |  | No Adaptive Planning import, including personnel modeled-sheet rows as positions |
 | `MOVE-002` | Move in from Planful | target | missing |  | No Planful import |

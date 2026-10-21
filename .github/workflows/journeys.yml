@@ -87,6 +87,10 @@ jobs:
         run: perl -e 'setpgrp(0,0); exec @ARGV' -- node tests/working-capital-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/working-capital
+      - name: ENTITY-002 reporting currency at desktop and phone widths
+        run: node tests/translation-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/translation
       - name: AGENT-007 confirmed commentary and immutable packs
         run: node tests/variance-commentary-browser.mjs
         env:

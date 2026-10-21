@@ -9,6 +9,7 @@ import type { Shared } from './app'
 import { revealHorizontally } from './scroll'
 import { AssetSchedule } from './assets'
 import { Statements } from './statements'
+import { ReportingCurrency } from './translation'
 import { ClosingCashChart } from './chart'
 import { api, kindLabel, money, monthLabel, ScenarioPicker, Person, Table, type D } from './shared'
 import { Dots, glue } from './dots'
@@ -91,6 +92,7 @@ export function Overview({ state, refresh }: Shared) {
     </section>}
     {calc && !department && <FinancingSchedule calculation={calc} currency={currency} />}
     {calc && !department && <Statements calculation={calc} currency={currency} />}
+    {calc && !department && <ReportingCurrency state={state} refresh={refresh} scenario={id} />}
     {view && <Headcount scenario={id} state={state} department={department} />}
     {view && <ActualHistoryOverlay view={view} department={department} />}
     {calc && <AssetSchedule calculation={{ ...calc, assets: (calc.assets ?? []).filter((a: D) => !department || a.department === department) }} currency={currency} />}

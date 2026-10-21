@@ -60,6 +60,7 @@ export async function stateView(c: Context) {
   batches: finance ? all(s, 'batch').sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : [],
   workbooks: finance ? all(s, 'workbook-import') : [],
   actionDepartments: finance ? all(s, 'pack-action-department') : [],
+  fxTable: finance ? find(s, 'fx-table', 'main') ?? null : null,
   packs: all(s, 'pack').filter(p => finance || p.status === 'published'),
   snapshots,
  }
