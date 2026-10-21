@@ -63,7 +63,7 @@ try {
   await saved(owner.page,'pack-publish',()=>draft.getByRole('button',{name:'Publish pack',exact:true}).click())
   const publishedState=await api(owner.context,server.origin,'state'),latestPack=publishedState.packs.find(p=>p.decisions.some(d=>d.text===actionText))
   assert.ok(latestPack.decisions.some(d=>d.text===`Private sales action ${width}`&&d.department===sales.id))
-  const published=owner.page.locator('.pack').filter({hasText:actionText})
+  const published=owner.page.locator('div.pack').filter({hasText:actionText})
   await published.getByText('This unclassified action stays in the company pack and stays out of department statements until finance assigns a department.',{exact:true}).waitFor()
   await published.screenshot({path:join(evidence,`unclassified-action-${width}.png`)})
   const assignment=published.locator('form').filter({has:owner.page.getByLabel(`Department for action: ${actionText}`,{exact:true})})

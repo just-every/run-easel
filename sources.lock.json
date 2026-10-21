@@ -3419,7 +3419,7 @@
       "executable": false
     },
     "tests/department-statements-browser.mjs": {
-      "sha256": "820e11f293433d82948c8a777f1a966ed2ed3101f9d2bf0550132fe855c74c04",
+      "sha256": "f9586866e3e5b725a0d0769210050d8cd30053f1d06070b9a11ccd58b5dc66a2",
       "executable": false
     },
     "tests/department-statements.test.mjs": {
