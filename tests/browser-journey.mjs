@@ -209,7 +209,7 @@ async function planning(browser, root, origin, evidence, pages, width) {
  // Close July: actuals replace the plan, the prior forecast is kept.
  await tab(p, 'Review')
  await press(p, 'Close Jul 2026')
- await p.getByText(/actuals through Jul 2026/).waitFor()
+ await card(p, 'Monthly review').getByText(/actuals through Jul 2026/).waitFor()
  await tab(p, 'Overview')
  await p.getByRole('button', { name: 'Subscription revenue Jul 2026: how it was calculated' }).click()
  await p.getByText(/from 1 accepted row/).waitFor()
