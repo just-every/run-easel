@@ -1,3 +1,4 @@
+import { DimensionFields, dimensionValues } from './dimensions'
 import { addMonths, command, decimalText, Field, Form, money, monthLabel, options, Table, type D } from './shared'
 import { Dots, glue } from './dots'
 
@@ -77,11 +78,12 @@ export function HistoryInputs({ state, view, save, refresh }: HistoryProps) {
    <p className="muted">Enter amounts in {view.workspace.currency}. Blank months have no entered value. Current and prior-year actuals are shown beside each amount; missing actuals are never treated as zero.</p>
    {schedules.filter(row => row.values && !row.history).map(row => <EnteredSchedule key={`${row.id}:${key}`} row={row} view={view} save={save} />)}
    <details><summary>Add an entered monthly schedule</summary><Form key={`entered-${key}`} submit="Add monthly schedule" onSubmit={values => save('schedule', {
-    name: values.name, line: values.line, department: values.department, values: enteredValues(values, months), scenarioRevision: view.scenario.revision,
+    name: values.name, line: values.line, department: values.department, dimensions: dimensionValues(values), values: enteredValues(values, months), scenarioRevision: view.scenario.revision,
    })}>
     <Field label="Monthly schedule name" name="name" />
     <Field label="Monthly schedule line" name="line" options={options(lines)} />
     <Field label="Monthly schedule department" name="department" options={options(departments)} />
+    <DimensionFields structure={view.dimensionStructure ?? {}} />
     {months.map(month => <Field key={month} label={`${monthLabel(month)} amount`} name={`amount-${month}`} required={false} />)}
    </Form></details>
   </section>

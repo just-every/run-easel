@@ -1,3 +1,4 @@
+import { requireDimensionAccess, validateDimensions } from './dimensions'
 import { nativeBindings, requireNativeSources } from './native-input'
 // Scenario inputs, branching and agent-ready proposals. A proposal is a
 // branch bound to the exact revision of the scenario it would change; finance
@@ -42,6 +43,23 @@ export function clearInputs(s: State, scenario: string) {
 
 export async function plan(c: Context, op: string, b: Data): Promise<Data | undefined> {
  const { s, x } = c
+ if (op === 'input-dimensions') {
+  requireMember(x)
+  const kind = choice(b.kind, INPUT_KINDS, 'an input kind')
+  if (['tax-policy', 'workbook-model'].includes(kind)) requireFinance(x)
+  const input = get(s, kind, b.id)
+  const scenario = scenarioAccess(s, x, b.scenario)
+  requireThat(input.scenario === scenario.id, 'This input belongs to another scenario')
+  requireThat(integer(b.revision, 'Reviewed scenario revision', 1, Number.MAX_SAFE_INTEGER) === scenario.revision, 'The plan changed; reload before tagging the input', 409)
+  if (kind === 'position' || kind === 'workbook-model' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
+  requireEditable(s, x, scenario, inputDepartment(kind, input))
+  requireDimensionAccess(s, x, input.dimensions)
+  const dimensions = validateDimensions(s, b.dimensions)
+  requireDimensionAccess(s, x, dimensions)
+  put(s, kind, input.id, { ...input, dimensions })
+  bump(c, scenario, op, input.id, { kind, before: input.dimensions ?? {}, dimensions })
+  return get(s, kind, input.id)
+ }
  if ((INPUT_KINDS as readonly string[]).includes(op)) {
   requireMember(x)
   const kind = op as InputKind
@@ -61,10 +79,11 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
     requireDepartment(x, position!.department)
    }
   }
-  if (prior) requireEditable(s, x, scenario, inputDepartment(kind, prior))
+  if (prior) { requireEditable(s, x, scenario, inputDepartment(kind, prior)); requireDimensionAccess(s, x, prior.dimensions) }
   const originId = prior?.originId ?? uid()
-  const value: Data = { ...validateInput(s, kind, { ...b, originId }, scenario.id), scenario: scenario.id, originId }
+  const value: Data = { ...validateInput(s, kind, { ...b, dimensions: b.dimensions ?? prior?.dimensions, originId }, scenario.id), scenario: scenario.id, originId }
   requireEditable(s, x, scenario, inputDepartment(kind, value))
+  requireDimensionAccess(s, x, value.dimensions)
   if (kind === 'revenue' && prior?.kind === 'services' && value.kind === 'services' && prior.gaugeActuals) {
    requireThat(value.department === prior.department, 'Undo Gauge utilization imports before changing the driver department', 409)
    Object.assign(value, { gaugeActuals: prior.gaugeActuals, gaugeUndo: null })
@@ -100,6 +119,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if (kind === 'position' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   const scenario = scenarioAccess(s, x, input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
+  requireDimensionAccess(s, x, input.dimensions)
   requireThat(kind !== 'revenue' || !all(s, 'expense').some(e => e.scenario === scenario.id && e.revenueOrigin === input.originId), 'Remove linked acquisition or inventory costs before deleting this revenue driver', 409)
   requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
   if (kind === 'revenue' && input.commissionPosition) {
@@ -260,7 +280,7 @@ function requireProposalScope(s: State, x: import('./types').Access, p: Data) {
    if (a && b && value(a) === value(b)) continue
    if (kind === 'position' || [a, b].some(row => row?.commissionPosition) || [a, b].some(row => row?.line && get(s, 'line', row.line).payroll)) requirePayDetail(x)
    requireThat(kind !== 'allocation', 'Only finance can propose allocation changes', 403)
-   for (const row of [a, b]) if (row) { requireDepartment(x, inputDepartment(kind, row)!); if(kind==='formula')requireNativeSources(s,x,row,p.id) }
+   for (const row of [a, b]) if (row) { requireDepartment(x, inputDepartment(kind, row)!); requireDimensionAccess(s,x,row.dimensions); if(kind==='formula')requireNativeSources(s,x,row,p.id) }
   }
  }
 }

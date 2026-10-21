@@ -1,3 +1,4 @@
+import type { DimensionStructure, DimensionTags } from './dimensions'
 import { nativeRuntime, type NativeBase, type FormulaValue, type NativeGraph } from './native-calculation'
 import { dailyCash, type DailyCash } from './daily-cash'
 import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
@@ -31,15 +32,16 @@ import { Fault, type Data } from './types'
 export const ENGINE = 'easel-engine-1'
 
 export type LineType = 'revenue' | 'cost-of-sales' | 'operating-expense'
-export type Line = { id: string; name: string; type: LineType; payroll?: boolean; nonCash?: boolean }
+export type Line = { id: string; name: string; type: LineType; payroll?: boolean; nonCash?: boolean; group?: string }
 export type Department = { id: string; name: string; shared?: boolean }
-export type Source = { kind: string; id?: string; label: string; amount: number; trace: string }
+export type Source = { kind: string; id?: string; label: string; amount: number; trace: string; dimensions?: DimensionTags }
 export type Cell = { line: string; department: string; month: string; amount: number; basis: 'plan' | 'actual'; sources: Source[] }
-export type ActualCell = { line: string; department: string; month: string; amount: number; rows: number; batches: string[] }
+export type ActualCell = { line: string; department: string; month: string; amount: number; rows: number; batches: string[]; dimensions?: DimensionTags }
 export type CashMonth = { month: string; opening: number; collections: number; payments: number; closing: number; trace: string; incompleteReasons?: string[] }
 export type ProfitMonth = { month: string; revenue: number; costOfSales: number; operatingExpenses: number; grossMargin: number; profit: number }
 
 export type Model = {
+ dimensionStructure?: DimensionStructure
  workspace: CalendarWorkspace & { currency: string }
  lines: Line[]
  departments: Department[]
@@ -112,6 +114,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  const taxPolicy=inputs['tax-policy']?.[0], taxableCollections:{month:string;date?:string;amount:number}[]=[]
  const commissions = commissionEstimates(inputs.revenue, inputs.position, currency)
  const employerTaxes=taxPolicy?payrollTaxes(inputs.position,months,taxPolicy,currency,workspace,commissions):null
+ const dimensionInputs = new Map(Object.values(inputs).flat().map(i => [i.originId, i]))
  const timedInputs = new Map([...inputs.revenue, ...inputs.expense, ...inputs.position, ...(inputs.formula ?? [])].map(i => [i.originId, i]))
  const collectionLag = Number(scenario.cash?.collectionLag ?? 0), paymentLag = Number(scenario.cash?.paymentLag ?? 0)
 
@@ -123,6 +126,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  }
  const add = (line: string, department: string, month: string, source: Source, lag?: number, nonCash = false) => {
   if (!inHorizon.has(month) || closed(month)) return
+  source.dimensions ??= source.id ? dimensionInputs.get(source.id)?.dimensions ?? {} : source.kind === 'tax' ? taxPolicy?.dimensions ?? {} : {}
   const c = cell(line, department, month, 'plan')
   c.amount += source.amount
   c.sources.push(source)
@@ -279,7 +283,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   if (!closed(a.month) || !inHorizon.has(a.month)) continue
   const c = cell(a.line, a.department, a.month, 'actual')
   c.amount += a.amount
-  c.sources.push({ kind: 'actual', label: 'Accepted actuals', amount: a.amount, trace: `${monthLabel(a.month)}: ${money(a.amount)} from ${a.rows} accepted row${a.rows === 1 ? '' : 's'} in ${a.batches.length} import${a.batches.length === 1 ? '' : 's'}` })
+  c.sources.push({ kind: 'actual', dimensions: a.dimensions ?? {}, label: 'Accepted actuals', amount: a.amount, trace: `${monthLabel(a.month)}: ${money(a.amount)} from ${a.rows} accepted row${a.rows === 1 ? '' : 's'} in ${a.batches.length} import${a.batches.length === 1 ? '' : 's'}` })
   const type = lineById.get(a.line)?.type
   if (lineById.get(a.line)?.nonCash || inventoryLines.has(`${a.line}|${a.department}`)) continue
   if (type === 'revenue' && contractActualKeys.has(`${a.line}|${a.department}|${a.month}`)) continue
@@ -335,14 +339,23 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
     if (weights.every((w: number) => w === 0)) { warnings.push(`${rule.name}: no headcount in the target departments in ${monthLabel(m)}, so ${money(c.amount)} of ${lineById.get(c.line)?.name} stays in ${deptName.get(rule.sourceDepartment)}`); continue }
     const total = c.amount
     const parts = apportion(total, weights)
+    const sourceParts = c.sources.map(source => ({ source, parts: apportion(source.amount, weights) }))
+    // Match the aggregate allocation remainder while retaining source identity.
+    for (let i = 0; i < parts.length; i++) {
+     const difference = parts[i] - sourceParts.reduce((sum, row) => sum + row.parts[i], 0)
+     if (difference && sourceParts.length) {
+      sourceParts[0].parts[i] += difference
+     }
+    }
     const basisText = rule.basis === 'headcount' ? `by headcount (${rule.targets.map((t: Data, i: number) => `${deptName.get(t.department)} ${weights[i]}`).join(', ')})` : `by fixed shares (${rule.targets.map((t: Data) => `${deptName.get(t.department)} ${formatBps(t.bps)}`).join(', ')})`
     c.amount -= total
-    c.sources.push({ kind: 'allocation', id: rule.originId, label: rule.name, amount: -total, trace: `${rule.name}: ${money(total)} allocated out ${basisText}` })
+    const originalSources = [...c.sources]
+    for (const source of originalSources) c.sources.push({ kind: 'allocation', id: rule.originId, dimensions: source.dimensions ?? {}, label: rule.name, amount: -source.amount, trace: `${rule.name}: ${money(source.amount)} allocated out ${basisText}` })
     rule.targets.forEach((t: Data, i: number) => {
      if (parts[i] === 0) return
      const target = cell(c.line, t.department, m, c.basis)
      target.amount += parts[i]
-     target.sources.push({ kind: 'allocation', id: rule.originId, label: rule.name, amount: parts[i], trace: `${rule.name}: ${money(parts[i])} of ${money(total)} from ${deptName.get(rule.sourceDepartment)} ${basisText}` })
+     for (const row of sourceParts) if (row.parts[i]) target.sources.push({ kind: 'allocation', id: rule.originId, dimensions: row.source.dimensions ?? {}, label: rule.name, amount: row.parts[i], trace: `${rule.name}: ${money(row.parts[i])} of ${money(row.source.amount)} from ${deptName.get(rule.sourceDepartment)} ${basisText}` })
     })
    }
   }

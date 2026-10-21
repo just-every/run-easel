@@ -6,10 +6,13 @@ export async function gridFixture(command, get, kit) {
  const other = await command('department', { name: 'Service delivery' })
  const scenario = (await get('state')).scenarios.find(s => s.kind === 'budget').id
  const months = Array.from({ length: 12 }, (_, i) => `2025-${String(i + 1).padStart(2, '0')}`)
+ const dimension = await command('dimension', { name: 'Region' })
+ const root = await command('dimension-member', { dimension: dimension.id, name: 'Domestic' })
+ const region = await command('dimension-member', { dimension: dimension.id, name: 'East', parent: root.id })
  const rows = []
  for (const [i, name] of ['Software subscriptions', 'Travel and events', 'Campaigns'].entries()) {
   const line = await command('line', { name, type: 'operating-expense' })
-  rows.push(await command('schedule', { scenario, name, department: department.id, line: line.id, values: Object.fromEntries(months.map(m => [m, '0'])) }))
+  rows.push(await command('schedule', { scenario, name, department: department.id, line: line.id, dimensions: { [dimension.id]: region.id }, values: Object.fromEntries(months.map(m => [m, '0'])) }))
   await command('account-map', { account: String(500 + i), target: line.id })
  }
  const driver = await command('line', { name: 'Sales capacity', type: 'revenue' })
@@ -18,5 +21,5 @@ export async function gridFixture(command, get, kit) {
  await acceptHistory(kit, historyFile('prior-year-spend.csv', rows.flatMap((_, r) => months.map((m, i) => `2024${m.slice(4)}-15,${500 + r},Sales,${i + 1},Prior spend`))))
  await command('member', { email: 'sales@dev.localhost', name: 'Sam Sales', role: 'contributor', departments: [department.id] })
  await command('request-submissions', { scenario, departments: [department.id] })
- return { scenario, department, other, months, rows: rows.sort((a, b) => a.name.localeCompare(b.name)), driver }
+ return { scenario, department, other, months, dimension, region, rows: rows.sort((a, b) => a.name.localeCompare(b.name)), driver }
 }

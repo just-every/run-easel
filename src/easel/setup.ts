@@ -1,3 +1,4 @@
+import { validateDimensionGrants } from './dimensions'
 import { validateCalendar } from './fiscal-calendar'
 import { balanceTarget } from './balance-targets'
 // Installation-level commands: the planning calendar, departments, planning
@@ -87,7 +88,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   requireThat(!(checked(b.nonCash) && checked(b.payroll)), 'A payroll line cannot be non-cash')
   requireThat(!checked(b.nonCash) || !all(s, 'position').some(p => p.line === id && all(s, 'revenue').some(r => r.scenario === p.scenario && r.commissionPosition === p.originId)), 'A linked commission position requires a cash salary line', 409)
   requireThat(!all(s, 'debt').some(debt => debt.line === id) || (type !== 'revenue' && !checked(b.nonCash) && !checked(b.payroll)), 'An interest line in use must remain a cash, non-payroll expense line', 409)
-  put(s, 'line', id, { name, type, nonCash: type !== 'revenue' && (b.nonCash === true || b.nonCash === 'on' || b.nonCash === 'true'), payroll: type !== 'revenue' && (b.payroll === true || b.payroll === 'on' || b.payroll === 'true'), order: prior?.order ?? all(s, 'line').length })
+  put(s, 'line', id, { name, type, nonCash: type !== 'revenue' && (b.nonCash === true || b.nonCash === 'on' || b.nonCash === 'true'), payroll: type !== 'revenue' && (b.payroll === true || b.payroll === 'on' || b.payroll === 'true'), ...(prior?.group ? { group: prior.group } : {}), order: prior?.order ?? all(s, 'line').length })
   c.activity.push({ action: op, record: id, detail: { name, type } })
   return get(s, 'line', id)
  }
@@ -116,7 +117,7 @@ export function setup(c: Context, op: string, b: Data): Data | undefined {
   const role = choice(b.role, ['finance', 'contributor', 'viewer'] as const, 'a role')
   const depts: string[] = role === 'contributor' ? (Array.isArray(b.departments) ? b.departments : [b.departments]).filter(Boolean).map((d: unknown) => get(s, 'department', d).id) : []
   requireThat(role !== 'contributor' || depts.length > 0, 'Choose the departments this contributor plans for')
-  put(s, 'member', email, { email, name: text(b.name, 'Name'), role, departments: depts, active: b.active !== false && b.active !== 'false' })
+  put(s, 'member', email, { email, name: text(b.name, 'Name'), role, departments: depts, ...(b.dimensionMembers !== undefined ? { dimensionMembers: validateDimensionGrants(s, b.dimensionMembers) } : find(s, 'member', email)?.dimensionMembers ? { dimensionMembers: find(s, 'member', email)!.dimensionMembers } : {}), active: b.active !== false && b.active !== 'false' })
   c.activity.push({ action: op, record: email, detail: { role, departments: depts } })
   return get(s, 'member', email)
  }

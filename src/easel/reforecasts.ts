@@ -9,12 +9,12 @@ import { snapshot } from './store'
 import { all, get, put, requireThat, text, uid, type Data } from './types'
 
 /** Frozen versions always read their captured structure, inputs and arithmetic. */
-export async function frozenModel(c: Context, scenario: Data): Promise<Model & { calculation: Calculation; actualsHistory?: Data }> {
+export async function frozenModel(c: Context, scenario: Data): Promise<Model & { calculation: Calculation; dimensionStructure?: Data; actualsHistory?: Data }> {
  if (scenario.kind !== 'reforecast') return approvedModel(c, scenario)
  const sn = await snapshot(c.db, scenario.reforecast?.snapshot)
  const b = sn.body
  requireThat(sn.kind === 'reforecast' && sn.scenario === scenario.id && b.scenario.id === scenario.id && b.revision === scenario.revision && b.scenario.revision === b.revision, 'The saved reforecast does not match this version', 409)
- return { scenario: b.scenario, workspace: b.workspace, lines: b.lines, departments: b.departments, inputs: b.inputs, calculation: b.calculation, actualsHistory: b.actualsHistory }
+ return { scenario: b.scenario, workspace: b.workspace, lines: b.lines, departments: b.departments, inputs: b.inputs, calculation: b.calculation, dimensionStructure: b.dimensionStructure ?? b.structure, actualsHistory: b.actualsHistory }
 }
 
 /** Saving a version leaves its working source unchanged. The revision fence in
@@ -40,7 +40,7 @@ export async function reforecasts(c: Context, op: string, b: Data): Promise<Data
  }
  put(c.s, 'scenario', id, saved)
  c.snapshots.push({ id: snapshotId, kind: 'reforecast', scenario: id, label: name, body: {
-  scenario: saved, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: m.inputs, calculation,
+  scenario: saved, workspace: m.workspace, lines: m.lines, departments: m.departments, dimensionStructure: m.dimensionStructure, inputs: m.inputs, calculation,
   source, sourceScenario: from, revision: from.revision, savedBy: { email: c.x.actor.email, name: c.x.actor.name }, savedAt: c.now,
  } })
  c.activity.push({ action: op, record: id, scenario: id, before: from.revision, after: from.revision, detail: { snapshot: snapshotId, source: from.id, revision: from.revision } })

@@ -1,3 +1,4 @@
+import { installStarterDimensions } from './dimensions'
 // Compose the ordinary validated setup/plan commands. The API persists the
 // entire starter in its normal revision-fenced save, or none of it.
 import { requireFinance } from './access'
@@ -38,6 +39,7 @@ export async function starterModels(c: Context, op: string, b: Data): Promise<Da
   requireThat(saved, 'Starter input was not created')
   if (input.key) origins[input.key] = saved.originId
  }
+ installStarterDimensions(c.s, scenario.id, starterId)
  await plan(c, 'scenario-cash', { scenario: scenario.id, opening: openingCash, basis: 'estimate', receivables: '0', payables: '0', collectionLag: starter.collectionLag, paymentLag: starter.paymentLag,
   note: `Starter assumptions · ${starter.name}. Editable estimates, not imported actuals. ${starter.cashTiming}` })
  const dashboard = await dashboards(c, 'dashboard-save', { name: `${starter.name} starter`, scenario: scenario.id, audience: 'leadership', widgets: starter.metrics.map(metric => ({ metric, display: metric === 'closingCash' ? 'chart' : 'tile' })) })

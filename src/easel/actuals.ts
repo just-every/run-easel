@@ -1,3 +1,4 @@
+import { resolveDimensions } from './dimension-mapping'
 import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { balanceTarget } from './balance-targets'
 // The Excel-first CSV actuals kit: a general-ledger detail export (one row
@@ -22,8 +23,8 @@ const MAX_BYTES = 2_000_000, MAX_ROWS = 5000
 
 export const departmentKey = (source: string) => source.trim() || '(blank)'
 
-type Columns = { date?: string; period?: string; account: string; accountName?: string; accountType?: string; department?: string; amount?: string; debit?: string; credit?: string; description?: string; reference?: string }
-type Normal = { line: number; date: string; period: string; account: string; accountName: string; accountType: string; department: string; amount: number; description: string; reference: string; fingerprint: string; sourceId: string }
+type Columns = { date?: string; period?: string; account: string; accountName?: string; accountType?: string; department?: string; amount?: string; debit?: string; credit?: string; description?: string; reference?: string; class?: string; trackingOption?: string }
+type Normal = { line: number; date: string; period: string; account: string; accountName: string; accountType: string; department: string; amount: number; description: string; reference: string; fingerprint: string; sourceId: string; sourceDimensions: Record<string, string> }
 
 function parseDate(v: string, format: string): { date: string; period: string } | null {
  const s = v.trim()
@@ -50,7 +51,7 @@ export async function readActuals(b: Data, calendar?: CalendarWorkspace) {
  const file = typeof b.filename === 'string' && b.filename.trim() ? b.filename.trim().slice(0, 200) : 'actuals.csv'
  const { headers, rows } = parseCsv(b.csv)
  requireThat(rows.length <= MAX_ROWS, `The file has more than ${MAX_ROWS} rows; split it by month`)
- const cols = (b.columns ?? { date: 'Date', account: 'Account', amount: 'Amount', ...(headers.includes('Department') ? { department: 'Department' } : {}) }) as Columns
+ const cols = (b.columns ?? { date: 'Date', account: 'Account', amount: 'Amount', ...(headers.includes('Department') ? { department: 'Department' } : {}), ...(headers.includes('Class') ? { class: 'Class' } : {}), ...(headers.includes('Tracking option') ? { trackingOption: 'Tracking option' } : {}) }) as Columns
  const has = (name?: string) => !!name && headers.includes(name)
  requireThat(has(cols.account), 'Choose the account column')
  requireThat(has(cols.date) || has(cols.period), 'Choose the date or period column')
@@ -76,8 +77,9 @@ export async function readActuals(b: Data, calendar?: CalendarWorkspace) {
     requireThat(!(debit !== 0 && credit !== 0), 'has both a debit and a credit')
     amount = debit - credit
    } else amount = money(at(cells, cols.amount), 'Amount') * (amountMode === 'credit-positive' ? -1 : 1)
-   const row = { date: when.date, period: calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
-   const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference]))
+   const sourceDimensions = { ...(cols.department ? { department: at(cells, cols.department) } : {}), ...(cols.class ? { class: at(cells, cols.class) } : {}), ...(cols.trackingOption ? { 'tracking-option': at(cells, cols.trackingOption) } : {}) }
+   const row = { sourceDimensions, date: when.date, period: calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
+   const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference, ...(Object.keys(sourceDimensions).some(k => k !== 'department') ? [sourceDimensions] : [])]))
    const earlier = seen.get(fingerprint) ?? []
    if (earlier.length && !allowRepeats) { rejected.push({ line, reason: `repeats line ${earlier[0]} exactly` }); continue }
    seen.set(fingerprint, [...earlier, line])
@@ -141,7 +143,8 @@ export async function previewActuals(c: Context, b: Data) {
  const unmappedAccounts = accountRows.filter(a => a.target === null).map(a => a.account)
  const unmappedDepartments = departmentRows.filter(d => d.department === null).map(d => d.source)
  const destination = `actuals:${read.sha.slice(0, 20)}`
- const reviewed = { config: read.config, workspace: workspace(s),
+ const dimensionExceptions = accepted.flatMap(r => resolveDimensions(s, r.sourceDimensions).unresolved.map(issue => ({ ...issue, line: r.line, period: r.period })))
+ const reviewed = { dimensionRules: all(s, 'dimension-map'), dimensionMembers: all(s, 'dimension-member'), config: read.config, workspace: workspace(s),
   accounts: accountRows.map(a => ({ account: a.account, resolutions: a.accountTypes.map((t: string) => resolveAccount(s, a.account, t)), line: find(s, 'line', a.target) ?? null })),
   departments: departmentRows.map(d => ({ source: d.source, mapping: find(s, 'department-map', d.source) ?? null, department: find(s, 'department', d.department) ?? null })),
  }
@@ -166,7 +169,7 @@ export async function previewActuals(c: Context, b: Data) {
    const unmappedDepartments = [...new Set(rows.filter(r => !find(s, 'department-map', r.department)).map(r => r.department))]
    return { ...p, blocked: !!(unmappedAccounts.length || unmappedDepartments.length), unmappedAccounts, unmappedDepartments }
   }),
-  accounts: accountRows, departments: departmentRows, unmappedAccounts, unmappedDepartments,
+  accounts: accountRows, departments: departmentRows, unmappedAccounts, unmappedDepartments, dimensionExceptions,
   fingerprint: plan.fingerprint, counts: plan.counts, ctx, plan,
  }
 }
@@ -180,6 +183,7 @@ export async function actualsCommand(c: Context, op: string, b: Data): Promise<K
   requireThat(p.accepted > 0, 'Nothing in this file can be accepted', 409)
   requireThat(!p.unmappedAccounts.length, `Map these accounts first: ${p.unmappedAccounts.join(', ')}`, 409)
   requireThat(!p.unmappedDepartments.length, `Map these departments first: ${p.unmappedDepartments.join(', ')}`, 409)
+  requireThat(!p.dimensionExceptions.length, 'Map the unresolved source dimension members before accepting this file', 409)
   requireThat(b.fingerprint === p.fingerprint, 'The file or mapping changed after your preview; review the preview again', 409)
   requireThat(Number(b.acknowledgeRejected ?? 0) === p.rejected.length, p.rejected.length ? `Confirm that the ${p.rejected.length} rejected rows stay out of this import` : 'Preview again', 409)
   const id = p.destination.slice('actuals:'.length)

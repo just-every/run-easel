@@ -24,6 +24,11 @@ test('MODEL-006: four real editable USD starters reconcile statements, dashboard
     for (const row of calc.balanceSheet) { assert.equal(row.balanceDifference, 0); assert.equal(row.cashDifference, 0); assert.equal(row.assets, row.liabilities + row.equity) }
     for (const row of calc.cashFlow) { assert.equal(row.difference, 0); assert.equal(row.closing, calc.cash.find(c => c.month === row.month).closing) }
    }
+   const dimensionReport = await h.get(`/api/easel/dimension-report/${id}`)
+   assert.equal(dimensionReport.dimensions.length, 1)
+   const root = dimensionReport.dimensions[0].members.find(m => m.rollup)
+   assert.deepEqual(root.lineTotals, dimensionReport.lineTotals)
+   for (const line of v.lines) for (const month of v.calculation.months) assert.equal(dimensionReport.lineTotals[line.id]?.[month] ?? 0, v.calculation.lineTotals[line.id]?.[month] ?? 0)
    balanced(v.calculation)
    const dashboards = await h.get('/api/easel/dashboards')
    assert.equal(dashboards.length, 1)

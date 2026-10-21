@@ -1,3 +1,4 @@
+import { dimensionStructure } from './dimensions'
 import { visibleNativeDependencies, visibleNativeInput } from './native-visibility'
 import { fiscalSummary } from './fiscal-summary'
 import { historyOverlay } from './history-sources'
@@ -54,7 +55,7 @@ export async function stateView(c: Context) {
  if (!x.role) return { me, workspace: null }
  const snapshots = (await snapshotList(c.db)).filter(sn => (!sn.scenario || canSeeScenario(x, get(s, 'scenario', sn.scenario))) && ( finance || sn.kind !== 'forecast' || x.role === 'contributor'))
  const view = {
-  me, workspace, lines: lines(s), departments: departments(s),
+  me, workspace, lines: lines(s), departments: departments(s), dimensions: all(s, 'dimension'), dimensionMembers: all(s, 'dimension-member'), lineGroups: all(s, 'line-group'), dimensionMaps: finance ? all(s, 'dimension-map') : [],
   members: finance ? all(s, 'member').map((m): Data => ({ ...m, payDetail: m.role !== 'viewer' && find(s, 'pay-grant', m.email)?.granted === true })) : [],
   scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async (sc): Promise<Data> => sc.status === 'frozen' ? { ...(await frozenModel(c, sc)).scenario, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) } : { ...sc, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) })),
   submissions: all(s, 'submission'),
@@ -94,7 +95,7 @@ export async function scenarioView(c: Context, id: string) {
  const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
  const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
  const visibleHistory = filterHistory(c.x, actualsHistory)
- return { fiscal: fiscalSummary(m.workspace, calc, m.lines), actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id), c.s), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id), c.s) }
+ return { dimensionStructure: (m as Data).dimensionStructure ?? dimensionStructure(c.s), fiscal: fiscalSummary(m.workspace, calc, m.lines), actualsHistory: visibleHistory, cashHealth: cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id), c.s), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id), c.s) }
 }
 
 const comparable = (input: Data) => { const { id: _i, scenario: _s, ...rest } = input; return rest }

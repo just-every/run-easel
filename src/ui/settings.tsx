@@ -1,3 +1,4 @@
+import { Dimensions } from './dimensions'
 import { BALANCE_TARGETS, balanceTarget } from '../easel/balance-targets'
 import { AccountRules } from './account-rules'
 import { GaugeConnection } from './gauge-connection'
@@ -75,6 +76,7 @@ export function Settings({ state, refresh }: Shared) {
     <Field label="Departments (contributors)" name="departments" multiple required={false} options={state.departments.map((d: D) => ({ value: d.id, label: d.name }))} />
    </Form>
   </section>
+  <Dimensions state={state} refresh={refresh} />
   <AccountRules state={state} refresh={refresh} />
   {state.me.role === 'finance' && <GaugeConnection />}
   <section className="card">

@@ -98,7 +98,7 @@ export function PlanningGrid({ state, view, refresh }: Props) {
   {schedules.length === 0 ? <p>Add an entered monthly schedule below to start entering amounts.</p> : <>
    <Table caption="Planning grid monthly inputs" className="planning-grid-table" heads={['Line / department / schedule', ...months.map((month, column) => `${columnName(column)} · ${monthLabel(month)}`)]}>
     {schedules.map((row, rowIndex) => <tr key={row.id}>
-     <th scope="row"><span>{rowIndex + 1}. {named(lines, row.line)}</span><small>{named(departments, row.department)}</small><small>{row.name}</small><button type="button" className="quiet" disabled={busy} onClick={() => {
+     <th scope="row"><span>{rowIndex + 1}. {named(lines, row.line)}</span><small>{named(departments, row.department)}</small><small>{row.name}</small>{Object.entries(row.dimensions ?? {}).map(([dimension, member]) => <small key={dimension}>{view.dimensionStructure?.dimension.find((d: D) => d.id === dimension)?.name}: {view.dimensionStructure?.['dimension-member'].find((m: D) => m.id === member)?.name}</small>)}<button type="button" className="quiet" disabled={busy} onClick={() => {
       invalidate(); const next = new Set(selection), all = months.every(month => next.has(cellKey({ schedule: row.id, month })))
       for (const month of months) { const key = cellKey({ schedule: row.id, month }); if (all) next.delete(key); else next.add(key) }
       setSelection(next)

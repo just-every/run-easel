@@ -1,3 +1,4 @@
+import { dimensionStructure, validateDimensions } from './dimensions'
 import { nativeInput, nativeBindings } from './native-input'
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { compensationInput } from './compensation'
@@ -38,7 +39,7 @@ export function model(s: State, scenarioId: string): Model {
  const scenario = get(s, 'scenario', scenarioId)
  return {
   workspace: { currency: w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon, fiscalYearStart: w.fiscalYearStart, calendar: w.calendar ?? 'calendar-month', ...(w.retailStartDate ? { retailStartDate: w.retailStartDate } : {}) },
-  lines: lines(s), departments: departments(s), scenario,
+  lines: lines(s), departments: departments(s), scenario, dimensionStructure: dimensionStructure(s),
   inputs: { formula: scenarioInputs(s, scenarioId, 'formula'), revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
 }
@@ -66,6 +67,11 @@ const optionalEnd = (s: State, v: unknown, start: string, label: string) => {
 
 /** Validates one input against the model's lines and departments. Returns the stored value. */
 export function validateInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
+ const dimensions = validateDimensions(s, b.dimensions)
+ return { ...validateBaseInput(s, kind, b, scenario), dimensions }
+}
+
+function validateBaseInput(s: State, kind: InputKind, b: Data, scenario: string): Data {
  if (kind === 'workbook-model') { requireThat(false, 'Workbook source graphs are created through the reviewed import door',409) }
  if (kind === 'tax-policy') return taxInput(s,b,scenario)
  if(b.line)requireThat(!all(s,'tax-policy').some(p=>p.scenario===scenario&&p.line===b.line),'This line is reserved for the income-tax estimate',409)

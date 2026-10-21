@@ -1,3 +1,5 @@
+import { DIMENSION_KINDS, dimensionStructure } from './dimensions'
+import { dimensionVersionCells } from './dimensions-report'
 import { nativeRevisions } from './native-revisions'
 import { historyOverlay } from './history-sources'
 import { addMonths } from './months'
@@ -9,7 +11,7 @@ import { INPUT_KINDS } from './model'
 import { semanticEqual } from './semantic'
 import { all, Fault, find, type Data, type State } from './types'
 
-const GLOBAL_KINDS = ['workspace', 'line', 'department', 'account-map', 'account-rule', 'department-map']
+const GLOBAL_KINDS = ['workspace', 'line', 'department', 'account-map', 'account-rule', 'department-map', ...DIMENSION_KINDS]
 const kinds = new Set([...GLOBAL_KINDS, ...INPUT_KINDS, 'scenario'])
 
 /** Global definitions contain no individual compensation; safe in pack snapshots. */
@@ -31,7 +33,7 @@ async function cells(c: Context, s: State, id: string) {
  if (!sc || !find(s, 'workspace', 'main')) return { cells: [], currency: null }
  try {
   const calc = await workingCalculation({ ...c, s }, id)
-  return { cells: calc.cells, currency: calc.currency }
+  return { cells: [...calc.cells, ...dimensionVersionCells(calc, dimensionStructure(s))], currency: calc.currency }
  } catch (error) {
   if (!(error instanceof Fault) || error.status !== 409) throw error
   return { cells: [], currency: null, blocked: error.message }
@@ -43,6 +45,7 @@ export async function versionStructure(c: Context, before: State, modelRevisionB
  // Every newly captured immutable version carries today's global definitions.
  for (const sn of c.snapshots) {
   sn.body.structure = capturedStructure(c.s)
+  sn.body.dimensionStructure = dimensionStructure(c.s)
   if (sn.body.calculation?.months) sn.body.actualsHistory = await historyOverlay(c, [...new Set<string>(sn.body.calculation.months.flatMap((m: string) => [m, addMonths(m, -12)]))])
   if (sn.kind === 'forecast') {
    sn.body.lines = all(c.s, 'line'); sn.body.departments = all(c.s, 'department')
@@ -68,13 +71,13 @@ export async function versionStructure(c: Context, before: State, modelRevisionB
   // Frozen arithmetic is never recalculated, including under global edits.
   if ((next ?? prior)?.status === 'frozen' || (!global && !ids.has(id) && !nativeAffected.has(id))) continue
   const a = await cells(c, before, id), b = await cells(c, c.s, id)
-  const key = (cell: Data) => `${cell.line}|${cell.department}|${cell.month}`
+  const key = (cell: Data) => JSON.stringify([cell.line, cell.department, cell.month, cell.dimension ?? null, cell.member ?? null, cell.lineGroup ?? null])
   const l = new Map(a.cells.map(cell => [key(cell), cell.amount])), r = new Map(b.cells.map(cell => [key(cell), cell.amount]))
   const changedCells = a.blocked || b.blocked ? [] : [...new Set([...l.keys(), ...r.keys()])].sort().flatMap(k => {
    const old = l.get(k) ?? null, now = r.get(k) ?? null
    if (old === now && a.currency === b.currency) return []
-   const [line, department, month] = k.split('|')
-   return [{ line, department, month, before: old, after: now, difference: old !== null && now !== null && a.currency === b.currency ? now - old : null }]
+   const [line, department, month, dimension, member, lineGroup] = JSON.parse(k)
+   return [{ line, department, month, ...(dimension !== null ? { dimension, member } : {}), ...(lineGroup !== null ? { lineGroup } : {}), before: old, after: now, difference: old !== null && now !== null && a.currency === b.currency ? now - old : null }]
   })
   scenarios.push({ id, name: (next ?? prior)!.name, currency: b.currency ?? a.currency, currencyBefore: a.currency, currencyAfter: b.currency,
    revisionBefore: prior?.revision ?? null, revisionAfter: next?.revision ?? null, changedCells,

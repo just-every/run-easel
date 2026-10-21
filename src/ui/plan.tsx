@@ -1,3 +1,4 @@
+import { DimensionPlan } from './dimensions'
 import { WorkbookDrivers } from './workbook-drivers'
 import { NativeFormulas } from './native-formulas'
 import { CollectionSummary, ExpenseForm, PayrollFields } from './working-capital-inputs'
@@ -110,6 +111,8 @@ export function Plan({ state, refresh }: Shared) {
     {inputs.schedule.map((s: D) => <tr key={s.id}><td>{s.name}</td><td>{lineName(s.line)}</td><td>{deptName(s.department)}</td><td>{s.history ? 'Actual reference' : Object.keys(s.values).length}</td><td className="num">{s.history ? 'Calculated' : money(Object.values(s.values as Record<string, number>).reduce((a, v) => a + v, 0), currency)}</td><td>{s.provenance ? `${s.provenance.file} ${s.provenance.sheet}${s.provenance.row == null ? '' : ` row ${s.provenance.row}`}` : 'entered'}</td><td><Action label="Remove" kind="danger" run={() => remove('schedule', s.id)} /></td></tr>)}
    </Table>
   </section>}
+
+  {view && <DimensionPlan state={state} view={view} refresh={refresh} />}
 
   {view && <PlanningGrid key={`grid-${sc.id}:${sc.revision}`} state={state} view={view} refresh={refresh} />}
 
