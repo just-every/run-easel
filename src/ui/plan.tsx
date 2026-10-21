@@ -47,7 +47,7 @@ export function Plan({ state, refresh }: Shared) {
    <Table caption="Revenue models" heads={['Name', 'Driver', 'Line', 'Department', 'From', '']}>
     {(inputs.revenue ?? []).map((r: D) => <tr key={r.id}><td>{r.name}</td><td><RevenueSummary row={r} currency={currency} /><CollectionSummary row={r} /></td><td>{lineName(r.line)}</td><td>{deptName(r.department)}</td><td>{monthLabel(r.start)}</td><td><Action label="Edit" kind="quiet" run={async () => edit('revenue', r)} /><Action label="Remove" kind="danger" run={() => remove('revenue', r.id)} /></td></tr>)}
    </Table>
-   <RevenueForm key={form('revenue')?.id ?? `new-revenue-${round}`} row={form('revenue')} lines={revenueLines} depts={depts} allDepts={options(state.departments)} onSave={b => save('revenue', b)} />
+   <RevenueForm key={form('revenue')?.id ?? `new-revenue-${round}`} row={form('revenue')} lines={revenueLines} depts={depts} allDepts={options(state.departments)} positions={inputs.position ?? []} payDetail={me.payDetail} onSave={b => save('revenue', b)} />
   </section>
 
   {me.role === 'finance' && sc && <GaugeUtilization key={`gauge-${sc.id}:${sc.revision}`} scenario={id} revision={sc.revision} drivers={(inputs.revenue ?? []).filter((r: D) => r.kind === 'services')} currency={currency} onChange={async () => { await load(); await refresh() }} />}
@@ -75,6 +75,7 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Employment type" name="employmentType" options={[{value:'W-2',label:'W-2 employee'},{value:'1099',label:'1099 contractor'}]} defaultValue={p?.employmentType ?? 'W-2'} />
     <Field label="Prior year-to-date taxable wages" name="taxYtdWages" required={false} defaultValue={p?.taxYtdWagesCents === undefined ? '' : decimalText(p.taxYtdWagesCents)} hint="Before the first plan month; required for a continuing W-2 position when tax estimates start midyear" />
     <PayrollFields row={p} />
+    <Field label="Commission planning estimate %" name="commissionPercent" defaultValue={decimalText(p?.commissionRateBps ?? 0)} hint="Applies only to explicitly linked contract bookings at start; no on-costs. ASC 340-40 capitalisation is not modelled." />
     <Field label="On-costs %" name="onCostPercent" defaultValue={p ? decimalText(p.onCostBps) : '12.00'} />
    </Form> })()}
    </> : <p className="muted">Individual positions and pay require a pay-detail grant from the owner. Payroll totals remain available in Overview.</p>}
