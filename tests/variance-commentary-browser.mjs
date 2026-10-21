@@ -55,11 +55,12 @@ try {
   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
   await page.getByLabel('Month', { exact: true }).selectOption(month); await settle(page)
   const detail = page.locator('details.card-row').filter({ has: page.getByText('Cloud', { exact: true }) })
-  const openDetail = async () => { await detail.waitFor(); if (!await detail.getAttribute('open').then(value => value !== null)) await detail.locator('summary').click() }
+  const openDetail = async () => { await detail.waitFor(); if ((await detail.getAttribute('open')) === null) await detail.locator('summary').click() }
   await openDetail()
   const narrative = `Unconfirmed capacity hypothesis ${width}`
   await detail.getByLabel('Explanation for Cloud · Engineering', { exact: true }).fill(narrative)
   await action('explanation', 'Save explanation')
+  await detail.getByText('Explanation (draft):', { exact: true }).waitFor({ state: 'attached' })
   await openDetail()
   await detail.getByText('Explanation (draft):', { exact: true }).waitFor()
   await shoot(`draft-review-${width}`)
@@ -74,6 +75,7 @@ try {
   await shoot(`published-draft-excluded-${width}`, rendered); await rendered.close()
   await openDetail()
   await action('explanation-confirm', 'Confirm explanation')
+  await detail.getByText(/Explanation \(confirmed/).waitFor({ state: 'attached' })
   await openDetail()
   await detail.getByText(/Explanation \(confirmed/).waitFor()
   await shoot(`confirmed-review-${width}`)
