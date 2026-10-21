@@ -98,13 +98,18 @@ async function planning(browser, root, origin, evidence, pages, width) {
   await lines.getByRole('cell', { name, exact: true }).waitFor()
  }
  const people = card(p, 'People')
- for (const [email, role, dept] of [['sales@dev.localhost', 'contributor', 'Sales'], ['engineering@dev.localhost', 'contributor', 'Engineering'], ['board@dev.localhost', 'viewer']]) {
+ for (const [email, role, dept] of [['finance@dev.localhost', 'finance'], ['sales@dev.localhost', 'contributor', 'Sales'], ['engineering@dev.localhost', 'contributor', 'Engineering'], ['board@dev.localhost', 'viewer']]) {
   await fill(people, 'Name', email.split('@')[0])
   await fill(people, 'Email', email)
   await pick(people, 'Role', role)
   if (dept) await people.getByLabel('Departments (contributors)').selectOption({ label: dept })
   await press(people, 'Add person')
   await people.getByRole('cell', { name: email, exact: true }).waitFor()
+  if (role !== 'viewer') {
+   const person = people.getByRole('row').filter({ has: p.getByRole('cell', { name: email, exact: true }) })
+   await press(person, 'Grant pay detail')
+   await person.getByRole('cell', { name: 'Granted', exact: true }).waitFor()
+  }
  }
 
  // July actuals: preview shows the repeat and the malformed row; map, then accept without them.
@@ -244,7 +249,7 @@ async function review(browser, root, origin, evidence, pages, width) {
 
  await tab(p, 'Review')
  await press(p, 'Close Aug 2026')
- await p.getByText(/actuals through Aug 2026/).waitFor()
+ await card(p, 'Monthly review').getByText(/actuals through Aug 2026/).waitFor()
  const ads = p.locator('details').filter({ hasText: 'Advertising · Marketing' })
  await ads.locator('summary').click()
  await ads.getByText(/Possibly timing: Conference sponsorship/).waitFor()
