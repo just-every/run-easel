@@ -39,7 +39,7 @@ try {
   await groups.getByLabel('Statement owner departments', { exact: true }).selectOption([sales.id, engineering.id])
   await groups.getByLabel('Region: edit members', { exact: true }).selectOption([east.id])
   group = await saved(finance.page, 'group-save', () => groups.getByRole('button', { name: 'Save group grants', exact: true }).click())
-  const row = groups.getByRole('row').filter({ has: finance.page.getByRole('rowheader', { name: /Sam Sales/ }) })
+  const row = groups.getByRole('row').filter({ has: finance.page.getByRole('rowheader', { name: /sales@dev.localhost/ }) })
   assert.ok((await row.innerText()).includes('No pay detail'))
   assert.ok((await row.innerText()).includes('Sales, Engineering') || (await row.innerText()).includes('Engineering, Sales'))
   await noOverflow(finance.page, `Groups ${width}`); await groups.screenshot({ path: join(evidence, `groups-${width}.png`) })
