@@ -43,7 +43,7 @@ try {
  assert.equal(metadata.calculationJob.status, 'completed'); assert.equal(metadata.result, undefined)
  const ownResult = await h.get(`/api/easel/calculation-jobs/${edit.value.calculationJob.id}`, analyst)
  assert.equal(ownResult.responseStatus, 200)
- await h.command('member', { email: 'job-planner@example.test', name: 'Job planner', role: 'viewer' })
+ await h.command('pay-detail', { email: 'job-planner@example.test', granted: false })
  const reduced = await h.get(`/api/easel/calculation-jobs/${edit.value.calculationJob.id}`, analyst)
  assert.equal(reduced.calculationJob.status, 'completed'); assert.equal(reduced.result, undefined, 'A stored response cannot retain revoked initiating authority')
  console.log('Background calculation: real reviewed workbook, bounded continuation, filtered job metadata and final exact totals passed')
