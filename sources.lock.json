@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "14c1821a07bde92d62cfb7c8bba1ec8f09ad75f86564c1422f4aaa56e0c62f79",
+      "sha256": "933479868ec2a87e0c3adcc7a26063075d104c8bcaa69072337d806eca13ce7d",
       "executable": false
     },
     "DEMO.md": {
@@ -827,7 +827,7 @@
       "executable": false
     },
     "src/easel/engine.ts": {
-      "sha256": "391adba66959b92d02e6ccde08d7d10236ce256e39945e8dd613a6d09e7b6cba",
+      "sha256": "84872c3cd72d650cfbc35a2bb5d3473e84f9e6bb5eab3c5a257885b9072b8f21",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -3563,7 +3563,7 @@
       "executable": false
     },
     "tests/people-comp.test.mjs": {
-      "sha256": "495a4c175940bac791750076413433e7f527b4643feb486fff752b7cf13faaa0",
+      "sha256": "36d61ae6fb8e887d15463241bcc0f8d28b07d928923aadf0f15af9750d53e07d",
       "executable": false
     },
     "tests/reforecasts-browser-journey.mjs": {

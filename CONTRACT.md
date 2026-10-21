@@ -480,7 +480,7 @@ Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold r
 
 *Status:* missing.
 
-Before REV-001 ships, it inherits PEOPLE-004 weighted-pipeline commission in the slipped booking period, through a finance-saved CRM-owner → position map, traced to the deal ID, under PEOPLE-005 pay filtering and the same planning-estimate/tax/rounding rules.
+Before REV-001 ships, it inherits PEOPLE-004 weighted-pipeline commission in the slipped booking period, with PEOPLE-004 quota, attainment and marginal-accelerator parity, through a finance-saved CRM-owner → position map, traced to the deal ID, under PEOPLE-005 pay filtering and the same planning-estimate/tax/rounding rules.
 
 #### REV-002 — Subscription metrics from Stripe Billing and Nectar.
 Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax).

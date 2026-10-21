@@ -109,7 +109,7 @@ export function calculate(model: Model, actuals: ActualCell[] = [], ledger?: Led
   if (nonCash || lineById.get(line)?.nonCash) return
   const type = lineById.get(line)?.type
   const input = source.id ? timedInputs.get(source.id) : undefined
- if (source.kind === 'position' && input?.payDay) { source.trace += `; payroll accrues when earned and settles on day ${input.payDay} of the earned period + ${input.payMonthOffset} periods (clamped to period end); see working-capital pay-date reconciliation`; return }
+ if (source.kind === 'position' && input?.payDay) { source.trace += `; ${input.bonusBps ? 'regular payroll, excluding position bonus and its incremental taxes,' : 'payroll'} accrues when earned and settles on day ${input.payDay} of the earned period + ${input.payMonthOffset} periods (clamped to period end)${input.bonusBps ? '; the position bonus and its incremental employer taxes settle on that pay day in the bonus period itself, with no month offset' : ''}; see working-capital pay-date reconciliation`; return }
   const timing = timedCash(input ?? {}, month, source.amount, type === 'revenue', type === 'revenue' ? lag ?? collectionLag : lineById.get(line)?.payroll ? 0 : lag ?? paymentLag, source.label, workspace)
   const tagged = timing.events.map(e => ({ ...e, line, department, source: source.id }))
   cash.push(...tagged)

@@ -231,6 +231,7 @@ test('PEOPLE-004 dated merit, March salary bonus, captured department defaults a
  assert.equal(source(current, '2026-04').amount, 1396000, 'bonus is not silently repeated')
  assert.match(source(current, '2026-02').trace, /Merit planning estimate.*2026-02-15.*14\/28.*500.00/)
  assert.match(source(current, '2026-03').trace, /Position bonus planning estimate.*13,200.00.*paid in 2026-03/)
+ assert.match(source(current, '2026-03').trace,/regular payroll, excluding position bonus.*bonus period itself, with no month offset/)
  assert.equal(current.calculation.cash[0].payments, 0)
  assert.equal(current.calculation.cash[2].payments, 1338000 + 1320000, 'March bonus cash is paid in March while February regular cost settles')
  await h.command('department', { id: dept.id, name: dept.name, onCostDefaultPercent: '25' })
