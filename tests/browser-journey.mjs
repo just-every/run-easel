@@ -77,6 +77,7 @@ async function planning(browser, root, origin, evidence, pages, width) {
  const p = finance.page
  await fill(p, 'Company name', 'Harbour Analytics (fixture)')
  await fill(p, 'First plan month', '2026-07')
+ await pick(p, 'Fiscal year starts in month', '7')
  await press(p, 'Create the plan')
  await p.getByRole('navigation', { name: 'Easel' }).waitFor()
 

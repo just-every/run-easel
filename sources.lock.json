@@ -3335,11 +3335,11 @@
       "executable": false
     },
     "tests/browser-journey.mjs": {
-      "sha256": "6bbdd3b2a054ad3d9c6cff982fbd1ea954024d77d84410fca881c3d71b63a63a",
+      "sha256": "c1c62d114cf8e14e1710351997c74b5c64d9f6be50c4fc776833f25633be04e4",
       "executable": false
     },
     "tests/browser-lobby.mjs": {
-      "sha256": "0e50fc4dc51ed0d9fa27509230718fb9ffd05511960022ba2dfcd56f98fc68f9",
+      "sha256": "0b515bac5f6788f618761c67c881fb14b9f8bbabc0bce00c65fcb3d80001881d",
       "executable": false
     },
     "tests/browser-runtime.mjs": {
