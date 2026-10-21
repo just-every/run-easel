@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { fiscalSummary } from '../easel/fiscal-summary'
 import { Field, money, Table, type D } from './shared'
+import { Dots } from './dots'
 
 /** Use the existing setup form; the chosen accounting calendar then stays fixed. */
 export function CalendarFields() {
@@ -27,7 +28,7 @@ export function FiscalSummary({ view, department }: { view: D; department: strin
   <Table caption="Fiscal totals" heads={['Period', 'Revenue', 'Cost of sales', 'Operating expenses', 'Profit', ...(!department ? ['Closing cash'] : [])]}>
    {groups.map((g: D) => <tr key={g.label}><th scope="row">{g.label}{g.complete ? '' : ' (partial)'}</th>{[g.revenue, g.costOfSales, g.operatingExpenses, g.profit, ...(!department ? [g.cash?.closing] : [])].map((v, i) => <td className="num" key={i}>{v === undefined ? 'Unavailable' : money(v, view.workspace.currency)}</td>)}</tr>)}
   </Table>
-  <details><summary>Accounting periods · {retail ? `${summary.calendar} retail` : 'calendar months'}</summary>
+  <details><summary><Dots>Accounting periods{retail ? `${summary.calendar} retail` : 'calendar months'}</Dots></summary>
    <p className="muted">{retail ? 'YYYY-MM keys identify consecutive accounting periods; they are not Gregorian months. Monthly driver amounts apply once per period. Dates below are inclusive; each retail year has 52 weeks.' : 'Each accounting period is one Gregorian month.'}</p>
    <Table caption="Accounting periods" heads={['Key', 'Fiscal period', 'Starts', 'Ends', 'Weeks']}>
     {summary.periods.map((p: D) => <tr key={p.key}><td>{p.key}</td><td>{p.fiscalYear} P{p.period} · Q{p.quarter}</td><td>{p.fromDate}</td><td>{p.throughDate}</td><td>{p.weeks ?? '—'}</td></tr>)}
