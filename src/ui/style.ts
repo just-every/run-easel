@@ -27,7 +27,7 @@ p{margin:8px 0}
 .dots{--dots:.8em;display:flex;flex-wrap:wrap;align-items:baseline;margin-left:calc(-1 * var(--dots))!important;clip-path:inset(-.6em -.6em -.6em calc(var(--dots) - 2px))}
 .dots>span{position:relative;min-width:0;padding-left:var(--dots)}
 .dots>span+span::before{content:"·";content:"·"/"";position:absolute;left:0;top:0;width:var(--dots);text-align:center}
-.dot{font-size:0}
+.dot{font-size:0;letter-spacing:0;word-spacing:0}
 `
 
 const shell = `
