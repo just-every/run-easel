@@ -9,6 +9,9 @@ test('ACCESS-001 group department and dimension authority, scenario shares, capa
  const sales = await h.command('department', { name: 'Sales' }), eng = await h.command('department', { name: 'Engineering' }), legal = await h.command('department', { name: 'Legal' })
  const line = await h.command('line', { name: 'Service fees', type: 'revenue' })
  const payroll = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ await h.stepUp()
+ const ownerCredential = await h.send('/api/easel/tokens/issue', { label: 'Synthetic finance integration', kind: 'personal', scope: 'read' }, h.owner)
+ assert.equal(ownerCredential.status, 200)
  const dimension = await h.command('dimension', { name: 'Region' })
  const east = await h.command('dimension-member', { dimension: dimension.id, name: 'East' })
  const west = await h.command('dimension-member', { dimension: dimension.id, name: 'West' })
@@ -35,6 +38,11 @@ test('ACCESS-001 group department and dimension authority, scenario shares, capa
  const definition = { name: 'Eastern planning', members: ['planner@example.test'], departments: { read: [], edit: [sales.id, eng.id], owners: [sales.id, eng.id] }, dimensions: { [dimension.id]: { read: [], edit: [east.id] } }, capabilities: [] }
  let group = await h.command('group-save', definition)
  await h.command('group-save', definition, person, 403)
+ const oldFinanceRead = await tokenRequest(ownerCredential.value.token, `/api/easel/scenario/${budget.id}`)
+ assert.equal(oldFinanceRead.status, 200)
+ assert.doesNotMatch(JSON.stringify(oldFinanceRead.value.calculation), /Western confidential agreement|Eastern retainers|Synthetic private employee/)
+ assert.deepEqual(oldFinanceRead.value.calculation.cells, [], 'A new dimension cannot expand an existing finance token')
+
  await h.command('group-pay', { id: group.id, revision: group.revision, granted: true }, person, 403)
  const report = await h.get('/api/easel/access-report')
  const authority = report.people.find(p => p.email === 'planner@example.test')

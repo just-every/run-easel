@@ -52,7 +52,7 @@ function intersectDimensions(a: Record<string, string[]>, b: Record<string, stri
  return Object.fromEntries(unique([...Object.keys(a), ...Object.keys(b)]).map(id => [id, a[id] === undefined ? b[id] : b[id] === undefined ? a[id] : intersect(a[id], b[id])]))
 }
 export function grantCeiling(x: Access, s: State): GrantCeiling {
- return { readDepartments: x.readDepartments ?? x.departments, dimensionRead: Object.fromEntries(all(s, 'dimension').map(d => [d.id, x.dimensionRead?.[d.id] ?? all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)])), dimensionEdit: Object.fromEntries(all(s, 'dimension').map(d => [d.id, x.dimensionEdit?.[d.id] ?? all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)])), capabilities: x.capabilities ?? [], groups: x.groups ?? [], scenarioGrants: x.scenarioGrants ?? {}, groupOnly: x.groupOnly === true }
+ return { readDepartments: x.readDepartments ?? x.departments, dimensionRead: Object.fromEntries(all(s, 'dimension').map(d => [d.id, x.dimensionRead?.[d.id] ?? ['', ...all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)]])), dimensionEdit: Object.fromEntries(all(s, 'dimension').map(d => [d.id, x.dimensionEdit?.[d.id] ?? ['', ...all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)]])), capabilities: x.capabilities ?? [], groups: x.groups ?? [], scenarioGrants: x.scenarioGrants ?? {}, groupOnly: x.groupOnly === true }
 }
 export function access(s: State, a: Actor): Access {
  const current = currentAccess(s, a)
@@ -63,13 +63,15 @@ export function access(s: State, a: Actor): Access {
  // original department/pay ceilings still govern their legacy planning reads.
  if (!ceiling) {
   const legacy = currentAccess(new Map([...s].filter(([, row]) => row.kind !== 'access-group')), a)
-  return { ...legacy, departments: intersect(legacy.departments, a.token.departments), readDepartments: intersect(legacy.readDepartments ?? [], a.token.departments), payDetail: legacy.payDetail === true && a.token.payDetail, capabilities: [], groups: [], scenarioGrants: {},
+  return { ...legacy, departments: intersect(legacy.departments, a.token.departments), readDepartments: intersect(legacy.readDepartments ?? [], a.token.departments), payDetail: legacy.payDetail === true && a.token.payDetail, capabilities: legacy.role === 'finance' ? legacy.capabilities ?? [] : [], dimensionLimited: all(s, 'dimension').length > 0, groups: [], scenarioGrants: {},
    dimensionRead: Object.fromEntries(all(s, 'dimension').map(d => [d.id, []])), dimensionEdit: Object.fromEntries(all(s, 'dimension').map(d => [d.id, []])) }
  }
  const scenarioGrants = Object.fromEntries(Object.entries(current.scenarioGrants ?? {}).filter(([id]) => ceiling.scenarioGrants[id]).map(([id, mode]) => [id, mode === 'edit' && ceiling.scenarioGrants[id] === 'edit' ? 'edit' : 'read'])) as Record<string, 'read' | 'edit'>
- return { ...current, payDetail: current.payDetail === true && a.token.payDetail, departments: intersect(current.departments, a.token.departments), readDepartments: intersect(current.readDepartments ?? [], ceiling.readDepartments),
+ const dimensionRead = intersectDimensions(current.dimensionRead ?? {}, Object.fromEntries(all(s, 'dimension').map(d => [d.id, ceiling.dimensionRead[d.id] ?? []])))
+ const dimensionLimited = all(s, 'dimension').some(d => ['', ...all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)].some(id => !dimensionRead[d.id]?.includes(id)))
+ return { ...current, dimensionRead, dimensionLimited, payDetail: current.payDetail === true && a.token.payDetail, departments: intersect(current.departments, a.token.departments), readDepartments: intersect(current.readDepartments ?? [], ceiling.readDepartments),
   capabilities: intersect(current.capabilities ?? [], ceiling.capabilities) as Capability[], groups: intersect(current.groups ?? [], ceiling.groups), scenarioGrants,
-  groupOnly: current.groupOnly || ceiling.groupOnly, dimensionRead: intersectDimensions(current.dimensionRead ?? {}, Object.fromEntries(all(s, 'dimension').map(d => [d.id, ceiling.dimensionRead[d.id] ?? []]))), dimensionEdit: intersectDimensions(current.dimensionEdit ?? {}, Object.fromEntries(all(s, 'dimension').map(d => [d.id, ceiling.dimensionEdit[d.id] ?? []]))),
+  groupOnly: current.groupOnly || ceiling.groupOnly, dimensionEdit: intersectDimensions(current.dimensionEdit ?? {}, Object.fromEntries(all(s, 'dimension').map(d => [d.id, ceiling.dimensionEdit[d.id] ?? []]))),
   statementDepartments: intersect(current.statementDepartments ?? [], ceiling.readDepartments) }
 }
 export function requireMember(x: Access) { requireThat(x.role, 'Finance has not added you to this plan yet', 403) }
@@ -85,7 +87,7 @@ export const seesDepartmentDetail = (x: Access, department: string) => x.role ==
 export function dimensionAllowed(_s: State, x: Access, tags: Record<string, string> = {}, edit = false) {
  if (!x.role || edit && x.role === 'viewer') return false
  const grants = (edit ? x.dimensionEdit : x.dimensionRead) ?? {}
- return Object.entries(grants).every(([dimension, ids]) => typeof tags[dimension] === 'string' && ids.includes(tags[dimension]))
+ return Object.entries(grants).every(([dimension, ids]) => ids.includes(tags[dimension] ?? ''))
 }
 export function visibleInput(x: Access, kind: string, input: Data) {
  if (!dimensionAllowed(new Map(), x, input.dimensions)) return false

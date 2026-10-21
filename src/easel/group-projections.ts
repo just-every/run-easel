@@ -2,12 +2,13 @@ import { dimensionAllowed, seesDepartmentDetail } from './access'
 import type { Calculation, Cell, Line } from './engine'
 import type { Access, State } from './types'
 
-export const scopedReader = (x: Access) => x.role !== 'finance' && (x.groupOnly === true || Object.keys(x.dimensionRead ?? {}).length > 0)
+export const scopedDepartment = (x: Access, department: string) => !x.groupOnly && x.role === 'viewer' || seesDepartmentDetail(x, department)
+export const scopedReader = (x: Access) => x.dimensionLimited === true || x.role !== 'finance' && (x.groupOnly === true || Object.keys(x.dimensionRead ?? {}).length > 0)
 /** A constrained reader receives sums of authorized source slices. Company cash,
  * balance-sheet stocks and unsupported derived metrics cannot be inferred from a slice. */
 export function scopedCalculation(s: State, x: Access, calc: Calculation, lines: Line[]): Calculation {
  if (!scopedReader(x)) return calc
- const cells: Cell[] = calc.cells.filter(cell => seesDepartmentDetail(x, cell.department)).map(cell => ({ ...cell, sources: cell.sources.filter(source => dimensionAllowed(s, x, source.dimensions)) })).filter(cell => cell.sources.length).map(cell => ({ ...cell, amount: cell.sources.reduce((sum, source) => sum + source.amount, 0) }))
+ const cells: Cell[] = calc.cells.filter(cell => scopedDepartment(x, cell.department)).map(cell => ({ ...cell, sources: cell.sources.filter(source => dimensionAllowed(s, x, source.dimensions)) })).filter(cell => cell.sources.length).map(cell => ({ ...cell, amount: cell.sources.reduce((sum, source) => sum + source.amount, 0) }))
  const lineTotals: Record<string, Record<string, number>> = {}
  for (const cell of cells) { lineTotals[cell.line] ??= {}; lineTotals[cell.line][cell.month] = (lineTotals[cell.line][cell.month] ?? 0) + cell.amount }
  const types = new Map(lines.map(line => [line.id, line.type]))

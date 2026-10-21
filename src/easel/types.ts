@@ -21,7 +21,7 @@ export type Actor = {
  baseRole: 'owner' | 'admin' | 'member'
 }
 /** What the actor may do in this installation, resolved from Base role and Easel membership. */
-export type Access = { actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean; readDepartments?: string[]; dimensionRead?: Record<string, string[]>; dimensionEdit?: Record<string, string[]>; capabilities?: Capability[]; groups?: string[]; scenarioGrants?: Record<string, 'read' | 'edit'>; groupOnly?: boolean; statementDepartments?: string[] }
+export type Access = { dimensionLimited?: boolean; actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean; readDepartments?: string[]; dimensionRead?: Record<string, string[]>; dimensionEdit?: Record<string, string[]>; capabilities?: Capability[]; groups?: string[]; scenarioGrants?: Record<string, 'read' | 'edit'>; groupOnly?: boolean; statementDepartments?: string[] }
 
 export class Fault extends Error {
  constructor(public status: number, message: string) { super(message) }
