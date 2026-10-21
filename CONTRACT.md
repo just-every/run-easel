@@ -648,6 +648,8 @@ Before this capability ships, REPORT-001 inherits US-001: schedules use the save
 
 *Status:* partial.
 
+Saved report authors and recipients inherit ACCESS-001 live group and dimension scope; group grants never expand stored token ceilings or compensation authority.
+
 #### REPORT-002 — Dashboards.
 Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width.
 
@@ -707,7 +709,9 @@ Finance creates groups (for example FP&A team, department heads, board) and gran
 
 *Acceptance:* the API journey makes a group with edit on two departments and no pay access, adds a person, and confirms reads, writes and exports respect it; the access report lists it.
 
-*Status:* partial.
+Current semantics adopted pending ct approval: native owner/admin sessions administer groups; only the signed-in owner grants group Pay detail or changes membership of a pay-enabled group. Groups never elevate a person's planner/viewer role. Department grants union with existing assignments unless finance explicitly selects group-only authority; custom dimension constraints intersect department grants, include current descendants and deny unassigned sources. Scenario shares use live memberships. Tokens intersect current authority with their issuance ceiling, including dimensions/members, capabilities, private shares and pay; later grants never expand a token. Global approvals and publishing require both the capability and visibility across every department and dimension member. Unsupported scoped cash/balance/headcount and unattributed discussions, tasks and explanations are unavailable rather than inferred. Gauge connection custody retains ct's 19 October native-finance session boundary; the connections capability does not override it. ACCESS-002 inherits these live group semantics for SCIM; ENTITY-001 inherits entity-member authority; REPORT-001 inherits current author and recipient filtering.
+
+*Status:* partial. Gap: ct approval of the adopted group composition, global-capability scope and owner-only pay administration default is pending. Delegated non-finance connection custody remains unavailable under the existing Gauge ruling.
 
 #### ACCESS-002 — SSO and SCIM.
 Easel is a SAML 2.0 and OIDC relying party for Okta, Microsoft Entra ID, Google Workspace and [Auth](https://github.com/just-every/run-auth), and a SCIM 2.0 server that provisions and deprovisions people and group membership. Deprovisioning ends the person's sessions at once and keeps their historical attribution.
@@ -715,6 +719,8 @@ Easel is a SAML 2.0 and OIDC relying party for Okta, Microsoft Entra ID, Google 
 *Acceptance:* with an IdP fake, sign in one person by SAML and another by OIDC; provision a person and a group by SCIM, add the person to the group by a SCIM group update and see the group's grants (`ACCESS-001`) apply, remove them and see the grants end; deprovision the person and see their session refused on the next request while their past submissions still show their name.
 
 *Status:* missing.
+
+Before SCIM groups ship, inherit ACCESS-001 live membership, department/dimension intersection, role and token ceilings, owner-only compensation administration and current connection custody.
 
 #### AUDIT-001 — Model audit trail.
 Every change to setup, inputs, formulas, mappings, connections, permissions, submissions, approvals, closes and packs is recorded with actor (person or agent), time, record, scenario, revision before and after, and the changed values. Finance filters the trail by person, record, scenario and date, and exports it. The trail is append-only and survives `rer export` and restore.
@@ -759,6 +765,8 @@ A company plans several entities (for example a US C-corp and a services subsidi
 *Acceptance:* two entities with an intercompany management fee; the API journey reads entity and consolidated statements in which the fee and the intercompany balance are eliminated and consolidated totals equal the sum less eliminations; the same holds when both entities arrive from one Sage Intacct multi-entity connection fake (`CONNECT-011`).
 
 *Status:* missing.
+
+Before entity consolidation ships, inherit ACCESS-001 entity-member grants and live department/dimension intersections on ordinary and consolidated reads and exports.
 
 #### ENTITY-002 — Multi-currency planning.
 An entity plans in its local currency and reports in USD, using rate tables that finance keeps (budget rate, monthly average and month-end rates). Profit and loss converts at average rates, the balance sheet at month-end rates, and the translation difference is shown. Constant-currency comparisons are available.
@@ -1045,7 +1053,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `3a7f66edba49cd566e94391265462abc29d1981c` (22 October 2026).
+Judged from the code and tests at commit `184c2ab26078d85b8f525fefcfd72c169374fdce` (22 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
@@ -1129,7 +1137,7 @@ Judged from the code and tests at commit `3a7f66edba49cd566e94391265462abc29d198
 | `REPORT-005` | Department budget-owner reporting | target | done | `src/easel/department-statements.ts`, `tests/department-statements.test.mjs`, `tests/department-statements-browser.mjs` | Scoped close-triggered statements, complete source rows, current tasks/confirmations, explicit pack-action departments, durable honest mail states, finance retry, authenticated app links and formula Excel |
 | `REPORT-006` | Scheduled cash alerts | target | partial | `src/easel/cash-alert-check.ts` `src/easel/cash-alert-schedule.ts` `tests/cash-alerts.test.mjs` `tests/cash-alerts-browser.mjs` | Floor, actual-cash and runway rules, refresh/close/daily company-zone checks, once-per-breach alerts, worsening and interval re-alerts and acknowledgment ship; bank-balance rules need CONNECT-009 (Plaid), and numbers in shared chat await ct (chat inherits CYCLE-003's Base egress gap) |
 | `REPORT-007` | BI and warehouse feeds | target | missing |  | No warehouse inputs or BI dataset endpoint |
-| `ACCESS-001` | Groups and per-dimension permissions | target | partial | `src/easel/access.ts` `tests/easel.test.mjs` | Finance, department-scoped contributor and viewer roles ship; groups, per-dimension and per-capability grants and an access report are missing |
+| `ACCESS-001` | Groups and per-dimension permissions | target | partial | `tests/groups.test.mjs` (ACCESS-001 group department and dimension authority, scenario shares, capability and pay grants retain live token ceilings; ACCESS-001 statement ownership groups determine recipients and revoke app, workbook and pending email access); `tests/groups-browser.mjs` (native group administration, tagged planner entry, group sharing and Excel at 1440/390); `tests/api-tokens.test.mjs`, `tests/compensation-access.test.mjs`, `tests/gauge-utilization.test.mjs` (existing token/pay/custody boundaries) | Native group grants, access report, live scenario/statement filtering and capability ceilings are proven. ct approval pending for adopted group composition, whole-company approval/publication scope and owner-only group Pay detail; non-finance connection custody remains unavailable under the existing Gauge ruling |
 | `ACCESS-002` | SSO and SCIM | target | missing |  | No SAML, OIDC or SCIM |
 | `AUDIT-001` | Model audit trail | target | done | `src/easel/audit.ts` `src/easel/audit-write.ts` `tests/audit.test.mjs` `tests/restore-flow.mjs` | Atomic before/after values for native and imported records, person or agent attribution, finance filters and complete CSV export; append-only database guards and real CLI restore preserve the trail |
 | `ERASE-001` | Person erasure | target | done | `tests/erasure.test.mjs` `tests/erasure-portability.test.mjs` `tests/erasure-browser.mjs` | — |
