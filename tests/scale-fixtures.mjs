@@ -24,11 +24,11 @@ export async function smallBusinessModel(h) {
  return { scenario, departments, lines, dimensions }
 }
 
-export async function finishJob(h, initial) {
+export async function finishJob(h, initial, cookie = h.owner) {
  let result = initial
  while (result.calculationJob?.status === 'running') {
   await new Promise(resolve => setTimeout(resolve, 50))
-  const response = await h.send(`/api/easel/calculation-jobs/${result.calculationJob.id}`, undefined, h.owner)
+  const response = await h.send(`/api/easel/calculation-jobs/${result.calculationJob.id}`, undefined, cookie)
   if (response.status === 409) continue
   if (response.status !== 200) throw new Error(JSON.stringify(response.value))
   result = response.value
