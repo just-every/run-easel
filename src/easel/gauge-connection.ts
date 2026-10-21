@@ -1,12 +1,13 @@
 import type { Bindings } from '../auth.server'
 import { gaugeOrigin } from './gauge-origin'
 import { revokeGauge, GAUGE_REVOCATION_WARNING } from './gauge-revoke'
-import { requireFinance } from './access'
+import { requireCapability, requireFinance } from './access'
 import type { Context } from './context'
 import { sealConnection, openConnection } from './connection-seal'
 import { find, put, requireThat, text, type Data } from './types'
 
 export function connectionAuthority(c: Context) {
+ requireCapability(c.x, 'connections')
  requireFinance(c.x)
  requireThat(!c.x.actor.token, 'Use a signed-in finance session for Gauge connections and imports', 403)
 }

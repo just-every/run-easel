@@ -44,6 +44,9 @@ test('ACCESS-001 group department and dimension authority, scenario shares, capa
  assert.deepEqual(oldFinanceRead.value.calculation.cells, [], 'A new dimension cannot expand an existing finance token')
 
  await h.command('group-pay', { id: group.id, revision: group.revision, granted: true }, person, 403)
+ await h.command('comment', { scenario: budget.id, department: sales.id, text: 'Western confidential deal discussion' })
+ const scopedState = await h.get('/api/easel/state', person)
+ assert.doesNotMatch(JSON.stringify(scopedState), /Western confidential deal discussion/)
  const report = await h.get('/api/easel/access-report')
  const authority = report.people.find(p => p.email === 'planner@example.test')
  assert.deepEqual(new Set(authority.departments.edit), new Set([sales.id, eng.id]))

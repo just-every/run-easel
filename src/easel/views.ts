@@ -61,8 +61,8 @@ export async function stateView(c: Context) {
   me, workspace, lines: lines(s), departments: departments(s), dimensions: all(s, 'dimension'), dimensionMembers: all(s, 'dimension-member').filter(m => x.role === 'finance' || !x.dimensionRead?.[m.dimension] || x.dimensionRead[m.dimension].includes(m.id)), lineGroups: all(s, 'line-group'), dimensionMaps: finance ? all(s, 'dimension-map') : [],
   members: finance ? all(s, 'member').map((m): Data => ({ ...m, payDetail: m.role !== 'viewer' && find(s, 'pay-grant', m.email)?.granted === true })) : [],
   scenarios: await Promise.all(all(s, 'scenario').filter(sc => canSeeScenario(x, sc)).sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? '')).map(async (sc): Promise<Data> => sc.status === 'frozen' ? { ...(await frozenModel(c, sc)).scenario, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) } : { ...sc, ...(find(s, 'scenario-designation', sc.id) ? { official: find(s, 'scenario-designation', sc.id)!.official } : {}) })),
-  submissions: all(s, 'submission'),
-  comments: all(s, 'comment').filter(cm => canSeeScenario(x, get(s, 'scenario', cm.scenario)) && (finance || x.departments.includes(cm.department))).sort((a, b) => a.at.localeCompare(b.at)),
+  submissions: scopedReader(x) ? [] : all(s, 'submission'),
+  comments: (scopedReader(x) ? [] : all(s, 'comment')).filter(cm => canSeeScenario(x, get(s, 'scenario', cm.scenario)) && (finance || x.departments.includes(cm.department))).sort((a, b) => a.at.localeCompare(b.at)),
   accountMaps: finance ? all(s, 'account-map') : [],
   accountRules: finance ? all(s, 'account-rule') : [],
   departmentMaps: finance ? all(s, 'department-map') : [],
@@ -70,7 +70,7 @@ export async function stateView(c: Context) {
   workbooks: finance ? all(s, 'workbook-import') : [],
   actionDepartments: finance ? all(s, 'pack-action-department') : [],
   fxTable: finance ? find(s, 'fx-table', 'main') ?? null : null,
-  packs: all(s, 'pack').filter(p => finance || p.status === 'published'),
+  packs: (scopedReader(x) ? [] : all(s, 'pack')).filter(p => finance || p.status === 'published'),
   snapshots,
  }
  // Collect from the finished view, never from records the reader cannot see.
