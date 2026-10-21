@@ -164,6 +164,7 @@ test('PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through tax
  for (const changes of [{ payBasis: 'other' }, { annualSalary: '1' }, { hourlyRate: '-1' }, { expectedHours: '1.001' }, { benefits: '-1' }, { retirementMatchPercent: '100.01' }, { payBasis: 'salary', annualSalary: '100' }]) {
   await h.command('position', { ...body, id: hourly.id, ...changes }, h.owner, 400)
  }
+ await h.command('position', { ...body, id: hourly.id, hourlyRate: '1000000', expectedHours: '1000000' }, h.owner, 409)
  await h.command('position', { ...body, id: hourly.id, hourlyRate: '100000000000', expectedHours: '100000000000' }, h.owner, 409)
  assert.deepEqual(await view(), before, 'invalid compensation never changes the model or revision')
  for (const [i, row] of current.calculation.balanceSheet.entries()) {

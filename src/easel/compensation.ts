@@ -22,6 +22,7 @@ export function compensationInput(b: Data): Data {
 export function compensation(p: Data, salaryWages: number, currency: string) {
  const hourly = p.payBasis === 'hourly'
  const wages = hourly ? mulDiv(p.hourlyRateCents, p.expectedHours, 100) : salaryWages
+ requireThat(wages <= 10 ** 13, 'Base wages exceed the supported money amount', 409)
  const onCosts = hourly ? mulDiv(wages, p.onCostBps, 10000) : 0
  const benefits = p.benefitsCents ?? 0
  const match = mulDiv(wages, p.retirementMatchBps ?? 0, 10000)

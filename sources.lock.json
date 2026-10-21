@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "2e77d5d7693afff6aea266af4cf1498551dabec9112b2bf82d9aba097f028949",
+      "sha256": "eda37bef189f365acbe2c46192838812fb74ff61805a28f5c6da1b42b89b7847",
       "executable": false
     },
     "base-copies.json": {
@@ -755,7 +755,7 @@
       "executable": false
     },
     "src/easel/compensation.ts": {
-      "sha256": "1e21ab43309c73df2e3c6e57103f0e43275f65066a11153f78080a9dd1df922a",
+      "sha256": "22c0da925ee19222c747d8fbf341ace993452d7f261e9faf3a091c703d53febe",
       "executable": false
     },
     "src/easel/connection-seal.ts": {
@@ -3563,7 +3563,7 @@
       "executable": false
     },
     "tests/people-comp.test.mjs": {
-      "sha256": "2d0b5735026d6b7f9d39d6f5e821bd1272ec4377465107e8c45e7b13ee70a029",
+      "sha256": "6be79ef699b8f0d72967a831c42e0317a6bd6461d762ef9a02411b43cdee334d",
       "executable": false
     },
     "tests/reforecasts-browser-journey.mjs": {
