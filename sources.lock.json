@@ -3507,7 +3507,7 @@
       "executable": false
     },
     "tests/people-comp-browser.mjs": {
-      "sha256": "29f516c31f03ce1451d5dba819165bb21d15663309a2bb4e839a8131885a4d64",
+      "sha256": "adc415173c88a83122f0a68d0f2f7b489fe15a34a59ebd2f8344abe6867be957",
       "executable": false
     },
     "tests/people-comp.test.mjs": {

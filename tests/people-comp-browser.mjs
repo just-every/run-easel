@@ -6,7 +6,7 @@ import { fresh, freePort, start } from './browser-runtime.mjs'
 import { api, noOverflow, session } from './browser-journey.mjs'
 import { proveFormulas, readWorkbook } from './spreadsheet-proof.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
-const root = await fresh(), evidence = resolve(process.env.EASEL_EVIDENCE ?? '../screens-people004')
+const root = process.env.EASEL_BROWSER_ROOT ?? await fresh(), evidence = resolve(process.env.EASEL_EVIDENCE ?? '../screens-people004')
 await mkdir(evidence, { recursive: true })
 const card = (page, heading) => page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
 const nav = (page, name) => page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name, exact: true }).click()
@@ -107,4 +107,4 @@ try {
    await trace.screenshot({ path: join(evidence, `restricted-trace-${width}.png`) }); await noOverflow(board.page, `PEOPLE-005 commission ${width}`)
   } finally { await board.context.close() }
  }
-} finally { await browser?.close(); await server?.close(); await rm(root, { recursive: true, force: true }) }
+} finally { await browser?.close(); await server?.close(); if (!process.env.EASEL_BROWSER_ROOT) await rm(root, { recursive: true, force: true }) }
