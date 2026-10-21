@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "0920997204fc30d0b46c0e264bce1acd0bf02bf894382f960703235384acae5f",
+      "sha256": "77983d04d1d48f19def6b9e4bb4ca67f09e9304b83980bfbde80d2c3e8fe3dd6",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "a04d6b2b6467007d051b6a068acbb2927f047aa8b9a25372fe3b1a31c70085b6",
+      "sha256": "96b0e232cf6a06184ca2e86952b8132d04ac2041db715920abe190b5456b491c",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "fa1f4356d1405367b0aa8a2a6bd1ce3f178d8c1396d446dd7c3498b323f624cf",
+      "sha256": "ad56fcc184f2715c0ae6c722df959e1ff1069d2cc296fa7e092a737e8551f717",
       "executable": false
     },
     "DEMO.md": {
@@ -312,6 +312,10 @@
     },
     "migrations/core/0018_group_authority.sql": {
       "sha256": "7877940cac1cc722af087347f05f0baac507f399baa86d19de9f3a546b2baf8d",
+      "executable": false
+    },
+    "migrations/core/0019_calculation_jobs.sql": {
+      "sha256": "a4e32bdeabd4c4b0612479ef912f321b46bdc1bf5e1761db24ccacba95031df6",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -527,7 +531,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "bf16c598b015c15ada6fa131217fc04826d6755ee44d313aea253baa788052f6",
+      "sha256": "7aa97c0cea63b4f0f0bcdc1c986a2dcb9f15c22de1736e13da25a0e6ac6e6693",
       "executable": false
     },
     "SOURCE.md": {
@@ -679,7 +683,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "5280c14d2eba4ccb493fee96ab16401c88be5f718d58e46a882611448c809cd5",
+      "sha256": "7f62721cdfebc81d3bb8f669377dfe5cdd218694cdb563a9477a4861c00d31be",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -714,8 +718,20 @@
       "sha256": "5a823d56ed1120cfe73af0734b19af49649c9d32552a2d2c8e29ffb6075a0126",
       "executable": false
     },
+    "src/easel/calculation-dispatch.ts": {
+      "sha256": "a1b099add1a65600aef8f0e07499cfe6033db08144a7d98bd2f8a9a41cf63982",
+      "executable": false
+    },
+    "src/easel/calculation-jobs.ts": {
+      "sha256": "37af01900d37f8ae6294ae587d1a7377a1a911ee8d9138cb89da4b8aee65ec11",
+      "executable": false
+    },
+    "src/easel/calculation-status.ts": {
+      "sha256": "a867de466ec599ef8f64304e94ea477e5b2c7284241e1578d6ee5a0bdeb228e0",
+      "executable": false
+    },
     "src/easel/calculation.ts": {
-      "sha256": "651af7548a55cc5842754a3a73f0300447950007a6dfb4dc7f5f4f98618abaca",
+      "sha256": "05ec2389e400a8ef0f005eab87efa4cd5cce2a1ee15f562d9af62180c982ddd1",
       "executable": false
     },
     "src/easel/calendar-channels.ts": {
@@ -779,7 +795,7 @@
       "executable": false
     },
     "src/easel/context.ts": {
-      "sha256": "09398d070252cb2a0b88219772e34e8a16aea7b50d41d18b7d386753505bcd01",
+      "sha256": "ceae3a0281900349e3f0f4d20440bae762fa51011197b91959649db0baca41b1",
       "executable": false
     },
     "src/easel/contract-revenue.ts": {
@@ -855,7 +871,7 @@
       "executable": false
     },
     "src/easel/dimensions-report.ts": {
-      "sha256": "298c9541bf0d5b463322c9e72adb428e3d07b17c02bd9bd2ad2ec1c274896d86",
+      "sha256": "a9a8c41a7f4f31f5abadbc4fcb79cf768fc6a9f8813154dc0f77634c3e31fde2",
       "executable": false
     },
     "src/easel/dimensions.ts": {
@@ -870,8 +886,12 @@
       "sha256": "99b93a56f02dc5d61a2c0820e4e9f5cc06a8e8831bffd20ef2dcdff7eb946a0c",
       "executable": false
     },
+    "src/easel/engine-indexes.ts": {
+      "sha256": "ad2d878d8d00a3903ec91ddb4404bfbbb0887ff77fa1d251682f87cee33ad38a",
+      "executable": false
+    },
     "src/easel/engine.ts": {
-      "sha256": "f3fd764dbf1d4f8859e8b96c5d7f0384caed28f70a71c1cdc8496784136b9cbc",
+      "sha256": "3f34530c102fa4e698926fb55557654f79b75a6baaa5b5cae684342f7e9d411b",
       "executable": false
     },
     "src/easel/entity-access.ts": {
@@ -927,7 +947,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/policy.mjs": {
-      "sha256": "a32e20952e0a59d3f75cb40f0534c407d138bac7f8df6bca8981552b41d9bf84",
+      "sha256": "68edd99411aa12b0f2e9089f95b27570a1c15f705a91fe50cb595919650876bd",
       "executable": false
     },
     "src/easel/erasure-archive/prepare.d.mts": {
@@ -1083,7 +1103,7 @@
       "executable": false
     },
     "src/easel/mcp.ts": {
-      "sha256": "f2695b96ca48256dc57593f37e2eb70a640f21fe77b2be37032208a883fd7c60",
+      "sha256": "dbc122c1444fa6eed01cac5d106a4f4651d234e71701b55508c9dcc785ac5c73",
       "executable": false
     },
     "src/easel/metric-rules.ts": {
@@ -1283,7 +1303,7 @@
       "executable": false
     },
     "src/easel/structure-versions.ts": {
-      "sha256": "34865daefc2038d9bd7505812f32f3f389d7036a4b7343935a118cb4dc265d33",
+      "sha256": "4d3ad671b3da6c96a96122f78b12dae3b771cfe3fe4323c0a59e9f3d1cc3db4f",
       "executable": false
     },
     "src/easel/tax-calculation.ts": {
@@ -1367,7 +1387,7 @@
       "executable": false
     },
     "src/easel/workbook.ts": {
-      "sha256": "3745c01063230b3e671f6f9bce6bdcccc22a8ee9dd2bdf2ea87647cc55f828e6",
+      "sha256": "f7aa6da1d7beaf0c0f6a8fc4a9442269d908025ac7ec9bb8cf601c70e9b743c4",
       "executable": false
     },
     "src/easel/working-capital-input.ts": {
@@ -3191,7 +3211,7 @@
       "executable": false
     },
     "src/ui/app.tsx": {
-      "sha256": "bcd520d78f8b1e92d4ee8f6cd12b35f809612670bd30e66a1370085c8e0d6794",
+      "sha256": "227c7563d3011559248ea3c4fa397d77531025a1cf33a59ffbdddbed5eedf270",
       "executable": false
     },
     "src/ui/assets.tsx": {
@@ -3204,6 +3224,14 @@
     },
     "src/ui/balance-actuals.tsx": {
       "sha256": "9a4bd0027e2e61a645a9e65459768ba056dcf28359f9cfbb3d630d734ad59dab",
+      "executable": false
+    },
+    "src/ui/calculation-request.ts": {
+      "sha256": "c7fe5a3e3ff26e67bf087342f0b464079489b88b4437f6092d55ded5aa7569ca",
+      "executable": false
+    },
+    "src/ui/calculation-state.tsx": {
+      "sha256": "137f14ff32c094f3ac4c77ad75a2214c7706cf57dc4a0a176db2b8c216f5dadc",
       "executable": false
     },
     "src/ui/calendar.tsx": {
@@ -3319,7 +3347,7 @@
       "executable": false
     },
     "src/ui/plan.tsx": {
-      "sha256": "25262d7d195a4ddd334f50a626a3ef64a503e2f67fcb322bffcf464e52ca22e3",
+      "sha256": "640ced3b1db2b8ac9e1d0071a186c26f01bd333dd8ed9d07e963b073d47494e5",
       "executable": false
     },
     "src/ui/planning-grid.css": {
@@ -3375,7 +3403,7 @@
       "executable": false
     },
     "src/ui/shared.tsx": {
-      "sha256": "7edda7b5d329be00bbcd50687de8b404d758b0193c3f157cbee19de9e7663af9",
+      "sha256": "50c0bd8831e8c8ac471a7204367d0fa1f92b849bc853fb69f42eaa3b2833aeb2",
       "executable": false
     },
     "src/ui/starter-models.tsx": {
@@ -3488,6 +3516,14 @@
     },
     "tests/browser.mjs": {
       "sha256": "0694f946453aeef31d10b4536bc29e2d8094b5c48a449d616073e38f1ad7565b",
+      "executable": false
+    },
+    "tests/calculation-background.mjs": {
+      "sha256": "b53c149367af4df43c0d780f602b1af8aac25b90303dcee2e261e9e4664bebab",
+      "executable": false
+    },
+    "tests/calculation-browser.mjs": {
+      "sha256": "b57fa8ab5c5c8a47f0f2de34acda0d6abf5f044e1f28ce483dafb851ecffe660",
       "executable": false
     },
     "tests/calendar-browser.mjs": {
@@ -3742,6 +3778,10 @@
       "sha256": "2d087866befdb00d911c3d914a39e84b84308b343e892118409b0a4ffe898fe7",
       "executable": false
     },
+    "tests/model-scale.mjs": {
+      "sha256": "c37c1ffb8f8ed4780d041250d9f68c4810d16bfb0f4512132f0e6fe72560e293",
+      "executable": false
+    },
     "tests/native-formula-flow.mjs": {
       "sha256": "8de951304f1e4fbf49ffd3cb107a95434a60994387850e8d9888f3e1e1c25e5f",
       "executable": false
@@ -3844,6 +3884,10 @@
     },
     "tests/saved-reports.test.mjs": {
       "sha256": "69d41518d8f7df3c360b5a7c9df3b2be491abfd2a8c691b916efddb28538f03a",
+      "executable": false
+    },
+    "tests/scale-fixtures.mjs": {
+      "sha256": "d6caa994a5df83fd270033fcb2a9c54ce9b5c2dfdaae41e5b801e29d4b710f5a",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {
