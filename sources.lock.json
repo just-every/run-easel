@@ -4451,7 +4451,7 @@
       "executable": false
     },
     "tests/source-guard-browser.mjs": {
-      "sha256": "a83a3e79413311dae5576e1c396e416c31a74d454ac8d8ef655d9dfe93304584",
+      "sha256": "c400c0097e311ef7758fffab8655b80d6b0821fc5b7f203407737f56615e3cad",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {

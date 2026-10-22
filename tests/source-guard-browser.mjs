@@ -83,6 +83,7 @@ try {
   await upload.getByRole('button',{name:'Accept 1 rows',exact:true}).click()
   const acceptedResponse=await accepted;assert.equal(acceptedResponse.status(),200,await acceptedResponse.text())
   await panel().getByText('Refresh accepted',{exact:true}).last().waitFor()
+  await panel().getByRole('table',{name:`Source impact ${label}`,exact:true}).getByRole('cell',{name:'source accepted; ordinary rule checks resumed',exact:true}).waitFor()
   assert.match(await panel().getByRole('table',{name:`Source impact ${label}`,exact:true}).innerText(),/source accepted; ordinary rule checks resumed/)
   const restored=await context.request.get(`${runtime.origin}/api/easel/scenario/${forecast.id}`)
   assert.equal(restored.status(),200,await restored.text())
