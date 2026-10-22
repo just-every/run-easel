@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import JSZip from 'jszip'
 import { harness } from './harness.mjs'
 import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
+import { modelerProposalFixture } from './modeler-proposal-fixture.mjs'
 
 // All current editable structure forms pass through the real HTTP save door.
 test('MODEL-005 structure versions retain exact definitions, readable diffs and moved cells without recomputing frozen versions', async t => {
@@ -98,4 +99,112 @@ test('MODEL-005 structure versions retain exact definitions, readable diffs and 
  const csv = await zip.file('tables/e_activity.csv').async('string')
  assert.ok(csv.includes('structure-version') && csv.includes('rateCents'))
  for (const sn of frozen) assert.deepEqual(JSON.parse(await zip.file(`snapshots/${sn.id}.json`).async('string')), sn)
+})
+
+test('AGENT-008 reviewed model requests create only atomic tested draft proposals with exact diffs and independent promotion authority', async t => {
+ let h, mode = 'valid', entered, release
+ const calls = [], key = 'synthetic-easel-1'
+ h = await harness({ outbound: async request => {
+  assert.equal(request.url, 'https://api.openai.com/v1/responses'); assert.equal(request.method, 'POST')
+  assert.equal(request.headers.get('authorization'), `Bearer ${key}`)
+  const payload = await request.json(), source = JSON.parse(payload.input)
+  calls.push(payload)
+  assert.equal(payload.store, false); assert.equal(payload.tools, undefined)
+  assert.ok(!JSON.stringify(payload).includes(key)); assert.ok(!JSON.stringify(payload).includes('synthetic-easel-private-holder'))
+  const pending = await h.db.prepare("SELECT value FROM e_records WHERE kind='modeler-run' AND json_extract(value,'$.status')='pending'").all()
+  assert.equal(pending.results.length, 1, 'Intent is committed before model egress')
+  assert.ok(JSON.parse(pending.results[0].value).reserveMicroUsd > 0)
+  if (mode === 'held') { entered(); await new Promise(resolve => { release = resolve }) }
+  if (mode === 'unknown') return Response.json({ status: 'incomplete', output: [] })
+  const proposal = modelerProposalFixture(source)
+  if (mode === 'bogus') proposal.tests[0].expected = '0.01'
+  if (mode === 'partial') proposal.formulas[1].formula = '1 / 0'
+  if (mode === 'operation') proposal.approve = true
+  return Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(proposal) }] }] })
+ } }); t.after(() => h.close())
+ const post = async (path, body, who = h.owner, expected = 200) => { const response = await h.send(`/api/easel/modeler/${path}`, body, who); assert.equal(response.status, expected, response.text); return response.value }
+ await h.command('workspace', { name: 'Southeast expansion', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const dept = await h.command('department', { name: 'Southeast sales' }), payroll = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true }), revenue = await h.command('line', { name: 'Southeast revenue', type: 'revenue' }), support = await h.command('line', { name: 'Support costs', type: 'operating-expense' })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('position', { scenario: budget.id, title: 'Existing analyst', holder: 'synthetic-easel-private-holder', department: dept.id, line: payroll.id, start: '2026-01', annualSalary: '60000', onCostPercent: '0' })
+ const { forecast } = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })
+ const before = await h.get(`/api/easel/scenario/${forecast.id}`)
+ const reviewer = await h.person('modeler-reviewer@example.test', 'contributor', [dept.id], true)
+ await h.command('group-save', { name: 'Approval delegates', members: ['modeler-reviewer@example.test'], capabilities: ['approvals'] })
+ const admin = await h.person('modeler-admin@example.test', 'finance', [], true)
+ const request = { from: forecast.id, request: 'Add two Southeast account executives at USD 120000 annual salary each from April, plus a Southeast contracts volume driver of 10 units at USD 1000 each and Regional capacity/support formulas at 2 times USD 125.25.' }
+ await post('preview', request, h.owner, 409)
+ await post('settings/configure', { monthlyUsd: '5', enabled: true, consent: true }, reviewer, 403)
+ await h.get('/api/easel/modeler/status', reviewer, 403)
+ await h.send('/api/easel/commentary/settings/configure', { model: 'synthetic-easel-model', inputUsdPerMillion: '1', outputUsdPerMillion: '2', monthlyUsd: '1', enabled: false, consent: true }, h.owner).then(r => assert.equal(r.status, 200, r.text))
+ await h.send('/api/easel/commentary/connection/connect', { key, consent: true }, h.owner).then(r => assert.equal(r.status, 200, r.text))
+ const settings = { monthlyUsd: '5', enabled: true, consent: true }
+ await post('settings/configure', { ...settings, consent: false }, h.owner, 400)
+ await post('settings/configure', settings)
+ await post('preview', request, h.owner, 409)
+ await post('settings/resume', {})
+ const preview = await post('preview', request)
+ assert.equal(calls.length, 0)
+ assert.ok(JSON.parse(preview.request.input).positions.every(p => !('holder' in p)))
+ await post('generate', { ...request, fingerprint: preview.fingerprint, consent: false }, h.owner, 400)
+ const result = await post('generate', { ...request, fingerprint: preview.fingerprint, consent: true })
+ assert.equal(result.status, 'draft'); assert.equal(calls.length, 1); assert.deepEqual(calls[0], preview.request)
+ const draft = await h.get(`/api/easel/scenario/${result.proposal}`), proof = await h.get(`/api/easel/modeler/proposal/${result.proposal}`)
+ assert.equal(draft.scenario.proposalStatus, 'draft'); assert.equal(draft.scenario.agent, 'Modeler'); assert.equal(proof.stale, false)
+ assert.deepEqual(draft.inputs.position.filter(p => p.title.startsWith('Southeast account executive')).map(p => p.title).sort(), ['Southeast account executive A', 'Southeast account executive B'])
+ assert.ok(draft.inputs.revenue.some(r => r.name === 'Southeast contracts'))
+ assert.ok(draft.inputs.formula.some(f => f.name === 'Regional support' && f.formula === 'DRIVER("Regional capacity") * 125.25'))
+ assert.equal(proof.inputDiff.length, 5); assert.equal(proof.structureDiff.formulaDefinitions.length, 2)
+ assert.ok(proof.structureDiff.reusedLines.every(l => l.before.id === l.after.id && l.before.name === l.after.name))
+ assert.ok(proof.expectedTests.every(check => check.passed && check.expectedMinor === check.actualMinor))
+ assert.deepEqual(proof.expectedTests.map(check => check.actualMinor), [2500000, 1000000, 25050, 200, 25050])
+ const compare = await h.get(`/api/easel/compare?a=${forecast.id}&b=${result.proposal}`)
+ assert.deepEqual(proof.inputDiff, compare.changedInputs); assert.deepEqual(proof.changedCells, compare.changedCells)
+ assert.equal(proof.changedCells.find(c => c.line === payroll.id && c.month === '2026-04').difference, 2000000)
+ assert.equal(proof.changedCells.find(c => c.line === revenue.id && c.month === '2026-04').difference, 1000000)
+ assert.equal(proof.changedCells.find(c => c.line === support.id && c.month === '2026-04').after, 25050)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${forecast.id}`), before)
+ await post('generate', { ...request, fingerprint: preview.fingerprint, consent: true }, h.owner, 409)
+ assert.equal(calls.length, 1)
+ const submitted = await h.command('proposal-submit', { id: result.proposal })
+ const denied = await h.send('/api/easel/command/proposal-promote', { id: result.proposal, revision: submitted.revision }, reviewer)
+ assert.equal(denied.status, 403, denied.text); assert.match(denied.value.error, /model-structure/i)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${forecast.id}`), before)
+ const productRecords = () => h.db.prepare("SELECT kind,id,revision,value FROM e_records WHERE kind NOT IN ('modeler-run','modeler-settings') ORDER BY kind,id").all().then(r => r.results)
+ for (const failure of ['operation', 'partial', 'bogus']) {
+  mode = failure; await post('settings/configure', settings)
+  const next = await post('preview', request), products = await productRecords()
+  const rejected = await post('generate', { ...request, fingerprint: next.fingerprint, consent: true })
+  assert.equal(rejected.status, 'refused'); assert.deepEqual(await productRecords(), products, `${failure} produces no partial proposal or input writes`)
+ }
+ const stale = await post('preview', request), callCount = calls.length
+ await h.command('expense', { scenario: forecast.id, name: 'Owner changed source', line: support.id, department: dept.id, start: '2026-01', kind: 'recurring', amount: '1' })
+ await post('generate', { ...request, fingerprint: stale.fingerprint, consent: true }, h.owner, 409)
+ assert.equal(calls.length, callCount); assert.equal((await h.get(`/api/easel/modeler/proposal/${result.proposal}`)).stale, true)
+ mode = 'unknown'; await post('settings/configure', settings)
+ const unknownPreview = await post('preview', request), unknown = await post('generate', { ...request, fingerprint: unknownPreview.fingerprint, consent: true })
+ assert.equal(unknown.status, 'unknown')
+ await post('generate', { ...request, fingerprint: unknownPreview.fingerprint, consent: true }, h.owner, 409)
+ const reserved = (await h.get('/api/easel/modeler/status')).reservedMicroUsd
+ assert.ok(reserved >= unknownPreview.reserveMicroUsd)
+ await post('settings/configure', { ...settings, monthlyUsd: '0.000001' })
+ const budgetPreview = await post('preview', request), budgetCallCount = calls.length
+ await post('generate', { ...request, fingerprint: budgetPreview.fingerprint, consent: true }, h.owner, 409)
+ assert.equal(calls.length, budgetCallCount)
+ mode = 'held'; await post('settings/configure', settings)
+ const held = await post('preview', request), atProvider = new Promise(resolve => { entered = resolve }), products = await productRecords()
+ const running = post('generate', { ...request, fingerprint: held.fingerprint, consent: true })
+ await atProvider; await post('settings/stop', {}); release()
+ assert.equal((await running).status, 'refused'); assert.deepEqual(await productRecords(), products)
+ await post('preview', request, h.owner, 409)
+ await post('settings/resume', {})
+ const adminPreview = await post('preview', request, admin), adminAtProvider = new Promise(resolve => { entered = resolve })
+ const adminRun = h.send('/api/easel/modeler/generate', { ...request, fingerprint: adminPreview.fingerprint, consent: true }, admin)
+ await adminAtProvider; await h.command('pay-detail', { email: 'modeler-admin@example.test', granted: false }); release()
+ assert.equal((await adminRun).status, 403, 'Live pay revocation prevents model result acceptance')
+ assert.equal((await h.get('/api/easel/state')).scenarios.filter(s => s.modelerRun).length, 1)
+ const activity = await h.get('/api/easel/activity')
+ assert.ok(activity.some(e => e.action === 'modeler-intent' && e.detail.model === 'synthetic-easel-model' && e.detail.reserveMicroUsd > 0))
+ assert.ok(activity.some(e => e.action === 'modeler-outcome' && e.detail.status === 'unknown'))
+ assert.ok(!JSON.stringify(activity).includes(key))
 })
