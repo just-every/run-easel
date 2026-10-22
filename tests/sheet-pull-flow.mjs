@@ -6,14 +6,13 @@ import { harness } from './harness.mjs'
 export async function proveSheetPull(t) {
  let now='2026-01-10T12:10:00.000Z', values=[100,200], columns=3, missing=false, revokeStatus=200, unreachable=false, reads=0, revokes=0
  const credentials={clientId:'synthetic-easel-1',clientSecret:'synthetic-easel-2',refreshToken:'synthetic-easel-3'}, accessToken='synthetic-easel-4'
- const h=await harness({now:()=>now,outbound:async request=>{
+ const google=async request=>{
   const url=new URL(request.url)
   assert.equal(url.protocol,'https:')
   if(url.hostname==='oauth2.googleapis.com') {
    assert.equal(request.method,'POST')
    if(url.pathname==='/revoke') {
     revokes++;assert.equal((await request.formData()).get('token'),credentials.refreshToken)
-    if(unreachable)return Response.error()
     return new Response(revokeStatus===200?'':JSON.stringify({private:credentials.refreshToken}),{status:revokeStatus,...(revokeStatus===302?{headers:{location:'https://must-not-follow.example'}}:{})})
    }
    if(url.pathname==='/tokeninfo') {assert.equal(request.headers.get('authorization'),`Bearer ${accessToken}`);return Response.json({aud:credentials.clientId,scope:'https://www.googleapis.com/auth/spreadsheets.readonly'})}
@@ -23,7 +22,15 @@ export async function proveSheetPull(t) {
   assert.equal(url.hostname,'sheets.googleapis.com');assert.equal(request.headers.get('authorization'),`Bearer ${accessToken}`);reads++
   if(missing)return Response.json({private:credentials.refreshToken},{status:404})
   return Response.json({spreadsheetId:'synthetic-easel-5',sheets:[{properties:{sheetId:0,title:'Capacity',sheetType:'GRID',gridProperties:{rowCount:10,columnCount:columns}},data:[{startRow:1,startColumn:1,rowData:[{values:values.map(numberValue=>({effectiveValue:{numberValue}}))}]}]}]})
- }});t.after(()=>h.close())
+ }
+ const h=await harness({now:()=>now,outbound:{node:async(req,res)=>{
+  const path=new URL(req.url,'https://oauth2.googleapis.com').pathname
+  const chunks=[];for await(const chunk of req)chunks.push(chunk)
+  const request=new Request(`https://${path.startsWith('/v4/')?'sheets.googleapis.com':'oauth2.googleapis.com'}${req.url}`,{method:req.method,headers:{...(req.headers.authorization?{authorization:req.headers.authorization}:{}),...(req.headers['content-type']?{'content-type':req.headers['content-type']}: {})},...(['GET','HEAD'].includes(req.method)?{}:{body:Buffer.concat(chunks)})})
+  if(unreachable&&path==='/revoke'){revokes++;assert.equal((await request.formData()).get('token'),credentials.refreshToken);res.destroy();return}
+  const response=await google(request)
+  res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()))
+ }}});t.after(()=>h.close())
  await h.command('workspace',{name:'Harbour Analytics',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
  const department=await h.command('department',{name:'Sales'}),line=await h.command('line',{name:'Capacity',type:'operating-expense'})
  const scenario=(await h.get('/api/easel/state')).scenarios[0]

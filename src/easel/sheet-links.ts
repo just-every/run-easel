@@ -127,7 +127,7 @@ export async function pullSheetLink(c: Context, env: Bindings, id: string, run?:
  }
  const old = new Map<string, number>()
  for (let r = 0; r < source.rowCount; r++) for (let col = 0; col < source.columnCount; col++) old.set(source.cells[r * source.columnCount + col].address, link.baseline[r][col])
- const changed = cells.filter(cell => old.get(cell.source) !== cell.afterCents).map(cell => ({ ...cell, sourceBeforeCents: old.get(cell.source) }))
+ const changed: Data[] = cells.filter(cell => old.get(cell.source) !== cell.afterCents).map(cell => ({ ...cell, sourceBeforeCents: old.get(cell.source) }))
  const staged: Context = { ...c, s: new Map(c.s), activity: [], snapshots: [], extra: [...(c.extra ?? [])] }
  let proposal: Data
  try {
