@@ -46,15 +46,15 @@ const slide = (shapes: string) => `${XML}<p:sld ${NS}><p:cSld><p:spTree>${GROUP}
 export function packPptx(title: string, subtitle: string, blocks: Block[]): Uint8Array {
  const slides: string[] = []
  slides.push(slide(box(2, 'Title', MX, 2200000, SW - 2 * MX, 1000000, [{ text: title, size: 32, bold: true }]) + box(3, 'Subtitle', MX, 3300000, SW - 2 * MX, 600000, [{ text: subtitle, size: 18 }])))
- let heading = '', shapes: string[] = [], y = 1000000, id = 3, started = false, count = 0
+ let heading = '', shapes: string[] = [], y = 1000000, id = 3, started = false
  const flush = () => { if (started) slides.push(slide(shapes.join(''))); shapes = []; started = false; y = 1000000; id = 3 }
- const open = (name: string) => { flush(); started = true; count++; heading = name; shapes = [box(2, 'Heading', MX, 300000, SW - 2 * MX, 600000, [{ text: name + (count > 1 && false ? '' : ''), size: 24, bold: true }])] }
+ const open = (name: string) => { flush(); started = true; heading = name; shapes = [box(2, 'Heading', MX, 300000, SW - 2 * MX, 600000, [{ text: name, size: 24, bold: true }])] }
  for (const block of blocks) {
   if (block.type === 'heading') open(block.text)
   else {
    if (!started) open(heading || 'Summary')
    if (block.type === 'text') { shapes.push(box(id++, 'Note', MX, y, SW - 2 * MX, 700000, [{ text: block.text, size: 11 }])); y += 700000 }
-   else if (block.type === 'chart') { shapes.push(chartShapes(id, block.chart, block.currency, y)); id += 200; }
+   else if (block.type === 'chart') { shapes.push(chartShapes(id, block.chart, block.currency, y)); id += 4 + block.chart.months.length * (block.chart.series.length + 1) }
    else {
     for (let i = 0; i < Math.max(1, block.rows.length); i += ROWS) {
      if (i > 0) open(`${heading} (continued)`)
@@ -72,7 +72,7 @@ export function packPptx(title: string, subtitle: string, blocks: Block[]): Uint
  add('_rels/.rels', rel([['rId1', 'officeDocument', 'ppt/presentation.xml']]))
  add('ppt/presentation.xml', `${XML}<p:presentation ${NS}><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slides.map((_, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 2}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${SW}" cy="${SH}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`)
  add('ppt/_rels/presentation.xml.rels', rel([['rId1', 'slideMaster', 'slideMasters/slideMaster1.xml'], ...slides.map((_, i): [string, string, string] => [`rId${i + 2}`, 'slide', `slides/slide${i + 1}.xml`])]))
- add('ppt/slideMasters/slideMaster1.xml', `${XML}<p:sldMaster ${NS}><p:cSld><p:spTree>${GROUP}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`)
+ add('ppt/slideMasters/slideMaster1.xml', `${XML}<p:sldMaster ${NS}><p:cSld><p:spTree>${GROUP}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="4400"/></a:lvl1pPr></p:titleStyle><p:bodyStyle><a:lvl1pPr><a:defRPr sz="2800"/></a:lvl1pPr></p:bodyStyle><p:otherStyle><a:defPPr><a:defRPr lang="en-US"/></a:defPPr></p:otherStyle></p:txStyles></p:sldMaster>`)
  add('ppt/slideMasters/_rels/slideMaster1.xml.rels', rel([['rId1', 'slideLayout', '../slideLayouts/slideLayout1.xml'], ['rId2', 'theme', '../theme/theme1.xml']]))
  add('ppt/slideLayouts/slideLayout1.xml', `${XML}<p:sldLayout ${NS} type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>${GROUP}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`)
  add('ppt/slideLayouts/_rels/slideLayout1.xml.rels', rel([['rId1', 'slideMaster', '../slideMasters/slideMaster1.xml']]))

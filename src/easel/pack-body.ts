@@ -29,9 +29,13 @@ export async function packPeriod(c: Context, forecast: Data, b: Data) {
 }
 
 type Rows = Awaited<ReturnType<typeof variance>>
-async function periodRows(c: Context, months: string[]): Promise<Rows> {
+async function monthRows(c: Context, months: string[]): Promise<Rows[]> {
  const parts: Rows[] = []
  for (const m of months) parts.push(await variance(c, m))
+ return parts
+}
+
+function periodRows(parts: Rows[], months: string[]): Rows {
  if (parts.length === 1) return parts[0]
  const last = parts.at(-1)!, keys = [...new Set(parts.flatMap(p => p.rows.map(r => r.key)))]
  const rows = keys.map(key => {
@@ -53,9 +57,8 @@ async function periodRows(c: Context, months: string[]): Promise<Rows> {
 /** Everything a pack states about its numbers; decisions and publication details are added at publication. */
 export async function packNumbers(c: Context, pack: Data) {
  const s = c.s, w = workspace(s), months: string[] = pack.months ?? [pack.month], last = months.at(-1)!
- const v = await periodRows(c, months)
- for (const m of months) {
-  const mv = months.length === 1 ? v : await variance(c, m)
+ const parts = await monthRows(c, months), v = periodRows(parts, months)
+ for (const mv of parts) {
   for (const row of mv.rows) {
    if (row.payroll || row.explanation?.status !== 'confirmed') continue
    const ids = row.explanation.citationIds ?? [], visible = new Set(row.citations.map(source => source.id))
