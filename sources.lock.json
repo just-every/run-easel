@@ -4423,7 +4423,7 @@
       "executable": false
     },
     "tests/source-guard-browser.mjs": {
-      "sha256": "b3a1a28763ca46faf011573b241b8560883948e2ba4559b12d4dcd76833de274",
+      "sha256": "a6103dff025a9ed56adba2bcd5d860df0069ee11224c2cfafc039ad56d70bc26",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {
