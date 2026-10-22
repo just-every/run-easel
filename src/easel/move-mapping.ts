@@ -34,7 +34,7 @@ export function mapMove(source: MoveExport, original: State, mapping: Data, id: 
   const type = choice(config?.type, ['revenue', 'cost-of-sales', 'operating-expense'] as const, 'an account planning type')
   requireThat(!(config.payroll && type === 'revenue'), 'Payroll accounts must be expenses')
   return { name: row.name, type, payroll: config.payroll === true, nonCash: config.nonCash === true, order: all(state, 'line').length }
- }))]))
+ })]))
  // Each source account keeps an independently checkable native line.
  const mappedAccounts = [...accounts.values()].filter(Boolean)
  requireThat(new Set(mappedAccounts).size === mappedAccounts.length, 'Map each imported account to a separate planning line for exact reconciliation')

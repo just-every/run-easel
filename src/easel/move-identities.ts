@@ -14,7 +14,7 @@ export function moveIdentityMapping(state: State, source: MoveExport, files: Mov
   originals.push({...extra,file:file.name,sha256:artifacts.find(a=>a.name===file.name)!.sha256,columns})
  }
  if (provider === 'adaptive') {
-  for (const file of files.filter(f=>f.sheet === options.personnelSheet)) {
+  for (const file of files.filter(f=>options.personnelSheet && f.sheet === options.personnelSheet)) {
    if (file.call === 'exportConfigurableModelData') record(file,{employeeId:'InternalID',name:mapping.personnelColumns?.holder},{xmlCdata:true})
    else if (/\.xlsx$/i.test(file.name)) record(file,{employeeId:'InternalID',name:mapping.personnelColumns?.holder},{sheet:file.sheet})
   }

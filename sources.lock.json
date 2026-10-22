@@ -1347,11 +1347,11 @@
       "executable": false
     },
     "src/easel/move-identities.ts": {
-      "sha256": "7ac54f57597aaca8ab0ed0c940af474eaf47b456cf1016a73407e8c1b9a6f54c",
+      "sha256": "2dbaa5ced7bc83709a32de3c9670654811ad81e412dae06b0d68c030ea355a78",
       "executable": false
     },
     "src/easel/move-import.ts": {
-      "sha256": "68a93f08e54756d3d78a9a263483d264dfb8fbcef4390e8af8d33464be27a91c",
+      "sha256": "889331cbf98a8da968256fc7cdee0c4da26caac88a5de26c06697b24e0e133b6",
       "executable": false
     },
     "src/easel/move-journal.ts": {
@@ -1359,7 +1359,7 @@
       "executable": false
     },
     "src/easel/move-mapping.ts": {
-      "sha256": "56074109c8e1361bd7def493e3cb2cb9a6d2bbc63037d12bbf9faed8a71ac586",
+      "sha256": "e11215e6f51315b08587617f87a7178a346f48f6d54ef1a3c2a8eec355a38b35",
       "executable": false
     },
     "src/easel/move-source.ts": {

@@ -24,7 +24,7 @@ export async function previewMove(c: Context, b: Data) {
  requireThat(source.versions.length && source.data.length, 'The export needs versions and monthly account data')
  requireThat(source.data.length <= 5000 && source.personnel.length <= 2000, 'Split this export into smaller version bundles')
  const mapping = b.mapping ?? {}
- const identity = sha256(canonicalJson({provider,artifacts:originals.map(({file,bytes})=>({...file,text:undefined,base64:undefined,sha256:sha256(bytes)})),options:b.options ?? {},mapping}))
+ const identity = sha256(canonicalJson({provider,artifacts:originals.map(({file:{text:_text,base64:_base64,...context},bytes})=>({...context,sha256:sha256(bytes)})),options:b.options ?? {},mapping}))
  const id = `move-${identity.slice(0,24)}`, destination = `incumbent:${identity.slice(0,24)}`
  const prior = find(c.s,'move-import',id)
  requireThat(!prior || ['undone','failed'].includes(prior.status),'This export is already imported or awaiting continuation; continue it or undo it first',409)
