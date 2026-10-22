@@ -35,6 +35,7 @@ export async function proveMove(h,provider) {
  assert.equal(safe.fingerprint,undefined)
  assert.equal(safe.positions,undefined)
  assert.equal(safe.unmapped,undefined)
+ assert.doesNotMatch(JSON.stringify(safe),/annualSalaryCents|hourlyRateCents|meritBps|bonusBps/)
  const serialized = JSON.stringify(safe)
  for(const position of preview.positions.filter(p=>p.holder)) assert.ok(!serialized.includes(position.holder),'Viewer preview hides names')
  assert.ok(safe.versions[0].cells.some(c=>c.amount>0))
@@ -68,6 +69,7 @@ export async function proveMove(h,provider) {
   }
   const viewer = await h.get(`/api/easel/scenario/${scenario}`,board)
   assert.deepEqual(viewer.inputs.position,[])
+  assert.doesNotMatch(JSON.stringify(viewer),/annualSalaryCents|hourlyRateCents|meritBps|bonusBps/)
   for(const position of native.filter(p=>p.holder)) assert.ok(!JSON.stringify(viewer).includes(position.holder),'Accepted viewer read hides names')
   assert.deepEqual(viewer.calculation.headcount,view.calculation.headcount)
   assert.deepEqual(viewer.calculation.cells.map(c=>c.amount),view.calculation.cells.map(c=>c.amount))

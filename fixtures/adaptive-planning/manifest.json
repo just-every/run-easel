@@ -97,5 +97,58 @@
     "meritDate": "2026-07-01",
     "bonusPercent": "10",
     "bonusMonth": "2026-12"
+  },
+  "provider": "adaptive",
+  "mapping": {
+    "levels": {
+      "synthetic-easel-1": "exclude",
+      "synthetic-easel-3": "create"
+    },
+    "accounts": {
+      "synthetic-easel-10": "exclude",
+      "synthetic-easel-12": {
+        "name": "Payroll",
+        "type": "operating-expense",
+        "payroll": true
+      },
+      "synthetic-easel-15": {
+        "name": "Equipment expense",
+        "type": "operating-expense",
+        "payroll": false
+      },
+      "synthetic-easel-17": {
+        "name": "Services revenue",
+        "type": "revenue",
+        "payroll": false
+      }
+    },
+    "dimensions": {
+      "synthetic-easel-30": "create"
+    },
+    "members": {
+      "synthetic-easel-30": {
+        "synthetic-easel-32": "create",
+        "synthetic-easel-34": "create"
+      }
+    },
+    "personnelColumns": {
+      "holder": "Name",
+      "title": "Title",
+      "start": "Start",
+      "end": "End",
+      "plannedStartDate": "Start Date",
+      "annualSalary": "Annual Salary",
+      "payBasis": "Pay Basis",
+      "hourlyRate": "Hourly Rate",
+      "expectedHours": "Expected Hours",
+      "employmentType": "Employment Type",
+      "bonusPercent": "Bonus Percent",
+      "bonusMonth": "Bonus Month",
+      "meritPercent": "Merit Percent",
+      "meritDate": "Merit Date",
+      "benefits": "Benefits",
+      "retirementMatchPercent": "Retirement Match Percent",
+      "onCostPercent": "On Cost Percent"
+    }
   }
 }

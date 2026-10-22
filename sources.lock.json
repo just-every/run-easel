@@ -255,7 +255,7 @@
       "executable": false
     },
     "fixtures/adaptive-planning/manifest.json": {
-      "sha256": "d9860cb260c78c6708e2261bd597bd44c285c89d95212e9d68ee2fbc6f033577",
+      "sha256": "24730abe7105ff2ab84ee100721ebc873be138216d46f9cc191aee683a5f99aa",
       "executable": false
     },
     "fixtures/adaptive-planning/other-modeled.xml": {
@@ -4043,7 +4043,7 @@
       "executable": false
     },
     "tests/move-fixtures.mjs": {
-      "sha256": "df8d3f43057a9a74805522995e108ac49fb7af27f990f0069e07e44ea9dd7cfe",
+      "sha256": "2da81f68d66dcc27468b63bd8461a1b41010bbc531d38d446befa2d618e85276",
       "executable": false
     },
     "tests/native-formula-flow.mjs": {
