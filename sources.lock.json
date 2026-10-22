@@ -4182,6 +4182,14 @@
       "sha256": "d6caa994a5df83fd270033fcb2a9c54ce9b5c2dfdaae41e5b801e29d4b710f5a",
       "executable": false
     },
+    "tests/sheet-browser-runtime.mjs": {
+      "sha256": "b9b17e164794ad7b885f7e1fcee8051be0ca7bcebd2defd680397a43e0a20b5b",
+      "executable": false
+    },
+    "tests/sheet-browser.mjs": {
+      "sha256": "371b75c161ef9a5f24bd8c9ba7473990f6490e9be0d7a9fa955e58d23e565dbe",
+      "executable": false
+    },
     "tests/sheet-pull-flow.mjs": {
       "sha256": "2420944fb21afe6a044b8b0ae1eb1d623465c30744d921113f6f2330c11a3eca",
       "executable": false
