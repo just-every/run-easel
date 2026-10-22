@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { readWorkbook } from './spreadsheet-proof.mjs'
+import { createPortability } from '@runeditrun/rer/modules/portability'
+import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
 
 test('AGENT-007 accepted citations stay in their visible variance and unconfirmed commentary never publishes', async t => {
  const h = await harness(); t.after(() => h.close())
@@ -89,4 +91,122 @@ test('AGENT-007 accepted citations stay in their visible variance and unconfirme
  // Human-written commentary remains supported without structured citations.
  const manual = await h.command('explanation', { ...explanation, text: 'Finance reviewed the cost change', citationIds: undefined })
  assert.deepEqual(manual.citationIds, []); assert.equal(manual.status, 'draft')
+})
+
+test('AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation', async t => {
+ let h, mode = 'valid', release, entered
+ const calls = [], key = 'synthetic-easel-1'
+ h = await harness({ outbound: async request => {
+  assert.equal(request.url, 'https://api.openai.com/v1/responses')
+  assert.equal(request.method, 'POST'); assert.equal(request.headers.get('authorization'), `Bearer ${key}`)
+  const body = await request.json(), source = JSON.parse(body.input)
+  calls.push(body)
+  const pending = await h.db.prepare("SELECT value FROM e_records WHERE kind='commentary-run' AND json_extract(value,'$.status')='pending'").all()
+  assert.equal(pending.results.length, 1, 'Durable intent exists before model egress')
+  assert.ok(JSON.parse(pending.results[0].value).reserveMicroUsd > 0)
+  assert.equal(body.store, false); assert.equal(body.tools, undefined)
+  assert.ok(!JSON.stringify(body).includes('synthetic-private-payroll'))
+  assert.ok(!JSON.stringify(body).includes(key))
+  assert.ok(source.acceptedRows.every(row => row.description !== 'synthetic-other-department'))
+  if (mode === 'held') { entered(); await new Promise(resolve => { release = resolve }) }
+  if (mode === 'unknown') return Response.json({ status: 'incomplete', output: [] })
+  const citationId = mode === 'invalid' ? 'synthetic-easel-unknown-row' : source.acceptedRows[0].id
+  return Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ claims: [
+   { text: 'Accepted compute costs exceeded the approved plan.', label: 'evidence', citationIds: [citationId] },
+   { text: 'Additional capacity might explain the change.', label: 'hypothesis', citationIds: [] },
+  ] }) }] }] })
+ } }); t.after(() => h.close())
+ const post = async (path, body, cookie = h.owner, status = 200) => { const r = await h.send(`/api/easel/commentary/${path}`, body, cookie); assert.equal(r.status, status, r.text); return r.value }
+ await h.command('workspace', { name: 'Model commentary', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const eng = await h.command('department', { name: 'Engineering' }), sales = await h.command('department', { name: 'Sales' })
+ const cloud = await h.command('line', { name: 'Cloud', type: 'operating-expense' }), payroll = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ const author = await h.person('commentary@example.test', 'contributor', [eng.id], false), viewer = await h.person('commentary-board@example.test', 'viewer')
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('expense', { scenario: budget.id, name: 'Cloud plan', line: cloud.id, department: eng.id, amount: '1000', kind: 'recurring', start: '2026-01' })
+ const { forecast } = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })
+ await h.command('account-map', { account: '500', target: cloud.id }); await h.command('account-map', { account: '600', target: payroll.id })
+ for (const dept of [eng, sales]) await h.command('department-map', { source: dept.name, department: dept.id })
+ const actuals = { filename: 'model-sources.csv', csv: 'Date,Account,Department,Amount,Description\n2026-01-31,500,Engineering,1300,Additional compute\n2026-02-28,500,Engineering,1400,February compute\n2026-01-31,500,Sales,2000,synthetic-other-department\n2026-01-31,600,Engineering,7600,synthetic-private-payroll\n', columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount', description: 'Description' }, dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive' }
+ const imported = await h.kit('actuals', 'preview', actuals)
+ await h.kit('actuals', 'commit', { ...actuals, fingerprint: imported.fingerprint })
+ for (const month of ['2026-01', '2026-02']) await h.command('close-month', { scenario: forecast.id, month })
+ const scope = { month: '2026-01', line: cloud.id, department: eng.id }
+ await post('preview', scope, author, 409)
+ const config = { model: 'synthetic-easel-model', inputUsdPerMillion: '1', outputUsdPerMillion: '2', monthlyUsd: '1', enabled: true, consent: true }
+ await post('settings/configure', config, author, 403)
+ await post('settings/configure', { ...config, consent: false }, h.owner, 400)
+ await post('settings/configure', config)
+ await post('connection/connect', { key, consent: true })
+ const sealed = (await h.db.prepare('SELECT sealed FROM e_connection_secrets WHERE id=?').bind('model:variance-commentary').first()).sealed
+ assert.ok(!sealed.includes(key))
+ await post('preview', scope, author, 409)
+ await post('settings/resume', {})
+ await post('preview', scope, viewer, 403)
+ await post('preview', { ...scope, line: payroll.id }, h.owner, 403)
+ await post('preview', { ...scope, department: sales.id }, author, 403)
+ const preview = await post('preview', scope, author)
+ assert.deepEqual(calls, [], 'Preview never sends a model request')
+ assert.equal(preview.request.model, config.model)
+ const source = JSON.parse(preview.request.input)
+ assert.equal(source.acceptedRows.length, 1); assert.equal(source.actual, 130000); assert.equal(source.budget, 100000)
+ await post('generate', { ...scope, fingerprint: preview.fingerprint }, author, 400)
+ assert.deepEqual(calls, [])
+ const generated = await post('generate', { ...scope, fingerprint: preview.fingerprint, consent: true }, author)
+ assert.equal(generated.status, 'draft'); assert.equal(calls.length, 1)
+ assert.deepEqual(calls[0], preview.request, 'The network receives exactly the reviewed payload')
+ const saved = (await h.get('/api/easel/variance/2026-01', author)).rows.find(r => r.line === cloud.id && r.department === eng.id).explanation
+ assert.equal(saved.status, 'draft'); assert.equal(saved.agent, 'Variance commentary')
+ assert.deepEqual(saved.citationIds, [source.acceptedRows[0].id]); assert.deepEqual(saved.claims.map(c => c.label), ['evidence', 'hypothesis'])
+ const pack = await h.command('pack-create', { month: scope.month }), published = await h.command('pack-publish', { pack: pack.id })
+ const frozen = await h.get(`/api/easel/snapshot/${published.snapshot}`)
+ assert.equal(frozen.body.variances.find(r => r.line === 'Cloud' && r.department === 'Engineering').explanation, null)
+ await post('generate', { ...scope, fingerprint: preview.fingerprint, consent: true }, author, 409)
+ assert.equal(calls.length, 1, 'A consumed request cannot be silently retried')
+ mode = 'invalid'
+ const febScope = { ...scope, month: '2026-02' }, invalidPreview = await post('preview', febScope, author)
+ const refused = await post('generate', { ...febScope, fingerprint: invalidPreview.fingerprint, consent: true }, author)
+ assert.equal(refused.status, 'refused'); assert.equal(calls.length, 2)
+ assert.equal((await h.get('/api/easel/variance/2026-02', author)).rows.find(r => r.line === cloud.id).explanation, null)
+ // Fresh settings invalidate an already-shown request; no model call follows.
+ const stale = await post('preview', scope, author)
+ await post('settings/configure', config)
+ await post('generate', { ...scope, fingerprint: stale.fingerprint, consent: true }, author, 409)
+ assert.equal(calls.length, 2)
+ mode = 'unknown'
+ const unknownPreview = await post('preview', scope, author)
+ const unknown = await post('generate', { ...scope, fingerprint: unknownPreview.fingerprint, consent: true }, author)
+ assert.equal(unknown.status, 'unknown'); assert.equal(calls.length, 3)
+ await post('generate', { ...scope, fingerprint: unknownPreview.fingerprint, consent: true }, author, 409)
+ assert.equal(calls.length, 3)
+ const reserved = (await h.get('/api/easel/commentary/status')).reservedMicroUsd
+ assert.equal(reserved, preview.reserveMicroUsd + invalidPreview.reserveMicroUsd + unknownPreview.reserveMicroUsd)
+ await post('settings/configure', { ...config, monthlyUsd: '0.000001' })
+ const overBudget = await post('preview', scope, author)
+ await post('generate', { ...scope, fingerprint: overBudget.fingerprint, consent: true }, author, 409)
+ assert.equal(calls.length, 3)
+ await post('settings/configure', config)
+ mode = 'held'
+ const stoppedPreview = await post('preview', scope, author)
+ const atProvider = new Promise(resolve => { entered = resolve })
+ const running = post('generate', { ...scope, fingerprint: stoppedPreview.fingerprint, consent: true }, author)
+ await atProvider
+ await post('settings/stop', {})
+ release()
+ assert.equal((await running).status, 'refused', 'A stop while the model runs prevents acceptance of its draft')
+ assert.deepEqual((await h.get('/api/easel/variance/2026-01', author)).rows.find(r => r.line === cloud.id && r.department === eng.id).explanation, saved)
+ await post('preview', scope, author, 409)
+ assert.equal(calls.length, 4)
+ const events = await h.get('/api/easel/activity')
+ assert.ok(events.some(e => e.action === 'commentary-model-intent' && e.actor === 'commentary@example.test' && e.detail.model === config.model && e.detail.reserveMicroUsd > 0))
+ assert.ok(events.some(e => e.action === 'commentary-model-outcome' && e.detail.status === 'unknown'))
+ assert.ok(!JSON.stringify(events).includes(key)); assert.ok(!JSON.stringify(await h.get('/api/easel/state')).includes(key))
+ const archiveService = await createPortability({ db: h.db, policy: easelPolicy }), archiveId = await archiveService.exports.create()
+ try {
+  while ((await archiveService.exports.advance(archiveId, { maxParts: 16 })).phase === 'building') {}
+  const archive = await new Response(await archiveService.exports.download(archiveId)).text()
+  assert.ok(!JSON.parse(archive.split('\n')[0]).tables.some(table => table.name === 'e_connection_secrets'))
+  assert.ok(!archive.includes(key)); assert.ok(!archive.includes(sealed))
+ } finally { await archiveService.exports.abort(archiveId) }
+ await h.command('explanation-confirm', scope, author)
+ assert.deepEqual(await h.get(`/api/easel/snapshot/${published.snapshot}`), frozen)
 })
