@@ -38,8 +38,8 @@ export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null
- const guard=all(c.s,'source-guard').find(g=>(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
- return guard ? `Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}` : null
+ const guards=all(c.s,'source-guard').filter(g=>(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
+ return guards.length ? guards.map(guard=>`Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}`).join('; ') : null
 }
 /** Called after actuals journal completion, in the same fenced save as batch acceptance. */
 export function completeSourceGuards(c:Context,batch:Data) {

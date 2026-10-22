@@ -947,7 +947,7 @@
       "executable": false
     },
     "src/easel/agents/source-guard.ts": {
-      "sha256": "b0d276956383988a61ca3d08c8b21d33071d678ecfa43508ba5230ee1db1a130",
+      "sha256": "5c8dc33c215c65923cdcc29f6c8bc407340983a2a8578354cbe01f335b56e476",
       "executable": false
     },
     "src/easel/api.ts": {
