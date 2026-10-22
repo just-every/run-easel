@@ -71,6 +71,9 @@ import { handleMcp } from './mcp'
 import { PACK_TYPES, packFileName, renderPack, type PackFormat } from './pack-formats'
 import { packPreview } from './pack-preview'
 import { biDropCommands, biDropList } from './bi-drops'
+import { leverCommands, levers } from './agents/levers'
+import { constraintCommands } from './agents/constraint-responses'
+import { decisionItems, needsConstraintCheck, watchConstraints } from './agents/constraint-watch'
 import { dataset, datasetCsv, datasetJson, datasetParquet } from './dataset'
 import { warehouseCommand, warehouseConnection, warehouseStatus } from './warehouse'
 import { packSave, packStoreConnection, packStoreStatus } from './pack-store'
@@ -405,6 +408,7 @@ api.get('/api/easel/dataset/:id', async c => {
  if (format === 'parquet') return new Response(datasetParquet(d) as any, { headers: { ...headers, 'content-type': 'application/vnd.apache.parquet' } })
  return c.json(datasetJson(d))
 })
+api.get('/api/easel/constraints', c => read(c, async ctx => { requireFinance(ctx.x); return { items: decisionItems(ctx), levers: levers(ctx) } }))
 api.get('/api/easel/bi-drops', c => read(c, async ctx => biDropList(ctx)))
 api.get('/api/easel/warehouse', c => read(c, warehouseStatus))
 api.post('/api/easel/warehouse/:warehouse/:op', async c => {
@@ -431,7 +435,7 @@ api.post('/api/easel/connections/pack-stores/:store/:op', async c => {
  return c.json(await packStoreStatus(ctx))
 })
 
-const commands = [biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [leverCommands, constraintCommands, biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
@@ -451,6 +455,7 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
   const evaluation = await evaluateMetricTasks(ctx)
   if (op === 'metric-refresh') result = evaluation
  }
+ if (needsConstraintCheck(ctx)) await watchConstraints(ctx)
  if (needsCashAlertCheck(ctx)) {
   const evaluation = await evaluateCashAlerts(ctx)
   if (op === 'cash-alert-check') result = { sent: evaluation.sent, blocked: evaluation.blocked }
@@ -491,6 +496,7 @@ async function executeImport(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeof
  requireFinance(after.x)
  const result = step.record!(after, outcome)
  if (needsMetricRefresh(after)) await evaluateMetricTasks(after)
+ if (needsConstraintCheck(after)) await watchConstraints(after)
  if (needsCashAlertCheck(after)) await evaluateCashAlerts(after)
  await commit(after, structureBefore.state, structureBefore.revision)
  await deliverNotifications(newNotifications(after), c.env, () => open(c), commit)

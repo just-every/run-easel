@@ -6,6 +6,7 @@ import { ParallelMonth } from './parallel-month'
 import { DepartmentStatements } from './department-statements'
 import { PackActionDepartment } from './pack-action-departments'
 import { DecisionFollowup } from './decision-followup'
+import { ConstraintWatch } from './constraints'
 import { ForecastLearning } from './forecast-learning'
 import { PackDraftStatus, PackSave, PackStart, PackStores } from './pack-tools'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
@@ -71,6 +72,7 @@ export function Review({ state, refresh }: Shared) {
   {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
   {(me.role === 'finance' || me.role === 'contributor') && closedMonths.includes(month) && <DepartmentStatements state={state} month={month} setMonth={setMonth} refresh={refresh} />}
   {me.role === 'finance' && closedMonths.includes(month) && <ParallelMonth key={month} state={state} month={month} />}
+  {me.role === 'finance' && forecast && state.workspace.cashAgreement && <ConstraintWatch state={state} forecast={forecast} refresh={refresh} />}
   {me.role === 'finance' && forecast?.actualsThrough && <ForecastLearning state={state} forecast={forecast} refresh={refresh} />}
   <section className="card">
    <h2>Review packs</h2>

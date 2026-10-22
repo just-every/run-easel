@@ -12,7 +12,7 @@ import type { Context } from './context'
 import { all, choice, find, put, requireThat, uid, type Data } from './types'
 
 export const MODES = ['email', 'digest', 'chat'] as const
-export const EVENT_LABEL: Record<string, string> = { 'approval-step-pending': 'Department review pending', mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'action-chase': 'Update due on your action', 'cash-alert': 'Cash alert' }
+export const EVENT_LABEL: Record<string, string> = { 'approval-step-pending': 'Department review pending', mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'action-chase': 'Update due on your action', 'cash-alert': 'Cash alert', 'decision-item': 'Decision needed' }
 export const preference = (c: Context, email: string): Data => find(c.s, 'notification-preference', email) ?? { mode: 'email', channel: null }
 
 /** Whether `email` may currently read a department's detail (finance always). */
