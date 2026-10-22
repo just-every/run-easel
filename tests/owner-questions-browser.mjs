@@ -52,7 +52,7 @@ try {
   await panel().getByLabel('Input owner', { exact: true }).selectOption(owner)
   await fill(panel(), 'Source reference', source); await fill(panel(), 'Question for the owner', question)
   // The browser context is UTC, so datetime-local preserves this exact instant.
-  await fill(panel(), 'Answer deadline', dueAt.slice(0, 19))
+  await fill(panel(), 'Answer deadline', dueAt.slice(0, 16))
   await action('owner-question-ask', () => press(panel(), 'Ask owner'))
   return panel().getByRole('article', { name: question, exact: true })
  }
@@ -107,7 +107,7 @@ try {
 
   // An overdue question has no implicit yes/no/date and cannot alter any input.
   const unanswered = `Please confirm the vendor checkpoint for Acme ${width}`
-  const deadline = new Date(Date.now() + 12000).toISOString()
+  const deadline = new Date(Math.ceil((Date.now() + 5000) / 60000) * 60000).toISOString()
   await ask(`Acme agreement ${width}`, unanswered, `Reviewed checkpoint request ${width}`, deadline)
   const due = (await readQuestions()).questions.find(q => q.question === unanswered)
   await page.waitForTimeout(Math.max(0, Date.parse(due.dueAt) - Date.now() + 100))
