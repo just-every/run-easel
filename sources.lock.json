@@ -1371,7 +1371,7 @@
       "executable": false
     },
     "src/easel/move-xml.ts": {
-      "sha256": "1a54f5f029b1e675dc86a636552264a1d1c1f0e7d675028af71506c69be9ad72",
+      "sha256": "5896602bc489a9e90e0411d16dfcd9c0b0acc42c90a79c7e7e47105793259764",
       "executable": false
     },
     "src/easel/native-calculation.ts": {

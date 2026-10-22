@@ -6,7 +6,7 @@ const validPoint = (n: number) => n === 9 || n === 10 || n === 13 || n >= 32 && 
 
 /** Small non-validating XML reader: no DTDs, custom entities, network or recovery. */
 export function parseMoveXml(raw: string, file: string): MoveXml {
- const fail = (message: string): never => { requireThat(false, `${file}: ${message}`); throw new Error(message) }
+ function fail(message: string): never { requireThat(false, `${file}: ${message}`); throw new Error(message) }
  if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(raw)) fail('XML declarations of document types or entities are not supported')
  if ([...raw].some(ch => !validPoint(ch.codePointAt(0)!))) fail('XML contains an invalid character')
  const decode = (value: string) => value.replace(/&([^;]*);|&/g, (all, entity: string | undefined) => {
