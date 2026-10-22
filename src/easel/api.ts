@@ -392,10 +392,15 @@ api.post('/api/easel/pack/:id/save', async c => {
  return c.json(result)
 })
 api.get('/api/easel/dataset/:id', async c => {
- const ctx = await open(c), d = await dataset(ctx, c.req.param('id'))
- await readFence(ctx.db, ctx.x.actor, ctx.revision)
- const format = choice(c.req.query('format') ?? 'json', ['json', 'csv', 'parquet'] as const, 'a dataset format')
+ const ctx = await open(c), format = choice(c.req.query('format') ?? 'json', ['json', 'csv', 'parquet', 'xlsx'] as const, 'a dataset format')
  const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }
+ if (format === 'xlsx') {
+  const bytes = savedReportWorkbook(await savedReport(ctx, c.req.param('id')))
+  await readFence(ctx.db, ctx.x.actor, ctx.revision)
+  return spreadsheet(bytes, 'easel-dataset')
+ }
+ const d = await dataset(ctx, c.req.param('id'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
  if (format === 'csv') return new Response(datasetCsv(d), { headers: { ...headers, 'content-type': 'text/csv; charset=utf-8' } })
  if (format === 'parquet') return new Response(datasetParquet(d) as any, { headers: { ...headers, 'content-type': 'application/vnd.apache.parquet' } })
  return c.json(datasetJson(d))

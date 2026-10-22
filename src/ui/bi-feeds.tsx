@@ -10,7 +10,7 @@ export function BiFeeds({ id }: { id: string }) {
  return <div className="pack" aria-label="BI dataset">
   <h3>BI dataset</h3>
   <p className="muted">One row per report row, month and series, in integer minor units; unavailable values are empty, never zero. Power BI, Looker and Tableau read it with a read-scoped API token (Settings → API tokens) and see only what that person may see: no individual pay detail.</p>
-  <p><a href={`/api/easel/dataset/${encodeURIComponent(id)}?format=csv`} download>Download dataset (CSV)</a> · <a href={`/api/easel/dataset/${encodeURIComponent(id)}?format=parquet`} download>Download dataset (Parquet)</a> · <code>GET /api/easel/dataset/{id}</code></p>
+  <p><a href={`/api/easel/dataset/${encodeURIComponent(id)}?format=csv`} download>Download dataset (CSV)</a> · <a href={`/api/easel/dataset/${encodeURIComponent(id)}?format=parquet`} download>Download dataset (Parquet)</a> · <a href={`/api/easel/dataset/${encodeURIComponent(id)}?format=xlsx`} download>Download dataset (Excel)</a> · <code>GET /api/easel/dataset/{id}</code></p>
   {drops && <>
    <h4>Nightly drops</h4>
    {mine.map((d: D) => <p key={d.id}>{d.formats.join(' and ')} to {d.store} for {d.audience} at {String(d.hour).padStart(2, '0')}:00 company time{d.enabled ? '' : ' (paused)'}. <Action kind="danger" label="Remove drop" run={async () => { await command('bi-drop-delete', { id: d.id, revision: d.revision }); await load() }} /></p>)}

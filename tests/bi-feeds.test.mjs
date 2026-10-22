@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { providerFakes } from './provider-fakes.mjs'
 import { readParquet } from './parquet-reader.mjs'
+import { readWorkbook } from './spreadsheet-proof.mjs'
 
 const csvRows = text => text.trim().split('\r\n').slice(1).map(line => line.split(',').map(v => v === '' ? null : v))
 
@@ -94,6 +95,9 @@ test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped B
  const csv = csvRows(await (await dataset('csv')).text()), parquetBytes = new Uint8Array(await (await dataset('parquet')).arrayBuffer())
  assert.deepEqual(csv, asRows(json).map(r => r.map(v => v === null ? null : String(v))))
  assert.deepEqual(readParquet(parquetBytes).rows, asRows(json))
+ const book = await readWorkbook(new Uint8Array(await (await dataset('xlsx')).arrayBuffer()))
+ assert.ok(book.getWorksheet('Saved report') && book.getWorksheet('Monthly'), 'the Excel door is the saved report workbook with its live formulas')
+ assert.doesNotMatch(JSON.stringify(book.worksheets.map(w => w.getSheetValues())), /Private principal engineer|Private Person/)
 
  // The nightly drop: the audience's current access, no Pay detail, retried only for unfinished files.
  const connect = (store, input) => h.send(`/api/easel/connections/pack-stores/${store}/connect`, input, h.owner)
