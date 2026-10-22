@@ -109,3 +109,8 @@ jobs:
         run: node tests/weekly-cash-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/weekly-cash
+
+      - name: AGENT-004 forecast learning at desktop and phone widths
+        run: node tests/forecast-learning-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/forecast-learning

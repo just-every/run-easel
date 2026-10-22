@@ -91,7 +91,7 @@
   ],
   "files": {
     ".github/workflows/journeys.yml": {
-      "sha256": "99d6210a415ef2830e3008fe6e22a1bea2f985616d0843231642fe017732508b",
+      "sha256": "e4d15d4a3f51b801ab5009bf8b67da9e2c169f93b8d0b3c12defd1d7d6c345ae",
       "executable": false
     },
     ".github/workflows/run-demo.yml": {
@@ -894,8 +894,28 @@
       "sha256": "f921341d2f3161254ef61c6dad1cc167845bc06153c66484dd95838970cda755",
       "executable": false
     },
+    "src/easel/agents/deal-outcomes.ts": {
+      "sha256": "df2248224ce0e1f8d919ac3be5094f36ac25cdaca215d4b30a3a22338e267784",
+      "executable": false
+    },
+    "src/easel/agents/forecast-learning.ts": {
+      "sha256": "47472dd6a1754b1626981fb4e52a0ef48daaff164a0a61cded203211433d1911",
+      "executable": false
+    },
+    "src/easel/agents/learning-backtest.ts": {
+      "sha256": "69468bc5861ae50ea63b4e5e39b3486180c223b62bb93212ffc84fdb0a59fb18",
+      "executable": false
+    },
+    "src/easel/agents/learning-commands.ts": {
+      "sha256": "3a1446c79353c085524ae66ceabbe2f4dac33e19d0f12430265932d118b38206",
+      "executable": false
+    },
+    "src/easel/agents/learning-measures.ts": {
+      "sha256": "165cff0494b9bcb9542f902ccf585665acf43cd012a2549c3001a3d88c759503",
+      "executable": false
+    },
     "src/easel/api.ts": {
-      "sha256": "5e148aa2bda0d022f52f5f007939a7dd9a4dad700eda55fb54cd05b90d35005f",
+      "sha256": "abfac22f87d739707d54c1425c6d1089dfe424a04e817a1a7a4ab25dfea61fe5",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -3586,6 +3606,10 @@
       "sha256": "5a4498f8c8dc82e64a15bb5898288a95de03971650d043638e64e324c4823cca",
       "executable": false
     },
+    "src/ui/forecast-learning.tsx": {
+      "sha256": "eeb670ef7ac69fa9cce108b8d939baed3c26d0c1645d1e08341541fd89866e09",
+      "executable": false
+    },
     "src/ui/gauge-connection.tsx": {
       "sha256": "a83916b1e4cbc8099cf20665a519373a76c1b6c1fe8ee366f3ff481b95dd4114",
       "executable": false
@@ -3675,7 +3699,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "fcc794c38821e950b6a5dad9345e0c897346db45529c750e919ac397affb3117",
+      "sha256": "07df721536b2773ce63c1cef80a0765203bcf7c00779bba1835279eeb9f0c46b",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -3980,6 +4004,14 @@
     },
     "tests/fiscal-calendar.test.mjs": {
       "sha256": "e90045ead1d6afa5744b352007c2ae83e94e3ca22cffacc963d35c95ad985463",
+      "executable": false
+    },
+    "tests/forecast-learning-browser.mjs": {
+      "sha256": "11876c61e8dcad0c80850ca9a8d3d233d0b68a4ea0bdb4b71a147a930ccecad8",
+      "executable": false
+    },
+    "tests/forecast-learning.test.mjs": {
+      "sha256": "1341d3749a31522e0776a6a08ca260889defe28a8f4ed7460c759a74ce454be2",
       "executable": false
     },
     "tests/formula-import-browser.mjs": {
