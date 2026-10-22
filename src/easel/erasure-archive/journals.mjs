@@ -13,10 +13,14 @@ const key = (table, row) => JSON.stringify([table, ...layouts[table].map(column 
 /** Rejoin journal pages before matching: both an identity and an encoded
  * original can straddle any SQL row boundary. Keep Base's archive inventory. */
 export async function prepareJournals(db, transformer) {
- const replacements = new Map(), jobs = new Map();
+ const replacements = new Map(), jobs = new Map(), changedJobs = new Set();
  const reads = await Promise.all(Object.entries(layouts).map(async ([table, columns]) => ({ table, columns, rows: (await db.prepare(`SELECT * FROM ${table}`).all()).results })));
  const sourceJobs = (await db.prepare('SELECT * FROM ik_jobs').all()).results;
- for (const job of sourceJobs) jobs.set(job.id, { ...job, plan_json: transformer.transform(job.plan_json,job.id) });
+ for (const job of sourceJobs) {
+  const plan_json=transformer.transform(job.plan_json,job.id);
+  if(plan_json!==job.plan_json)changedJobs.add(job.id);
+  jobs.set(job.id,{...job,plan_json});
+ }
  for (const { table, columns, rows } of reads) {
   const groups = new Map();
   for (const row of rows) {
@@ -31,6 +35,7 @@ export async function prepareJournals(db, transformer) {
    try { parsed = JSON.parse(source); } catch {}
    const body = parsed === undefined ? transformer.transform(source,parts[0].job_id) : canonicalJson(transformer.transform(parsed,parts[0].job_id));
    if (body === source) continue;
+   if(table==='ik_d1_plan_chunks')changedJobs.add(parts[0].job_id);
    transformer.digests.set(digest(source), digest(body));
    let offset = 0;
    const exported = parts.map((row, index) => {
@@ -63,7 +68,7 @@ export async function prepareJournals(db, transformer) {
  const exportedReports = new Map();
  for(const row of reports) {
   const original=JSON.parse(row.record_json), transformed=transformer.transform(original,row.job_id);
-  const record_json=canonicalJson(original)===canonicalJson(transformed) ? row.record_json : canonicalJson(redactDisposition(transformed));
+  const record_json=!changedJobs.has(row.job_id) && canonicalJson(original)===canonicalJson(transformed) ? row.record_json : canonicalJson(redactDisposition(transformed));
   exportedReports.set(`${row.job_id}:${row.effect_id}`,{...row,record_json});
  }
  for(const [id,job] of jobs) {

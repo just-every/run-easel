@@ -30,14 +30,17 @@ export async function previewMove(c: Context, b: Data) {
  requireThat(!prior || ['undone','failed'].includes(prior.status),'This export is already imported or awaiting continuation; continue it or undo it first',409)
  const mapped = mapMove(source,c.s,mapping,id,c.x.actor.email,provider)
  const artifacts = originals.map(({file,bytes})=>({name:file.name,sha256:sha256(bytes),size:bytes.length,original:{status:'available' as const,base64:base64(bytes)}}))
- const identities = moveIdentityMapping(mapped.state,source,files,artifacts,mapping,b.options ?? {},provider,destination,mapped.positions)
- mapped.records.push({kind:'move-personnel-mapping',id:`${id}:identities`,value:identities,location:'reviewed-personnel-associations'})
+ const detailed = c.x.role === 'finance' && c.x.payDetail
+ if (detailed) {
+  const identities = moveIdentityMapping(mapped.state,source,files,artifacts,mapping,b.options ?? {},provider,destination,mapped.positions)
+  mapped.records.push({kind:'move-personnel-mapping',id:`${id}:identities`,value:identities,location:'reviewed-personnel-associations'})
+ }
  // Binding current assumptions and target rows makes a stale review fail before writing.
  const ctx = moveContext(c,destination,`move-v1:${sha256(canonicalJson({provider,identity,records:mapped.records,targets:structureAssumptions(c,destination)})).slice(0,24)}`,undefined,true)
  const records = mapped.records.map((r,i)=>({namespace:MOVE_NAMESPACE,kind:r.kind,sourceId:String(i),payload:{targetId:r.id,value:r.value},payloadHash:sha256(canonicalJson({targetId:r.id,value:r.value})),artifactHash:artifacts[0].sha256,location:{artifact:artifacts[0].name,pointer:r.location}}))
  const bundle: SourceBundle = {diagnostics:[],artifacts,records}
  const map: ImportMapping = {version:ctx.mappingVersion,map:record=>({effects:[{targetKind:record.kind,targetId:(record.payload as Data).targetId,value:(record.payload as Data).value}]})}
- const plan = await planD1Import(bundle,map,ctx)
+ const plan = detailed ? await planD1Import(bundle,map,ctx) : undefined
  const ready = !mapped.unresolved.length && mapped.reconciliation.length > 0 && mapped.reconciliation.every(r=>r.status === 'reconciled')
  const reader = access(mapped.state,c.x.actor)
  const versions = mapped.calculations.map(({version,scenario,calculation})=>{
@@ -45,9 +48,8 @@ export async function previewMove(c: Context, b: Data) {
   return {sourceVersion:version,id:scenario,name:get(mapped.state,'scenario',scenario).name,months:calc.months,headcount:calc.headcount,cells:calc.cells.map(cell=>({line:cell.line,department:cell.department,month:cell.month,amount:cell.amount})),profit:calc.profit}
  })
  const safe = {id,provider,versions,ready,files:artifacts.map(({name,size,sha256})=>({name,size,sha256}))}
- const detailed = c.x.role === 'finance' && c.x.payDetail
- const result = detailed ? {...safe,created:mapped.created,unresolved:mapped.unresolved,unmapped:mapped.unmapped,reconciliation:mapped.reconciliation,positions:mapped.positions,fingerprint:plan.fingerprint,counts:plan.counts} : safe
- return {id,destination,provider,ctx,plan,fingerprint:plan.fingerprint,ready,mapped,result,artifacts}
+ const result = detailed ? {...safe,created:mapped.created,unresolved:mapped.unresolved,unmapped:mapped.unmapped,reconciliation:mapped.reconciliation,positions:mapped.positions,fingerprint:plan!.fingerprint,counts:plan!.counts} : safe
+ return {id,destination,provider,ctx,plan,fingerprint:plan?.fingerprint,ready,mapped,result,artifacts}
 }
 
 export async function moveImport(c: Context, op: string, b: Data): Promise<KitStep | undefined> {
@@ -56,6 +58,7 @@ export async function moveImport(c: Context, op: string, b: Data): Promise<KitSt
  requireThat(!c.x.actor.agent && !c.x.actor.token, 'Use your signed-in finance session to move in an incumbent model',403)
  if (op === 'commit') {
   const p = await previewMove(c,b)
+  requireThat(p.plan, 'A detailed finance preview is required before accepting',403)
   requireThat(p.ready, 'Map the unresolved items and reconcile every account, level, version and month before accepting',409)
   requireThat(b.fingerprint === p.fingerprint, 'The export, mapping or target assumptions changed; preview again',409)
   const prior = find(c.s,'move-import',p.id)
@@ -64,7 +67,7 @@ export async function moveImport(c: Context, op: string, b: Data): Promise<KitSt
   put(c.s,'move-import',p.id,{destination:p.destination,provider:p.provider,files:p.artifacts.map(({name,sha256})=>({name,sha256})),scenarios:p.mapped.scenarios,rows:p.mapped.records.length,assumptions:structureAssumptions(c,p.destination),status:'importing',attempt,createdBy:c.x.actor.email,createdAt:c.now,unmapped:p.mapped.unmapped,reconciliation:p.mapped.reconciliation,created:p.mapped.created})
   c.activity.push({action:'move-import-started',record:p.id,detail:{provider:p.provider,scenarios:p.mapped.scenarios}})
   return {result:{},kit:async()=>{
-   const job = await createD1ImportJob(p.plan,{...p.ctx,reviewedFingerprint:p.fingerprint,operationKey:`${p.fingerprint}:${attempt}`})
+   const job = await createD1ImportJob(p.plan!,{...p.ctx,reviewedFingerprint:p.fingerprint!,operationKey:`${p.fingerprint}:${attempt}`})
    return applyD1ImportBatches(job.id,p.ctx)
   },record:(after,job)=>finish(after,p.id,job),failed:async(after,error)=>{
    if (await after.db.prepare('SELECT 1 FROM ik_jobs WHERE destination=?').bind(p.destination).first()) return
