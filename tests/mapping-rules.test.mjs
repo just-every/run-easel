@@ -449,6 +449,9 @@ test('Source refresh proposes a reasoned mapping and exact impacts, blocks incom
  assert.equal((await h.get('/api/easel/source-guard')).guards[0].status,'completed')
  checks=await h.command('cash-alert-check',{})
  assert.deepEqual(checks.blocked,[])
+ const unreviewed=guardActuals('610','Renamed software source','151')
+ const unreviewedPreview=await h.kit('actuals','preview',unreviewed)
+ await h.kit('actuals','commit',{...unreviewed,fingerprint:unreviewedPreview.fingerprint},h.owner,409)
  assert.deepEqual(await h.get(`/api/easel/snapshot/${published.snapshot}`),frozen,'published pack remains captured throughout source correction')
 })
 

@@ -181,7 +181,7 @@ export async function actualsCommand(c: Context, op: string, b: Data): Promise<K
  if (op === 'preview') return { result: publicPreview(await previewActuals(c, b)) }
  if (op === 'commit') {
   const p = await previewActuals(c, b)
-  assertSourceGuardAcceptance(c, p.sha256)
+  assertSourceGuardAcceptance(c, p.sha256, p.periods.map((r:Data)=>r.period))
   requireThat(p.accepted > 0, 'Nothing in this file can be accepted', 409)
   requireThat(!p.unmappedAccounts.length, `Map these accounts first: ${p.unmappedAccounts.join(', ')}`, 409)
   requireThat(!p.unmappedDepartments.length, `Map these departments first: ${p.unmappedDepartments.join(', ')}`, 409)

@@ -107,6 +107,8 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
 }
 
 /** Before creating/applying the GL journal: missing data cannot be accepted around the guard. */
-export function assertSourceGuardAcceptance(c:Context,sha256:string) {
+export function assertSourceGuardAcceptance(c:Context,sha256:string,periods:string[]) {
+ const tracked=all(c.s,'source-guard').filter(g=>periods.includes(g.month))
+ requireThat(!tracked.length || tracked.some(g=>g.sha256===sha256), 'This period has a tracked source; stage the changed source file before accepting its refresh',409)
  for(const g of all(c.s,'source-guard').filter(g=>g.sha256===sha256 && g.status!=='completed')) requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
 }
