@@ -191,7 +191,7 @@
       "executable": false
     },
     "docs/move-adaptive-format.md": {
-      "sha256": "13ee4f1f7674adf5f22df9a01c4b4acfd589f3039069fc95c5151a3d0603cc26",
+      "sha256": "619b12a951e64db6b9c6d3eac2bcfbdf14ee2b191725f8c87acfd28abe3b1722",
       "executable": false
     },
     "docs/move-in.md": {
@@ -199,7 +199,7 @@
       "executable": false
     },
     "docs/move-tabular-formats.md": {
-      "sha256": "9540cf0c6d4b846d31356fcfdd6926ba235903a2995eac3fd96fce3226e7c089",
+      "sha256": "50277b201cd823222156bb95b9999960550aa5b0644dd769c45e78a3934fd326",
       "executable": false
     },
     "docs/overview.md": {
@@ -1359,7 +1359,7 @@
       "executable": false
     },
     "src/easel/move-mapping.ts": {
-      "sha256": "e11215e6f51315b08587617f87a7178a346f48f6d54ef1a3c2a8eec355a38b35",
+      "sha256": "35dfa6263cbc9a5969b27dbebe0f9ca6f8b66b43c1bb1a879f2637f8d1871a67",
       "executable": false
     },
     "src/easel/move-source.ts": {
@@ -4043,7 +4043,7 @@
       "executable": false
     },
     "tests/move-fixtures.mjs": {
-      "sha256": "b9313e93d787594aeb56c0f06be3cd602268ffb376b3e4ccae282490174368b6",
+      "sha256": "8dd5c7664485245eea843102a58b3fe59cc1190a15e81acf5ec5f8db91ad6ba5",
       "executable": false
     },
     "tests/native-formula-flow.mjs": {

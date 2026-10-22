@@ -72,11 +72,13 @@ export function mapMove(source: MoveExport, original: State, mapping: Data, id: 
   const scenario = scenarios.get(row.version), department = levels.get(row.level), line = accounts.get(row.account)
   if (!scenario || !department || !line) { unresolved.push(`personnel:${row.location}`); continue }
   requireThat(get(state, 'line', line).payroll, 'Personnel rows require a payroll-classified account')
-  const values: Data = Object.fromEntries(Object.entries(mapping.personnelColumns ?? {}).map(([field, column]) => [field, row.values[column as string] ?? '']))
+  for (const column of Object.values(mapping.personnelColumns ?? {})) requireThat(typeof column === 'string' && Object.hasOwn(row.values, column), `Mapped personnel column ${String(column)} is missing at ${row.location}`)
+  const values: Data = Object.fromEntries(Object.entries(mapping.personnelColumns ?? {}).map(([field, column]) => [field, row.values[column as string]]))
   for (const column of Object.keys(row.values)) if (!mappedColumns.has(column) && !['InternalID', 'ParentID', 'IsParent'].includes(column)) unmapped.push({ location: `${row.location}:${column}`, reason: 'Modeled-sheet column has no mapped Easel equivalent' })
   const startDate = String(values.start ?? ''), endDate = String(values.end ?? '')
+  for (const value of [startDate, endDate].filter(Boolean)) requireThat(/^\d{4}-(0[1-9]|1[0-2])$/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0,10) === value, `Use a real ISO personnel date at ${row.location}`)
   const request = { ...values, start: startDate.slice(0,7), end: endDate.slice(0,7), plannedStartDate: values.plannedStartDate || (/^\d{4}-\d{2}-\d{2}$/.test(startDate) ? startDate : ''), annualSalary: values.annualSalary || '0', onCostPercent: values.onCostPercent || '0', department, line, dimensions: tags((row as Data).dimensions), originId: makeId('position', `${row.version}:${row.id}`) }
-  const value = { ...validateInput(state, 'position', request, scenario), originId: request.originId, scenario, provider: `move:${provider}`, employeeId: row.id, imported: { move: id, location: row.location } }
+  const value = { ...validateInput(state, 'position', request, scenario), originId: request.originId, scenario, provider: `move:${provider}`, employeeId: row.id, imported: { move: id, location: row.location, startDate, endDate } }
   add('position', `${row.version}:${row.id}`, value, row.location); positions.push(value)
   payrollKeys.add(`${row.version}:${row.account}`)
  }

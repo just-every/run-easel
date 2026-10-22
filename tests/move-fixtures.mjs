@@ -23,6 +23,7 @@ export async function proveMove(h,provider) {
  await h.command('workspace',{name:`Synthetic ${provider} planning`,currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
  const board = await h.person('board@example.test','viewer')
  const before = await h.get('/api/easel/state')
+ await h.kit('incumbent','preview',{...fixture,mapping:{...fixture.mapping,personnelColumns:{...fixture.mapping.personnelColumns,holder:'Missing employee name column'}}},h.owner,400)
  const preview = await h.kit('incumbent','preview',fixture)
  assert.equal(preview.ready,true,JSON.stringify({unresolved:preview.unresolved,reconciliation:preview.reconciliation.filter(r=>r.status!=='reconciled')}))
  assert.equal(preview.positions.length,5)
