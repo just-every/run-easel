@@ -48,7 +48,7 @@ for(const provider of providers) {
    const native=await api(finance.context,server.origin,`scenario/${imported.import.scenarios[0]}`)
    assert.equal(native.inputs.position.length,5);assert.equal(native.inputs.position.filter(p=>!p.holder).length,2)
    await noOverflow(finance.page,`${provider} native plan ${width}`);await people.screenshot({path:join(evidence,`${provider}-positions-${width}.png`)})
-   await board.page.reload();await board.page.getByRole('navigation',{name:'Easel'}).waitFor();await board.page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name:'Plan',exact:true}).click();await settle(board.page)
+   await board.page.reload();await board.page.getByRole('navigation',{name:'Easel'}).waitFor();await board.page.getByRole('navigation',{name:'Easel'}).getByRole('button',{name:'Overview',exact:true}).click();await settle(board.page)
    await board.page.getByLabel('Scenario',{exact:true}).selectOption(imported.import.scenarios[0]);await settle(board.page)
    for(const position of native.inputs.position.filter(p=>p.holder))assert.ok(!(await board.page.locator('body').innerText()).includes(position.holder))
    const boardView=await api(board.context,server.origin,`scenario/${imported.import.scenarios[0]}`);assert.deepEqual(boardView.inputs.position,[]);assert.deepEqual(boardView.calculation.cells.map(c=>c.amount),native.calculation.cells.map(c=>c.amount))

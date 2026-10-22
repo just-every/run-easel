@@ -4039,7 +4039,7 @@
       "executable": false
     },
     "tests/move-browser.mjs": {
-      "sha256": "a0cfd7af951a228434be9f10c7be08de0bca9032eba169db6463257f8d970ea2",
+      "sha256": "86156ef0d105dde91dfcf42be1ea5fe1c86af7119fe60f2dad902bb1b9fd2952",
       "executable": false
     },
     "tests/move-fixtures.mjs": {
