@@ -831,7 +831,7 @@ Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, lo
 
 *Acceptance:* the `MOVE-001` journey with one fixture per product in its documented export shape.
 
-*Status:* partial. Gap: documented-fixture HTTP reconciliation, positions, filtered previews/exports, undo and erasure/restore pass; native 1440/390 browser journey pending.
+*Status:* done.
 
 #### MOVE-004 — A parallel month against the old tool.
 For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools.
@@ -1040,7 +1040,7 @@ Every capability the run site's homepage (run-easel.com, `src/site/landing/`) sh
 | 11 October close | Variance against budget with the ledger rows; each department head confirms their own | `EASEL-013` (`src/easel/review.ts`) | code |
 | 11 October close | The agent drafts each variance, citing sources, hypotheses marked | `AGENT-007` | partly |
 | 11 October close | Forecast extended; department statements emailed | `MODEL-002`, `REPORT-005` (`src/easel/department-statements.ts`) | code |
-| 12 Before the switch | Brings in an Adaptive Planning model; also Planful, Anaplan, Runway and Pigment | `MOVE-001`, `MOVE-002`, `MOVE-003` | contract, not yet in code |
+| 12 Before the switch | Brings in an Adaptive Planning model; also Planful, Anaplan, Runway and Pigment | `MOVE-001`, `MOVE-002`, `MOVE-003` | code |
 | 12 Before the switch | Two years of QuickBooks backfilled, each month tied | `CONNECT-001` | contract, not yet in code |
 | 12 Before the switch | A parallel month line by line, differences classified | `MOVE-004` (`tests/parallel-month.test.mjs`) | code |
 
@@ -1080,8 +1080,8 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 46 | 17 | 23 | 86 |
-| All | 63 | 17 | 23 | 103 |
+| Target and push further | 47 | 16 | 23 | 86 |
+| All | 64 | 16 | 23 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1171,7 +1171,7 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | `US-001` | US defaults | target | done | `tests/us-defaults.test.mjs` `tests/us-defaults-browser.mjs` | Current default/format/import doors complete; future statutory and scheduled obligations inherited by their named clauses |
 | `MOVE-001` | Move in from Adaptive Planning | target | done | `tests/workbook-undo.test.mjs` (Adaptive original metadata, account data and personnel exports preview, reconcile native positions with bonus and merit, filter pay and undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (adaptive: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390) | None; original-call fixtures, created metadata/versions, unmapped attributes/sheet formulas/modeled rows/custom columns, exact account and payroll costs, five positions/two to hire, viewer preview/read/Excel, erasure/restore and journal undo are proven |
 | `MOVE-002` | Move in from Planful | target | done | `tests/workbook-undo.test.mjs` (Planful segment, MTD and workforce exports preserve mapped versions, payroll parity, pay filtering and undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (planful: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390) | None; all documented-fixture import, created metadata/versions, unmapped items, exact account/payroll costs, five positions/two to hire, viewer previews/reads/Excel, erasure/restore and undo points proven |
-| `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | partial | `tests/workbook-undo.test.mjs` (Anaplan, Runway and Pigment original configurable exports retain structure, reconciled personnel, filtered previews and journal undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo) | One documented original fixture per product passes HTTP points; native 1440/390 browser journeys pending |
+| `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | done | `tests/workbook-undo.test.mjs` (Anaplan, Runway and Pigment original configurable exports retain structure, reconciled personnel, filtered previews and journal undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (anaplan, runway, pigment: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390) | None; each documented fixture proves metadata/versions, unmapped items, exact account/payroll costs, five positions/two to hire, viewer previews/reads/Excel, erasure/restore and undo |
 | `MOVE-004` | A parallel month against the old tool | target | done | `tests/parallel-month.test.mjs` `tests/parallel-month-browser.mjs` |  |
 | `PORT-001` | An export a buyer can open without Easel | target | done | `src/easel/open-export.ts`, `tests/open-export.test.mjs`, `tests/open-export-browser-journey.mjs` | Finance downloads product and import-journal table CSVs, scenario formula workbooks, model JSON, every immutable snapshot and retained original, with digest manifest; existing credential exclusions preserved |
 | `MOBILE-001` | Review and approve at phone width | target | done | `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001): complete planning/review journeys at 390, persisted exact-revision approval/promotion, dashboard cash equals API, page overflow checks |  |
