@@ -1139,7 +1139,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Implementation status with named public-door evidence, updated by sx-easel-c42 (23 October 2026).
+Judged from the code and tests at commit `e971ab9b68b3e7a288465e838e82f6ef3149c82d` (23 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
