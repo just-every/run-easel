@@ -1,3 +1,4 @@
+import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 // Deterministic owner questions: an authenticated answer is evidence, never
 // permission for an agent to promote a forecast.
 import { requireCapability, requireFinance, requireMember } from '../access'
@@ -76,7 +77,7 @@ export async function ownerQuestions(c: Context, op: string, b: Data): Promise<D
   const due = Date.parse(b.dueAt)
   requireThat(Number.isFinite(due) && due > Date.parse(c.now), 'Choose a future escalation time')
   const id = uid(), owner = text(b.owner, 'Input owner', 254).toLowerCase()
-  const q = { id, revision: 1, scenario: forecast.id, scenarioRevision: forecast.revision, inputKind: row.kind, originId: row.originId, field: row.field, inputName: row.name, department: row.department, owner, source: text(b.source, 'Reviewed ownership source', 1000), question: text(b.question, 'Structured question', 1000), expectedDate: row.value, dueAt: new Date(due).toISOString(), status: 'open', askedBy: c.x.actor.email, askedAt: c.now, inputFingerprint: JSON.stringify(row.input), history: [] }
+  const q = { id, revision: 1, scenario: forecast.id, scenarioRevision: forecast.revision, inputKind: row.kind, originId: row.originId, field: row.field, inputName: row.name, department: row.department, owner, source: text(b.source, 'Reviewed ownership source', 1000), question: text(b.question, 'Structured question', 1000), expectedDate: row.value, dueAt: new Date(due).toISOString(), status: 'open', askedBy: c.x.actor.email, askedAt: c.now, inputFingerprint: sha256(canonicalJson(row.input)), history: [] }
   requireThat(await questionOwner(c, owner, q), 'The named owner must be active and permitted to read this input', 403)
   requireThat(!all(c.s, 'owner-question').some(v => v.scenario === q.scenario && v.originId === q.originId && v.field === q.field && v.status === 'open'), 'This input already has an unanswered question', 409)
   changedDate(c, q, row.input, row.value)
@@ -97,7 +98,7 @@ export async function ownerQuestions(c: Context, op: string, b: Data): Promise<D
   requireThat(q.answer && ['yes', 'new-date'].includes(q.answer.choice), 'A negative or missing answer never becomes a date')
   requireThat(!q.answer.proposal, 'This answer already has a proposal', 409)
   const forecast = get(c.s, 'scenario', q.scenario), row = linkedInput(c, q)
-  requireThat(forecast.revision === q.scenarioRevision && JSON.stringify(row.input) === q.inputFingerprint, 'The forecast or source input changed; ask and review a new question', 409)
+  requireThat(forecast.revision === q.scenarioRevision && sha256(canonicalJson(row.input)) === q.inputFingerprint, 'The forecast or source input changed; ask and review a new question', 409)
   const next = changedDate(c, q, row.input, q.answer.date)
   const p = (await plan(c, 'proposal-create', { from: forecast.id, name: `Owner assumption: ${q.inputName}`.slice(0, 200), request: `${q.question}\n${q.answer.by} answered ${q.answer.choice}: ${q.answer.date} at ${q.answer.at}. Source: ${q.source}${q.answer.note ? `\nFinance override: ${q.answer.note}` : ''}`.slice(0, 2000) }))!
   const copy = scenarioInputs(c.s, p.id, q.inputKind).find(i => i.originId === q.originId)!
