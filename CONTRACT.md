@@ -22,7 +22,7 @@ A buyer replacing an incumbent needs the whole job, so the target is the whole j
 - **Headcount and compensation.** A roster from Gusto, Rippling or [Willow](https://github.com/just-every/run-willow), or a mapped roster and payroll-register file from any PEO or payroll provider, open roles from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse, and US compensation assumptions (W-2 and 1099, employer payroll taxes with wage bases, benefits, bonus, commission), with salary visible only to those allowed (`PEOPLE-*`, `EASEL-007`).
 - **Revenue and pipeline.** Pipeline from [Orbit](https://github.com/just-every/run-orbit), HubSpot and Salesforce with explicit probability and timing assumptions, and subscription metrics (ARR, churn, cohorts) from Stripe Billing or [Nectar](https://github.com/just-every/run-nectar) (`REV-*`).
 - **Spreadsheets kept live.** Two-way Excel and Google Sheets add-ins whose formulas stay live, model import that keeps formulas, and Excel exports with formulas (`SHEET-*`, `EASEL-015`).
-- **Planning cycles.** Budget calendars, tasks, reminders and escalations, metric-triggered tasks, quarterly reforecasts, long-range plans, private and shared scenarios, groups and per-dimension permissions (`CYCLE-*`, `EASEL-009` to `EASEL-012`).
+- **Planning cycles.** Budget calendars, tasks, reminders and escalations, metric-triggered tasks, quarterly reforecasts, long-range plans, private and shared scenarios, per-department ordered approval chains, groups and per-dimension permissions (`CYCLE-*`, `EASEL-009` to `EASEL-012`).
 - **Reporting.** A report builder, dashboards, board packs in PDF, PowerPoint and Excel, scheduled cash alerts, and BI and warehouse feeds (`REPORT-*`, `EASEL-013`, `EASEL-014`).
 - **Move in and out.** Imports from Adaptive Planning, Planful, Anaplan, Runway and Pigment exports, a parallel month against the old tool, and complete exports and restores (`MOVE-*`, `PORT-*`, `EASEL-016`).
 - **Anywhere and governed.** Phone-width review and approvals, native iOS and Android apps with push, SSO and SCIM, an audit trail, person erasure, multi-entity and multi-currency plans, a public API, webhooks and an MCP endpoint (`MOBILE-*`, `ACCESS-*`, `AUDIT-*`, `ERASE-*`, `ENTITY-*`, `API-*`).
@@ -643,6 +643,32 @@ A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headco
 
 *Status:* done.
 
+#### CYCLE-007 — Per-department ordered approval chains.
+Finance can give any department an ordered approval chain: one or more review steps that a requested submission (`EASEL-009`) passes, in order, before it counts as submitted for budget approval (`EASEL-010`). Finance here means a native owner or admin, or a person holding the `approvals` capability with full company scope (`ACCESS-001`). Each step names one or more eligible reviewers: named active members, an `ACCESS-001` group, or both. Any one eligible reviewer completes the step. Departments without a chain keep today's single finance step unchanged.
+
+Reviewer authority is live. When a reviewer acts, they must be an active finance person or contributor (never a viewer) and still eligible for that step. Under their current `ACCESS-001` grants (evaluated per grant and unioned) they must be able to read every source of that department in the budget. They also need Pay detail wherever the department's submission includes positions they would review (`PEOPLE-005`). A step never grants edit, Pay detail, the global `approvals` or `publishing` capability, or any other access. Removing a person from the chain, from a group or from the department ends their authority on their next request. A step with no currently eligible reviewer is shown as blocked, with the reason. It is never skipped or auto-approved.
+
+Order and exact content. Steps act strictly in order. A step reviewer approves only the department's exact submitted content: the department's budget inputs (scenario revision plus a digest of that department's inputs) as submitted. If those inputs change by any route, every completed step for that pass is voided and the chain restarts at step one. Changes to other departments don't void it. A later step cannot act before an earlier step completes, and a step cannot act twice in one pass. While its chain is in progress the department stays locked to contributors, as under `EASEL-009`.
+
+Return and resubmission. Any reviewer at the current or an earlier completed step can return the submission with a reason, and so can finance at any point. Return reopens the department to its contributors under `EASEL-009`. The voided decisions stay in history, and resubmission starts again at step one. The full request, submit, step-approve, return and restart history is kept with each actor, time, step, chain version and the exact content reviewed.
+
+Chain versions. Saving a chain creates a new version through the fenced model revision. Each submission records the chain version current when it was submitted and completes on that version. A later version applies to the next submission. Finance may explicitly restart an in-flight submission on the current version, which voids its completed steps and keeps them in history. Deleting a department's chain applies the same rule.
+
+Relationship to global approval and publication. `EASEL-010` approval also requires every requested department with a chain to have completed every step of its recorded version on the exact content now in the budget. Otherwise approval names the waiting department and step and refuses (409). Global approval, month close and publication keep their `ACCESS-001` rule (the capability plus full company scope); completing a chain step confers none of them. The approval snapshot captures each department's chain version and step decisions. A step pending its reviewers is a `CYCLE-003` pending-approval event for that step's current eligible reviewers. Step review inherits `MOBILE-001` (390 pixels) and `AUDIT-001`. Chain configuration and history travel through `EASEL-016` export and restore and `PORT-001` open exports under existing filtering. Agents act only as a signed-in person and cannot approve a step (`AGENT-011`, `API-003`). Easel sets no thresholds, amounts, step counts or reviewer quotas.
+
+*Acceptance:* `tests/approval-chains.test.mjs` (`CYCLE-007`): finance gives Sales a two-step chain (step one a department-head group, step two a named finance planner) and leaves Engineering without a chain. Sales submits. Step two is refused before step one. A step-one reviewer approves the exact content. A finance edit to a Sales input voids step one, and an Engineering edit does not. Step two returns with a reason, the contributor revises and resubmits, and the chain restarts at step one with history kept. Assert:
+- global approval is refused, naming Sales and the waiting step, until both steps complete, then succeeds, and its snapshot records the chain version and decisions;
+- a reviewer removed from the group, a viewer and a reviewer whose grant omits a Sales dimension member are refused;
+- a step with no eligible reviewer is shown as blocked;
+- a chain version saved mid-flight leaves the in-flight submission on its recorded version until finance explicitly restarts it;
+- completing a step grants no edit, Pay detail, global approval or publishing;
+- a pending-step notice reaches only that step's eligible reviewers;
+- export and restore keep the chain and history.
+
+`tests/approval-chains-browser.mjs` (`CYCLE-007`): finance configures the chain, and the reviewers approve and return in order, at 1440 and 390 pixels without page overflow.
+
+*Status:* missing.
+
 ### Reporting
 
 #### REPORT-001 — Report builder.
@@ -852,7 +878,7 @@ Besides the `rer export` archive (`EASEL-016`), finance can download the whole p
 ### Anywhere
 
 #### MOBILE-001 — Review and approve at phone width.
-Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001` to `CYCLE-006`, `REPORT-001` to `REPORT-007`, `AGENT-001` to `AGENT-011`) inherit the same 390-pixel obligation before they ship.
+Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001` to `CYCLE-007`, `REPORT-001` to `REPORT-007`, `AGENT-001` to `AGENT-011`) inherit the same 390-pixel obligation before they ship.
 
 *Acceptance:* the browser journeys at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page.
 
@@ -1082,8 +1108,8 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 48 | 16 | 22 | 86 |
-| All | 65 | 16 | 22 | 103 |
+| Target and push further | 48 | 16 | 23 | 87 |
+| All | 65 | 16 | 23 | 104 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1154,6 +1180,7 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | `CYCLE-004` | Private and shared scenarios | target | done | `tests/sandboxes.test.mjs` `tests/sandboxes-browser.mjs` | None for current named-person doors; ACCESS-001 inherits group shares |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | done | `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs` | Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths |
+| `CYCLE-007` | Per-department ordered approval chains | target | missing |  | No approval-chain configuration, ordered department review steps, scoped reviewer authority, chain versions or chain gate on budget approval; submissions go from contributor to full-scope finance only (`src/easel/cycle.ts`, `src/easel/access.ts`) |
 | `REPORT-001` | Report builder | target | done | `tests/saved-reports.test.mjs` (REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes; Report authors stay within their department and scheduled copies follow current recipients and company DST; Saved report dimension and account hierarchies preserve source cuts, frozen versions and blocked-cell availability); `tests/saved-reports-browser.mjs` (native quarter builder, filter/highlight, share, personal table/chart dashboard, Excel and named schedule at 1440/390) | None for current report doors; REPORT-003/004/007 inherit their new report surfaces |
 | `REPORT-002` | Dashboards | target | done | `src/easel/dashboards.ts` `tests/dashboards.test.mjs` `tests/dashboards-browser.mjs` |  |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |
