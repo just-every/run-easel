@@ -1,3 +1,4 @@
+import { IncumbentImport } from './move-import'
 import { BalanceActuals } from './balance-actuals'
 import { BALANCE_TARGETS } from '../easel/balance-targets'
 import { useEffect, useState } from 'react'
@@ -45,6 +46,7 @@ export function Actuals({ state, refresh }: Shared) {
   </section>}
   {reconciliation && <BalanceActuals trials={reconciliation.trialBalances} currency={currency} lines={state.lines} batches={state.batches} />}
   <WorkbookImport state={state} refresh={refresh} />
+  {state.me.payDetail && <IncumbentImport state={state} refresh={refresh} />}
  </>
 }
 

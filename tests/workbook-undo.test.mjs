@@ -60,3 +60,23 @@ test('MODEL-005 current finance can undo another operator workbook while other r
   }
  }
 })
+
+test('Adaptive original metadata, account data and personnel exports preview, reconcile native positions with bonus and merit, filter pay and undo', async t => {
+ const { proveMove } = await import('./move-fixtures.mjs')
+ const h = await harness(); t.after(()=>h.close())
+ await proveMove(h,'adaptive')
+})
+
+test('Planful segment, MTD and workforce exports preserve mapped versions, payroll parity, pay filtering and undo', async t => {
+ const { proveMove } = await import('./move-fixtures.mjs')
+ const h = await harness(); t.after(()=>h.close())
+ await proveMove(h,'planful')
+})
+
+test('Anaplan, Runway and Pigment original configurable exports retain structure, reconciled personnel, filtered previews and journal undo', async t => {
+ const { proveMove } = await import('./move-fixtures.mjs')
+ for (const provider of ['anaplan','runway','pigment']) {
+  const h = await harness()
+  try {await proveMove(h,provider)} finally {await h.close()}
+ }
+})

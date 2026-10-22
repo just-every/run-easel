@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import JSZip from 'jszip/dist/jszip.min.js';
 import { PortabilityError } from '@runeditrun/rer/modules/portability';
+import { transformMoveOriginal } from './move-originals.mjs';
 import { transformPayrollOriginal } from './payroll-originals.mjs';
 import { transformErased } from '../erasure-map.mjs';
 
@@ -33,7 +34,8 @@ export function transformBlob(value, maps) {
  return encoded(textBytes(bytes, maps) ?? ensureOpaqueSafe(bytes, maps));
 }
 export async function transformOriginalBytes(input, maps, jobId, payroll = false) {
- const scoped = await transformPayrollOriginal(input, maps, jobId);
+ const moved = await transformMoveOriginal(input, maps, jobId);
+ const scoped = await transformPayrollOriginal(moved, maps, jobId);
  if (payroll) return Buffer.from(scoped);
  const bytes = Buffer.from(scoped);
  if (!maps.length) return bytes;

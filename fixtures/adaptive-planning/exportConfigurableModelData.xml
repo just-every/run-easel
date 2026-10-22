@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response success="true"><output><data jobNumber="1"><![CDATA["InternalID","Level","Account","Name","Title","Start","End","Start Date","Annual Salary","Pay Basis","Hourly Rate","Expected Hours","Employment Type","Bonus Percent","Bonus Month","Merit Percent","Merit Date","Benefits","Retirement Match Percent","On Cost Percent","Custom Column"
+"synthetic-easel-60","synthetic-easel-4","synthetic-easel-13","synthetic-easel-70","synthetic-easel-80","2026-01","","2026-01-01","120000","salary","0","0","W-2","10","2026-12","10","2026-07-01","0","0","0","synthetic-easel-90"
+"synthetic-easel-61","synthetic-easel-4","synthetic-easel-13","synthetic-easel-71","synthetic-easel-81","2026-01","","2026-01-01","60000","salary","0","0","W-2","0","","0","","0","0","0","synthetic-easel-90"
+"synthetic-easel-62","synthetic-easel-4","synthetic-easel-13","synthetic-easel-72","synthetic-easel-82","2026-01","","2026-01-01","0","hourly","25","160","W-2","0","","0","","0","0","0","synthetic-easel-90"
+"synthetic-easel-63","synthetic-easel-4","synthetic-easel-13","","synthetic-easel-83","2026-07","","2026-07-01","48000","salary","0","0","W-2","0","","0","","0","0","0","synthetic-easel-90"
+"synthetic-easel-64","synthetic-easel-4","synthetic-easel-13","","synthetic-easel-84","2026-10","","2026-10-01","36000","salary","0","0","W-2","0","","0","","0","0","0","synthetic-easel-90"
+]]></data></output></response>

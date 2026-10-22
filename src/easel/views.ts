@@ -67,6 +67,7 @@ export async function stateView(c: Context) {
   accountRules: finance ? all(s, 'account-rule') : [],
   departmentMaps: finance ? all(s, 'department-map') : [],
   batches: finance ? all(s, 'batch').sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : [],
+  moveImports: finance && x.payDetail ? all(s, 'move-import') : [],
   workbooks: finance ? all(s, 'workbook-import') : [],
   actionDepartments: finance ? all(s, 'pack-action-department') : [],
   fxTable: finance ? find(s, 'fx-table', 'main') ?? null : null,

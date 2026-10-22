@@ -1,0 +1,4 @@
+MemberId,Code,Name,RollupOperator,MemberType,ActiveStatus,Sort,ParentMemberId,AccountType,AccountGroup,NormalDataInput,CreditDebit,Variance,TrialBalanceAccount,ReportCategoryName,CurrencyTypeCode,CurrencyTypeName,ParentCode,ParentMemberCode,ParentMemberName,ParentMemberLabel,Lineage
+synthetic-easel-10,synthetic-easel-10,Payroll,+,Leaf,Active,1,,Flow,,,,,,,,,,,,,
+synthetic-easel-11,synthetic-easel-11,Subscription Revenue,+,Leaf,Active,2,,Flow,,,,,,,,,,,,,
+synthetic-easel-12,synthetic-easel-12,Cloud Hosting,+,Leaf,Active,3,,Flow,,,,,,,,,,,,,

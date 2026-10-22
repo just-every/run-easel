@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response success="true"><output><versions seqNo="1"><version id="synthetic-easel-50" name="synthetic-easel-51" type="VERSION_FOLDER" isDefaultVersion="false"><version id="synthetic-easel-20" name="synthetic-easel-21" type="PLANNING" isDefaultVersion="true" isLocked="false" isImportable="1" startPlan="01/2026" endPlan="12/2026"/></version></versions></output></response>

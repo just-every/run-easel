@@ -1,0 +1,381 @@
+{
+  "members": [
+    {
+      "memberCode": "synthetic-easel-100",
+      "rollupOperator": "~",
+      "memberDisplayLabel": "All Personnel"
+    },
+    {
+      "memberCode": "synthetic-easel-101",
+      "memberParent": "synthetic-easel-100",
+      "rollupOperator": "+",
+      "memberDisplayLabel": "Engineer",
+      "mapping": [
+        {
+          "attribute": "Scenario",
+          "attributeCode": "synthetic-easel-20"
+        },
+        {
+          "attribute": "Home Budget Entity",
+          "attributeCode": "synthetic-easel-1"
+        },
+        {
+          "attribute": "Salary Account",
+          "attributeCode": "synthetic-easel-10"
+        },
+        {
+          "attribute": "Employee Name",
+          "attributeCode": "Synthetic Person 1"
+        },
+        {
+          "attribute": "Job Title",
+          "attributeCode": "Engineer"
+        },
+        {
+          "attribute": "Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "Annual Salary",
+          "attributeCode": "120000"
+        },
+        {
+          "attribute": "Pay Basis",
+          "attributeCode": "salary"
+        },
+        {
+          "attribute": "Hourly Rate",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Hours",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Oncost Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Benefits",
+          "attributeCode": "200"
+        },
+        {
+          "attribute": "Bonus Percent",
+          "attributeCode": "10"
+        },
+        {
+          "attribute": "Bonus Month",
+          "attributeCode": "2026-12"
+        },
+        {
+          "attribute": "Merit Percent",
+          "attributeCode": "10"
+        },
+        {
+          "attribute": "Merit Date",
+          "attributeCode": "2026-07-01"
+        },
+        {
+          "attribute": "Custom Retention Band",
+          "attributeCode": "source-only"
+        },
+        {
+          "attribute": "ICSegment",
+          "attributeCode": "synthetic-easel-32"
+        },
+        {
+          "attribute": "Company",
+          "attributeCode": "synthetic-easel-41"
+        }
+      ]
+    },
+    {
+      "memberCode": "synthetic-easel-102",
+      "memberParent": "synthetic-easel-100",
+      "rollupOperator": "+",
+      "memberDisplayLabel": "Account Executive",
+      "mapping": [
+        {
+          "attribute": "Scenario",
+          "attributeCode": "synthetic-easel-20"
+        },
+        {
+          "attribute": "Home Budget Entity",
+          "attributeCode": "synthetic-easel-2"
+        },
+        {
+          "attribute": "Salary Account",
+          "attributeCode": "synthetic-easel-10"
+        },
+        {
+          "attribute": "Employee Name",
+          "attributeCode": "Synthetic Person 2"
+        },
+        {
+          "attribute": "Job Title",
+          "attributeCode": "Account Executive"
+        },
+        {
+          "attribute": "Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "Annual Salary",
+          "attributeCode": "120000"
+        },
+        {
+          "attribute": "Pay Basis",
+          "attributeCode": "salary"
+        },
+        {
+          "attribute": "Hourly Rate",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Hours",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Oncost Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Benefits",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Bonus Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Merit Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "ICSegment",
+          "attributeCode": "synthetic-easel-32"
+        },
+        {
+          "attribute": "Company",
+          "attributeCode": "synthetic-easel-41"
+        }
+      ]
+    },
+    {
+      "memberCode": "synthetic-easel-103",
+      "memberParent": "synthetic-easel-100",
+      "rollupOperator": "+",
+      "memberDisplayLabel": "Support Specialist",
+      "mapping": [
+        {
+          "attribute": "Scenario",
+          "attributeCode": "synthetic-easel-20"
+        },
+        {
+          "attribute": "Home Budget Entity",
+          "attributeCode": "synthetic-easel-1"
+        },
+        {
+          "attribute": "Salary Account",
+          "attributeCode": "synthetic-easel-10"
+        },
+        {
+          "attribute": "Employee Name",
+          "attributeCode": "Synthetic Person 3"
+        },
+        {
+          "attribute": "Job Title",
+          "attributeCode": "Support Specialist"
+        },
+        {
+          "attribute": "Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "Annual Salary",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Pay Basis",
+          "attributeCode": "hourly"
+        },
+        {
+          "attribute": "Hourly Rate",
+          "attributeCode": "25"
+        },
+        {
+          "attribute": "Monthly Hours",
+          "attributeCode": "160"
+        },
+        {
+          "attribute": "Oncost Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Benefits",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Bonus Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Merit Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "ICSegment",
+          "attributeCode": "synthetic-easel-32"
+        },
+        {
+          "attribute": "Company",
+          "attributeCode": "synthetic-easel-41"
+        }
+      ]
+    },
+    {
+      "memberCode": "synthetic-easel-104",
+      "memberParent": "synthetic-easel-100",
+      "rollupOperator": "+",
+      "memberDisplayLabel": "Planned Engineer",
+      "mapping": [
+        {
+          "attribute": "Scenario",
+          "attributeCode": "synthetic-easel-20"
+        },
+        {
+          "attribute": "Home Budget Entity",
+          "attributeCode": "synthetic-easel-1"
+        },
+        {
+          "attribute": "Salary Account",
+          "attributeCode": "synthetic-easel-10"
+        },
+        {
+          "attribute": "Job Title",
+          "attributeCode": "Planned Engineer"
+        },
+        {
+          "attribute": "Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "Annual Salary",
+          "attributeCode": "120000"
+        },
+        {
+          "attribute": "Pay Basis",
+          "attributeCode": "salary"
+        },
+        {
+          "attribute": "Hourly Rate",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Hours",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Oncost Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Benefits",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Bonus Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Merit Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Planned Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "ICSegment",
+          "attributeCode": "synthetic-easel-32"
+        },
+        {
+          "attribute": "Company",
+          "attributeCode": "synthetic-easel-41"
+        }
+      ]
+    },
+    {
+      "memberCode": "synthetic-easel-105",
+      "memberParent": "synthetic-easel-100",
+      "rollupOperator": "+",
+      "memberDisplayLabel": "Planned Account Executive",
+      "mapping": [
+        {
+          "attribute": "Scenario",
+          "attributeCode": "synthetic-easel-20"
+        },
+        {
+          "attribute": "Home Budget Entity",
+          "attributeCode": "synthetic-easel-2"
+        },
+        {
+          "attribute": "Salary Account",
+          "attributeCode": "synthetic-easel-10"
+        },
+        {
+          "attribute": "Job Title",
+          "attributeCode": "Planned Account Executive"
+        },
+        {
+          "attribute": "Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "Annual Salary",
+          "attributeCode": "120000"
+        },
+        {
+          "attribute": "Pay Basis",
+          "attributeCode": "salary"
+        },
+        {
+          "attribute": "Hourly Rate",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Hours",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Oncost Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Monthly Benefits",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Bonus Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Merit Percent",
+          "attributeCode": "0"
+        },
+        {
+          "attribute": "Planned Start Date",
+          "attributeCode": "2026-01-01"
+        },
+        {
+          "attribute": "ICSegment",
+          "attributeCode": "synthetic-easel-32"
+        },
+        {
+          "attribute": "Company",
+          "attributeCode": "synthetic-easel-41"
+        }
+      ]
+    }
+  ]
+}

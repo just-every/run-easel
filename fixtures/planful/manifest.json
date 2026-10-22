@@ -1,0 +1,216 @@
+{
+  "provider": "planful",
+  "files": [
+    {
+      "name": "Segment1.csv"
+    },
+    {
+      "name": "Segment3.csv"
+    },
+    {
+      "name": "Segment2.csv"
+    },
+    {
+      "name": "Segment4.csv"
+    },
+    {
+      "name": "DLR-MTD.csv"
+    },
+    {
+      "name": "Personnel-Dimension.json",
+      "call": "Export Dimension / Attribute Hierarchy"
+    },
+    {
+      "name": "ApprovalRoleExport.xlsx"
+    }
+  ],
+  "options": {
+    "tables": [
+      {
+        "file": "Segment1.csv",
+        "role": "accounts",
+        "columns": {
+          "id": "Code",
+          "name": "Name",
+          "type": "AccountType"
+        }
+      },
+      {
+        "file": "Segment3.csv",
+        "role": "levels",
+        "columns": {
+          "id": "Code",
+          "name": "Name",
+          "parent": "ParentCode"
+        }
+      },
+      {
+        "file": "Segment2.csv",
+        "role": "dimension",
+        "columns": {
+          "id": "Code",
+          "name": "Name",
+          "parent": "ParentCode"
+        },
+        "dimension": {
+          "id": "synthetic-easel-40",
+          "name": "Company"
+        }
+      },
+      {
+        "file": "Segment4.csv",
+        "role": "dimension",
+        "columns": {
+          "id": "Code",
+          "name": "Name",
+          "parent": "ParentCode"
+        },
+        "dimension": {
+          "id": "synthetic-easel-30",
+          "name": "ICSegment"
+        }
+      },
+      {
+        "file": "DLR-MTD.csv",
+        "role": "data",
+        "columns": {
+          "account": "Account",
+          "level": "Department",
+          "version": "Scenario",
+          "year": "Fiscal Year",
+          "period": "Fiscal Month",
+          "amount": "Amount"
+        },
+        "dimensions": {
+          "synthetic-easel-40": "Company",
+          "synthetic-easel-30": "ICSegment"
+        },
+        "periods": {
+          "2026/01": "2026-01",
+          "2026/02": "2026-02",
+          "2026/03": "2026-03",
+          "2026/04": "2026-04",
+          "2026/05": "2026-05",
+          "2026/06": "2026-06",
+          "2026/07": "2026-07",
+          "2026/08": "2026-08",
+          "2026/09": "2026-09",
+          "2026/10": "2026-10",
+          "2026/11": "2026-11",
+          "2026/12": "2026-12"
+        }
+      },
+      {
+        "file": "DLR-MTD.csv",
+        "role": "versions",
+        "columns": {
+          "id": "Scenario",
+          "name": "Scenario"
+        }
+      },
+      {
+        "file": "Personnel-Dimension.json",
+        "role": "personnel",
+        "columns": {
+          "id": "memberCode",
+          "version": "Scenario",
+          "level": "Home Budget Entity",
+          "account": "Salary Account"
+        },
+        "personnelColumns": {
+          "holder": "Employee Name",
+          "title": "Job Title",
+          "start": "Start Date",
+          "annualSalary": "Annual Salary",
+          "payBasis": "Pay Basis",
+          "hourlyRate": "Hourly Rate",
+          "expectedHours": "Monthly Hours",
+          "onCostPercent": "Oncost Percent",
+          "benefits": "Monthly Benefits",
+          "bonusPercent": "Bonus Percent",
+          "bonusMonth": "Bonus Month",
+          "meritPercent": "Merit Percent",
+          "meritDate": "Merit Date",
+          "plannedStartDate": "Planned Start Date"
+        },
+        "dimensions": {
+          "synthetic-easel-30": "ICSegment",
+          "synthetic-easel-40": "Company"
+        },
+        "identityColumns": [
+          "memberCode",
+          "Employee Name"
+        ],
+        "envelope": "planful-dimension",
+        "rowFilter": {
+          "rollupOperator": "+"
+        }
+      },
+      {
+        "file": "ApprovalRoleExport.xlsx",
+        "role": "unmapped",
+        "reason": "Source access rule requires a new Easel membership grant; permissions are never copied",
+        "sheet": "Approval Roles"
+      }
+    ],
+    "measure": "MTD"
+  },
+  "mapping": {
+    "levels": {
+      "synthetic-easel-1": "create",
+      "synthetic-easel-2": "create"
+    },
+    "accounts": {
+      "synthetic-easel-10": {
+        "name": "Payroll",
+        "type": "operating-expense",
+        "payroll": true
+      },
+      "synthetic-easel-11": {
+        "name": "Subscription Revenue",
+        "type": "revenue",
+        "payroll": false
+      },
+      "synthetic-easel-12": {
+        "name": "Cloud Hosting",
+        "type": "operating-expense",
+        "payroll": false
+      }
+    },
+    "dimensions": {
+      "synthetic-easel-30": "create",
+      "synthetic-easel-40": "create"
+    },
+    "members": {
+      "synthetic-easel-30": {
+        "synthetic-easel-31": "create",
+        "synthetic-easel-32": "create"
+      },
+      "synthetic-easel-40": {
+        "synthetic-easel-41": "create"
+      }
+    },
+    "personnelColumns": {
+      "holder": "Employee Name",
+      "title": "Job Title",
+      "start": "Start Date",
+      "annualSalary": "Annual Salary",
+      "payBasis": "Pay Basis",
+      "hourlyRate": "Hourly Rate",
+      "expectedHours": "Monthly Hours",
+      "onCostPercent": "Oncost Percent",
+      "benefits": "Monthly Benefits",
+      "bonusPercent": "Bonus Percent",
+      "bonusMonth": "Bonus Month",
+      "meritPercent": "Merit Percent",
+      "meritDate": "Merit Date",
+      "plannedStartDate": "Planned Start Date"
+    }
+  },
+  "identityColumns": {
+    "Personnel-Dimension.json": [
+      "memberCode",
+      "Employee Name"
+    ]
+  }
+}

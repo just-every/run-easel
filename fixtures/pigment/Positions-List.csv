@@ -1,0 +1,6 @@
+GUID;Scenario;Department;Payroll Account;Employee Name;Job Title;Start Date;End Date;Annual Salary;Pay Basis;Hourly Rate;Monthly Hours;Oncost Percent;Monthly Benefits;Bonus Percent;Bonus Month;Merit Percent;Merit Date;Planned Start Date;Custom Retention Band;Region
+synthetic-easel-101;synthetic-easel-20;synthetic-easel-1;synthetic-easel-10;Synthetic Person 1;Engineer;2026-01-01;;120000;salary;0;0;0;200;10;2026-12;10;2026-07-01;;source-only;synthetic-easel-32
+synthetic-easel-102;synthetic-easel-20;synthetic-easel-2;synthetic-easel-10;Synthetic Person 2;Account Executive;2026-01-01;;120000;salary;0;0;0;0;0;;0;;;;synthetic-easel-32
+synthetic-easel-103;synthetic-easel-20;synthetic-easel-1;synthetic-easel-10;Synthetic Person 3;Support Specialist;2026-01-01;;0;hourly;25;160;0;0;0;;0;;;;synthetic-easel-32
+synthetic-easel-104;synthetic-easel-20;synthetic-easel-1;synthetic-easel-10;;Planned Engineer;2026-01-01;;120000;salary;0;0;0;0;0;;0;;2026-01-01;;synthetic-easel-32
+synthetic-easel-105;synthetic-easel-20;synthetic-easel-2;synthetic-easel-10;;Planned Account Executive;2026-01-01;;120000;salary;0;0;0;0;0;;0;;2026-01-01;;synthetic-easel-32

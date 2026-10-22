@@ -1,0 +1,101 @@
+{
+  "description": "Synthetic saved Adaptive response shapes; full-year 2026, USD; no tax policy, benefits, on-costs or employer match. Five positions, two to be hired. December bonus and July merit belong to the first employee. Source totals are independent arithmetic, not balancing entries.",
+  "files": [
+    {
+      "name": "exportLevels.xml",
+      "call": "exportLevels"
+    },
+    {
+      "name": "exportAccounts.xml",
+      "call": "exportAccounts"
+    },
+    {
+      "name": "exportDimensions.xml",
+      "call": "exportDimensions"
+    },
+    {
+      "name": "exportAttributes.xml",
+      "call": "exportAttributes"
+    },
+    {
+      "name": "exportVersions.xml",
+      "call": "exportVersions"
+    },
+    {
+      "name": "exportData.xml",
+      "call": "exportData",
+      "version": "synthetic-easel-20"
+    },
+    {
+      "name": "exportConfigurableModelData.xml",
+      "call": "exportConfigurableModelData",
+      "version": "synthetic-easel-20",
+      "sheet": "Personnel"
+    },
+    {
+      "name": "other-modeled.xml",
+      "call": "exportConfigurableModelData",
+      "version": "synthetic-easel-20",
+      "sheet": "Capital Assets"
+    },
+    {
+      "name": "sheet-export.xlsx",
+      "sheet": "Personnel"
+    }
+  ],
+  "options": {
+    "personnelSheet": "Personnel",
+    "personnelLevelColumn": "Level",
+    "personnelAccountColumn": "Account",
+    "dataColumns": {
+      "account": "Account Code",
+      "level": "Level Name"
+    },
+    "personnelColumns": {
+      "holder": "Name",
+      "title": "Title",
+      "start": "Start",
+      "end": "End",
+      "plannedStartDate": "Start Date",
+      "annualSalary": "Annual Salary",
+      "payBasis": "Pay Basis",
+      "hourlyRate": "Hourly Rate",
+      "expectedHours": "Expected Hours",
+      "employmentType": "Employment Type",
+      "bonusPercent": "Bonus Percent",
+      "bonusMonth": "Bonus Month",
+      "meritPercent": "Merit Percent",
+      "meritDate": "Merit Date",
+      "benefits": "Benefits",
+      "retirementMatchPercent": "Retirement Match Percent",
+      "onCostPercent": "On Cost Percent"
+    }
+  },
+  "expected": {
+    "positions": 5,
+    "toBeHired": 2,
+    "version": "synthetic-easel-20",
+    "level": "synthetic-easel-3",
+    "account": "synthetic-easel-12",
+    "monthlyPayroll": {
+      "2026-01": "19000",
+      "2026-02": "19000",
+      "2026-03": "19000",
+      "2026-04": "19000",
+      "2026-05": "19000",
+      "2026-06": "19000",
+      "2026-07": "24000",
+      "2026-08": "24000",
+      "2026-09": "24000",
+      "2026-10": "27000",
+      "2026-11": "27000",
+      "2026-12": "40200"
+    },
+    "annualPayroll": "280200",
+    "customColumn": "Custom Column",
+    "meritPercent": "10",
+    "meritDate": "2026-07-01",
+    "bonusPercent": "10",
+    "bonusMonth": "2026-12"
+  }
+}

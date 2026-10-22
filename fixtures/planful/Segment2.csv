@@ -1,0 +1,2 @@
+MemberId,Code,Name,RollupOperator,MemberType,ActiveStatus,Sort,ParentId,CurrencyCode,CurrencyName,ParentCode,Lineage
+synthetic-easel-41,synthetic-easel-41,Synthetic Company,+,Leaf,Active,1,,,,,

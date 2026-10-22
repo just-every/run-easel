@@ -1,0 +1,6 @@
+{
+  "model": "synthetic-easel-401",
+  "dimension": "Personnel",
+  "includeAttributes": true,
+  "includeDimensions": false
+}

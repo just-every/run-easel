@@ -9,7 +9,7 @@ export function erasureMatchers(values) {
 export function transformPayrollIdentity(item, maps) {
  if (!item || Array.isArray(item) || typeof item !== 'object') return item
  let result = item
- for (const map of maps) for (const scope of map.payrollScopes ?? []) {
+ for (const map of maps) for (const scope of [...(map.payrollScopes ?? []), ...(map.moveScopes ?? [])]) {
   if (typeof item.originId === 'string' && 'holder' in item && (scope.positionHashes ?? []).includes(erasedHash(item.originId))) result = {...result,holder:map.pseudonym}
   if (typeof item.provider !== 'string' || erasedHash(item.provider) !== scope.providerHash) continue
   if (typeof item.employeeId === 'string' && erasedHash(item.employeeId) === scope.employeeHash) {

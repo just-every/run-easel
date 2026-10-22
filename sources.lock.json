@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "96b0e232cf6a06184ca2e86952b8132d04ac2041db715920abe190b5456b491c",
+      "sha256": "1f40f01622f7cc5d22ad1caff5b1a5cca782fadba6982b4210e21efbd7a92b20",
       "executable": false
     },
     "base-copies.json": {
@@ -190,8 +190,16 @@
       "sha256": "76c745dcd8a0af50432b4c8c2aa77fde171fd5347e4bcb75d27c5221271cf5b6",
       "executable": false
     },
+    "docs/move-adaptive-format.md": {
+      "sha256": "13ee4f1f7674adf5f22df9a01c4b4acfd589f3039069fc95c5151a3d0603cc26",
+      "executable": false
+    },
     "docs/move-in.md": {
-      "sha256": "d87f0a69241fc94d04c412d567af9e883fcf5f9cf9f7934bfd8c8f89fdc35437",
+      "sha256": "df05657991300e27a411855b05dde26f6dde633edc41d49180425ec9f6387245",
+      "executable": false
+    },
+    "docs/move-tabular-formats.md": {
+      "sha256": "9540cf0c6d4b846d31356fcfdd6926ba235903a2995eac3fd96fce3226e7c089",
       "executable": false
     },
     "docs/overview.md": {
@@ -218,6 +226,86 @@
       "sha256": "b1aef99afb68350a4dc621597540a9070450d22329e6aefe1d06964f7a9db0ad",
       "executable": false
     },
+    "fixtures/adaptive-planning/exportAccounts.xml": {
+      "sha256": "682ad86e793320c169ff599b45ed7a885f73e5d7f857ca9dadc83d6e04a593fb",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/exportAttributes.xml": {
+      "sha256": "8d5e79420ac610a3425a042724bc400d2421c66a2e7f9d2df8ab5c19613c84bf",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/exportConfigurableModelData.xml": {
+      "sha256": "01fb4defb5dc9282744d589305f4a1c9ae2ba0ffb7661d663dbe2f170e98e2c3",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/exportData.xml": {
+      "sha256": "aa665623b5e68b5fcb34ac55b151f3a820a608cdd7f4c805ee2f105d2261c264",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/exportDimensions.xml": {
+      "sha256": "262f11c55bd83e9d6dcc10e9142df75320703f7770eac7f31e726954e7dac576",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/exportLevels.xml": {
+      "sha256": "6ba51ae09c399e0955f814554a3135479698a8c284735258b1d9eea4718d00d7",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/exportVersions.xml": {
+      "sha256": "94ac35da1772c6614510d83ce91faaf081c0710ee1b619472089188d05335f9e",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/manifest.json": {
+      "sha256": "d9860cb260c78c6708e2261bd597bd44c285c89d95212e9d68ee2fbc6f033577",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/other-modeled.xml": {
+      "sha256": "364d2f90708805409ff14014fa19191518187cd64aabb7287ccc92baf23c21f9",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/personnel.csv": {
+      "sha256": "5b67a51378999e0ed62f72e15a39a54a1e470fea85a35a7425451eeb82748425",
+      "executable": false
+    },
+    "fixtures/adaptive-planning/sheet-export.xlsx": {
+      "sha256": "061ecbf62d646a107ca05e64e2053a3bd5b4ccc1a68f3276144f5bbcd9c5ceea",
+      "executable": false
+    },
+    "fixtures/anaplan/Accounts.csv": {
+      "sha256": "89baa14f6ad44913094cf8c377c29fac789eafb6e1aec929d739f041227d024b",
+      "executable": false
+    },
+    "fixtures/anaplan/CAP01.csv": {
+      "sha256": "c8490d876ac8ed25eb98259cd5202754dd72e6917bcc9fbc6666cd9a26073abe",
+      "executable": false
+    },
+    "fixtures/anaplan/Departments.csv": {
+      "sha256": "7cb4981978bbc71cb5aae261ab87d1e50dd2d6c2d4c135f45690dc71017b98e3",
+      "executable": false
+    },
+    "fixtures/anaplan/EMP01.csv": {
+      "sha256": "a4e2a969a1642a19de7ee636cc4f749e5e40711b85ddf583a226ba2136c298a0",
+      "executable": false
+    },
+    "fixtures/anaplan/expected.json": {
+      "sha256": "5d13bc6d26ae6689ac77749be90242a99bd6245f91330837082e010514d95c28",
+      "executable": false
+    },
+    "fixtures/anaplan/FIN01.csv": {
+      "sha256": "de3dbaaf95fb2566481f0ca5153215bebd9426fe051932947985caf8e0388a96",
+      "executable": false
+    },
+    "fixtures/anaplan/manifest.json": {
+      "sha256": "0a10f75194016be4e53a726f119264ea49a035c133d74fd80cac4ddc91d3e84f",
+      "executable": false
+    },
+    "fixtures/anaplan/Regions.csv": {
+      "sha256": "634c514e1e4872fc6bfc15fbaf7b51de40b522936538edee993584a62386c369",
+      "executable": false
+    },
+    "fixtures/anaplan/Versions.csv": {
+      "sha256": "5dbd47e807510f07735411fc317cebe31aa66ffee6c66d2e8409432af6c5b345",
+      "executable": false
+    },
     "fixtures/build-workbook.mjs": {
       "sha256": "7c895ac5d0ae7ff0b0dfbe630f26c61a24457f3ae94c1667f433b12d3398668b",
       "executable": false
@@ -232,6 +320,122 @@
     },
     "fixtures/gl-detail-2026-08.csv": {
       "sha256": "8cd7c75bc5e6970a9b9df3ddac62723d4a63490a3983c367821f4378145bcb24",
+      "executable": false
+    },
+    "fixtures/pigment/Accounts.csv": {
+      "sha256": "07a1cfe9d71678506549f58a505360136d04e5a2920075a806b824adce6ed554",
+      "executable": false
+    },
+    "fixtures/pigment/Asset-List.csv": {
+      "sha256": "134278f51c63c87dce986628c4038a61a1911ba2303f9f0c0035df762c96c2cd",
+      "executable": false
+    },
+    "fixtures/pigment/Departments.csv": {
+      "sha256": "69f4a7620301a3eb6260cc7791565184d15066d3cd2ddeb59ec2e25b3a17e66c",
+      "executable": false
+    },
+    "fixtures/pigment/expected.json": {
+      "sha256": "5d13bc6d26ae6689ac77749be90242a99bd6245f91330837082e010514d95c28",
+      "executable": false
+    },
+    "fixtures/pigment/Finance-Table.csv": {
+      "sha256": "84618b9ae4d1d73ad845b4b86266721123cc1e0f642df9a52f092ee77e98f71e",
+      "executable": false
+    },
+    "fixtures/pigment/manifest.json": {
+      "sha256": "9a5f3a80063ef6e91f8c63deee01396c33fdfd629f116b61656d46c50e688aa8",
+      "executable": false
+    },
+    "fixtures/pigment/Positions-List.csv": {
+      "sha256": "30140b140133aa116047433aff58870e9620d01e0bcfd284ee69fabdf6a91f3f",
+      "executable": false
+    },
+    "fixtures/pigment/Regions.csv": {
+      "sha256": "a66dbfa998ac34b628cdb91a6bf0b2062ed92a85669b41e13f9b1d119b6b4ed1",
+      "executable": false
+    },
+    "fixtures/pigment/Scenarios.csv": {
+      "sha256": "bca02bb42baabee196011472de16af3496153339ab10f8b127cea5dd0665585c",
+      "executable": false
+    },
+    "fixtures/planful/ApprovalRoleExport.xlsx": {
+      "sha256": "38d1a91846cb759a2d57ec2a50d74dc64f295354fa58287f15a3bd668268f49d",
+      "executable": false
+    },
+    "fixtures/planful/DLR-MTD.csv": {
+      "sha256": "18b569b5f30dea5e6fd1c2dc44ddcf117a415e1738f3b2f847fc0492fb4da543",
+      "executable": false
+    },
+    "fixtures/planful/expected.json": {
+      "sha256": "5d13bc6d26ae6689ac77749be90242a99bd6245f91330837082e010514d95c28",
+      "executable": false
+    },
+    "fixtures/planful/manifest.json": {
+      "sha256": "60c2393f6f33a339aa96966091185c79769a2220dbd8a30705adb3087c2a3265",
+      "executable": false
+    },
+    "fixtures/planful/Personnel-Dimension.json": {
+      "sha256": "ca766f1a7fcb5964e70e4334bc16205f954a0125cbeefc8097a49732d9ebd683",
+      "executable": false
+    },
+    "fixtures/planful/personnel-export-request.json": {
+      "sha256": "e29ecd743a0aa21a92c59daab393682d7d6c703d27f161076de6b9914027f542",
+      "executable": false
+    },
+    "fixtures/planful/Segment1.csv": {
+      "sha256": "825a4839cc208c015a0b1d1981af307c9d3823d091d387800e69b27eb8876dbd",
+      "executable": false
+    },
+    "fixtures/planful/Segment2.csv": {
+      "sha256": "cb081955a259ba5e4388b65a1ab8b97cbe906b709b50a023248b323198151bd1",
+      "executable": false
+    },
+    "fixtures/planful/Segment3.csv": {
+      "sha256": "864b159e9e4615b8aebbb8280cad4fc149d9890d29beb148cd216aff927a5375",
+      "executable": false
+    },
+    "fixtures/planful/Segment4.csv": {
+      "sha256": "81d274a0481f7e1f461bde35686ea53dd5ed4a0a262f769f101760e47805ab7c",
+      "executable": false
+    },
+    "fixtures/runway/Capital - Assets - Main.csv": {
+      "sha256": "c8490d876ac8ed25eb98259cd5202754dd72e6917bcc9fbc6666cd9a26073abe",
+      "executable": false
+    },
+    "fixtures/runway/expected.json": {
+      "sha256": "5d13bc6d26ae6689ac77749be90242a99bd6245f91330837082e010514d95c28",
+      "executable": false
+    },
+    "fixtures/runway/export-api.json": {
+      "sha256": "1efc5c8015c07854288b5c30e771f355006932a2a17c2818a7acc372ac45b1d0",
+      "executable": false
+    },
+    "fixtures/runway/Finance - Accounts - Main.csv": {
+      "sha256": "61e41ae4b17e3f917ff4d05a93ea7873ddc77afb1fe8947651de7277d6b4f181",
+      "executable": false
+    },
+    "fixtures/runway/Finance - Income statement - Main.csv": {
+      "sha256": "19fb18208632944ed285074fb9a96842ce8866e72cbb6d5f2564506a4d6eeacf",
+      "executable": false
+    },
+    "fixtures/runway/Finance - Plans - Main.csv": {
+      "sha256": "e0446caa66a475bac4731b78f1cbd5235c413aa96f4368b29e7d822189e32265",
+      "executable": false
+    },
+    "fixtures/runway/manifest.json": {
+      "sha256": "b3c9d8b75e0be88d1f0924a4112610c6020322272393570a6c9a62df0bbd673a",
+      "executable": false
+    },
+    "fixtures/runway/Organization - Markets - Main.csv": {
+      "sha256": "1fd3eabd42208476a1ffadb42339f636bf417da350e46f69531cae2b630e5189",
+      "executable": false
+    },
+    "fixtures/runway/Organization - Teams - Main.csv": {
+      "sha256": "37acad294b422a878a25d5204a509deb421b9b287ec926159492391e91274f8f",
+      "executable": false
+    },
+    "fixtures/runway/Workforce - Positions - Main.csv": {
+      "sha256": "792e07a14b9c6b0e0f2d4cb99c533d9145c2a5d0fcd1536a5490eb054e80a80e",
       "executable": false
     },
     "IMPORTING.md": {
@@ -687,7 +891,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "7f62721cdfebc81d3bb8f669377dfe5cdd218694cdb563a9477a4861c00d31be",
+      "sha256": "78046eab0afff7a5c156dc8bbb1d4a23842c5cb0e848a053b06fb64c524f1b6c",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -934,12 +1138,16 @@
       "sha256": "1ba86e5cde906bd2942ee28277833680cd80cb6f830f2817d347c7b747110741",
       "executable": false
     },
+    "src/easel/erasure-archive/move-originals.mjs": {
+      "sha256": "3f32fbc41509511f462231256877914367af2c46b71a92e097e92b33159f4998",
+      "executable": false
+    },
     "src/easel/erasure-archive/originals.d.mts": {
       "sha256": "1eca86179a8cdb51eed038643e720223baf0105c050e5ef2a9ab2078f6110542",
       "executable": false
     },
     "src/easel/erasure-archive/originals.mjs": {
-      "sha256": "a2fd79dc5c73d5e77b414bc53ccb4255627776df5d38f2594f78a0fdfc12e229",
+      "sha256": "73775d84fd306e3c1d7e97c196241f70d5761964f7e13c1bf8b3e32f00b7963f",
       "executable": false
     },
     "src/easel/erasure-archive/payroll-originals.d.mts": {
@@ -967,15 +1175,15 @@
       "executable": false
     },
     "src/easel/erasure-map.d.mts": {
-      "sha256": "9c43c4ba9b6bc2bb40c4a0dacff8e013de5e470fd5440164e9e72d29679cee84",
+      "sha256": "8b5e23376c6d21f9ca979940d287f48ce2618a19c743063ecab7965178b5800e",
       "executable": false
     },
     "src/easel/erasure-map.mjs": {
-      "sha256": "37f1f6e088a22ea7de0b072a14a96d4bd2874d1dfc8d1131f0b8e3809d2e489f",
+      "sha256": "bc46b67168faabd057c9ce6af1de35d3a3330c3574ab677031b4a23c63b06663",
       "executable": false
     },
     "src/easel/erasure.ts": {
-      "sha256": "a20e14b631d3149917fa36c570f8ede3de1353eeb41d03dd3bbb03eeb705301f",
+      "sha256": "412d36f0ef9ea4cbd4c6f780370118d8db77c39d7d751578743b7efa21a59631",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -1126,6 +1334,42 @@
       "sha256": "24a79064dc14137adf614f416e9a0b3dce61d55efc41acd054c545fd5e4f67db",
       "executable": false
     },
+    "src/easel/move-adaptive.ts": {
+      "sha256": "0d8c2464c67422d7132e04f2a2a4cb6ab264b291248aa17ec6a8d5b9cd44c7b2",
+      "executable": false
+    },
+    "src/easel/move-erasure.d.mts": {
+      "sha256": "4cb3af82f46f4994914365bc96175afa5f9a7d226b3b4acd76ea88b1626a5ae1",
+      "executable": false
+    },
+    "src/easel/move-erasure.mjs": {
+      "sha256": "06eb0040fc2b129742823fbf200eb85ab970bb4831f47e9407f1cb48cfaba658",
+      "executable": false
+    },
+    "src/easel/move-identities.ts": {
+      "sha256": "7ac54f57597aaca8ab0ed0c940af474eaf47b456cf1016a73407e8c1b9a6f54c",
+      "executable": false
+    },
+    "src/easel/move-import.ts": {
+      "sha256": "ffd31cec558fe27a88776bae84567a5bc71d85b5337fea68e05babd8a5ec202f",
+      "executable": false
+    },
+    "src/easel/move-mapping.ts": {
+      "sha256": "56074109c8e1361bd7def493e3cb2cb9a6d2bbc63037d12bbf9faed8a71ac586",
+      "executable": false
+    },
+    "src/easel/move-source.ts": {
+      "sha256": "a7afb08493a08a8ea97d91cb7a88ac10e63bf06456fb9ac902eee4346884c94a",
+      "executable": false
+    },
+    "src/easel/move-tabular.ts": {
+      "sha256": "abed72b32e4ed3f9159bfb02495ee31bbf17c49a7fc00546c60358b6d692be73",
+      "executable": false
+    },
+    "src/easel/move-xml.ts": {
+      "sha256": "1a54f5f029b1e675dc86a636552264a1d1c1f0e7d675028af71506c69be9ad72",
+      "executable": false
+    },
     "src/easel/native-calculation.ts": {
       "sha256": "350b01b084660f333c67118a84b353571434ad00b61d16827a6ab777daa1cc56",
       "executable": false
@@ -1187,7 +1431,7 @@
       "executable": false
     },
     "src/easel/payroll-erasure.mjs": {
-      "sha256": "af6b44ecb6960564b27d4bdc8bfdb01426da0e155949c90ab12af7aa88be0193",
+      "sha256": "1d08241b52af04394951ae3f6eb325a38b67553e97d44cdf9959bc9a162d086f",
       "executable": false
     },
     "src/easel/payroll-export-access.ts": {
@@ -1351,7 +1595,7 @@
       "executable": false
     },
     "src/easel/views.ts": {
-      "sha256": "5219c88e866d41a9f9fb9d53e632b30d955697f72f0d0c3b17e8bdf28bccb848",
+      "sha256": "12e5b947205061e31e4be190f3c1447627fecf932c2d18acd5bac85eef9dd1fd",
       "executable": false
     },
     "src/easel/weekly-cash-workbook.ts": {
@@ -3211,7 +3455,7 @@
       "executable": false
     },
     "src/ui/actuals.tsx": {
-      "sha256": "012be43648310cecfa31d75079c873c713d7edf4f1fd4fb996d8f0f1d2d636ce",
+      "sha256": "b8379cbe3f553f9fab1be34d44eaa84257c4ede933cae772fa9dbaac9d83f325",
       "executable": false
     },
     "src/ui/app.tsx": {
@@ -3324,6 +3568,10 @@
     },
     "src/ui/metric-tasks.tsx": {
       "sha256": "164b7dc1c9700a01b23551652b34b03d95ab5e848bddf11620417733c7fa37e4",
+      "executable": false
+    },
+    "src/ui/move-import.tsx": {
+      "sha256": "e4b10b3f622305d6061a2be704d89999d8c35483a354c8b93d836d4e989ad0c2",
       "executable": false
     },
     "src/ui/native-formulas-form.tsx": {
@@ -3786,6 +4034,10 @@
       "sha256": "c37c1ffb8f8ed4780d041250d9f68c4810d16bfb0f4512132f0e6fe72560e293",
       "executable": false
     },
+    "tests/move-fixtures.mjs": {
+      "sha256": "1a3880381db26590d0fac4bc365603fa0f1726e7c14987b5e80cf381395e32a4",
+      "executable": false
+    },
     "tests/native-formula-flow.mjs": {
       "sha256": "8de951304f1e4fbf49ffd3cb107a95434a60994387850e8d9888f3e1e1c25e5f",
       "executable": false
@@ -3819,7 +4071,7 @@
       "executable": false
     },
     "tests/payroll-erasure.test.mjs": {
-      "sha256": "c05f18d54e7dd382f2e1b07c7fcb8f7b6d5115f9fa60be62d61f41640347c234",
+      "sha256": "89dac9a5f3d4a1ef655985e88b0b038797bf2ac3e49518977e93546641422732",
       "executable": false
     },
     "tests/payroll-files-browser.mjs": {
@@ -3971,7 +4223,7 @@
       "executable": false
     },
     "tests/workbook-undo.test.mjs": {
-      "sha256": "2c0cb4ed5f9d5e90d0bb9b2dd1090916cbfd1ee8da252a6922eec80246c6e7c5",
+      "sha256": "8c6175584a8bc2c0e97193556ca3e6c20b870e4abe3eba9220a5dd57aa84f35d",
       "executable": false
     },
     "tests/working-capital-browser.mjs": {

@@ -1,0 +1,62 @@
+{
+  "positions": 5,
+  "employees": 3,
+  "toBeHired": 2,
+  "budgetVersion": "synthetic-easel-20",
+  "payrollAccount": "synthetic-easel-10",
+  "monthlyPayroll": {
+    "2026-01": {
+      "synthetic-easel-1": "24200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-02": {
+      "synthetic-easel-1": "24200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-03": {
+      "synthetic-easel-1": "24200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-04": {
+      "synthetic-easel-1": "24200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-05": {
+      "synthetic-easel-1": "24200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-06": {
+      "synthetic-easel-1": "24200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-07": {
+      "synthetic-easel-1": "25200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-08": {
+      "synthetic-easel-1": "25200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-09": {
+      "synthetic-easel-1": "25200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-10": {
+      "synthetic-easel-1": "25200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-11": {
+      "synthetic-easel-1": "25200",
+      "synthetic-easel-2": "20000"
+    },
+    "2026-12": {
+      "synthetic-easel-1": "38400",
+      "synthetic-easel-2": "20000"
+    }
+  },
+  "annualPayroll": "549600.00",
+  "bonusDecember": "13200.00",
+  "meritMonthlyFromJuly": "1000.00",
+  "benefitsMonthly": "200.00",
+  "customUnmappedColumn": "Custom Retention Band"
+}

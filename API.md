@@ -538,3 +538,9 @@ completed job; never repeat an accepted mutation to discover its outcome.
 An interrupted operation has an unknown outcome: reload current state before
 deciding on another action. Background responses are transient operational data
 and are excluded from portable model archives.
+
+### Incumbent planning exports
+
+`POST /api/easel/import/incumbent/preview` accepts `{provider,files,options,mapping}`; provider is `adaptive`, `planful`, `anaplan`, `runway` or `pigment`. Each original file supplies `name` and exactly one `text` or `base64`, plus its export call/version/sheet context where applicable. [Move-in formats](docs/move-in.md) describe the explicit buyer mapping. Preview writes nothing. Native finance with Pay detail receives created records, unmapped items, personnel, per-account reconciliation and the reviewed fingerprint; other current planning members receive only their aggregate version projections. No preview fingerprint is returned to a viewer.
+
+`POST /api/easel/import/incumbent/commit` takes the same body and `fingerprint`. Every account/month must reconcile. Acceptance, `resume`, `status` and `undo` require a native finance session and live Pay detail. The latter operations take `{id}` from the import result. All created structure, scenarios, schedules and positions go through the retained-original import journal. Source permissions never become native permissions.

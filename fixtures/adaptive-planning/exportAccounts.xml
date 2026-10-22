@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response success="true"><output><accounts seqNo="1"><account id="synthetic-easel-10" code="" name="synthetic-easel-11" accountTypeCode="" isGroup="1"><account id="synthetic-easel-12" code="synthetic-easel-13" name="synthetic-easel-14" accountTypeCode="E" balanceType="DEBIT" displayAs="CURRENCY" isGroup="0" hasSalaryDetail="1" dataPrivacy="PRIVATE"/></account></accounts></output></response>

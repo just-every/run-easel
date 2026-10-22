@@ -1,0 +1,3 @@
+MemberId,Code,Name,RollupOperator,MemberType,ActiveStatus,Sort,ParentId,ParentCode,Lineage
+synthetic-easel-1,synthetic-easel-1,Engineering,+,Leaf,Active,1,,,
+synthetic-easel-2,synthetic-easel-2,Sales,+,Leaf,Active,2,,,

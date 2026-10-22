@@ -138,3 +138,60 @@ test('PEOPLE-007 ERASE-001 explicit finance association erases scoped employee i
  for(const imp of [later,register,first,retired])assert.equal((await finalDestination.kit('payroll','status',{id:imp.import.id})).job.state,'undone')
 
 })
+
+test('Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo', async t => {
+ const { moveFixture } = await import('./move-fixtures.mjs')
+ for (const provider of ['adaptive','planful','anaplan','runway','pigment']) {
+  const h=await harness()
+  try {
+   await h.command('workspace',{name:'Synthetic incumbent erasure',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+   const department=await h.command('department',{name:'Identity association'})
+   const email='former@example.test'
+   await h.person(email,'contributor',[department.id],false)
+   const fixture=await moveFixture(provider)
+   const preliminary=await h.kit('incumbent','preview',fixture)
+   let employee=preliminary.positions.find(p=>p.holder)
+   fixture.mapping.memberMap={[employee.employeeId]:email}
+   const preview=await h.kit('incumbent','preview',fixture)
+   employee=preview.positions.find(p=>p.employeeId===employee.employeeId)
+   const imp=await h.kit('incumbent','commit',{...fixture,fingerprint:preview.fingerprint})
+   assert.equal(imp.import.status,'imported')
+   const scenario=imp.import.scenarios[0]
+   const before=await h.get(`/api/easel/scenario/${scenario}`)
+   const originals=(await h.db.prepare('SELECT * FROM ik_originals ORDER BY job_id,original_key').all()).results
+   await h.command('member',{email,name:'former',role:'contributor',departments:[department.id],active:false})
+   const receipt=await h.command('person-erase',{email})
+   const after=await h.get(`/api/easel/scenario/${scenario}`)
+   const erased=after.inputs.position.find(p=>p.originId===employee.originId)
+   assert.equal(erased.holder,receipt.pseudonym)
+   assert.equal(erased.employeeId,receipt.pseudonym)
+   assert.deepEqual(after.calculation.cells.map(c=>c.amount),before.calculation.cells.map(c=>c.amount))
+   const exported=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}})
+   assert.equal(exported.status,200,await exported.clone().text())
+   const zip=await JSZip.loadAsync(await exported.arrayBuffer()),manifest=JSON.parse(await zip.file('manifest.json').async('string'))
+   let pseudonyms=0
+   for(const original of manifest.originals.filter(o=>o.jobId===imp.job.id && o.status==='retained')) {
+    const bytes=await zip.file(original.path).async('nodebuffer')
+    const texts=bytes[0]===0x50&&bytes[1]===0x4b ? await Promise.all(Object.values((await JSZip.loadAsync(bytes)).files).filter(f=>!f.dir).map(f=>f.async('string'))) : [bytes.toString('utf8')]
+    for(const text of texts){assert.ok(!text.includes(employee.holder),`${provider} original hides holder`);assert.ok(!text.includes(employee.employeeId),`${provider} original hides employee ID`);if(text.includes(receipt.pseudonym))pseudonyms++}
+   }
+   assert.ok(pseudonyms>0)
+   assert.deepEqual((await h.db.prepare('SELECT * FROM ik_originals ORDER BY job_id,original_key').all()).results,originals,'Stored originals remain immutable')
+   const dir=await mkdtemp(join(tmpdir(),'easel-move-erasure-'))
+   try {
+    const path=join(dir,'erased.rer')
+    await exportArchive(await createEaselExportService({db:h.db}),path,[])
+    const destination=await harness()
+    try {
+     await importArchive(await createPortability({db:destination.db,policy:easelPolicy}),path,[])
+     assert.deepEqual((await destination.get(`/api/easel/scenario/${scenario}`)).calculation.cells.map(c=>c.amount),after.calculation.cells.map(c=>c.amount))
+     const undone=await destination.kit('incumbent','undo',{id:imp.import.id})
+     assert.equal(undone.import.status,'undone')
+    } finally {await destination.close()}
+   } finally {await rm(dir,{recursive:true,force:true})}
+   assert.equal((await h.kit('incumbent','undo',{id:imp.import.id})).import.status,'undone')
+   const retained=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}})
+   assert.equal(retained.status,200,await retained.clone().text())
+  } finally {await h.close()}
+ }
+})

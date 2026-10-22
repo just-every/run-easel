@@ -1,3 +1,4 @@
+import { moveOriginalScopes } from './move-erasure.mjs'
 // Finance's explicit provider/employee associations are the only employee
 // identity authority. Durable receipts keep hashes, never source identifiers.
 import { erasedHash } from './erasure-map.mjs'
@@ -19,18 +20,18 @@ export function payrollErasureScopes(records, email) {
 export function payrollOriginalScopes(maps, records, jobs = []) {
  const mappings = records.filter(r => r.kind === 'payroll-file-mapping').map(r => r.value)
  const imports = records.filter(r => r.kind === 'payroll-import').map(r => r.value)
- return maps.map(map => ({ ...map, payrollScopes:(map.payrollScopes ?? []).map((scope) => ({ ...scope, originals: [
+ return moveOriginalScopes(maps.map(map => ({ ...map, payrollScopes:(map.payrollScopes ?? []).map((scope) => ({ ...scope, originals: [
   ...(scope.originals ?? []),
   ...mappings.filter(m => erasedHash(m.provider) === scope.providerHash).flatMap(m => imports.filter(i => i.destination === m.batch).map(i => ({ sha256:i.sha256, jobId:jobs.find(j=>j.destination===i.destination)?.id, columns:m.config.columns, ...(m.config.sheet ? {sheet:m.config.sheet} : {}) }))),
- ] })) }))
+ ] })) })), records, jobs)
 }
 
 /** Undo removes its current mapping but not the recorded finance association.
  * Only explicit before/after mapping images count as identity authority. */
 export async function payrollIdentityHistory(db, records) {
- const rows = (await db.prepare("SELECT detail FROM e_activity WHERE action='record-changed' AND json_extract(detail,'$.kind')='payroll-file-mapping'").all()).results
+ const rows = (await db.prepare("SELECT detail FROM e_activity WHERE action='record-changed' AND json_extract(detail,'$.kind') IN ('payroll-file-mapping','move-personnel-mapping')").all()).results
  return [...records, ...rows.flatMap(row=>{
   const detail=JSON.parse(row.detail)
-  return [detail.before,detail.after].filter(Boolean).map(value=>({kind:'payroll-file-mapping',value}))
+  return [detail.before,detail.after].filter(Boolean).map(value=>({kind:detail.kind,value}))
  })]
 }

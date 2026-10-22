@@ -1,0 +1,201 @@
+{
+  "provider": "pigment",
+  "files": [
+    {
+      "name": "Accounts.csv"
+    },
+    {
+      "name": "Departments.csv"
+    },
+    {
+      "name": "Regions.csv"
+    },
+    {
+      "name": "Scenarios.csv"
+    },
+    {
+      "name": "Finance-Table.csv"
+    },
+    {
+      "name": "Positions-List.csv"
+    },
+    {
+      "name": "Asset-List.csv"
+    }
+  ],
+  "options": {
+    "tables": [
+      {
+        "file": "Accounts.csv",
+        "role": "accounts",
+        "columns": {
+          "id": "GUID",
+          "name": "Name",
+          "type": "Statement Type"
+        },
+        "delimiter": ";"
+      },
+      {
+        "file": "Departments.csv",
+        "role": "levels",
+        "columns": {
+          "id": "GUID",
+          "name": "Name",
+          "parent": "Parent"
+        },
+        "delimiter": ";"
+      },
+      {
+        "file": "Regions.csv",
+        "role": "dimension",
+        "columns": {
+          "id": "GUID",
+          "name": "Name",
+          "parent": "Parent"
+        },
+        "dimension": {
+          "id": "synthetic-easel-30",
+          "name": "Region"
+        },
+        "delimiter": ";"
+      },
+      {
+        "file": "Scenarios.csv",
+        "role": "versions",
+        "columns": {
+          "id": "GUID",
+          "name": "Name"
+        },
+        "delimiter": ";"
+      },
+      {
+        "file": "Finance-Table.csv",
+        "role": "data",
+        "columns": {
+          "version": "Scenario",
+          "level": "Departments",
+          "month": "Month"
+        },
+        "dimensions": {
+          "synthetic-easel-30": "Region"
+        },
+        "metrics": {
+          "Payroll": "synthetic-easel-10",
+          "Revenue": "synthetic-easel-11",
+          "Cloud": "synthetic-easel-12"
+        },
+        "delimiter": ";",
+        "monthValues": {
+          "Jan 26": "2026-01",
+          "Feb 26": "2026-02",
+          "Mar 26": "2026-03",
+          "Apr 26": "2026-04",
+          "May 26": "2026-05",
+          "Jun 26": "2026-06",
+          "Jul 26": "2026-07",
+          "Aug 26": "2026-08",
+          "Sep 26": "2026-09",
+          "Oct 26": "2026-10",
+          "Nov 26": "2026-11",
+          "Dec 26": "2026-12"
+        }
+      },
+      {
+        "file": "Positions-List.csv",
+        "role": "personnel",
+        "columns": {
+          "id": "GUID",
+          "version": "Scenario",
+          "level": "Department",
+          "account": "Payroll Account"
+        },
+        "personnelColumns": {
+          "holder": "Employee Name",
+          "title": "Job Title",
+          "start": "Start Date",
+          "end": "End Date",
+          "annualSalary": "Annual Salary",
+          "payBasis": "Pay Basis",
+          "hourlyRate": "Hourly Rate",
+          "expectedHours": "Monthly Hours",
+          "onCostPercent": "Oncost Percent",
+          "benefits": "Monthly Benefits",
+          "bonusPercent": "Bonus Percent",
+          "bonusMonth": "Bonus Month",
+          "meritPercent": "Merit Percent",
+          "meritDate": "Merit Date",
+          "plannedStartDate": "Planned Start Date"
+        },
+        "delimiter": ";",
+        "dimensions": {
+          "synthetic-easel-30": "Region"
+        },
+        "identityColumns": [
+          "GUID",
+          "Employee Name"
+        ]
+      },
+      {
+        "file": "Asset-List.csv",
+        "role": "unmapped",
+        "reason": "Other modeled sheet row: capital asset assumptions have no configured Easel translation; exported account totals are retained separately",
+        "delimiter": ";"
+      }
+    ]
+  },
+  "mapping": {
+    "levels": {
+      "synthetic-easel-1": "create",
+      "synthetic-easel-2": "create"
+    },
+    "accounts": {
+      "synthetic-easel-10": {
+        "name": "Payroll",
+        "type": "operating-expense",
+        "payroll": true
+      },
+      "synthetic-easel-11": {
+        "name": "Subscription Revenue",
+        "type": "revenue",
+        "payroll": false
+      },
+      "synthetic-easel-12": {
+        "name": "Cloud Hosting",
+        "type": "operating-expense",
+        "payroll": false
+      }
+    },
+    "dimensions": {
+      "synthetic-easel-30": "create"
+    },
+    "members": {
+      "synthetic-easel-30": {
+        "synthetic-easel-31": "create",
+        "synthetic-easel-32": "create"
+      }
+    },
+    "personnelColumns": {
+      "holder": "Employee Name",
+      "title": "Job Title",
+      "start": "Start Date",
+      "end": "End Date",
+      "annualSalary": "Annual Salary",
+      "payBasis": "Pay Basis",
+      "hourlyRate": "Hourly Rate",
+      "expectedHours": "Monthly Hours",
+      "onCostPercent": "Oncost Percent",
+      "benefits": "Monthly Benefits",
+      "bonusPercent": "Bonus Percent",
+      "bonusMonth": "Bonus Month",
+      "meritPercent": "Merit Percent",
+      "meritDate": "Merit Date",
+      "plannedStartDate": "Planned Start Date"
+    }
+  },
+  "identityColumns": {
+    "Positions-List.csv": [
+      "GUID",
+      "Employee Name"
+    ]
+  }
+}

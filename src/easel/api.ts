@@ -80,6 +80,7 @@ import { tokenRate, tokenUse } from './token-auth'
 import { Fault, get, requireThat, type Actor, type Data } from './types'
 import { actualsView, compareView, scenarioView, snapshotView, stateView, paySafePack } from './views'
 import { workbookCommand } from './workbook'
+import { moveImport } from './move-import'
 
 type Env = { Bindings: Bindings; Variables: { apiActor: Actor } }
 export const api = new Hono<Env>()
@@ -377,11 +378,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent', 'Unknown move-in kit', 404)
  const ctx = await open(c)
- requirePayDetail(ctx.x)
+ if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const imported = [...ctx.s.values()].find(row => row.kind === 'workbook-import' && (row.id === b.id || ctx.before.get(`workbook-import:${row.id}`)?.revision !== row.revision))?.value
  if (kit === 'workbook' && step.kit && imported && imported.rows > INLINE_INPUT_ROWS) return c.json(await startCalculationJob(ctx, [imported.scenario], async id => { ctx.calculationJob = id; return executeImport(c, ctx, step) }, promise => c.executionCtx.waitUntil(promise)), 202)
