@@ -135,6 +135,7 @@ test('ACCESS-001 statement ownership groups determine recipients and revoke app,
  await h.command('member', { email: 'head@example.test', name: 'Head', role: 'contributor', departments: [], groupOnly: true })
  const definition = { name: 'Statement heads', members: ['head@example.test'], departments: { read: [sales.id, eng.id], edit: [], owners: [sales.id, eng.id] }, dimensions: { [region.id]: { read: [east.id], edit: [] } }, capabilities: [] }
  let group = await h.command('group-save', definition)
+ await h.command('group-save', { name: 'Unrestricted legal reads', members: ['head@example.test'], departments: { read: [legal.id] } })
  const budget = (await h.get('/api/easel/state')).scenarios[0]
  for (const department of [sales.id, eng.id, legal.id]) await h.command('expense', { scenario: budget.id, department, line: line.id, name: `Cloud ${department}`, kind: 'recurring', start: '2026-01', amount: '100', dimensions: { [region.id]: east.id } })
  await h.command('expense', { scenario: budget.id, department: sales.id, line: line.id, name: 'West confidential spend', kind: 'recurring', start: '2026-01', amount: '700', dimensions: { [region.id]: west.id } })

@@ -85,10 +85,12 @@ test('ENTITY-001 local entity plans translate independently and eliminate review
  const restricted = await h.get(path, viewer)
  assert.equal(restricted.scope, 'restricted'); assert.equal(restricted.consolidated[0].profit, null)
  assert.ok(!JSON.stringify(restricted).includes('European entity'))
- await h.command('department', { name: 'Restricted department' })
+ const restrictedDepartment = await h.command('department', { name: 'Restricted department' })
  await h.command('member', { email: 'synthetic-entity-reader@example.test', name: 'Canadian reader', role: 'viewer', groupOnly: true })
  await h.command('group-save', { name: 'Entity Operations readers', members: ['synthetic-entity-reader@example.test'], departments: { read: [department.id] }, dimensions: { [from.dimension]: { read: [from.member] } } })
+ await h.command('group-save', { name: 'Other department in Europe', members: ['synthetic-entity-reader@example.test'], departments: { read: [restrictedDepartment.id] }, dimensions: { [from.dimension]: { read: [to.member] } } })
  await h.get(path, viewer, 403)
+ assert.equal((await h.mf.dispatchFetch(h.origin+path+'/workbook',{headers:{cookie:viewer}})).status,403)
  assert.equal((await h.get(`/api/easel/scenario/${parent.id}`, viewer)).calculation.profit[0].revenue, 10000)
  await h.command('member', { email: 'synthetic-entity-reader@example.test', name: 'Canadian reader', role: 'viewer', groupOnly: false, dimensionMembers: { [from.dimension]: [from.member] } })
  // A later source edit invalidates the reviewed rule rather than silently exceeding its source amount.
