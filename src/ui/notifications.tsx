@@ -4,7 +4,7 @@ import { Dots } from './dots'
 
 const MODE: Record<string, string> = { email: 'Email each notification', digest: 'Daily email digest at 08:00', chat: 'Chat only (generic notice)' }
 const CHANNEL: Record<string, string> = { slack: 'Slack', teams: 'Microsoft Teams', nook: 'Nook' }
-const EVENT: Record<string, string> = { mention: 'Mention', returned: 'Submission returned', 'approval-pending': 'Ready for approval', 'metric-task': 'Task assigned' }
+const EVENT: Record<string, string> = { 'approval-step-pending': 'Department review pending', mention: 'Mention', returned: 'Submission returned', 'approval-pending': 'Ready for approval', 'metric-task': 'Task assigned' }
 
 /** Each person's single notification preference and their recent notifications. */
 export function Notifications({ state }: { state: D }) {

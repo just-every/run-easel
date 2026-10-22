@@ -1,3 +1,4 @@
+import { approvalChains, approvalChainView } from './approval-chains'
 import { sheetConnection, sheetStatus } from './sheet-connection'
 import { sheetLinkCommands, sheetLinks } from './sheet-links'
 import { CalculationPending } from './calculation-status'
@@ -118,7 +119,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const { state, revision } = await load(c.env.DB)
  const current = access(state, a)
  if (a.token) requireMember(current)
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -191,6 +192,7 @@ api.post('/api/easel/sheet-links/:op', async c => {
  return c.json(result)
 })
 const newNotifications = (ctx: Awaited<ReturnType<typeof open>>) => [...ctx.s.values()].filter(r => r.kind === 'notification' && !ctx.before.has(`notification:${r.id}`)).map(r => r.id)
+api.get('/api/easel/approval-chains/:scenario', c => read(c, ctx => approvalChainView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.env)))
 api.post('/api/easel/notifications/preference', async c => {
  const ctx = await open(c), result = await savePreference(ctx, c.env, await body(c))
@@ -363,7 +365,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

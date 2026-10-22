@@ -667,7 +667,7 @@ Relationship to global approval and publication. `EASEL-010` approval also requi
 
 `tests/approval-chains-browser.mjs` (`CYCLE-007`): finance configures the chain, and the reviewers approve and return in order, at 1440 and 390 pixels without page overflow.
 
-*Status:* missing.
+*Status:* partial. Ordered reviews and API/export/restore proof ship; native browser proof and exact-SHA Verify are pending.
 
 ### Reporting
 
@@ -1108,8 +1108,8 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 48 | 16 | 23 | 87 |
-| All | 65 | 16 | 23 | 104 |
+| Target and push further | 48 | 17 | 22 | 87 |
+| All | 65 | 17 | 22 | 104 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1180,7 +1180,7 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | `CYCLE-004` | Private and shared scenarios | target | done | `tests/sandboxes.test.mjs` `tests/sandboxes-browser.mjs` | None for current named-person doors; ACCESS-001 inherits group shares |
 | `CYCLE-005` | Quarterly reforecasts and version comparison | target | done | `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs` | Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore |
 | `CYCLE-006` | Long-range plan linked to the operating plan | target | done | `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs` | Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths |
-| `CYCLE-007` | Per-department ordered approval chains | target | missing |  | No approval-chain configuration, ordered department review steps, scoped reviewer authority, chain versions or chain gate on budget approval; submissions go from contributor to full-scope finance only (`src/easel/cycle.ts`, `src/easel/access.ts`) |
+| `CYCLE-007` | Per-department ordered approval chains | target | partial | `tests/approval-chains.test.mjs` — CYCLE-007 ordered department reviews bind live authority, exact content, versions, history, notifications and portable records | Native 1440/390 browser proof and exact-SHA Verify pending |
 | `REPORT-001` | Report builder | target | done | `tests/saved-reports.test.mjs` (REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes; Report authors stay within their department and scheduled copies follow current recipients and company DST; Saved report dimension and account hierarchies preserve source cuts, frozen versions and blocked-cell availability); `tests/saved-reports-browser.mjs` (native quarter builder, filter/highlight, share, personal table/chart dashboard, Excel and named schedule at 1440/390) | None for current report doors; REPORT-003/004/007 inherit their new report surfaces |
 | `REPORT-002` | Dashboards | target | done | `src/easel/dashboards.ts` `tests/dashboards.test.mjs` `tests/dashboards-browser.mjs` |  |
 | `REPORT-003` | Board pack | target | partial | `src/easel/review.ts` `src/easel/pack-documents.ts` `tests/easel.test.mjs` | Immutable monthly review packs with decisions ship as HTML and CSV; templates, quarter packs, refresh before publish, PDF, PowerPoint and Excel exports and saving to file stores are missing |

@@ -1,3 +1,5 @@
+import { reconcileApprovalChains } from './approval-chains'
+import { access } from './access'
 // Loading and saving the editable model. Every save is one D1 batch fenced by
 // the model revision read at load and by the actor's current native session,
 // so a concurrent change or a revoked session writes nothing.
@@ -45,6 +47,7 @@ export async function sha256(text: string) {
 
 /** `at` is the save's own time; only the demo seeder passes one, so its story's records carry the story's moments. */
 export async function save(db: D1Database, a: Actor, before: State, after: State, revision: number, activity: Activity[], snapshots: Snapshot[] = [], finance = false, extra: D1PreparedStatement[] = [], at = new Date().toISOString()) {
+ await reconcileApprovalChains({ s: after, x: access(after, a), db, activity, snapshots, now: at })
  const auth = authority(a, finance)
  const guard = (extra = '') => db.prepare(`INSERT INTO e_guard SELECT CASE WHEN (${auth.sql})${extra} THEN 1 ELSE 0 END`)
  const q: D1PreparedStatement[] = [guard(' AND (SELECT revision FROM e_meta WHERE id=1)=?').bind(...auth.params, revision)]

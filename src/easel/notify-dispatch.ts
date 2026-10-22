@@ -8,7 +8,7 @@ import { ACCEPTED_LABEL, chatReady, sendChat, type ChatChannel } from './calenda
 import { zonedInstant } from './calendar-time'
 import type { Context } from './context'
 import { workspace } from './model'
-import { EVENT_LABEL, canRead, preference } from './notify'
+import { EVENT_LABEL, canReadNotification, preference } from './notify'
 import { all, find, get, put, type Data } from './types'
 
 type Saved = Context & { revision: number; before: Context['s'] }
@@ -40,7 +40,7 @@ export async function deliverNotifications(ids: string[], original: Bindings, op
   const pref = n.status === 'new' ? preference(c, n.recipient) : { mode: n.channel === 'email' ? 'email' : 'chat', channel: n.channel }
   if (pref.mode === 'digest') { record('digest-queued', { channel: 'digest' }); await commit(c); continue }
   const channel = pref.mode === 'email' ? 'email' : pref.channel
-  if (!(await canRead(c, n.recipient, n.department))) { record('blocked', { channel, reason: 'The recipient can no longer read this record', completedAt: c.now }); await commit(c); continue }
+  if (!(await canReadNotification(c, n))) { record('blocked', { channel, reason: 'The recipient can no longer read this record', completedAt: c.now }); await commit(c); continue }
   if (channel !== 'email' && !(await chatReady(c, env, channel))) { record('blocked', { channel, reason: 'That chat channel is no longer connected', completedAt: c.now }); await commit(c); continue }
   const message = n.message ?? (channel === 'email' ? { subject: `${EVENT_LABEL[n.event]}: ${n.title}`, text: [`${EVENT_LABEL[n.event]}.`, '', n.title, '', ...(n.body ? [n.body, ''] : []), `Open it in Easel: ${link(env.AUTH_ORIGIN, n)}`].join('\n') } : { subject: NOTICE, text: NOTICE })
   record('sending', { channel, message, attempts: n.attempts + 1, dispatchedAt: c.now })
@@ -80,7 +80,7 @@ export async function deliverDigests(ids: string[], original: Bindings, open: Op
   if (d.status !== 'pending') continue
   const items = d.notifications.map((n: string) => get(c.s, 'notification', n))
   const readable: Data[] = []
-  for (const n of items) if (await canRead(c, d.recipient, n.department)) readable.push(n)
+  for (const n of items) if (await canReadNotification(c, n)) readable.push(n)
   const message = d.message ?? { subject: `Easel daily digest: ${readable.length} notification${readable.length === 1 ? '' : 's'}`, text: ['Your Easel notifications since the last digest:', '', ...readable.map(n => `- ${EVENT_LABEL[n.event]}: ${n.title}\n  ${link(env.AUTH_ORIGIN, n)}`)].join('\n') }
   const save = (status: string, extra: Data = {}) => { d = { ...d, ...extra, status, history: [...d.history, { status, at: c.now }] }; put(c.s, 'notification-digest', id, d); c.activity.push({ action: 'notification-digest-result', record: id, detail: { status } }) }
   if (!readable.length) { save('blocked', { reason: 'Nothing the recipient can still read', completedAt: c.now }); await commit(c); continue }

@@ -36,6 +36,7 @@
     {
       "id": "budget-cycle",
       "clauses": [
+        "CYCLE-007",
         "EASEL-009",
         "EASEL-010"
       ]

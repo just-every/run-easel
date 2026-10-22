@@ -1,3 +1,4 @@
+import { beginDepartmentReview, mayReturn, returnedReview, requireCompletedChains } from './approval-chains'
 import { boundEntity } from './entity-scope'
 import { ledgerContext, requireBalancedClose } from './ledger-context'
 import { workingCalculation } from './calculation'
@@ -26,7 +27,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   for (const d of ids) {
    const dept = get(s, 'department', d)
    const prior = find(s, 'submission', `${budget.id}|${dept.id}`)
-   requireThat(!prior || prior.status !== 'submitted', `${dept.name} has already submitted`, 409)
+   requireThat(!prior || !['submitted', 'reviewing'].includes(prior.status), `${dept.name} has already submitted`, 409)
    put(s, 'submission', `${budget.id}|${dept.id}`, { scenario: budget.id, department: dept.id, status: 'requested', due, requestedBy: x.actor.email, requestedAt: c.now, history: [...(prior?.history ?? []), { status: 'requested', by: x.actor.email, at: c.now }] })
   }
   c.activity.push({ action: op, record: budget.id, scenario: budget.id, detail: { departments: ids, due } })
@@ -53,15 +54,17 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   requireThat(scenario.status === 'working', 'The budget is already approved', 409)
   put(s, 'submission', sub.id, { ...sub, status: 'submitted', submittedBy: x.actor.email, submittedAt: c.now, submittedRevision: scenario.revision, note: typeof b.note === 'string' ? b.note.slice(0, 2000) : '', history: [...sub.history, { status: 'submitted', by: x.actor.email, at: c.now, revision: scenario.revision }] })
   c.activity.push({ action: op, record: sub.id, scenario: scenario.id, before: scenario.revision, after: scenario.revision, detail: { department: sub.department } })
+  await beginDepartmentReview(c, get(s, 'submission', sub.id))
   if (all(s, 'submission').filter(x => x.scenario === scenario.id).every(x => x.status === 'submitted')) notify(c, 'approval-pending', await financeRecipients(c), { title: `${scenario.name}: every requested department has submitted`, tab: 'cycle', record: scenario.id, department: '' })
   return get(s, 'submission', sub.id)
  }
  if (op === 'return-submission') {
-  requireCapability(x, 'approvals', s)
   const sub = get(s, 'submission', `${b.scenario}|${b.department}`, 'submission')
-  requireThat(sub.status === 'submitted', 'Only a submitted department can be returned', 409)
+  requireThat(await mayReturn(c, sub), 'Only finance or a current or completed step reviewer can return this submission', 403)
+  requireThat(get(s, 'scenario', sub.scenario).status === 'working', 'The budget is already approved', 409)
+  requireThat(['submitted', 'reviewing'].includes(sub.status), 'Only a submitted department can be returned', 409)
   const reason = text(b.reason, 'Reason', 2000)
-  put(s, 'submission', sub.id, { ...sub, status: 'returned', history: [...sub.history, { status: 'returned', by: x.actor.email, at: c.now, reason }] })
+  put(s, 'submission', sub.id, returnedReview(c, sub, reason))
   c.activity.push({ action: op, record: sub.id, scenario: sub.scenario, detail: { department: sub.department, reason } })
   notify(c, 'returned', all(s, 'member').filter(m => m.active && m.role === 'contributor' && m.departments?.includes(sub.department)).map(m => m.email), { title: `${get(s, 'scenario', sub.scenario).name} · ${get(s, 'department', sub.department).name} submission returned: ${reason}`, tab: 'cycle', record: sub.id, department: sub.department })
   return get(s, 'submission', sub.id)
@@ -71,6 +74,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const budget = scenarioAccess(s, x, b.scenario)
   requireThat(budget.kind === 'budget' && budget.status === 'working', 'Only a working budget can be approved', 409)
   requireThat(Number(b.revision) === budget.revision, 'The budget changed after you reviewed it; review its current revision', 409)
+  await requireCompletedChains(c, budget.id)
   const open = all(s, 'submission').filter(x => x.scenario === budget.id && x.status !== 'submitted')
   requireThat(!open.length, `Waiting for submissions from ${open.map(o => find(s, 'department', o.department)?.name).join(', ')}`, 409)
   const w = workspace(s)

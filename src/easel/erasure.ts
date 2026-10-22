@@ -30,7 +30,9 @@ export async function erasure(c: Context, op: string, b: Data): Promise<Data | u
  let records=0
  for (const [rowKey,row] of [...c.s]) {
   if (row.kind === 'member' && row.id === email || row.kind === 'pay-grant' && row.id === email) { c.s.delete(rowKey); records++; continue }
-  if (row.kind === 'erasure') continue
+  // Like frozen snapshots, review captures retain their bytes; the durable
+  // erasure map filters every read and portable export.
+  if (['erasure', 'approval-chain-version', 'approval-content'].includes(row.kind)) continue
   const value=transformErased(row.value,[map]); const id=transformErased(row.id,[map])
   if (JSON.stringify(value) === JSON.stringify(row.value) && id === row.id) continue
   if (id !== row.id) c.s.delete(rowKey)

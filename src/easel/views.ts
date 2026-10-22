@@ -1,3 +1,4 @@
+import { managesChains } from './approval-chains'
 import { scopedCalculation, scopedReader } from './group-projections'
 import { dimensionStructure } from './dimensions'
 import { visibleNativeDependencies, visibleNativeInput } from './native-visibility'
@@ -53,7 +54,7 @@ export async function stateView(c: Context) {
  const { s, x } = c
  const finance = x.role === 'finance'
  const workspace = find(s, 'workspace', 'main') ?? null
- const me = { email: x.actor.email, name: x.actor.name, role: x.role, departments: x.departments, payDetail: x.payDetail === true, capabilities: x.capabilities ?? [], readDepartments: x.readDepartments ?? [], groupOnly: x.groupOnly === true, owner: x.actor.baseRole === 'owner' && !x.actor.token }
+ const me = { approvals: managesChains(x, s), email: x.actor.email, name: x.actor.name, role: x.role, departments: x.departments, payDetail: x.payDetail === true, capabilities: x.capabilities ?? [], readDepartments: x.readDepartments ?? [], groupOnly: x.groupOnly === true, owner: x.actor.baseRole === 'owner' && !x.actor.token }
  if (!x.role) return { me, workspace: null }
  const snapshots = (await snapshotList(c.db)).filter(sn => (!sn.scenario || canSeeScenario(x, get(s, 'scenario', sn.scenario))) && ( finance || sn.kind !== 'forecast' || x.role === 'contributor'))
  const view = {
