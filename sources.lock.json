@@ -3803,7 +3803,7 @@
       "executable": false
     },
     "src/ui/modeler.tsx": {
-      "sha256": "e132a2f0d70e55649d1de755e837cc5ef58738294bc0665a3a2d7f425309e66f",
+      "sha256": "875fb5bc8f4317a4d665468d128f177ed2b554fc046440669e77e58a2d381783",
       "executable": false
     },
     "src/ui/move-import.tsx": {
@@ -4355,7 +4355,7 @@
       "executable": false
     },
     "tests/modeler-browser.mjs": {
-      "sha256": "87789eca25bbeaffa9bad11fe938f5c538495168c4df8f984f1c1090d4273a39",
+      "sha256": "ccb4e520bb786af2a72f6b889e565cf9d558e15cda8497d9d2666532df6f8ca6",
       "executable": false
     },
     "tests/modeler-proposal-fixture.mjs": {

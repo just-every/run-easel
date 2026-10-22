@@ -36,10 +36,13 @@ export function Modeler({ state, refresh }: Pick<Shared, 'state' | 'refresh'>) {
   </>}
   {preview && <div aria-label="Exact modeler request">
    <h3>Review the exact modeler request</h3>
-   <p>Destination: https://api.openai.com/v1/responses. Source revision {preview.sourceRevision}. This request can contain planning salaries; person and holder identities are excluded.</p>
-   <p>Conservative allowance: USD {usd(preview.reserveMicroUsd)} · {preview.inputTokenAllowance} input tokens (UTF-8 request bytes plus 4,096) · {preview.maxOutputTokens} output token limit.</p>
-   <p style={{ overflowWrap: 'anywhere' }}>Request fingerprint: {preview.fingerprint}</p>
-   <pre style={wrapped}>{JSON.stringify(preview.request, null, 2)}</pre>
+   <p>Send source revision {preview.sourceRevision} to your chosen OpenAI model. This request can contain planning salaries; person and holder identities are excluded.</p>
+   <p>Conservative allowance for this request: USD {usd(preview.reserveMicroUsd)}.</p>
+   <details><summary>Inspect the complete provider request</summary>
+    <p>Destination: https://api.openai.com/v1/responses. Input allowance: {preview.inputTokenAllowance} tokens; output limit: {preview.maxOutputTokens} tokens.</p>
+    <p style={{ overflowWrap: 'anywhere' }}>Request fingerprint: {preview.fingerprint}</p>
+    <pre style={wrapped}>{JSON.stringify(preview.request, null, 2)}</pre>
+   </details>
    <Form key={preview.fingerprint} submit="Generate draft proposal" onSubmit={async values => {
     const result = await api('modeler/generate', { from: preview.from, request: preview.requestText, fingerprint: preview.fingerprint, consent: values.consent })
     setPreview(null); await reload(); setOutcome(result); if (result.proposal) setChosen(result.proposal)
