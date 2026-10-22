@@ -24,6 +24,9 @@ import { publicLedger } from './ledger-public'
 import { ledgerAllocation } from './ledger-allocation'
 import { workbookDrivers } from './workbook-model'
 import { headcountView } from './headcount'
+import { forecastLearning } from './agents/forecast-learning'
+import { dealHistory } from './agents/deal-outcomes'
+import { learningCommands } from './agents/learning-commands'
 import { payrollImport } from './payroll-import'
 import { payrollView } from './payroll-reconciliation'
 import { erasure, erasedView } from './erasure'
@@ -146,6 +149,8 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
 }
 
 api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
+api.get('/api/easel/forecast-learning/:scenario', c => read(c, ctx => forecastLearning(ctx, c.req.param('scenario'))))
+api.get('/api/easel/deal-history', c => read(c, async ctx => { requireFinance(ctx.x); return { deals: dealHistory(ctx) } }))
 api.get('/api/easel/payroll/:scenario', c => read(c, ctx => payrollView(ctx, c.req.param('scenario'))))
 
 api.get('/api/easel/export', async c => {
@@ -376,7 +381,7 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
 })
 
-const commands = [approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
