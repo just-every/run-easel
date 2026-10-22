@@ -3,32 +3,99 @@
     {
       "title": "Start here",
       "pages": [
-        { "slug": "overview", "title": "What Easel is", "file": "overview.md", "summary": "One company's next twelve months of revenue, costs, hiring and cash, with the arithmetic behind every number." },
-        { "slug": "getting-started", "title": "Run Easel", "file": "getting-started.md", "summary": "Get Easel and start it on your own computer with one line, signed in as the owner." },
-        { "slug": "first-plan", "title": "Set up your plan", "file": "first-plan.md", "summary": "Name the company, choose the fiscal year, then add departments, planning lines and people." }
+        {
+          "slug": "overview",
+          "title": "What Easel is",
+          "file": "overview.md",
+          "summary": "One company's next twelve months of revenue, costs, hiring and cash, with the arithmetic behind every number."
+        },
+        {
+          "slug": "getting-started",
+          "title": "Run Easel",
+          "file": "getting-started.md",
+          "summary": "Get Easel and start it on your own computer with one line, signed in as the owner."
+        },
+        {
+          "slug": "first-plan",
+          "title": "Set up your plan",
+          "file": "first-plan.md",
+          "summary": "Name the company, choose the fiscal year, then add departments, planning lines and people."
+        }
       ]
     },
     {
       "title": "Plan the year",
       "pages": [
-        { "slug": "build-the-plan", "title": "Build the plan", "file": "build-the-plan.md", "summary": "Revenue drivers, positions, expenses, shared costs and opening cash, and how to read any number's arithmetic." },
-        { "slug": "budget-cycle", "title": "Run the budget cycle", "file": "budget-cycle.md", "summary": "Request department submissions, return or approve them, and freeze the budget exactly as approved." },
-        { "slug": "scenarios", "title": "Scenarios and proposals", "file": "scenarios.md", "summary": "Branch a downside, compare profit and closing cash month by month, and promote proposals at an exact revision." },
-        { "slug": "monthly-review", "title": "Close the month", "file": "monthly-review.md", "summary": "Replace a month with actuals, explain each variance, and publish the review pack." }
+        {
+          "slug": "build-the-plan",
+          "title": "Build the plan",
+          "file": "build-the-plan.md",
+          "summary": "Revenue drivers, positions, expenses, shared costs and opening cash, and how to read any number's arithmetic."
+        },
+        {
+          "slug": "budget-cycle",
+          "title": "Run the budget cycle",
+          "file": "budget-cycle.md",
+          "summary": "Request department submissions, return or approve them, and freeze the budget exactly as approved."
+        },
+        {
+          "slug": "scenarios",
+          "title": "Scenarios and proposals",
+          "file": "scenarios.md",
+          "summary": "Branch a downside, compare profit and closing cash month by month, and promote proposals at an exact revision."
+        },
+        {
+          "slug": "monthly-review",
+          "title": "Close the month",
+          "file": "monthly-review.md",
+          "summary": "Replace a month with actuals, explain each variance, and publish the review pack."
+        }
       ]
     },
     {
       "title": "Move in",
       "pages": [
-        { "slug": "move-in", "title": "Move in your actuals and spreadsheet", "file": "move-in.md", "summary": "Bring in a general-ledger CSV and an Excel planning workbook, preview them, accept them, and undo them." }
+        {
+          "slug": "move-in",
+          "title": "Move in your actuals and spreadsheet",
+          "file": "move-in.md",
+          "summary": "Bring in a general-ledger CSV and an Excel planning workbook, preview them, accept them, and undo them."
+        },
+        {
+          "slug": "move-adaptive-format",
+          "title": "Adaptive Planning exports",
+          "file": "move-adaptive-format.md",
+          "summary": "Original metadata, account data and workforce exports with reviewed buyer mappings."
+        },
+        {
+          "slug": "move-tabular-formats",
+          "title": "Other planning exports",
+          "file": "move-tabular-formats.md",
+          "summary": "Documented Planful, Anaplan, Runway and Pigment export profiles and buyer mappings."
+        }
       ]
     },
     {
       "title": "Keep it safe",
       "pages": [
-        { "slug": "backup-and-restore", "title": "Back up and restore", "file": "backup-and-restore.md", "summary": "Export the whole installation to one file and restore it on another computer." },
-        { "slug": "people-and-access", "title": "People and access", "file": "people-and-access.md", "summary": "Who can see and change what: finance, contributors and viewers, and private pay." },
-        { "slug": "share-with-your-team", "title": "Share it with your team", "file": "share-with-your-team.md", "summary": "Check a deployment locally, then put Easel on your own account for the people who plan with you." }
+        {
+          "slug": "backup-and-restore",
+          "title": "Back up and restore",
+          "file": "backup-and-restore.md",
+          "summary": "Export the whole installation to one file and restore it on another computer."
+        },
+        {
+          "slug": "people-and-access",
+          "title": "People and access",
+          "file": "people-and-access.md",
+          "summary": "Who can see and change what: finance, contributors and viewers, and private pay."
+        },
+        {
+          "slug": "share-with-your-team",
+          "title": "Share it with your team",
+          "file": "share-with-your-team.md",
+          "summary": "Check a deployment locally, then put Easel on your own account for the people who plan with you."
+        }
       ]
     }
   ]
