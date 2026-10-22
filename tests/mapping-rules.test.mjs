@@ -416,6 +416,8 @@ test('Source refresh proposes a reasoned mapping and exact impacts, blocks incom
  assert.ok(guard.impacts.reports.some(s=>s.id===report.id))
  assert.ok(guard.impacts.packs.some(s=>s.id===pack.id && /unchanged/.test(s.status)))
  assert.ok(guard.impacts.alerts.some(s=>s.id===rule.id))
+ await h.get(`/api/easel/scenario/${forecast.id}`,h.owner,409)
+ await h.get(`/api/easel/dashboards/${report.id}/report`,h.owner,409)
  let checks=await h.command('cash-alert-check',{})
  assert.deepEqual(checks.sent,[])
  assert.match(checks.blocked.find(b=>b.rule===rule.id).reason,/2026-01.*Missing payroll run/)

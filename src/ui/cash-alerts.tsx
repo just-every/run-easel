@@ -3,7 +3,7 @@ import { Action, api, command, decimalText, Field, Form, money as format, Person
 
 type Rule = { id: string; name: string; kind: 'floor' | 'below-plan' | 'bank-below-plan' | 'runway'; basis?: 'amount' | 'percent'; amountCents?: number; percentBps?: number; runwayHundredths?: number; intervalDays: number; enabled: boolean; revision: number; currency: string; lastCheckedAt?: string; blocked?: string }
 type Send = { n: number; at: string; reason: 'breach' | 'worse' | 'interval'; headline: string; detail: string[]; cause: string; recipients: string[] }
-type Alert = { id: string; rule: string; ruleName: string; status: 'open' | 'ended'; openedAt: string; sends: Send[]; acknowledgments: { by: string; at: string; send: number }[]; endedAt?: string; endedReason?: string; revision: number }
+type Alert = { blocked?: string; id: string; rule: string; ruleName: string; status: 'open' | 'ended'; openedAt: string; sends: Send[]; acknowledgments: { by: string; at: string; send: number }[]; endedAt?: string; endedReason?: string; revision: number }
 type Check = { date: string; zone: string; scheduledAt: string; ranAt: string; sent: string[] }
 type List = { zone: string; checkHour: number; rules: Rule[]; alerts: Alert[]; checks: Check[] }
 
@@ -38,6 +38,7 @@ export function CashAlerts({ state }: { state: D }) {
    const acked = a.acknowledgments.find(k => k.send === latest.n)
    return <li key={a.id} id={`cash-alert-${a.id}`}>
     <h3>{a.ruleName} <span className="pill">{a.status === 'open' ? 'Open' : 'Ended'}</span></h3>
+    {a.blocked && <p role="status" className="error">Current assessment blocked: {a.blocked}. The previous sends below are historical.</p>}
     <p>{latest.headline}.</p>
     <ul>{latest.detail.map((d, i) => <li key={i} style={{ overflowWrap: 'anywhere' }}>{d}</li>)}</ul>
     <p style={{ overflowWrap: 'anywhere' }}>Cause: {latest.cause}.</p>

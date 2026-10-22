@@ -1,3 +1,5 @@
+import { sourceGuardCommands, sourceGuardView } from './agents/source-guard'
+import { ownerQuestions, ownerQuestionView } from './agents/owner-questions'
 import { approvalChains, approvalChainView } from './approval-chains'
 import { sheetConnection, sheetStatus } from './sheet-connection'
 import { sheetLinkCommands, sheetLinks } from './sheet-links'
@@ -158,6 +160,8 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
 
 api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/forecast-learning/:scenario', c => read(c, ctx => forecastLearning(ctx, c.req.param('scenario'))))
+api.get('/api/easel/source-guard', c => read(c, async ctx => sourceGuardView(ctx)))
+api.get('/api/easel/owner-questions', c => read(c, ownerQuestionView))
 api.get('/api/easel/deal-history', c => read(c, async ctx => { requireFinance(ctx.x); return { deals: dealHistory(ctx) } }))
 api.get('/api/easel/payroll/:scenario', c => read(c, ctx => payrollView(ctx, c.req.param('scenario'))))
 
@@ -435,7 +439,7 @@ api.post('/api/easel/connections/pack-stores/:store/:op', async c => {
  return c.json(await packStoreStatus(ctx))
 })
 
-const commands = [leverCommands, constraintCommands, biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [sourceGuardCommands, ownerQuestions, leverCommands, constraintCommands, biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

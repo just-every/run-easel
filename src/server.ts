@@ -1,3 +1,4 @@
+import { runOwnerQuestionSchedule } from './easel/agents/owner-question-schedule'
 import { runSheetSchedules } from './easel/sheet-schedule'
 import { runBiDrops } from './easel/bi-drops'
 import { runSavedReportSchedules } from './easel/saved-report-dispatch'
@@ -34,7 +35,7 @@ export default withDemo({
   },
   async scheduled(_controller, env) {
     await runCalendarSchedule(env)
-    await runActionChases(env)
+    await runActionChases(env); await runOwnerQuestionSchedule(env)
     await runSavedReportSchedules(env); await runCashAlertSchedule(env); await runSheetSchedules(env); await runBiDrops(env)
   },
 } satisfies ExportedHandler<Bindings>, { seed: seedDemo })

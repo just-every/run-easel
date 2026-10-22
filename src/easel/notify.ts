@@ -1,3 +1,4 @@
+import { canReadQuestion } from './agents/owner-questions'
 import { canReceiveChainNotice } from './approval-chains'
 // Notifications from discussions and events (CYCLE-003). Commands record one
 // notification per event and recipient inside their own fenced save; delivery
@@ -12,7 +13,7 @@ import type { Context } from './context'
 import { all, choice, find, put, requireThat, uid, type Data } from './types'
 
 export const MODES = ['email', 'digest', 'chat'] as const
-export const EVENT_LABEL: Record<string, string> = { 'approval-step-pending': 'Department review pending', mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'action-chase': 'Update due on your action', 'cash-alert': 'Cash alert', 'decision-item': 'Decision needed' }
+export const EVENT_LABEL: Record<string, string> = { 'approval-step-pending': 'Department review pending', mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'action-chase': 'Update due on your action', 'cash-alert': 'Cash alert', 'decision-item': 'Decision needed', 'owner-question': 'Owner assumption question', 'owner-question-escalation': 'Unanswered owner assumption' }
 export const preference = (c: Context, email: string): Data => find(c.s, 'notification-preference', email) ?? { mode: 'email', channel: null }
 
 /** Whether `email` may currently read a department's detail (finance always). */
@@ -49,7 +50,9 @@ export async function notificationView(c: Context, env: Bindings) {
  requireMember(c.x)
  const channels = []
  for (const ch of CHAT_CHANNELS) if (await chatReady(c, env, ch)) channels.push(ch)
- return { preference: preference(c, c.x.actor.email), channels, notifications: all(c.s, 'notification').filter(n => n.recipient === c.x.actor.email).map((n): Data => ({ ...n, message: undefined })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50) }
+ const permitted: Data[] = []
+ for (const n of all(c.s, 'notification').filter(n => n.recipient === c.x.actor.email)) if (!['owner-question', 'owner-question-escalation'].includes(n.event) || await canReadNotification(c, n)) permitted.push(n)
+ return { preference: preference(c, c.x.actor.email), channels, notifications: permitted.map((n): Data => ({ ...n, message: undefined })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50) }
 }
 
 export async function savePreference(c: Context, env: Bindings, b: Data) {
@@ -64,4 +67,6 @@ export async function savePreference(c: Context, env: Bindings, b: Data) {
 }
 const get = (c: Context) => preference(c, c.x.actor.email)
 
-export async function canReadNotification(c: Context, n: Data) { return n.event === 'approval-step-pending' ? canReceiveChainNotice(c, n) : canRead(c, n.recipient, n.department) }
+export async function canReadNotification(c: Context, n: Data) {
+ if (['owner-question', 'owner-question-escalation'].includes(n.event)) { const q = find(c.s, 'owner-question', n.record); return !!q && q.status !== 'canceled' && (n.event !== 'owner-question' || q.status === 'open') && await canReadQuestion(c, q, n.recipient) }
+ return n.event === 'approval-step-pending' ? canReceiveChainNotice(c, n) : canRead(c, n.recipient, n.department) }

@@ -21,8 +21,9 @@ function payrollEvidence(c:Context, guard:Data, expected:Data) {
  const imports=all(c.s,'payroll-import').filter(i=>i.status==='imported' && i.scenario===guard.scenario && i.provider===expected.provider)
  return all(c.s,'payroll-run').filter(r=>imports.some(i=>i.destination===r.batch) && r.payDate===expected.payDate).length >= expected.rows
 }
+function currentIssues(c:Context,g:Data):Data[] { return Date.parse(c.now)>Date.parse(g.nextExpectedAt) && !g.issues.some((i:Data)=>i.kind==='freshness') ? [...g.issues,{id:'freshness',kind:'freshness',reason:`Source stopped updating: next update was expected ${g.nextExpectedAt}`}] : g.issues }
 function unresolved(c:Context,g:Data) {
- return g.issues.filter((i:Data)=>{
+ return currentIssues(c,g).filter((i:Data)=>{
   const d=[...g.decisions].reverse().find((d:Data)=>d.issue===i.id)
   if(i.kind==='payroll' && payrollEvidence(c,g,i.expected))return false
   if(!d)return true
@@ -33,11 +34,12 @@ function unresolved(c:Context,g:Data) {
  })
 }
 
-export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,unresolved:unresolved(c,g)})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
+export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g)})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
- const guard=all(c.s,'source-guard').find(g=>g.status!=='completed' && g.scenario===forecast.id && unresolved(c,g).length)
- return guard ? `Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ')}` : null
+ if(forecast.status==='frozen')return null
+ const guard=all(c.s,'source-guard').find(g=>(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
+ return guard ? `Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}` : null
 }
 /** Called after actuals journal completion, in the same fenced save as batch acceptance. */
 export function completeSourceGuards(c:Context,batch:Data) {
@@ -51,11 +53,12 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
  if(!['source-guard-stage','source-guard-review'].includes(op))return
  authority(c)
  if(op==='source-guard-stage') {
+  requireThat(!all(c.s,'batch').some(b=>['importing','undoing'].includes(b.status)), 'Complete the in-progress actuals import before staging another source refresh',409)
   const id=text(b.source,'Source ID',100), label=text(b.label,'Source label'), period=month(b.month,'Coverage month'), scenario=get(c.s,'scenario',b.scenario)
   requireThat(scenario.kind==='forecast' && scenario.status!=='frozen','Choose a working forecast')
   const prior=find(c.s,'source-guard',id)
   requireThat(!prior || b.revision===prior.revision,'The source review changed; reload before staging again',409)
-  requireThat(!prior || prior.status==='completed' || !unresolved(c,prior).length,'Resolve the existing source issues before replacing its refresh',409)
+  requireThat(!prior || prior.status==='completed' || !unresolved(c,prior).filter((i:Data)=>i.kind!=='freshness').length,'Resolve the existing source issues before replacing its refresh',409)
   const payload=b.actuals ?? b
   const step=await actualsCommand(c,'preview',payload), preview=step!.result
   const raw=await readActuals({...payload,dateFormat:payload.dateFormat ?? workspace(c.s).dateFormat},workspace(c.s))
@@ -81,7 +84,7 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
  requireThat(Array.isArray(b.decisions) && b.decisions.length>0,'Choose source issues to review')
  const decisions=[...guard.decisions]
  for(const decision of b.decisions) {
-  const issue=guard.issues.find((i:Data)=>i.id===decision.issue)
+  const issue=currentIssues(c,guard).find((i:Data)=>i.id===decision.issue)
   requireThat(issue && (unresolved(c,guard).some((i:Data)=>i.id===issue.id) || decision.action==='evidence' && issue.kind==='payroll' && !decisions.some((d:Data)=>d.issue===issue.id)),'Choose an unresolved source issue',409)
   const reason=text(decision.reason,'Finance review reason',2000)
   if(decision.action==='map') {
@@ -96,7 +99,7 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
   }
   decisions.push({issue:issue.id,action:decision.action,target:decision.target ?? null,reason,by:c.x.actor.email,at:c.now})
  }
- const updated:Data={...guard,decisions,revision:guard.revision+1}
+ const updated:Data={...guard,issues:currentIssues(c,guard),decisions,revision:guard.revision+1}
  updated.status=unresolved(c,updated).length?'review':'ready'
  put(c.s,'source-guard',guard.id,updated)
  c.activity.push({action:op,record:guard.id,scenario:guard.scenario,detail:{decisions:decisions.slice(guard.decisions.length)}})

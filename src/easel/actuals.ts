@@ -1,3 +1,4 @@
+import { assertSourceGuardAcceptance, completeSourceGuards } from './agents/source-guard'
 import { resolveDimensions } from './dimension-mapping'
 import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { balanceTarget } from './balance-targets'
@@ -180,6 +181,7 @@ export async function actualsCommand(c: Context, op: string, b: Data): Promise<K
  if (op === 'preview') return { result: publicPreview(await previewActuals(c, b)) }
  if (op === 'commit') {
   const p = await previewActuals(c, b)
+  assertSourceGuardAcceptance(c, p.sha256)
   requireThat(p.accepted > 0, 'Nothing in this file can be accepted', 409)
   requireThat(!p.unmappedAccounts.length, `Map these accounts first: ${p.unmappedAccounts.join(', ')}`, 409)
   requireThat(!p.unmappedDepartments.length, `Map these departments first: ${p.unmappedDepartments.join(', ')}`, 409)
@@ -235,6 +237,7 @@ function finishBatch(c: Context, id: string, job: Data) {
  const batch = get(c.s, 'batch', id)
  const done = job.state === 'completed'
  put(c.s, 'batch', id, { ...batch, status: done ? 'accepted' : 'importing', jobState: job.state, ...(done ? { acceptedBy: c.x.actor.email, acceptedAt: c.now } : {}) })
+ if (done) completeSourceGuards(c, batch)
  if (done) c.activity.push({ action: 'actuals-accepted', record: id, detail: { file: batch.file, rows: batch.accepted } })
  return { batch: get(c.s, 'batch', id), job: { id: job.id, state: job.state, checkpoint: job.checkpoint, total: job.total } }
 }

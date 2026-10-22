@@ -1,3 +1,4 @@
+import { OwnerQuestions } from './owner-questions'
 import { useDate } from './shared'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
@@ -73,6 +74,7 @@ export function Review({ state, refresh }: Shared) {
   {(me.role === 'finance' || me.role === 'contributor') && closedMonths.includes(month) && <DepartmentStatements state={state} month={month} setMonth={setMonth} refresh={refresh} />}
   {me.role === 'finance' && closedMonths.includes(month) && <ParallelMonth key={month} state={state} month={month} />}
   {me.role === 'finance' && forecast && state.workspace.cashAgreement && <ConstraintWatch state={state} forecast={forecast} refresh={refresh} />}
+  {forecast && me.role !== 'viewer' && <OwnerQuestions state={state} forecast={forecast} refresh={refresh} />}
   {me.role === 'finance' && forecast?.actualsThrough && <ForecastLearning state={state} forecast={forecast} refresh={refresh} />}
   <section className="card">
    <h2>Review packs</h2>

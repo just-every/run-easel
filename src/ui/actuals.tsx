@@ -1,3 +1,4 @@
+import { SourceGuard } from './source-guard'
 import { IncumbentImport } from './move-import'
 import { BalanceActuals } from './balance-actuals'
 import { BALANCE_TARGETS } from '../easel/balance-targets'
@@ -25,6 +26,7 @@ export function Actuals({ state, refresh }: Shared) {
  useEffect(() => { api('actuals').then(setReconciliation) }, [state])
  const currency = state.workspace.currency
  return <>
+  <SourceGuard state={state} refresh={refresh} />
   <CsvImport state={state} refresh={refresh} />
   <section className="card">
    <h2>Imports</h2>

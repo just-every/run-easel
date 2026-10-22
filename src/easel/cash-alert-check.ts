@@ -1,3 +1,4 @@
+import { sourceGuardBlock } from './agents/source-guard'
 import { plaidCashSource } from './plaid-connection'
 import { periodForKey } from './fiscal-calendar'
 // Scheduled cash alerts (REPORT-006). Enabled finance rules are checked after
@@ -20,6 +21,9 @@ import { Fault, all, put, uid, type Data } from './types'
 import { formatHundredths, formatMoney, mulDiv } from './units'
 
 const CAUSES: Record<string, (detail: Data) => string> = {
+ 'source-guard-stage': () => 'staged a source refresh for review',
+ 'source-guard-review': () => 'reviewed source changes',
+ 'source-guard-completed': () => 'completed the reviewed source refresh',
  'actuals-accepted': d => `accepted actuals file ${d.file}`,
  'actuals-undone': d => `undid actuals file ${d.file}`,
  'close-month': d => `closed ${monthLabel(d.month)}`,
@@ -141,6 +145,7 @@ export async function evaluateCashAlerts(c: Context, scheduled?: { cause: string
  for (const rule of all(c.s, 'cash-alert-rule').filter(r => r.enabled)) {
   let finding: Finding
   if (!forecast) finding = blocked('Approve the operating budget before cash alerts can be checked.')
+  else if (sourceGuardBlock(c, forecast, rule)) finding = blocked(sourceGuardBlock(c, forecast, rule)!)
   else if (pending) finding = blocked('Complete the in-progress actuals import before cash alerts can be checked.')
   else if (rule.currency !== w.currency) finding = blocked('The reporting currency changed; review and save this rule in the new currency.')
   else {
@@ -149,19 +154,19 @@ export async function evaluateCashAlerts(c: Context, scheduled?: { cause: string
   }
   put(c.s, 'cash-alert-rule', rule.id, { ...rule, lastCheckedAt: c.now, blocked: finding.state === 'blocked' ? finding.reason : '' })
   const open = all(c.s, 'cash-alert').find(a => a.rule === rule.id && a.status === 'open')
-  if (finding.state === 'blocked') { blockedRules.push({ rule: rule.id, reason: finding.reason }); continue }
+  if (finding.state === 'blocked') { if (open) put(c.s, 'cash-alert', open.id, { ...open, current: null, blocked: finding.reason, lastCheckedAt: c.now }); blockedRules.push({ rule: rule.id, reason: finding.reason }); continue }
   if (finding.state === 'clear') { if (open) endAlert(c, open, `Cash no longer breaches this rule (${cause})`); continue }
   const last = open?.sends.at(-1)
   const reason = !open ? 'breach' : worse(rule.kind, finding.numbers, last.numbers) ? 'worse' : zoneDate(c.now, zone) >= addDays(zoneDate(last.at, zone), rule.intervalDays) ? 'interval' : null
   const id = open?.id ?? uid()
-  if (!reason) { put(c.s, 'cash-alert', id, { ...open, current: finding.numbers, lastCheckedAt: c.now }); continue }
+  if (!reason) { put(c.s, 'cash-alert', id, { ...open, blocked: '', current: finding.numbers, lastCheckedAt: c.now }); continue }
   const recipients = await financeEmails(c.db), n = (open?.sends.length ?? 0) + 1
   const why = reason === 'breach' ? 'New breach.' : reason === 'worse' ? 'The breach worsened since the last alert.' : `Still breached ${rule.intervalDays} company-zone day${rule.intervalDays === 1 ? '' : 's'} after the last alert.`
   const body = [why, ...finding.detail, `Cause: ${cause}.`, `Forecast ${forecast!.name} revision ${forecast!.revision}.`].join('\n')
   const ids = notify(c, 'cash-alert', recipients, { title: `${rule.name}: ${finding.headline}`, tab: 'overview', record: id, department: '', body }, { includeActor: true })
   const send = { n, at: c.now, reason, numbers: finding.numbers, headline: finding.headline, detail: finding.detail, cause, forecast: forecast!.id, forecastRevision: forecast!.revision, recipients, notifications: ids }
   put(c.s, 'cash-alert', id, open
-   ? { ...open, current: finding.numbers, lastCheckedAt: c.now, sends: [...open.sends, send], revision: open.revision + 1 }
+   ? { ...open, blocked: '', current: finding.numbers, lastCheckedAt: c.now, sends: [...open.sends, send], revision: open.revision + 1 }
    : { rule: rule.id, ruleName: rule.name, ruleRevision: rule.revision, kind: rule.kind, currency: rule.currency, status: 'open', openedAt: c.now, current: finding.numbers, lastCheckedAt: c.now, sends: [send], acknowledgments: [], revision: 1 })
   c.activity.push({ action: 'cash-alert-sent', record: id, scenario: forecast!.id, detail: { rule: rule.id, ruleRevision: rule.revision, n, reason, recipients: recipients.length } })
   sent.push(id); notifications.push(...ids)
