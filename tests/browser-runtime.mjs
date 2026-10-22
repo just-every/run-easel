@@ -56,6 +56,7 @@ export async function start(root, port, mode = 'dev') {
  if (!ready()) { process.kill(-child.pid, 'SIGTERM'); throw new Error(`${mode} readiness timed out`) }
  return {
   origin: `http://127.0.0.1:${port}`,
+  siteOrigin: output.match(/^RER_SITE (\S+)/m)?.[1],
   // Only the browser consumes this credential; never include it in logs or reports.
   openUrl: output.match(/^RER_OPEN (\S+)/m)?.[1],
   async close() {

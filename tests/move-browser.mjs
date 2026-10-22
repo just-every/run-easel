@@ -15,6 +15,18 @@ for(const provider of providers) {
   const port=await freePort();await command(root,['setup','--owner-email','owner@example.test','--port',String(port)]);server=await start(root,port)
   browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIUM_PATH?{executablePath:process.env.EASEL_CHROMIUM_PATH}:{}),args:['--use-mock-keychain','--password-store=basic']})
   finance=await session(browser,root,server.origin,'owner',1440)
+  if (provider==='adaptive') {
+   assert.ok(server.siteOrigin, 'The native run site is available')
+   const docs=await browser.newPage()
+   for(const width of [1440,390]) for(const slug of ['move-in','move-adaptive-format','move-tabular-formats']) {
+    await docs.setViewportSize({width,height:1000})
+    const document=await docs.goto(`${server.siteOrigin}/docs/${slug}`);assert.equal(document.status(),200)
+    await noOverflow(docs,`${slug} docs ${width}`)
+    await docs.screenshot({path:join(evidence,`${slug}-${width}.png`),fullPage:true})
+   }
+   await docs.close()
+  }
+
   await api(finance.context,server.origin,'command/workspace',{name:'Ridgeline Studio',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
   await api(finance.context,server.origin,'command/member',{email:'board@dev.localhost',name:'Board Reader',role:'viewer',departments:[]})
   board=await session(browser,root,server.origin,'board',1440)
