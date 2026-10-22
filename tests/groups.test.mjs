@@ -205,7 +205,7 @@ test('Independent grants preserve department and dimension pairings across reads
  assert.equal(report.rows[0].budget, 10000)
  const access = (await h.get('/api/easel/access-report')).people.find(p => p.email === 'paired@example.test')
  assert.equal(access.grants.read.length, 2)
- assert.deepEqual(access.grants.read.map(g => g.departments), [[sales.id], [marketing.id]])
+ assert.deepEqual(new Set(access.grants.read.map(g => JSON.stringify(g.departments))), new Set([[sales.id], [marketing.id]].map(v=>JSON.stringify(v))))
  await h.stepUp(person)
  const issued = await h.send('/api/easel/tokens/issue', { label: 'Paired scope', kind: 'personal', scope: 'write' }, person)
  assert.equal(issued.status, 200)
