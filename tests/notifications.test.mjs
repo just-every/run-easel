@@ -91,3 +91,131 @@ test('CYCLE-003 mentions, returns, pending approval and triggered tasks notify e
  assert.equal(activity[0].detail.scheduledAt,'2026-10-27T12:00:00.000Z');assert.equal(activity[0].detail.zone,'America/New_York')
  assert.equal(activity[0].actor,'scheduler:calendar')
 })
+
+test('Private Slack notifications require the mapped native person’s consent and recheck exact human, team, private IM and live authority without fallback', async t => {
+ const { privateSlackProvider } = await import('./private-slack-runtime.mjs')
+ const provider = privateSlackProvider()
+ let now = '2026-11-01T12:00:00.000Z'
+ const h = await harness({ now: () => now, outbound: provider.fetch, bindings: { SLACK_WEBHOOK_URL: 'https://chat.example.test/synthetic-easel-2' } }); t.after(() => h.close())
+ const post = async (op, body, cookie = h.owner, status = 200) => { const r = await h.send(`/api/easel/slack-private/${op}`, body, cookie); assert.equal(r.status, status, `${op}: ${JSON.stringify(r.value)}`); return r.value }
+ const status = cookie => h.get('/api/easel/slack-private', cookie)
+ await h.command('workspace', { name: 'Private owner questions', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01', horizon: 24 })
+ const sales = await h.command('department', { name: 'Sales' }), revenue = await h.command('line', { name: 'Service agreements', type: 'revenue' })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('scenario-cash', { scenario: budget.id, basis: 'estimate', opening: '100000', collectionLag: 0, paymentLag: 0 })
+ const contract = await h.command('revenue', { scenario: budget.id, name: 'Acme agreement', kind: 'contract', line: revenue.id, department: sales.id, start: '2026-12', startDate: '2026-12-15', termMonths: 12, contractValue: '120000', billingCadence: 'monthly', dsoDays: 0 })
+ const forecast = (await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })).forecast
+ const recipient = await h.person('sales@example.test', 'contributor', [sales.id]), other = await h.person('other@example.test', 'contributor', [sales.id])
+ await h.command('owner-question-settings', { enabled: true })
+ await post('connection/connect', { key: provider.key, consent: true, revision: '' }, recipient, 403)
+ await post('connection/connect', { key: provider.key, consent: false, revision: '' }, h.owner, 400)
+ provider.authOverride = { bot_id: undefined }
+ await post('connection/connect', { key: provider.key, consent: true, revision: '' }, h.owner, 409)
+ assert.equal(await h.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind('slack:private-delivery').first(), null)
+ provider.authOverride = {}
+ await post('connection/connect', { key: provider.key, consent: true, revision: '' })
+ let view = await status(), mapping
+ const bind = async (email = 'sales@example.test', user = 'USALES') => {
+  const v = await status(), prior = v.bindings.find(b => b.email === email)
+  await post('bind', { email, user, revision: prior?.revision ?? '', connectionRevision: v.connection.revision })
+  return (await status()).bindings.find(b => b.email === email)
+ }
+ // Every refusal goes through the same native mapping door; names never infer an identity.
+ for (const userOverride of [{ id: 'UOTHER' }, { team_id: 'TOTHER' }, { profile: {} }, { profile: { email: 'Sales@example.test' } }, { profile: { email: 'other@example.test' } }, { is_bot: true }, { is_app_user: true }, { is_restricted: true }, { is_ultra_restricted: true }, { deleted: true }]) {
+  provider.userOverride = userOverride
+  await post('bind', { email: 'sales@example.test', user: 'USALES', revision: '', connectionRevision: view.connection.revision }, h.owner, 409)
+ }
+ provider.userOverride = {}; mapping = await bind()
+ assert.equal(mapping.enabled, false)
+ const consent = async (email = 'sales@example.test', cookie = recipient) => {
+  const v = await status(cookie), b = v.bindings.find(x => x.email === email)
+  return post('consent', { email, user: b.user, team: b.team, revision: b.revision, connectionRevision: v.connection.revision, consent: true }, cookie)
+ }
+ await post('consent', { email: mapping.email, user: mapping.user, team: mapping.team, revision: mapping.revision, connectionRevision: view.connection.revision, consent: true }, other, 403)
+ assert.deepEqual((await status(other)).bindings, [], 'Another native member sees no mapping or consent identity')
+ const sealed = (await h.db.prepare('SELECT sealed FROM e_connection_secrets WHERE id=?').bind('slack:private-delivery').first()).sealed
+ assert.ok(!sealed.includes(provider.key)); assert.ok(!JSON.stringify(await status()).includes(provider.key))
+ const { createPortability } = await import('@runeditrun/rer/modules/portability'), { easelPolicy } = await import('../scripts/installer/easel-policy.mjs')
+ const archiveService = await createPortability({ db: h.db, policy: easelPolicy }), archiveId = await archiveService.exports.create()
+ try {
+  while ((await archiveService.exports.advance(archiveId, { maxParts: 16 })).phase === 'building') {}
+  const archive = await new Response(await archiveService.exports.download(archiveId)).text()
+  assert.ok(!JSON.parse(archive.split('\n')[0]).tables.some(table => table.name === 'e_connection_secrets'))
+  assert.ok(!archive.includes(provider.key)); assert.ok(!archive.includes(sealed))
+ } finally { await archiveService.exports.abort(archiveId) }
+ const ask = async (owner = 'sales@example.test') => {
+  now = new Date(Date.parse(now) + 60_000).toISOString()
+  const q = await h.command('owner-question-ask', { scenario: forecast.id, scenarioRevision: forecast.revision, kind: 'revenue', originId: contract.originId, field: 'startDate', owner, source: 'Reviewed agreement synthetic-easel-5; responsible account owner', question: 'Will Acme start on 15 December? Yes, No or a new date.', dueAt: '2026-11-30T12:00:00.000Z' })
+  const notifications = (await h.get('/api/easel/notifications', owner === 'owner@example.test' ? h.owner : recipient)).notifications
+  return { q, notification: notifications.find(n => n.record === q.id) }
+ }
+ const cancel = q => h.command('owner-question-cancel', { id: q.id, revision: q.revision, reason: 'Finished this explicit private-delivery check' })
+ let asked = await ask()
+ assert.equal(asked.notification.status, 'blocked'); assert.equal(provider.posts.length, 0)
+ assert.ok(!h.messages.some(m => m.to.includes('sales@example.test') && /Confirm Acme/.test(m.subject)), 'No alternate email before native consent')
+ await cancel(asked.q); await consent()
+ asked = await ask()
+ assert.equal(provider.posts.length, 1); assert.equal(asked.notification.status, 'accepted'); assert.match(asked.notification.label, /Accepted.*Slack.*not confirmed/)
+ assert.equal(provider.posts[0].channel, 'DSALES')
+ for (const part of ['Acme', '2026-12-15', 'Yes, No or a new date', 'Reviewed agreement synthetic-easel-5; responsible account owner', `/app?tab=review&record=${asked.q.id}`]) assert.ok(provider.posts[0].text.includes(part), part)
+ assert.equal(provider.posts[0].mrkdwn, false); assert.equal(provider.posts[0].unfurl_links, false)
+ const accepted = await h.command('owner-question-answer', { id: asked.q.id, revision: asked.q.revision, choice: 'new-date', date: '2027-01-15' }, recipient)
+ assert.equal(accepted.answer.date, '2027-01-15'); assert.equal(accepted.answer.by, 'sales@example.test'); assert.ok(accepted.answer.source)
+ assert.equal((await h.get(`/api/easel/scenario/${forecast.id}`)).inputs.revenue.find(r => r.originId === contract.originId).startDate, '2026-12-15')
+ await h.command('owner-question-escalate', { id: accepted.id, revision: accepted.revision })
+ assert.equal(provider.posts.length, 1, 'No-change check never sends a duplicate')
+ for (const [target, change] of [['authOverride', { team_id: 'TOTHER' }], ['userOverride', { deleted: true }], ['userOverride', { profile: { email: 'other@example.test' } }], ['imOverride', { is_im: false, is_mpim: true }], ['imOverride', { user: 'UOTHER' }], ['imOverride', { is_ext_shared: true }]]) {
+  provider[target] = change
+  const before = provider.posts.length; asked = await ask()
+  assert.equal(provider.posts.length, before, 'Changed identity or non-private IM never posts')
+  assert.ok(['blocked', 'pending'].includes(asked.notification.status))
+  await cancel(asked.q); provider[target] = {}
+ }
+ // Known refusal is retryable only by explicit finance action, with captured body/key.
+ provider.sendMode = 'refused'; asked = await ask(); assert.equal(asked.notification.status, 'pending')
+ const refused = provider.posts.at(-1); provider.sendMode = 'accepted'
+ assert.equal((await h.send(`/api/easel/notifications/${asked.notification.id}/retry`, {}, h.owner)).status, 200)
+ assert.deepEqual(provider.posts.at(-1), refused)
+ await cancel(asked.q)
+ provider.sendMode = 'unknown'; asked = await ask(); assert.equal(asked.notification.status, 'uncertain')
+ const unknownCount = provider.posts.length
+ assert.equal((await h.send(`/api/easel/notifications/${asked.notification.id}/retry`, {}, h.owner)).status, 409)
+ assert.equal(provider.posts.length, unknownCount); await cancel(asked.q); provider.sendMode = 'accepted'
+ mapping = (await status(recipient)).bindings[0]
+ await post('revoke', { email: mapping.email, revision: mapping.revision }, recipient)
+ asked = await ask(); assert.equal(asked.notification.status, 'blocked'); assert.equal(provider.posts.length, unknownCount); await cancel(asked.q)
+ await consent()
+ provider.sendMode = 'refused'; asked = await ask(); assert.equal(asked.notification.status, 'pending'); provider.sendMode = 'accepted'
+ const beforeRemoval = provider.posts.length
+ await h.command('member', { email: 'sales@example.test', name: 'Sales', role: 'contributor', departments: [sales.id], active: false })
+ await h.get('/api/easel/slack-private', recipient, 403)
+ const afterRemoval = await h.send(`/api/easel/notifications/${asked.notification.id}/retry`, {}, h.owner)
+ assert.equal(afterRemoval.status, 200); assert.equal(afterRemoval.value.status, 'blocked')
+ assert.equal(provider.posts.length, beforeRemoval, 'Removed membership blocks the captured refused send')
+ // REPORT-006 uses the same opted-in native finance identity, carrying numbers and cause privately.
+ await bind('owner@example.test', 'UOWNER'); await consent('owner@example.test', h.owner)
+ await h.command('cash-constraints', { floor: '200000', runwayMinimum: '0' })
+ const beforeFinanceAlert = provider.posts.length
+ await h.command('cash-alert-rule-save', { name: 'Private cash floor', kind: 'floor', enabled: true })
+ assert.equal(provider.posts.length, beforeFinanceAlert + 1, 'One structured private financial alert for the new breach')
+ const financial = provider.posts.at(-1)
+ assert.equal(financial.channel, 'DOWNER'); assert.match(financial.text, /\$200,000\.00/); assert.match(financial.text, /\$100,000\.00/); assert.match(financial.text, /Cause:.*owner@example\.test/); assert.match(financial.text, /Jan 2026/); assert.match(financial.text, /\/app\?tab=overview&record=/)
+ const financialCount = provider.posts.length
+ await h.command('cash-alert-check', {}); assert.equal(provider.posts.length, financialCount)
+ // Ordinary notices remain on the existing generic shared-channel preference.
+ await h.send('/api/easel/notifications/preference', { mode: 'chat', channel: 'slack' }, other)
+ await h.command('comment', { scenario: forecast.id, department: sales.id, text: '@other@example.test review this sensitive planning detail' })
+ assert.ok(provider.shared.length > 0)
+ for (const shared of provider.shared) { assert.match(shared.text, /You have an Easel notification/); assert.doesNotMatch(shared.text, /sensitive|Acme|200,000|Private cash/) }
+ // Archive restore retains metadata, but absence of custody blocks until reconnect/rebind/consent.
+ await h.db.prepare('DELETE FROM e_connection_secrets WHERE id=?').bind('slack:private-delivery').run()
+ const missing = await status(); assert.equal(missing.connection.connected, false); assert.match(missing.connection.error, /Reconnect after restore/)
+ await post('connection/connect', { revision: missing.connection.revision, consent: true, key: provider.key })
+ assert.equal((await status()).bindings.find(b => b.email === 'owner@example.test').enabled, false)
+ provider.revokeConfirmed = false
+ view = await status(); await post('connection/disconnect', { revision: view.connection.revision, consent: true })
+ assert.equal(await h.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind('slack:private-delivery').first(), null)
+ assert.match((await status()).connection.revocation, /unconfirmed/)
+ assert.ok(provider.calls.some(c => c.method === 'auth.revoke'))
+ assert.ok(!JSON.stringify(await h.get('/api/easel/activity')).includes(provider.key))
+})
