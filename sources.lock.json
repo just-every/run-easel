@@ -3307,7 +3307,7 @@
       "executable": false
     },
     "src/ui/groups.tsx": {
-      "sha256": "78b62667a9458f1498ed3ff52593ce4bb495b9cec78361dcb19d9b5e0d53e49f",
+      "sha256": "650a4bd721854f81c6b43542831076a21b7a7a539ca00cb2c73d3df5d079ca15",
       "executable": false
     },
     "src/ui/headcount.tsx": {
