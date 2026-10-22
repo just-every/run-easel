@@ -7,7 +7,8 @@ const file = (filename, rows) => ({ filename, csv: `Date,Account,Department,Amou
 
 test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per breach on refresh, re-alert on worsening or after the interval on the company-zone schedule, and record acknowledgment', async t => {
  let now = '2026-03-02T15:00:00.000Z'
- const h = await harness({ now: () => now }); t.after(() => h.close())
+ const slack = []
+ const h = await harness({ now: () => now, bindings: { SLACK_WEBHOOK_URL: 'https://chat.example.test/synthetic-easel-1' }, outbound: async request => { slack.push(await request.json()); return new Response('ok') } }); t.after(() => h.close())
  const run = async at => { now = at; await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' }) }
  const accept = async f => { const p = await h.kit('actuals', 'preview', f); return h.kit('actuals', 'commit', { ...f, fingerprint: p.fingerprint }) }
  const alertMail = () => h.messages.filter(m => /^Cash alert: /.test(m.subject))
@@ -24,6 +25,8 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  await h.command('department-map', { source: 'Operations', department: ops.id })
  await h.command('cash-constraints', { floor: '350000', runwayMinimum: '0' })
  const planner = await h.person('planner@example.test', 'contributor', [ops.id]), viewer = await h.person('viewer@example.test', 'viewer')
+ const chatFinance = await h.person('chat-finance@example.test', 'finance')
+ assert.equal((await h.send('/api/easel/notifications/preference', { mode: 'chat', channel: 'slack' }, chatFinance)).status, 200)
  const rule = body => h.command('cash-alert-rule-save', { enabled: true, ...body })
  for (const cookie of [planner, viewer]) {
   await h.command('cash-alert-rule-save', { name: 'Not finance', kind: 'floor' }, cookie, 403)
@@ -55,7 +58,9 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  const rn = alertOf(runway)[0].current
  assert.deepEqual([rn.month, rn.closingCents, rn.trailingNetBurnCents, rn.trailingMonths, rn.runwayHundredths], ['2026-02', 44000000, 8000000, 2, 1100], 'runway falls to 11 months in February')
  let mail = alertMail()
- assert.equal(mail.length, 4, 'one email per alert to the only active finance person')
+ assert.equal(mail.length, 4, 'one email per alert to finance with the email preference')
+ assert.equal(slack.length, 4, 'one shared-channel notice per alert for chat-only finance')
+ for (const notice of slack) { assert.match(notice.text, /You have an Easel notification.*Sign in to Easel/); assert.doesNotMatch(notice.text, /340,000|350,000|60,000|Cash floor|Subscriptions|owner@example/) }
  const floorMail = mail.find(m => m.subject.includes('Cash floor'))
  assert.deepEqual(floorMail.to, ['owner@example.test'])
  for (const part of ['Dec 2026', '$340,000.00', '$350,000.00', 'Cause: owner@example.test closed Jan 2026.', `/app?tab=overview&record=${alertOf(floor)[0].id}`]) assert.ok(floorMail.text.includes(part), `floor email names ${part}`)
@@ -67,6 +72,7 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  v = await h.get(list)
  for (const r of [floor, amount, percent, runway]) assert.equal(alertOf(r)[0].sends.length, 1)
  assert.equal(alertMail().length, 4)
+ assert.equal(slack.length, 4)
 
  // A refresh that worsens every breach (another $5,000 of January cost) re-alerts each once.
  await accept(file('january-late.csv', ['2026-01-31,500,Operations,5000']))
@@ -76,6 +82,7 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  assert.match(alertMail().at(-1).text, /Cause: owner@example\.test accepted actuals file january-late\.csv\./)
  await accept(file('january-zero-2.csv', ['2026-01-30,500,Operations,0']))
  assert.equal(alertMail().length, 8)
+ assert.equal(slack.length, 8)
 
  // The daily check runs at 08:00 company time: before it nothing is recorded; an
  // unchanged breach waits for its seven-day interval, which spans the DST change.
@@ -94,6 +101,7 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  for (const r of [floor, amount, percent, runway]) assert.deepEqual(alertOf(r)[0].sends.map(s => s.reason), ['breach', 'worse', 'interval'], r.name)
  mail = alertMail()
  assert.equal(mail.length, 12)
+ assert.equal(slack.length, 12)
  assert.match(mail.at(-1).text, /Still breached 7 company-zone days after the last alert/, 'the default interval is seven days')
  assert.match(mail.at(-1).text, /Cause: scheduled check for Mon, 03\/09\/2026, 08:00\sAM\sEDT\./)
 
@@ -111,4 +119,5 @@ test('REPORT-006 cash alerts: floor, below-plan and runway rules alert once per 
  v = await h.get(list)
  for (const r of [floor, amount, percent, runway]) assert.deepEqual(alertOf(r).map(a => a.status), ['ended'], r.name)
  assert.equal(alertMail().length, 12)
+ assert.equal(slack.length, 12)
 })

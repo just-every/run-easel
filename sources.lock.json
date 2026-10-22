@@ -4015,7 +4015,7 @@
       "executable": false
     },
     "tests/cash-alerts.test.mjs": {
-      "sha256": "1b65dd67cf321f931629cea2a8ebd3d75aeea5d6cbb565fa9c5bb294566a8617",
+      "sha256": "d392731ae52045c568ffe87ca7eefb3fd21a76858f869e9388ba1d592bbac9f6",
       "executable": false
     },
     "tests/cash-drivers.test.mjs": {
