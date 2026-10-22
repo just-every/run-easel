@@ -103,7 +103,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "0ddd4bb1678f681211dda8f2da7c127368d02cdc51e07104194c918eeeffc552",
+      "sha256": "6a3d5d5ebdb352fdc3d790f9e7ace3ea2e0af2508465744214a6d78198cfe953",
       "executable": false
     },
     ".gitignore": {
@@ -331,7 +331,7 @@
       "executable": false
     },
     "package.json": {
-      "sha256": "18e592b0a3a1baf31e453ad00bf78fa51c3e93ad6beb6461fa00fac5e573ce55",
+      "sha256": "24ab38cc89894858cb3e88b7d172f2d6cf9c2f6123ed44db94f8783bf0b837e7",
       "executable": false
     },
     "pnpm-lock.yaml": {
