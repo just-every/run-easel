@@ -1,3 +1,5 @@
+import { canSeeDashboard } from '../dashboard-access'
+import { canSeeScenario } from '../scenario-access'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { all, type Data } from '../types'
 import type { Context } from '../context'
@@ -25,10 +27,10 @@ export function sourceChanges(c: Context, preview: Data, metadata: Data, prior?:
 
 /** A conservative impact inventory, explicitly describing possible dependencies rather than predicting cell amounts. */
 export function sourceImpacts(c: Context, month: string) {
- const scenarios=all(c.s,'scenario').filter(s=>s.kind==='forecast' || s.actualsThrough && s.actualsThrough >= month || all(c.s,'expense').some(i=>i.scenario===s.id && i.history) || all(c.s,'revenue').some(i=>i.scenario===s.id && i.history))
+ const scenarios=all(c.s,'scenario').filter(s=>canSeeScenario(c.x,s)).filter(s=>s.kind==='forecast' || s.actualsThrough && s.actualsThrough >= month || all(c.s,'expense').some(i=>i.scenario===s.id && i.history) || all(c.s,'revenue').some(i=>i.scenario===s.id && i.history))
  return {
   scenarios:scenarios.map(s=>({id:s.id,name:s.name,status:s.status==='frozen' || s.snapshot ? 'captured; unchanged' : 'working; dependent conclusions held'})),
-  reports:[{id:'actuals',name:'Actuals reconciliation',status:'dependent month held'},...all(c.s,'dashboard').filter(d=>d.report && scenarios.some(s=>s.id===d.scenario)).map(d=>({id:d.id,name:d.name,status:'source-dependent report'}))],
+  reports:[{id:'actuals',name:'Actuals reconciliation',status:'dependent month held'},...all(c.s,'dashboard').filter(d=>d.report && canSeeDashboard(c.s,c.x,d) && scenarios.some(s=>s.id===d.scenario)).map(d=>({id:d.id,name:d.name,status:'source-dependent report'}))],
   packs:all(c.s,'pack').filter(p=>(p.months ?? [p.month]).some((m:string)=>m>=month)).map(p=>({id:p.id,name:p.title,status:p.status==='published'?'published snapshot; unchanged':'draft; refresh held'})),
   alerts:all(c.s,'cash-alert-rule').filter(r=>r.enabled && r.kind!=='bank-below-plan').map(r=>({id:r.id,name:r.name,status:'blocked until source review'})),
  }

@@ -34,7 +34,7 @@ function unresolved(c:Context,g:Data) {
  })
 }
 
-export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g)})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
+export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g),impacts:sourceImpacts(c,g.month),history:(g.history ?? []).map((h:Data)=>({...h,impacts:sourceImpacts(c,h.month)}))})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null
