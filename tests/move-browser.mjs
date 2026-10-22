@@ -21,8 +21,8 @@ for(const provider of providers) {
    for(const width of [1440,390]) for(const slug of ['move-in','move-adaptive-format','move-tabular-formats']) {
     await docs.setViewportSize({width,height:1000})
     const document=await docs.goto(`${server.siteOrigin}/docs/${slug}`);assert.equal(document.status(),200)
-    await noOverflow(docs,`${slug} docs ${width}`)
     await docs.screenshot({path:join(evidence,`${slug}-${width}.png`),fullPage:true})
+    await noOverflow(docs,`${slug} docs ${width}`)
    }
    await docs.close()
   }

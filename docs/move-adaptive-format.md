@@ -3,8 +3,8 @@ upload bundle identifies each original by `name`, exactly one `text` or `base64`
 and optional `call`, `version`, and `sheet`. This wrapper is Easel transport, not
 an Adaptive export format. Keep the originals in the import journal.
 
-`fixtures/adaptive-planning/manifest.json` lists every fixture original and the
-parser options. Load each listed file's bytes into the corresponding artifact.
+The `adaptive-planning` folder under `fixtures` contains `manifest.json`,
+which lists every fixture original and its parser options. Load each listed file's bytes into the corresponding artifact.
 The companion `personnel.csv` makes the CDATA payload readable; it is not a
 second import artifact. All identities are synthetic. Validation is synthetic
 only; no customer export or held-key provider run is claimed.

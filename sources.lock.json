@@ -191,7 +191,7 @@
       "executable": false
     },
     "docs/move-adaptive-format.md": {
-      "sha256": "619b12a951e64db6b9c6d3eac2bcfbdf14ee2b191725f8c87acfd28abe3b1722",
+      "sha256": "9c7ec885f33e4b860bb114fae4e19a6273d7a1e8b646c8fbcb31bd7206916f54",
       "executable": false
     },
     "docs/move-in.md": {
@@ -199,7 +199,7 @@
       "executable": false
     },
     "docs/move-tabular-formats.md": {
-      "sha256": "50277b201cd823222156bb95b9999960550aa5b0644dd769c45e78a3934fd326",
+      "sha256": "395648d28309a011430cd519763b6077dfe575cfb93325c7e52237c452cf1191",
       "executable": false
     },
     "docs/overview.md": {
@@ -4039,7 +4039,7 @@
       "executable": false
     },
     "tests/move-browser.mjs": {
-      "sha256": "ce2b1d41d5544c9a2a9ea42cb6b833b45409c3a62685c3898d29b8a57138ffc9",
+      "sha256": "e323b2a637d9e4736944e7f1f048a70cf6ddcd349cbb13a0ef816b1381901247",
       "executable": false
     },
     "tests/move-fixtures.mjs": {
