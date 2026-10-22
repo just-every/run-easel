@@ -30,15 +30,15 @@ export function SourceGuard({state,refresh}:{state:D;refresh:()=>Promise<unknown
    <h3>{guard.label} · {guard.month}</h3>
    <p role="status">{guard.unresolved.length ? `Blocked: ${guard.unresolved.length} unresolved source issues` : guard.status==='completed'?'Refresh accepted':'Source review complete; accept the reviewed ledger file through Upload actuals'}</p>
    <p className="muted">Source observed {guard.observedAt}; next update expected {guard.nextExpectedAt}. Revision {guard.revision}.</p>
-   {guard.unresolved.map((issue:D)=><div key={issue.id}>
+   {guard.unresolved.map((issue:D)=><div key={issue.id} role="group" aria-label={issue.reason}>
     <p>{issue.reason}</p>
     {issue.proposals?.map((p:D)=><p key={p.target}>Proposed mapping: {p.name}. {p.reason}</p>)}
     <Form submit={`Review ${issue.kind} ${issue.account ?? issue.key ?? issue.expected?.payDate ?? ''}`} onSubmit={async v=>{
      await command('source-guard-review',{id:guard.id,revision:guard.revision,fingerprint:guard.fingerprint,decisions:[{issue:issue.id,...v}]});await load();await refresh()
     }}>
-     <Field label={`Decision for ${issue.id}`} name="action" options={[...(issue.kind==='account' || issue.kind==='department'?[{value:'map',label:'Approve mapping'}]:[]),...(issue.kind==='payroll'?[{value:'evidence',label:'Verify imported register evidence'}]:[]),{value:'exclude',label:'Exclude this finding with reason'}]} />
-     {(issue.kind==='account' || issue.kind==='department') && <Field label={`Mapping target for ${issue.id}`} name="target" required={false} options={(issue.kind==='account'?state.lines:state.departments).map((l:D)=>({value:l.id,label:l.name}))} />}
-     <Field label={`Review reason for ${issue.id}`} name="reason" />
+     <Field label="Decision" name="action" options={[...(issue.kind==='account' || issue.kind==='department'?[{value:'map',label:'Approve mapping'}]:[]),...(issue.kind==='payroll'?[{value:'evidence',label:'Verify imported register evidence'}]:[]),{value:'exclude',label:'Exclude this finding with reason'}]} />
+     {(issue.kind==='account' || issue.kind==='department') && <Field label="Mapping target" name="target" required={false} options={(issue.kind==='account'?state.lines:state.departments).map((l:D)=>({value:l.id,label:l.name}))} />}
+     <Field label="Review reason" name="reason" />
     </Form>
    </div>)}
    <Table caption={`Source impact ${guard.label}`} heads={['Kind','Affected item','Effect']}>

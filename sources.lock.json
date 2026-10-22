@@ -3851,7 +3851,7 @@
       "executable": false
     },
     "src/ui/source-guard.tsx": {
-      "sha256": "a045362bf29758b0ba43b0d5144f485dcb028133cfbd6344a42534f06112d103",
+      "sha256": "223f82517e3fb114f8044a8f198b5c6fa02d053da7d5a8beec455bb3a08d86bf",
       "executable": false
     },
     "src/ui/starter-models.tsx": {
@@ -4423,7 +4423,7 @@
       "executable": false
     },
     "tests/source-guard-browser.mjs": {
-      "sha256": "a6103dff025a9ed56adba2bcd5d860df0069ee11224c2cfafc039ad56d70bc26",
+      "sha256": "bd843a7fc306cfe741bf234da5ef36a33d36f6e7861a04e2fd913daf15e7203c",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {
