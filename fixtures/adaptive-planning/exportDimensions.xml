@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<response success="true"><output><dimensions><dimension id="synthetic-easel-30" name="synthetic-easel-31" autoCreate="0" listDimension="0" keepSorted="0" useOnLevels="0"><dimensionValue id="synthetic-easel-32" name="synthetic-easel-33"><dimensionValue id="synthetic-easel-34" name="synthetic-easel-35"/></dimensionValue></dimension></dimensions></output></response>
+<response success="true"><output><dimensions><dimension id="synthetic-easel-30" name="Region" autoCreate="0" listDimension="0" keepSorted="0" useOnLevels="0"><dimensionValue id="synthetic-easel-32" name="North America"><dimensionValue id="synthetic-easel-34" name="East"/></dimensionValue></dimension></dimensions></output></response>

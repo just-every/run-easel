@@ -227,31 +227,31 @@
       "executable": false
     },
     "fixtures/adaptive-planning/exportAccounts.xml": {
-      "sha256": "682ad86e793320c169ff599b45ed7a885f73e5d7f857ca9dadc83d6e04a593fb",
+      "sha256": "88823574ee771ca19157ba6217729bc15176cbc6dc3f4c1e74ff01e8eb49a27d",
       "executable": false
     },
     "fixtures/adaptive-planning/exportAttributes.xml": {
-      "sha256": "8d5e79420ac610a3425a042724bc400d2421c66a2e7f9d2df8ab5c19613c84bf",
+      "sha256": "b55b65acd796e88aff6321e2a6a9653ca2119c2cb0c97b4ae9aee985e6c99cd2",
       "executable": false
     },
     "fixtures/adaptive-planning/exportConfigurableModelData.xml": {
-      "sha256": "01fb4defb5dc9282744d589305f4a1c9ae2ba0ffb7661d663dbe2f170e98e2c3",
+      "sha256": "5396a00e38c32c9e83cfd63cb9a7a1a9323cd5d549f8d032167f90f635bec850",
       "executable": false
     },
     "fixtures/adaptive-planning/exportData.xml": {
-      "sha256": "aa665623b5e68b5fcb34ac55b151f3a820a608cdd7f4c805ee2f105d2261c264",
+      "sha256": "d69738d4fec922a8f1211bd68051b81adb8ee7d52aebecaae9dfce9c51284431",
       "executable": false
     },
     "fixtures/adaptive-planning/exportDimensions.xml": {
-      "sha256": "262f11c55bd83e9d6dcc10e9142df75320703f7770eac7f31e726954e7dac576",
+      "sha256": "a431be916e6f260cae2319576718ed2537ec175168b3666670921a25daa5dc5b",
       "executable": false
     },
     "fixtures/adaptive-planning/exportLevels.xml": {
-      "sha256": "6ba51ae09c399e0955f814554a3135479698a8c284735258b1d9eea4718d00d7",
+      "sha256": "f420999fbcc4f46a318a9b07589dc3d008f1be990f7a5c9efadd95aa3f2cf138",
       "executable": false
     },
     "fixtures/adaptive-planning/exportVersions.xml": {
-      "sha256": "94ac35da1772c6614510d83ce91faaf081c0710ee1b619472089188d05335f9e",
+      "sha256": "5a8551109534d41822f12688e752c7f27e80880e6d2f51a3a3ddc49ca04058b3",
       "executable": false
     },
     "fixtures/adaptive-planning/manifest.json": {
@@ -259,15 +259,15 @@
       "executable": false
     },
     "fixtures/adaptive-planning/other-modeled.xml": {
-      "sha256": "364d2f90708805409ff14014fa19191518187cd64aabb7287ccc92baf23c21f9",
+      "sha256": "65474e514581b951b55e83636522b53c47f181aaefc53c0418d61d75906758ff",
       "executable": false
     },
     "fixtures/adaptive-planning/personnel.csv": {
-      "sha256": "5b67a51378999e0ed62f72e15a39a54a1e470fea85a35a7425451eeb82748425",
+      "sha256": "8ee15099942aafe505880a24221c5dfdd24e240c5580646a74f3fdf8108a0fe5",
       "executable": false
     },
     "fixtures/adaptive-planning/sheet-export.xlsx": {
-      "sha256": "061ecbf62d646a107ca05e64e2053a3bd5b4ccc1a68f3276144f5bbcd9c5ceea",
+      "sha256": "22fc48b4823b0b8902a79efdc50d30e1364809a07b22932ad31485eede072164",
       "executable": false
     },
     "fixtures/anaplan/Accounts.csv": {
@@ -4043,7 +4043,7 @@
       "executable": false
     },
     "tests/move-fixtures.mjs": {
-      "sha256": "1a3880381db26590d0fac4bc365603fa0f1726e7c14987b5e80cf381395e32a4",
+      "sha256": "df8d3f43057a9a74805522995e108ac49fb7af27f990f0069e07e44ea9dd7cfe",
       "executable": false
     },
     "tests/native-formula-flow.mjs": {

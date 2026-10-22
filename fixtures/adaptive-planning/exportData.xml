@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <response success="true"><output><![CDATA["Account Name","Account Code","Level Name","01/2026","02/2026","03/2026","04/2026","05/2026","06/2026","07/2026","08/2026","09/2026","10/2026","11/2026","12/2026"
-"synthetic-easel-14","synthetic-easel-13","synthetic-easel-4","19000","19000","19000","19000","19000","19000","24000","24000","24000","27000","27000","40200"
+"Payroll","synthetic-easel-13","Engineering","19000","19000","19000","19000","19000","19000","24000","24000","24000","27000","27000","40200"
+"Equipment expense","synthetic-easel-16","Engineering","300","0","0","0","0","0","0","0","0","0","0","0"
+"Services revenue","synthetic-easel-18","Engineering","50000","50000","50000","50000","50000","50000","50000","50000","50000","50000","50000","50000"
 ]]></output></response>

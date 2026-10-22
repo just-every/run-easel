@@ -10,7 +10,7 @@ export async function moveFixture(provider) {
  const mapping = structuredClone(manifest.mapping ?? {})
  if (provider === 'adaptive') {
   mapping.levels = {'synthetic-easel-1':'exclude','synthetic-easel-3':'create'}
-  mapping.accounts = {'synthetic-easel-10':'exclude','synthetic-easel-12':{name:'Payroll',type:'operating-expense',payroll:true}}
+  mapping.accounts = {'synthetic-easel-10':'exclude','synthetic-easel-12':{name:'Payroll',type:'operating-expense',payroll:true},'synthetic-easel-15':{name:'Equipment expense',type:'operating-expense',payroll:false},'synthetic-easel-17':{name:'Services revenue',type:'revenue',payroll:false}}
   mapping.dimensions = {'synthetic-easel-30':'create'}
   mapping.members = {'synthetic-easel-30':{'synthetic-easel-32':'create','synthetic-easel-34':'create'}}
   mapping.personnelColumns = manifest.options.personnelColumns
