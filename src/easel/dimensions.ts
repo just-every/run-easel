@@ -31,8 +31,8 @@ export function validateDimensions(s: State, value: unknown): DimensionTags {
 
 /** Live grants are intersected with department authority by each caller. A grant
  * on a group includes its descendants, and follows later hierarchy changes. */
-export function dimensionAccess(s: State, x: Access, tags: DimensionTags = {}) { return dimensionAllowed(s, x, tags) }
-export function requireDimensionAccess(s: State, x: Access, tags: DimensionTags = {}) { requireThat(dimensionAllowed(s, x, tags, true), 'You can only change your assigned dimension members', 403) }
+export function dimensionAccess(s: State, x: Access, tags: DimensionTags = {}, department?: string) { return dimensionAllowed(s, x, tags, false, department) }
+export function requireDimensionAccess(s: State, x: Access, tags: DimensionTags = {}, department?: string) { requireThat(dimensionAllowed(s, x, tags, true, department), 'You can only change your assigned dimension members', 403) }
 export function validateDimensionGrants(s: State, value: unknown) {
  if (value === undefined || value === null) return undefined
  requireThat(typeof value === 'object' && !Array.isArray(value), 'Dimension grants must name member lists')

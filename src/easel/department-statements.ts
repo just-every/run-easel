@@ -35,7 +35,7 @@ export function statementWork(c: Context, s: Data): Data {
  const rows: Data[] = scopedStatementRows(c, s).map((r: Data) => {
   const explanation = find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`) ?? null
   const restricted = (r.payroll || find(c.s, 'line', r.line)?.payroll) && !seesPayDetail(c.x, s.department)
-  return { ...r, citations: restricted ? [] : r.citations.filter((citation: Data) => dimensionAllowed(c.s, c.x, citation.dimensions ?? {})), explanation: restricted || dimensionRestricted ? null : explanation }
+  return { ...r, citations: restricted ? [] : r.citations.filter((citation: Data) => dimensionAllowed(c.s, c.x, citation.dimensions ?? {}, false, s.department)), explanation: restricted || dimensionRestricted ? null : explanation }
  })
  const metricTasks = all(c.s, 'metric-task').filter(t => t.department === s.department && t.status === 'open').map(t => ({ id: t.id, name: t.name, owner: t.owner, due: t.due, revision: t.revision, evidence: { summary: t.evidence.summary } }))
  const submissions = all(c.s, 'submission').filter(t => t.department === s.department && ['requested', 'returned'].includes(t.status)).map(t => ({ id: t.id, name: `Submit department budget · ${s.departmentName}`, owner: 'Department contributors', due: t.due, evidence: { summary: `Submission ${t.status}; requested ${t.requestedAt}.` } }))

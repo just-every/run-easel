@@ -37,6 +37,7 @@ try {
   await groups.getByLabel('Group people', { exact: true }).selectOption(['sales@dev.localhost'])
   await groups.getByLabel('Departments: edit', { exact: true }).selectOption([sales.id, engineering.id])
   await groups.getByLabel('Statement owner departments', { exact: true }).selectOption([sales.id, engineering.id])
+  await groups.getByLabel('Region: scope', { exact: true }).selectOption('restricted')
   await groups.getByLabel('Region: edit members', { exact: true }).selectOption([east.id])
   group = await saved(finance.page, 'group-save', () => groups.getByRole('button', { name: 'Save group grants', exact: true }).click())
   const row = groups.getByRole('row').filter({ has: finance.page.getByRole('rowheader', { name: /sales@dev.localhost/ }) })

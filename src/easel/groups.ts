@@ -81,7 +81,7 @@ export async function accessReport(c: Context) {
  const { results } = await c.db.prepare("SELECT id,email,display_name AS name,role,version FROM oa_operators WHERE status='active' ORDER BY email").all<{ id: string; email: string; name: string; role: 'owner' | 'admin' | 'member'; version: number }>()
  const people = results.map(person => {
   const x = access(c.s, { ...person, baseRole: person.role, session: '' })
-  return { email: person.email, name: person.name, role: x.role, groups: x.groups ?? [], departments: { read: x.readDepartments ?? [], edit: x.role === 'finance' ? all(c.s, 'department').map(d => d.id) : x.departments, owners: x.statementDepartments ?? [] },
+  return { email: person.email, name: person.name, role: x.role, groups: x.groups ?? [], grants: { read: x.readGrants ?? [], edit: x.editGrants ?? [] }, departments: { read: x.readDepartments ?? [], edit: x.role === 'finance' ? all(c.s, 'department').map(d => d.id) : x.departments, owners: x.statementDepartments ?? [] },
    dimensions: { read: x.dimensionRead ?? {}, edit: x.dimensionEdit ?? {} }, capabilities: x.capabilities ?? [], payDetail: x.payDetail === true, groupOnly: x.groupOnly === true,
    scenarios: all(c.s, 'scenario').filter(sc => canSeeScenario(x, sc)).map(sc => ({ id: sc.id, name: sc.name, mode: sc.sandbox ? sc.createdBy === person.email || sc.sandbox.grants?.[person.email] === 'edit' || x.scenarioGrants?.[sc.id] === 'edit' ? 'edit' : 'read' : x.role === 'viewer' ? 'read' : 'edit' })) }
  }).filter(person => person.role)

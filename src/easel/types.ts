@@ -5,7 +5,8 @@ export type Row = { destination: string; kind: string; id: string; revision: str
 export type State = Map<string, Row>
 
 export type Capability = 'compensation' | 'connections' | 'model-structure' | 'approvals' | 'publishing'
-export type GrantCeiling = { readDepartments: string[]; dimensionRead: Record<string, string[]>; dimensionEdit: Record<string, string[]>; capabilities: Capability[]; groups: string[]; scenarioGrants: Record<string, 'read' | 'edit'>; groupOnly: boolean }
+export type ScopeGrant = { id: string; departments: string[] | null; dimensions: Record<string, string[]> }
+export type GrantCeiling = { readGrants?: ScopeGrant[]; editGrants?: ScopeGrant[]; readDepartments: string[]; dimensionRead: Record<string, string[]>; dimensionEdit: Record<string, string[]>; capabilities: Capability[]; groups: string[]; scenarioGrants: Record<string, 'read' | 'edit'>; groupOnly: boolean }
 export type Role = 'finance' | 'contributor' | 'viewer'
 export type Actor = {
  id: string
@@ -21,7 +22,7 @@ export type Actor = {
  baseRole: 'owner' | 'admin' | 'member'
 }
 /** What the actor may do in this installation, resolved from Base role and Easel membership. */
-export type Access = { dimensionLimited?: boolean; scenarioDimensions?: Record<string, Record<string, string>>; actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean; readDepartments?: string[]; dimensionRead?: Record<string, string[]>; dimensionEdit?: Record<string, string[]>; capabilities?: Capability[]; groups?: string[]; scenarioGrants?: Record<string, 'read' | 'edit'>; groupOnly?: boolean; statementDepartments?: string[] }
+export type Access = { readGrants?: ScopeGrant[]; editGrants?: ScopeGrant[]; dimensionLimited?: boolean; scenarioDimensions?: Record<string, Record<string, string>>; actor: Actor; role: Role | null; departments: string[]; payDetail?: boolean; readDepartments?: string[]; dimensionRead?: Record<string, string[]>; dimensionEdit?: Record<string, string[]>; capabilities?: Capability[]; groups?: string[]; scenarioGrants?: Record<string, 'read' | 'edit'>; groupOnly?: boolean; statementDepartments?: string[] }
 
 export class Fault extends Error {
  constructor(public status: number, message: string) { super(message) }

@@ -47,7 +47,7 @@ const paySafeInput = (x: Access, input: Data, positions: Data[]) => {
  return safe
 }
 const filterInputs = (x: Access, inputs: Record<string, Data[]>, payrollLines: string[] = [], state?: State) =>
- Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => (!state || dimensionAllowed(state, x, i.dimensions)) && (k !== 'formula' || !state || visibleNativeInput(state,x,i,new Set(),inputs.formula??[])) && (k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department)))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
+ Object.fromEntries(Object.entries(inputs).map(([k, list]) => [k, list.filter(i => (!state || dimensionAllowed(state, x, i.dimensions, false, i.department ?? i.sourceDepartment)) && (k !== 'formula' || !state || visibleNativeInput(state,x,i,new Set(),inputs.formula??[])) && (k === 'asset-category' || visibleInput(x, k, i) && (!payrollLines.includes(i.line) || seesPayDetail(x, i.department)))).map(i => paySafeInput(x, i, inputs.position ?? []))]))
 
 export async function stateView(c: Context) {
  const { s, x } = c

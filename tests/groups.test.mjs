@@ -168,3 +168,53 @@ test('ACCESS-001 statement ownership groups determine recipients and revoke app,
  const blocked = await h.get(`/api/easel/department-statements/${statement.id}`)
  assert.equal(blocked.deliveries[0].status, 'blocked')
 })
+
+test('Independent grants preserve department and dimension pairings across reads, writes, reports, exports and token ceilings', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Synthetic paired grants', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const sales = await h.command('department', { name: 'Sales' }), marketing = await h.command('department', { name: 'Marketing' })
+ const line = await h.command('line', { name: 'Retainers', type: 'revenue' })
+ const region = await h.command('dimension', { name: 'Region' })
+ const east = await h.command('dimension-member', { dimension: region.id, name: 'East' }), west = await h.command('dimension-member', { dimension: region.id, name: 'West' })
+ const person = await h.person('paired@example.test', 'contributor', [], false)
+ await h.command('member', { email: 'paired@example.test', name: 'Planner', role: 'contributor', departments: [], groupOnly: true })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ const input = { scenario: budget.id, line: line.id, start: '2026-01', kind: 'volume', startVolume: '1' }
+ for (const [department, member, rate, name] of [[sales.id, east.id, '100', 'Sales East'], [marketing.id, west.id, '200', 'Marketing West'], [sales.id, west.id, '700', 'Forbidden Sales West'], [marketing.id, east.id, '900', 'Forbidden Marketing East']]) {
+  await h.command('revenue', { ...input, department, dimensions: { [region.id]: member }, rate, name })
+ }
+ const grant = (name, department, member) => ({ name, members: ['paired@example.test'], departments: { edit: [department] }, dimensions: { [region.id]: { edit: [member] } } })
+ await h.command('group-save', grant('A', sales.id, east.id))
+ await h.command('group-save', grant('B', marketing.id, west.id))
+ const read = async cookie => h.get(`/api/easel/scenario/${budget.id}`, cookie)
+ const view = await read(person)
+ assert.deepEqual(new Set(view.inputs.revenue.map(r => r.name)), new Set(['Sales East', 'Marketing West']))
+ assert.equal(view.calculation.profit[0].revenue, 30000)
+ for (const [department, member] of [[sales.id, west.id], [marketing.id, east.id]]) await h.command('revenue', { ...input, department, dimensions: { [region.id]: member }, rate: '1', name: 'Refused pairing' }, person, 403)
+ const csv = await h.send(`/api/easel/scenario/${budget.id}/document.csv`, undefined, person)
+ assert.equal(csv.status, 200); assert.doesNotMatch(csv.text, /Forbidden|70000|90000/)
+ const exported = await h.mf.dispatchFetch(h.origin + `/api/easel/scenario/${budget.id}/document.xlsx`, { headers: { cookie: person } })
+ assert.equal(exported.status, 200)
+ assert.doesNotMatch(JSON.stringify((await readWorkbook(await exported.arrayBuffer())).model), /Forbidden|70000|90000/)
+ const dashboard = await h.command('dashboard-save', { name: 'Authorized totals', scenario: budget.id, department: 'all', audience: 'company', widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'line', period: 'month', through: '2026-01', lines: [line.id] } })
+ const report = await h.get(`/api/easel/dashboards/${dashboard.id}/report`, person)
+ assert.equal(report.rows[0].budget, 30000)
+ const access = (await h.get('/api/easel/access-report')).people.find(p => p.email === 'paired@example.test')
+ assert.equal(access.grants.read.length, 2)
+ assert.deepEqual(access.grants.read.map(g => g.departments), [[sales.id], [marketing.id]])
+ await h.stepUp(person)
+ const issued = await h.send('/api/easel/tokens/issue', { label: 'Paired scope', kind: 'personal', scope: 'write' }, person)
+ assert.equal(issued.status, 200)
+ const bearer = async (path, body) => {
+  const response = await h.mf.dispatchFetch(h.origin + path, { method: body ? 'POST' : 'GET', headers: { authorization: `Bearer ${issued.value.token}`, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) })
+  return { status: response.status, value: await response.json() }
+ }
+ assert.equal((await bearer(`/api/easel/scenario/${budget.id}`)).value.calculation.profit[0].revenue, 30000)
+ assert.equal((await bearer('/api/easel/command/revenue', { ...input, department: sales.id, dimensions: { [region.id]: west.id }, rate: '1', name: 'Token forbidden pairing' })).status, 403)
+ const unlimited = await h.command('group-save', { name: 'Unlimited Sales', members: ['paired@example.test'], departments: { edit: [sales.id] } })
+ assert.ok((await read(person)).inputs.revenue.some(r => r.name === 'Forbidden Sales West'), 'An unlimited group is never narrowed by the East group')
+ assert.equal((await bearer(`/api/easel/scenario/${budget.id}`)).value.calculation.profit[0].revenue, 30000, 'A later unlimited grant cannot enlarge a token')
+ await h.command('group-delete', { id: unlimited.id, revision: unlimited.revision })
+ await h.command('member', { email: 'paired@example.test', name: 'Planner', role: 'contributor', departments: [sales.id], groupOnly: false })
+ assert.ok((await read(person)).inputs.revenue.some(r => r.name === 'Forbidden Sales West'), 'A direct assignment is never narrowed by the East group')
+})

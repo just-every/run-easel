@@ -19,7 +19,7 @@ export async function reportDimensionSource(c: Context, id: string) {
  const frozen = scenario.status === 'frozen' ? await frozenModel(c, scenario) : null
  const calculation = frozen?.calculation ?? await workingCalculation(c, id)
  const structure: DimensionStructure = frozen?.dimensionStructure ?? dimensionStructure(c.s)
- return { structure, cells: dimensionalCells(calculation.cells).filter(cell => (!scopedReader(c.x) || seesDepartmentDetail(c.x, cell.department)) && dimensionAccess(c.s, c.x, cell.dimensions)) }
+ return { structure, cells: dimensionalCells(calculation.cells).filter(cell => (!scopedReader(c.x) || seesDepartmentDetail(c.x, cell.department)) && dimensionAccess(c.s, c.x, cell.dimensions, cell.department)) }
 }
 
 export function reportDimensionRows(definition: Data, structure: DimensionStructure, lines: Data[]) {
@@ -35,7 +35,7 @@ export function reportDimensionRows(definition: Data, structure: DimensionStruct
 }
 
 export function reportDimensionMatch(c: Context, definition: Data, structure: DimensionStructure, cell: Data, row: string) {
- if (!dimensionAccess(c.s, c.x, cell.dimensions ?? {})) return false
+ if (!dimensionAccess(c.s, c.x, cell.dimensions ?? {}, cell.department)) return false
  for (const [dimension, member] of Object.entries(definition.dimensions ?? {})) {
   requireThat(structure['dimension-member'].some(m => m.id === member && m.dimension === dimension), 'A filter member is absent from this source version', 409)
   if (!descendants(structure['dimension-member'], member as string).has(cell.dimensions?.[dimension] ?? '')) return false

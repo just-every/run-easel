@@ -18,7 +18,7 @@ export function scopedStatementRows(c: Context, statement: Data): Data[] {
  requireThat(statement.dimensionCells, 'This older statement has no captured dimension slices', 409)
  requireThat(!statement.dimensionCells.blocked.some((issue: Data) => !issue.dimensions.length || issue.dimensions.some((d: Data) => dimensions.includes(d.dimension))), 'Statement dimension sources need mapping', 409)
  return (statement.rows ?? []).map((row: Data) => {
-  const amount = (kind: string) => statement.dimensionCells[kind].filter((cell: Data) => cell.line === row.line && dimensionAllowed(c.s, c.x, cell.dimensions)).reduce((total: number, cell: Data) => total + cell.amount, 0)
+  const amount = (kind: string) => statement.dimensionCells[kind].filter((cell: Data) => cell.line === row.line && dimensionAllowed(c.s, c.x, cell.dimensions, false, statement.department)).reduce((total: number, cell: Data) => total + cell.amount, 0)
   const actual = amount('actual'), budget = amount('budget')
   return { ...row, actual, budget, variance: actual - budget }
  })
