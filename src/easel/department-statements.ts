@@ -1,3 +1,4 @@
+import { hasFullScope } from './access-grants'
 import { captureStatementDimensions, scopedStatementRows } from './statement-dimensions'
 // Monthly department statements are scoped before they are stored or mailed.
 import { access, dimensionAllowed, requireCapability, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail } from './access'
@@ -31,7 +32,7 @@ export function statementOwner(s: Context['s'], email: string, department: strin
 const canRead = (c: Context, s: Data) => c.x.role === 'finance' || seesDepartmentDetail(c.x, s.department)
 
 export function statementWork(c: Context, s: Data): Data {
- const dimensionRestricted = Object.keys(c.x.dimensionRead ?? {}).length > 0
+ const dimensionRestricted = !hasFullScope(c.s, c.x, {}, s.department)
  const rows: Data[] = scopedStatementRows(c, s).map((r: Data) => {
   const explanation = find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`) ?? null
   const restricted = (r.payroll || find(c.s, 'line', r.line)?.payroll) && !seesPayDetail(c.x, s.department)

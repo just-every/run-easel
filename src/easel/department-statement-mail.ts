@@ -33,7 +33,7 @@ export async function dispatchDepartmentStatement(id: string, original: Bindings
   }
   const recipientAccess = access(c.s, { id: native.id, email: native.email, name: native.name, baseRole: native.role, version: native.version, session: '' })
   const messagePayDetail = seesPayDetail(recipientAccess, s.department)
-  const messageAudience = JSON.stringify(Object.fromEntries(Object.entries(recipientAccess.dimensionRead ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([dimension, ids]) => [dimension, [...ids].sort()])))
+  const messageAudience = JSON.stringify((recipientAccess.readGrants ?? []).map(g => ({ id: g.id, departments: g.departments === null ? null : [...g.departments].sort(), dimensions: Object.fromEntries(Object.entries(g.dimensions).sort(([a], [b]) => a.localeCompare(b)).map(([id, members]) => [id, [...members].sort()])) })).sort((a, b) => a.id.localeCompare(b.id)))
   if (delivery.message && (delivery.messagePayDetail !== messagePayDetail || (delivery.messageAudience ?? '{}') !== messageAudience)) {
    delivery = { ...delivery, status: 'blocked', reason: 'The stored email has an unknown or changed permission audience. Its body and delivery key cannot be safely reused; open the statement for current access.' }
    put(c.s, 'department-statement', id, { ...s, deliveries: s.deliveries.map((d: Data) => d.recipient === recipient ? delivery : d) })

@@ -1,4 +1,5 @@
 import { dimensionAllowed } from './access'
+import { hasFullScope } from './access-grants'
 import { dimensionActuals } from './dimension-actuals'
 import { dimensionalCells } from './dimensions-report'
 import type { Context } from './context'
@@ -13,8 +14,8 @@ export async function captureStatementDimensions(c: Context, statement: Data, bu
  return { actual: dimensionalCells(actual.cells).filter(include), budget: dimensionalCells(budget.body.calculation.cells).filter(include), blocked: actual.blocked.filter(issue => issue.month === statement.month && (!issue.department || issue.department === statement.department)) }
 }
 export function scopedStatementRows(c: Context, statement: Data): Data[] {
- const dimensions = Object.keys(c.x.dimensionRead ?? {})
- if (!dimensions.length) return statement.rows ?? []
+ if (hasFullScope(c.s, c.x, {}, statement.department)) return statement.rows ?? []
+ const dimensions = [...new Set((c.x.readGrants ?? []).filter(g => g.departments === null || g.departments.includes(statement.department)).flatMap(g => Object.keys(g.dimensions)))]
  requireThat(statement.dimensionCells, 'This older statement has no captured dimension slices', 409)
  requireThat(!statement.dimensionCells.blocked.some((issue: Data) => !issue.dimensions.length || issue.dimensions.some((d: Data) => dimensions.includes(d.dimension))), 'Statement dimension sources need mapping', 409)
  return (statement.rows ?? []).map((row: Data) => {

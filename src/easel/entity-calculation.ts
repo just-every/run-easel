@@ -1,4 +1,5 @@
 import { requireMember } from './access'
+import { hasFullScope } from './access-grants'
 import { workingCalculation } from './calculation'
 import type { Context } from './context'
 import type { RateTable } from './currency-rates'
@@ -15,6 +16,7 @@ import { find, requireThat, type Data } from './types'
 export async function entityCalculation(c: Context, entity: Data) {
  requireMember(c.x)
  requireThat(entityAllowed(c.s, c.x, entity), 'Entity not found', 404)
+ requireThat(hasFullScope(c.s, c.x, { [entity.dimension]: entity.member }), 'Whole-entity statements require every department and dimension in this entity', 403)
  const scenario = scenarioAccess(c.s, c.x, entity.scenario)
  const m = scenario.status === 'frozen' ? await frozenModel(c, scenario) : model(c.s, scenario.id)
  requireThat(m.workspace.currency === entity.currency, 'The source plan currency does not match this entity; review the entity plan currency', 409)

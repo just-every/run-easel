@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "348051dbcd94dccd9b7de3a51916a75c8d9dcaf35d17eb838a171eaf68df9973",
+      "sha256": "d0dd20503db31d07e60f28e11ab4f8e277dd9b74b171596c207e8f0caa4c5022",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "29e248be517f7ed2a1b84d9ff6dfa043c6a36644b0238e5757365cb5482b87a1",
+      "sha256": "698a4a4e2888da9219e70be2ddac8fff9cfff0539ba731f3272117c23544c697",
       "executable": false
     },
     "DEMO.md": {
@@ -663,7 +663,7 @@
       "executable": false
     },
     "src/easel/access-grants.ts": {
-      "sha256": "88631decb0118fc43929cff2fb5ccd06dfa30fbd82e4630a84bd4f1d52b664b0",
+      "sha256": "b240243cda088804734b7a8bd97b8a2f6b9d38b7d07b57ebb4d192d83c39c96a",
       "executable": false
     },
     "src/easel/access.ts": {
@@ -855,11 +855,11 @@
       "executable": false
     },
     "src/easel/department-statement-mail.ts": {
-      "sha256": "eaed1e9d6c271dc85a1e1d13bfe5ec084de98a83feafc27ec0a01e397b650980",
+      "sha256": "13a186ad092a34703101452f6158c42f65c5ada5e44c32b79d4571750b53088e",
       "executable": false
     },
     "src/easel/department-statements.ts": {
-      "sha256": "6135242b2ede36502abcc5ee461aad7d58cb140e4469bb3566c8b24e3a4e7209",
+      "sha256": "3b21e7cea3253ac76433cc0a503e7629d4715d1570c2ecd30cad56410b53bc49",
       "executable": false
     },
     "src/easel/dimension-actuals.ts": {
@@ -903,7 +903,7 @@
       "executable": false
     },
     "src/easel/entity-calculation.ts": {
-      "sha256": "f2ebbd049e10356a7d52d95ff84c7aa36916a4d213faef3d46ba25d1f1a59693",
+      "sha256": "9d1d7c217c4a41cbb07237c67f347ba10d9767723458acd52dab2181f6f24ca1",
       "executable": false
     },
     "src/easel/entity-consolidation.ts": {
@@ -1291,7 +1291,7 @@
       "executable": false
     },
     "src/easel/statement-dimensions.ts": {
-      "sha256": "8ac981666cadb9978f7f27523cfedc9efb9da795e5ae60dd32c7d6f4c8205b55",
+      "sha256": "d550c47aa8177635548a6c2683e323c3dfcdf70ccc1b33c0d3594fcf83472c3e",
       "executable": false
     },
     "src/easel/statements-workbook.ts": {
@@ -3631,7 +3631,7 @@
       "executable": false
     },
     "tests/entities.test.mjs": {
-      "sha256": "e9d184ff5952f24f42b908ffda96b013bd2f527bff6667f5b1c5a3edfe5b5cb0",
+      "sha256": "ae12aac70bcb25847cc27fdeaf12b0ad4922614fa11e80458bc5b7c93e8a33f8",
       "executable": false
     },
     "tests/erasure-browser.mjs": {
@@ -3711,7 +3711,7 @@
       "executable": false
     },
     "tests/groups.test.mjs": {
-      "sha256": "601cae69c58fd142d95151ed434f37b32929e5357058611d0b47818b66e12386",
+      "sha256": "b38e9c1b2843b96a3631c4c5a9e2ab47dbbff69b2c2770165c7545968b76bc65",
       "executable": false
     },
     "tests/harness.mjs": {

@@ -25,10 +25,10 @@ export function intersectGrants(s: State, live: ScopeGrant[], ceiling: ScopeGran
  return live.flatMap(a => ceiling.map(b => ({ id: a.id, departments: a.departments === null ? b.departments : b.departments === null ? a.departments : a.departments.filter(id => b.departments!.includes(id)),
   dimensions: Object.fromEntries(all(s, 'dimension').map(d => [d.id, a.dimensions[d.id] === undefined ? b.dimensions[d.id] ?? [] : a.dimensions[d.id].filter(id => (b.dimensions[d.id] ?? []).includes(id))])) }))).filter(g => g.departments === null || g.departments.length > 0)
 }
-export function hasFullScope(s: State, x: Access) {
+export function hasFullScope(s: State, x: Access, fixedTags: Record<string, string> = {}, department?: string) {
  const grants = x.readGrants
  if (!grants) return false
- const dimensions = all(s, 'dimension').map(d => [d.id, ['', ...all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)]] as const)
+ const dimensions = all(s, 'dimension').map(d => [d.id, fixedTags[d.id] === undefined ? ['', ...all(s, 'dimension-member').filter(m => m.dimension === d.id).map(m => m.id)] : [fixedTags[d.id]]] as const)
  const covers = (rows: ScopeGrant[], index: number): boolean => {
   if (!rows.length) return false
   if (rows.some(g => dimensions.slice(index).every(([id, members]) => g.dimensions[id] === undefined || members.every(m => g.dimensions[id].includes(m))))) return true
@@ -36,5 +36,5 @@ export function hasFullScope(s: State, x: Access) {
   const [id, members] = dimensions[index]
   return members.every(member => covers(rows.filter(g => g.dimensions[id] === undefined || g.dimensions[id].includes(member)), index + 1))
  }
- return all(s, 'department').every(d => covers(grants.filter(g => g.departments === null || g.departments.includes(d.id)), 0))
+ return (department === undefined ? all(s, 'department').map(d => d.id) : [department]).every(id => covers(grants.filter(g => g.departments === null || g.departments.includes(id)), 0))
 }
