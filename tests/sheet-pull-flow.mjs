@@ -13,7 +13,7 @@ export async function proveSheetPull(t) {
    assert.equal(request.method,'POST')
    if(url.pathname==='/revoke') {
     revokes++;assert.equal((await request.formData()).get('token'),credentials.refreshToken)
-    if(unreachable)throw Error('synthetic provider unavailable')
+    if(unreachable)return Response.error()
     return new Response(revokeStatus===200?'':JSON.stringify({private:credentials.refreshToken}),{status:revokeStatus,...(revokeStatus===302?{headers:{location:'https://must-not-follow.example'}}:{})})
    }
    if(url.pathname==='/tokeninfo') {assert.equal(request.headers.get('authorization'),`Bearer ${accessToken}`);return Response.json({aud:credentials.clientId,scope:'https://www.googleapis.com/auth/spreadsheets.readonly'})}
