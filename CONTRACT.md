@@ -815,21 +815,23 @@ Easel imports a Workday Adaptive Planning export (levels, accounts, dimensions a
 
 *Acceptance:* a fixture export in the shapes of Adaptive's documented API calls (`exportLevels`, `exportAccounts`, `exportDimensions`, `exportAttributes`, `exportVersions`, `exportData` and `exportConfigurableModelData` for a personnel sheet) and a sheet export; the import report lists created levels, accounts and versions and the unmapped items; budget totals equal the export's totals. The personnel-sheet fixture holds three employees and two to-be-hired rows, one row carrying a 10% bonus and a merit increase on a date, and one custom column with no Easel equivalent: the import creates five positions, two of them to be hired, whose monthly cost per payroll account equals the export's payroll-account totals for the same version to the cent, with the bonus and merit as traced components (`PEOPLE-004`); the custom column is listed as unmapped; a viewer reads headcount and payroll totals through the API without names or salaries, in the preview and after acceptance; undo removes the import, the positions included.
 
-*Status:* missing.
+Current move-in semantics: the native Actuals screen accepts original files plus an explicit buyer mapping through `POST /api/easel/import/incumbent/:op`. Adaptive metadata XML and completed CSV/CDATA exports, Planful segment/MTD/custom personnel-dimension exports, Anaplan lists/modules, Runway database/model CSV and Pigment flat list/view exports retain originals and source locations. Each exported version becomes a separate working scenario. Native positions, including salary/hourly pay, benefits, bonus and dated merit, supply payroll; every exported account/level/version/month reconciles in integer cents before acceptance, with no balancing schedule. Source-only attributes, formulas, modeled rows, custom columns and permissions remain listed as unmapped. A reviewed fingerprint binds the originals, buyer choices and current native structure; journal batches fence current session/Pay detail and reviewed target assumptions. Undo removes journal-owned structure and inputs, preserving later business edits/references; its own import status is administrative rather than a business dependency. Aggregate preview is available to current planning members without a fingerprint, personnel, salary fields, originals or raw diagnostics. Native finance with live Pay detail administers acceptance/resume/status/undo. Explicit employee-to-member mappings inherit ERASE-001 for current positions, retained originals, journals and portable restore; source names never establish identity and source permissions never confer native grants. The configured export profiles and primary provider documentation are in `docs/move-adaptive-format.md` and `docs/move-tabular-formats.md`. No live account is claimed or required by these fixture-only clauses.
+
+*Status:* done.
 
 #### MOVE-002 — Move in from Planful.
 Planful exports of the chart of accounts, segments, scenarios and data load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo.
 
 *Acceptance:* the `MOVE-001` journey with a fixture in Planful's documented export shapes.
 
-*Status:* missing.
+*Status:* partial. Gap: documented-fixture HTTP reconciliation, positions, filtered previews/exports, undo and erasure/restore pass; native 1440/390 browser journey pending.
 
 #### MOVE-003 — Move in from Anaplan, Runway and Pigment.
 Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo.
 
 *Acceptance:* the `MOVE-001` journey with one fixture per product in its documented export shape.
 
-*Status:* missing.
+*Status:* partial. Gap: documented-fixture HTTP reconciliation, positions, filtered previews/exports, undo and erasure/restore pass; native 1440/390 browser journey pending.
 
 #### MOVE-004 — A parallel month against the old tool.
 For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools.
@@ -1078,8 +1080,8 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 44 | 16 | 26 | 86 |
-| All | 61 | 16 | 26 | 103 |
+| Target and push further | 45 | 18 | 23 | 86 |
+| All | 62 | 18 | 23 | 103 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1167,9 +1169,9 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | `ENTITY-001` | Multiple entities and management consolidation | target | partial | `tests/entities.test.mjs` (ENTITY-001 local entity plans translate independently and eliminate reviewed source-backed charges, balances and settlements); `tests/entities-browser.mjs` (native entity binding, separate rates, reviewed charge/balance elimination, local and consolidated statements, formula Excel and unavailable months at 1440/390) | Native entity plans, per-entity translation, exact reviewed eliminations and live entity/department authority are proven. BLOCKED: CONNECT-011 account-blocked Sage Intacct adapter for the required multi-entity connection-fake journey; all ledger entity sources and entity-scoped actual close remain unavailable. ACCESS-001 composition follows ct batch-8 ruling E |
 | `ENTITY-002` | Multi-currency planning | target | done | `src/easel/translation.ts` `src/easel/currency-rates.ts` `tests/translation.test.mjs` `tests/translation-browser.mjs` |  |
 | `US-001` | US defaults | target | done | `tests/us-defaults.test.mjs` `tests/us-defaults-browser.mjs` | Current default/format/import doors complete; future statutory and scheduled obligations inherited by their named clauses |
-| `MOVE-001` | Move in from Adaptive Planning | target | missing |  | No Adaptive Planning import, including personnel modeled-sheet rows as positions |
-| `MOVE-002` | Move in from Planful | target | missing |  | No Planful import |
-| `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | missing |  | No Anaplan, Runway or Pigment import |
+| `MOVE-001` | Move in from Adaptive Planning | target | done | `tests/workbook-undo.test.mjs` (Adaptive original metadata, account data and personnel exports preview, reconcile native positions with bonus and merit, filter pay and undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (adaptive: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390) | None; original-call fixtures, created metadata/versions, unmapped attributes/sheet formulas/modeled rows/custom columns, exact account and payroll costs, five positions/two to hire, viewer preview/read/Excel, erasure/restore and journal undo are proven |
+| `MOVE-002` | Move in from Planful | target | partial | `tests/workbook-undo.test.mjs` (Planful segment, MTD and workforce exports preserve mapped versions, payroll parity, pay filtering and undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo) | All documented-fixture HTTP points pass; native 1440/390 browser journey pending |
+| `MOVE-003` | Move in from Anaplan, Runway and Pigment | target | partial | `tests/workbook-undo.test.mjs` (Anaplan, Runway and Pigment original configurable exports retain structure, reconciled personnel, filtered previews and journal undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo) | One documented original fixture per product passes HTTP points; native 1440/390 browser journeys pending |
 | `MOVE-004` | A parallel month against the old tool | target | done | `tests/parallel-month.test.mjs` `tests/parallel-month-browser.mjs` |  |
 | `PORT-001` | An export a buyer can open without Easel | target | done | `src/easel/open-export.ts`, `tests/open-export.test.mjs`, `tests/open-export-browser-journey.mjs` | Finance downloads product and import-journal table CSVs, scenario formula workbooks, model JSON, every immutable snapshot and retained original, with digest manifest; existing credential exclusions preserved |
 | `MOBILE-001` | Review and approve at phone width | target | done | `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001): complete planning/review journeys at 390, persisted exact-revision approval/promotion, dashboard cash equals API, page overflow checks |  |

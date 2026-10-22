@@ -29,7 +29,11 @@ export async function proveMove(h,provider) {
  assert.equal(preview.positions.filter(p=>!p.holder).length,2)
  assert.ok(preview.positions.some(p=>p.bonusBps===1000 && p.meritBps===1000))
  assert.ok(preview.unmapped.some(r=>/Custom/.test(r.location+r.reason)))
- for (const kind of ['department','line','scenario']) assert.ok(preview.created.some(r=>r.kind===kind))
+ if(provider==='adaptive') {
+  for(const fragment of ['exportAttributes.xml','other-modeled.xml'])assert.ok(preview.unmapped.some(r=>r.location.includes(fragment)))
+  assert.ok(preview.unmapped.some(r=>/formula/i.test(r.reason) && r.location.includes('sheet-export.xlsx')))
+ } else for(const table of fixture.options.tables.filter(t=>t.role==='unmapped'))assert.ok(preview.unmapped.some(r=>r.location.startsWith(table.file)))
+ for (const kind of ['department','line','dimension','dimension-member','scenario']) assert.ok(preview.created.some(r=>r.kind===kind))
  assert.deepEqual(await h.get('/api/easel/state'),before,'Preview creates no native records')
  const safe = await h.kit('incumbent','preview',fixture,board)
  assert.equal(safe.fingerprint,undefined)
