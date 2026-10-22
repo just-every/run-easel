@@ -169,7 +169,7 @@ export async function parseTabular(provider: Provider, files: MoveArtifact[], op
    const version = value('version', true), level = value('level', true)
    if (spec.role === 'personnel') {
     const dimensions = Object.fromEntries(Object.entries(dimensionColumns).map(([id, h]) => [id, row.values[h].trim()]).filter(([, v]) => v))
-    result.personnel.push({ id: value('id', true), version, level, account: value('account', true), values: { ...row.values }, location: row.location, ...(Object.keys(dimensions).length ? { dimensions } : {}) })
+    result.personnel.push({ id: value('id', true), version, level, account: value('account', true), values: { ...row.values }, structuralColumns: [...Object.values(columns), ...Object.values(dimensionColumns), ...Object.keys(rowFilter)], location: row.location, ...(Object.keys(dimensions).length ? { dimensions } : {}) })
     continue
    }
    const dimensions = Object.fromEntries(Object.entries(dimensionColumns).map(([id, h]) => [id, row.values[h].trim()]).filter(([, v]) => v))

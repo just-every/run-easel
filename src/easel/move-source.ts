@@ -8,7 +8,7 @@ export type MoveExport = {
  dimensions: { id: string; name: string; members: { id: string; name: string; parent?: string }[] }[]
  versions: { id: string; name: string }[]
  data: { version: string; account: string; level: string; month: string; amount: string; dimensions?: Record<string, string>; location: string }[]
- personnel: { id: string; version: string; level: string; account: string; values: Record<string, string>; dimensions?: Record<string,string>; location: string }[]
+ personnel: { id: string; version: string; level: string; account: string; values: Record<string, string>; structuralColumns: string[]; dimensions?: Record<string,string>; location: string }[]
  unmapped: { location: string; reason: string }[]
 }
 

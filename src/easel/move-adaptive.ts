@@ -110,7 +110,7 @@ export async function parseAdaptive(files: MoveArtifact[], options: Data): Promi
    requireThat(!values.ParentID&&(!values.IsParent||['false','0'].includes(values.IsParent.toLowerCase())),`${location}: split personnel rows require explicit consolidation before import`)
    const level=resolve(required(values[levelColumn],location,'personnel level'),result.levels,'level',location)
    const account=resolve(required(values[accountColumn]||options.personnelAccount,location,'personnel payroll account'),result.accounts,'account',location,codes)
-   result.personnel.push({id,version:v,level,account,values,location})
+   result.personnel.push({id,version:v,level,account,values,structuralColumns:['InternalID','ParentID','IsParent',levelColumn,accountColumn],location})
   }
  }
  for(const file of files.filter(file=>!file.call||!calls.has(file.call))){
