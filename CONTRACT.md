@@ -1032,7 +1032,13 @@ Before the single call, a native-session-fenced intent and a conservative USD al
 
 *Acceptance:* with a model fake, the request produces a proposal whose diff adds the named positions and drivers; promotion by a person without model-structure permission is refused.
 
-*Status:* partial.
+Current reviewed-modeler semantics (sx-easel-c42, conservative default; ct approval pending). Native company-wide finance with Pay detail and model-structure permission explicitly enables and resumes this agent (off/stopped by default), consents to reusing the owner-chosen model/key/rates and sets a separate monthly conservative USD allowance. Review configures the shared sealed, archive-excluded key; Scenarios previews the exact model and natural-language request, including permitted pay assumptions, and needs explicit per-call consent. One fixed OpenAI Responses request uses a strict schema, no tools and no automatic retry. A durable intent reserves allowance before egress; every outcome retains it. Current person, key/settings, source revision/fingerprint and stop are checked before send and acceptance.
+
+The safe output is limited to planned salary positions, volume revenue drivers and native formulas using existing permitted lines/departments. Ordinary native commands build a separate draft in an isolated context. The server recalculates its actual input/cell differences and requires exact decimal expected-value checks for every moved line and every formula; unsupported operations or failed checks save no partial proposal or inputs. The proof labels agent work, reused structure and added formula definitions, moved inputs/cells and actual checked values; a changed source or proposal is visibly stale. The official scenario stays unchanged until ordinary submission and exact-revision human promotion, which independently requires model-structure permission. No agent approves, closes, publishes, promotes, connects, pays or hires. AGENT-011 inherits the chosen-provider custody, local budget/stop, named authority and audit machinery into its global governance.
+
+*Acceptance evidence:* `tests/structure-versions.test.mjs`, “AGENT-008 reviewed model requests create only atomic tested draft proposals with exact diffs and independent promotion authority”, proves the model-edge request, named positions/revenue drivers/formula, source/input/cell differences and exact expected-value checks; the official forecast is unchanged, malformed and bogus expectations create no partial proposal, and an approvals-only person receives a model-structure refusal from ordinary promotion. It also proves exact consent, stale-source/budget/stop/current-Pay/unknown-outcome refusals and no automatic retry. `tests/modeler-browser.mjs` proves native configuration/request/proposal proof/ordinary comparison and stop at 1440/390.
+
+*Status:* partial. Gap: ct approval of the adopted native finance/Pay/model-structure generation, exact provider consent, sealed shared custody and separate conservative allowance default; AGENT-011 carries global governance.
 
 #### AGENT-009 — Analyst with cited answers.
 *What the agent does:* it answers questions about the plan and actuals ("why is Q3 burn higher than budget?", "what happens to runway if we lose our largest customer?"). Each answer cites cells, rows and deals, and a what-if becomes a private scenario (`CYCLE-004`).
@@ -1141,7 +1147,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and tests at commit `1953a5256524dd5fd0de3392698b5c8915f9855a` (23 October 2026).
+Judged from the code and tests at commit `df198e860e5e88128b6b9d7593f81e4654e2e5ef` (23 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
@@ -1251,7 +1257,7 @@ Judged from the code and tests at commit `1953a5256524dd5fd0de3392698b5c8915f985
 | `AGENT-005` | Source-change guard | push-further | done | `tests/mapping-rules.test.mjs` (Source refresh proposes a reasoned mapping and exact impacts, blocks incomplete payroll cash, and accepts only finance-reviewed source decisions; Repeated source observations detect metadata, shape and dimension changes; real payroll evidence resolves a missing run) `tests/source-guard-browser.mjs` |  |
 | `AGENT-006` | Following decisions through to results | push-further | done | `src/easel/decision-followup.ts` `src/ui/decision-followup.tsx` `tests/decision-followup.test.mjs` `tests/decision-followup-browser.mjs` | Decisions cite captured promotion effects; company-zone chases before due dates; reasoned owner revisions and stops; finance-approved decision changes; realized payroll, revenue and cash against the approved assumption, with roster headcount and Gauge capacity unavailable unless reviewed |
 | `AGENT-007` | Variance commentary grounded in sources | push-further | partial | `tests/variance-commentary.test.mjs` (AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation; AGENT-007 accepted citations stay in their visible variance and unconfirmed commentary never publishes) `tests/commentary-model-browser.mjs` | Model-fake drafting, checked citations and human publication ship; ct approval of explicit provider consent, sealed custody and conservative allowance default pending |
-| `AGENT-008` | Modeler agent | push-further | partial | `src/easel/plan.ts` `API.md` | Outside agents can prepare proposals through the API as a signed-in person; in-product plain-language model changes are missing |
+| `AGENT-008` | Modeler agent | push-further | partial | `tests/structure-versions.test.mjs` (AGENT-008 reviewed model requests create only atomic tested draft proposals with exact diffs and independent promotion authority) `tests/modeler-browser.mjs` | Model-fake named positions/drivers/formulas, tested diffs and independent promotion permission proven; ct generation/consent/custody/allowance default approval pending |
 | `AGENT-009` | Analyst with cited answers | push-further | missing |  | No in-product analyst; Easel calls no model |
 | `AGENT-010` | Recurring missions | push-further | missing |  | No saved or scheduled missions |
 | `AGENT-011` | Agent governance | push-further | partial | `src/easel/access.ts` `src/easel/store.ts` | Every request runs with a person's role and a session-fenced save; model-provider settings, budgets, agent labels, a stop switch and an agent action refusal list are missing |
