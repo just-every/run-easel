@@ -40,6 +40,8 @@ export async function proveMove(h,provider) {
  for(const position of preview.positions.filter(p=>p.holder)) assert.ok(!serialized.includes(position.holder),'Viewer preview hides names')
  assert.ok(safe.versions[0].cells.some(c=>c.amount>0))
  assert.ok(Object.keys(safe.versions[0].headcount).length>0)
+ assert.equal(Object.values(safe.versions[0].headcount).reduce((sum,months)=>sum+(months['2026-12'] ?? 0),0),5)
+ assert.deepEqual(safe.versions[0].cells,preview.versions[0].cells,'Viewer preview retains exact aggregate account totals')
  await h.kit('incumbent','commit',{...fixture,fingerprint:preview.fingerprint},board,403)
  const stale = {...fixture,mapping:{...fixture.mapping,personnelColumns:{...fixture.mapping.personnelColumns,benefits:undefined}}}
  await h.kit('incumbent','commit',{...stale,fingerprint:preview.fingerprint},h.owner,409)
@@ -59,10 +61,11 @@ export async function proveMove(h,provider) {
  for (const scenario of imported.import.scenarios) {
   const view = await h.get(`/api/easel/scenario/${scenario}`)
   const native = view.inputs.position
-  assert.equal(native.length,5)
-  assert.equal(native.filter(p=>!p.holder).length,2)
-  assert.match(JSON.stringify(view.calculation),/Merit planning estimate/)
-  assert.match(JSON.stringify(view.calculation),/Position bonus planning estimate/)
+  const expectedPositions=preview.positions.filter(p=>p.scenario===scenario)
+  assert.deepEqual(new Set(native.map(p=>p.originId)),new Set(expectedPositions.map(p=>p.originId)))
+  assert.equal(native.filter(p=>!p.holder).length,expectedPositions.filter(p=>!p.holder).length)
+  if(expectedPositions.some(p=>p.meritBps))assert.match(JSON.stringify(view.calculation),/Merit planning estimate/)
+  if(expectedPositions.some(p=>p.bonusBps))assert.match(JSON.stringify(view.calculation),/Position bonus planning estimate/)
   for (const row of preview.reconciliation.filter(r=>r.version===view.scenario.imported.sourceVersion)) {
    assert.equal(view.calculation.cells.filter(c=>c.line===row.line && c.department===row.department && c.month===row.month).reduce((sum,c)=>sum+c.amount,0),row.exported)
    assert.equal(row.difference,0)

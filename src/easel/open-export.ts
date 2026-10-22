@@ -9,6 +9,7 @@ import { readD1ImportOriginals } from '../modules/import-kit/src/d1/index'
 import type { RetainedOriginal } from '../modules/import-kit/src/types'
 import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
+import { moveContext, MOVE_NAMESPACE } from './move-journal'
 import { payrollJournalContext } from './payroll-journal'
 import { journalContext } from './kit'
 import { scenarioWorkbook } from './report-workbooks'
@@ -72,7 +73,7 @@ async function retainedOriginals(c: Context, visible:(id:string)=>boolean): Prom
  const { results } = await c.db.prepare(
   'SELECT DISTINCT j.id, j.destination, j.namespace, j.mapping_version, j.principal_id FROM ik_jobs j JOIN ik_originals o ON o.job_id=j.id ORDER BY j.id',
  ).all<any>()
- const originals = await Promise.all(results.filter((job:any)=>visible(job.id)).map((job: any) => readD1ImportOriginals(job.id, job.namespace === 'easel-payroll-files' ? payrollJournalContext(c,job.destination,job.mapping_version,job) : journalContext(
+ const originals = await Promise.all(results.filter((job:any)=>visible(job.id)).map((job: any) => readD1ImportOriginals(job.id, job.namespace === 'easel-payroll-files' ? payrollJournalContext(c,job.destination,job.mapping_version,job) : job.namespace === MOVE_NAMESPACE ? moveContext(c,job.destination,job.mapping_version,job) : journalContext(
   c.db, c.x.actor, job.destination, job.namespace, { mapping_version: job.mapping_version, principal_id: job.principal_id },
  )).then(rows=>rows.map(row=>({...row,payroll:job.namespace === 'easel-payroll-files'})))))
  return originals.flat()
