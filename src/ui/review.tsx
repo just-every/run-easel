@@ -6,6 +6,7 @@ import { ParallelMonth } from './parallel-month'
 import { DepartmentStatements } from './department-statements'
 import { PackActionDepartment } from './pack-action-departments'
 import { DecisionFollowup } from './decision-followup'
+import { ForecastLearning } from './forecast-learning'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 import { Dots, glue } from './dots'
 import { ConstantCurrency } from './translation'
@@ -67,6 +68,7 @@ export function Review({ state, refresh }: Shared) {
   {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
   {(me.role === 'finance' || me.role === 'contributor') && closedMonths.includes(month) && <DepartmentStatements state={state} month={month} setMonth={setMonth} refresh={refresh} />}
   {me.role === 'finance' && closedMonths.includes(month) && <ParallelMonth key={month} state={state} month={month} />}
+  {me.role === 'finance' && forecast?.actualsThrough && <ForecastLearning state={state} forecast={forecast} refresh={refresh} />}
   <section className="card">
    <h2>Review packs</h2>
    {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}
