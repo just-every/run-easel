@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "7d185aa8a7cb054353e8a7af007acb516db02b02f6b04111c813ebd7688094a2",
+      "sha256": "55170c83e57f3b67139be4374bde38e627b61f44697955c4958796a54cca1bf4",
       "executable": false
     },
     "DEMO.md": {
@@ -4187,7 +4187,7 @@
       "executable": false
     },
     "tests/sheet-browser.mjs": {
-      "sha256": "371b75c161ef9a5f24bd8c9ba7473990f6490e9be0d7a9fa955e58d23e565dbe",
+      "sha256": "791a099e808a29d0f69c17b6f336faa6827b96cb1f04be60ca54f4cb9be0e5b1",
       "executable": false
     },
     "tests/sheet-pull-flow.mjs": {

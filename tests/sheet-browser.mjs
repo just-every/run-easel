@@ -20,6 +20,10 @@ try{
  const schedule=await post('/api/easel/command/schedule',{scenario:scenario.id,name:'Sales capacity',department:department.id,line:line.id,values:{'2026-02':'100','2026-03':'200'}})
  const original=await(await context.request.get(`${runtime.origin}/api/easel/scenario/${scenario.id}`)).json()
  page=await context.newPage();page.on('dialog',d=>d.accept())
+ await page.goto(`${runtime.origin}/setup`)
+ await page.getByLabel('I confirm this owner account is ready to use.',{exact:true}).check()
+ await page.getByRole('button',{name:'Finish setup',exact:true}).click()
+ await page.getByRole('navigation',{name:'Easel'}).waitFor()
  const panel=()=>page.locator('section.card').filter({has:page.getByRole('heading',{name:'Google Sheets',exact:true})})
  const action=async(path,click)=>{const pending=page.waitForResponse(r=>r.url().endsWith(path));await click();const r=await pending;assert.equal(r.status(),200,await r.text());await settle(page);return r.json()}
  const settings=async()=>{await page.goto(`${runtime.origin}/app?tab=settings`);await page.getByRole('navigation',{name:'Easel'}).waitFor();await panel().getByRole('button',{name:'Connect Google Sheets',exact:true}).waitFor()}
