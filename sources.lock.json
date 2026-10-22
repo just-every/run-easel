@@ -3575,7 +3575,7 @@
       "executable": false
     },
     "src/ui/move-import.tsx": {
-      "sha256": "390300bc43bd7996d2850756edf814f071f58934b0f557e5523fedde3bb67b1a",
+      "sha256": "ce2dbe1046247f70b17cbfd9cd7a88435d23223d320f2ebaa7cbff7ba9c37d2a",
       "executable": false
     },
     "src/ui/native-formulas-form.tsx": {
