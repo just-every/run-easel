@@ -523,7 +523,7 @@
       "executable": false
     },
     "migrations/core/0020_approval_chains.sql": {
-      "sha256": "647abeca0dea5e6267e8ba3e13d7c6089def1a2056762a96152a58ec3e40b1b3",
+      "sha256": "74c45f47ae779c285f590fb259cf98bd0c44db8954172fb2259b87bac519ab10",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -899,7 +899,7 @@
       "executable": false
     },
     "src/easel/approval-chains.ts": {
-      "sha256": "32355c573e009082c1595a6d1f0b4300d39397e620d0a32f8eac604b4aa61d06",
+      "sha256": "a242a3fd0aece0c6c09c38358af4ddefa23669daa4aacd9cfa6bf6a29f39879b",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -1031,7 +1031,7 @@
       "executable": false
     },
     "src/easel/cycle.ts": {
-      "sha256": "eb983cfe4c9e94e7edf0f5185bb7f438b8bb9c7dd274835f879d47e1b7ba5023",
+      "sha256": "604abe97205a6388a7fd44f4f3996f5043c3ef254d343fa34c52434716a9285e",
       "executable": false
     },
     "src/easel/daily-cash.ts": {
@@ -1579,7 +1579,7 @@
       "executable": false
     },
     "src/easel/store.ts": {
-      "sha256": "dff4210876dc669050fea14d8875e6ecd14251f91c4bf8eb07a909aaf7e31ace",
+      "sha256": "a6a51580da923fb716ff20997341597932faa6e08dfd012d0b534a4dcf2db603",
       "executable": false
     },
     "src/easel/structure-versions.ts": {
@@ -3495,7 +3495,7 @@
       "executable": false
     },
     "src/ui/approval-chains.tsx": {
-      "sha256": "49a5da482f2e8408dec83391934bcb1b31f1c5886366bcf28274807b8d12b780",
+      "sha256": "20c9037f856c96312d2ebca2b90e945f64ac392f3aed65dbe7d169f8d677c21b",
       "executable": false
     },
     "src/ui/assets.tsx": {
@@ -3779,7 +3779,7 @@
       "executable": false
     },
     "tests/approval-chains.test.mjs": {
-      "sha256": "8c6de8b6fd70df685b179665be4801ecd4db5e0c0a7094a838c70ccd69882cdd",
+      "sha256": "b14cd9548084019705131cf16431330b8bd0bb7c5d070f0d3dc886d90935d3c9",
       "executable": false
     },
     "tests/assets-browser-journey.mjs": {
@@ -4159,7 +4159,7 @@
       "executable": false
     },
     "tests/restore-flow.mjs": {
-      "sha256": "e420865d41983597b1ace168445e1fc857baec4a695d8fd9072f53aa374defb5",
+      "sha256": "3d81bfc7aa952a448460fcbb6574e1cb63ad9fe16c1adb7770514bf9ffa299a0",
       "executable": false
     },
     "tests/revenue-drivers-browser.mjs": {

@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import JSZip from 'jszip'
+import { restoreModelRecords } from './restore-flow.mjs'
 import { createPortability } from '@runeditrun/rer/modules/portability'
 import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
 
@@ -136,4 +137,72 @@ test('CYCLE-007 ordered department reviews bind live authority, exact content, v
  assert.deepEqual(restoredView.departments.find(d => d.department === sales.id).submission, completed)
  assert.deepEqual(restoredView.departments.find(d => d.department === sales.id).configuration, chain)
  assert.deepEqual((await restored.get(`/api/easel/snapshot/${approved.snapshot}`)).body, snapshot.body)
+ await restoreModelRecords(h, ['approval-chain', 'approval-chain-version', 'approval-content', 'submission'])
+})
+
+test('CYCLE-007 grid undo, proposal promotion, chain deletion and live reviewer removal preserve exact review boundaries', async t => {
+ let now = '2026-10-26T15:00:00.000Z'
+ const h = await harness({ now: () => now }); t.after(() => h.close())
+ await h.command('workspace', { name: 'Synthetic Easel review changes', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const sales = await h.command('department', { name: 'Sales' }), eng = await h.command('department', { name: 'Engineering' }), line = await h.command('line', { name: 'Services', type: 'revenue' })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ const reviewer = await h.person('head@example.test', 'contributor', [sales.id], false)
+ await h.command('calendar-schedule-save', { enabled: true, channels: [], revision: 0 })
+ assert.equal((await h.send('/api/easel/notifications/preference', { mode: 'digest' }, reviewer)).status, 200)
+ const request = { scenario: budget.id, department: sales.id, name: 'Sales plan', line: line.id, values: { '2026-01': '100' } }
+ await h.command('schedule', request); await h.command('schedule', { ...request, department: eng.id, name: 'Engineering plan' })
+ let chain = await h.command('approval-chain-save', { department: sales.id, steps: [{ name: 'Department head', members: ['head@example.test'] }, { name: 'Finance', members: ['owner@example.test'] }] })
+ await h.command('request-submissions', { scenario: budget.id, departments: [sales.id] }); await h.command('submit', { scenario: budget.id, department: sales.id }, reviewer)
+ const row = async () => (await h.get(`/api/easel/approval-chains/${budget.id}`)).departments.find(d => d.department === sales.id)
+ const sub = async () => (await row()).submission
+ const approve = async (status = 200) => { const r = await row(); return h.command('approval-step', { scenario: budget.id, department: sales.id, step: r.steps[0].id, pass: r.submission.review.pass, digest: r.submission.review.content.digest }, reviewer, status) }
+ const scenario = async () => h.get(`/api/easel/scenario/${budget.id}`)
+ await approve()
+ const first = await sub()
+ // Promoting a change in Engineering copies all input rows, but Sales is the
+ // same content even when its storage row ID changes.
+ const promote = async department => {
+  const p = await h.command('proposal-create', { from: budget.id, name: 'Updated department plan', request: 'Revise the January services estimate' })
+  const v = await h.get(`/api/easel/scenario/${p.id}`), input = v.inputs.schedule.find(r => r.department === department)
+  await h.command('schedule', { ...input, values: { '2026-01': '200' } })
+  const submitted = await h.command('proposal-submit', { id: p.id })
+  await h.command('proposal-promote', { id: p.id, revision: submitted.revision })
+ }
+ await promote(eng.id)
+ assert.deepEqual((await sub()).review, first.review)
+ await promote(sales.id)
+ assert.equal((await sub()).review.decisions.length, 0)
+ await approve()
+ let v = await scenario(), schedule = v.inputs.schedule.find(r => r.department === sales.id)
+ const change = { scenario: budget.id, revision: v.scenario.revision, changes: [{ schedule: schedule.id, month: '2026-01', value: '250' }] }
+ const preview = await h.command('grid-preview', change)
+ await h.command('grid-save', { ...change, fingerprint: preview.fingerprint })
+ assert.equal((await sub()).review.decisions.length, 0)
+ await approve()
+ await h.command('grid-undo', { scenario: budget.id, revision: (await scenario()).scenario.revision })
+ assert.equal((await sub()).review.decisions.length, 0)
+ await approve()
+ const recorded = (await sub()).review.version
+ const originalSteps = chain.steps
+ chain = await h.command('approval-chain-save', { ...chain, steps: [{ ...chain.steps[0], members: ['owner@example.test'] }, chain.steps[1]] })
+ await h.command('return-submission', { scenario: budget.id, department: sales.id, reason: 'Removed reviewer' }, reviewer, 403)
+ assert.equal((await sub()).review.version, recorded)
+ const deleted = await h.command('approval-chain-delete', { department: sales.id, version: chain.version })
+ assert.equal((await sub()).review.version, recorded)
+ assert.equal((await row()).steps[1].status, 'blocked')
+ await h.command('approval-chain-restart', { scenario: budget.id, department: sales.id, pass: (await sub()).review.pass, version: deleted.version, reason: 'Remove review steps explicitly' })
+ assert.equal((await sub()).status, 'submitted')
+ assert.equal((await row()).steps.length, 0)
+ chain = await h.command('approval-chain-save', { department: sales.id, version: deleted.version, steps: originalSteps.map(({ id, ...step }) => step) })
+ assert.equal((await sub()).review.version, deleted.version, 'New definition applies only after an explicit restart or resubmission')
+ await h.command('approval-chain-restart', { scenario: budget.id, department: sales.id, pass: (await sub()).review.pass, version: chain.version, reason: 'Reinstate review' })
+ await h.command('member', { email: 'head@example.test', name: 'Head', role: 'contributor', departments: [eng.id] })
+ await approve(403)
+ assert.equal((await row()).steps[0].status, 'blocked')
+ await h.command('member', { email: 'head@example.test', name: 'Head', role: 'viewer' })
+ await approve(403)
+ const mailBefore = h.messages.length
+ now = '2026-10-27T12:05:00.000Z'
+ await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' })
+ assert.equal(h.messages.slice(mailBefore).filter(m => m.to.includes('head@example.test')).length, 0, 'A revoked reviewer receives none of the queued pending-step notices')
 })

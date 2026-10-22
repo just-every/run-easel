@@ -50,7 +50,10 @@ function departmentInputs(s: State, scenario: string, department: string) {
 }
 export async function reviewContent(s: State, scenario: string, department: string) {
  const inputs = departmentInputs(s, scenario, department)
- const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical(inputs)))
+ // Row IDs can change when an exact proposal is copied into its parent.
+ // Stable origin IDs and input values identify content, not storage addresses.
+ const content = Object.fromEntries(Object.entries(inputs).map(([kind, rows]) => [kind, rows.map(({ id: _id, scenario: _scenario, ...input }) => input).sort((a, b) => String(a.originId).localeCompare(String(b.originId)))]))
+ const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical(content)))
  return { revision: get(s, 'scenario', scenario).revision, digest: [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join(''), inputs }
 }
 const contentRef = (content: Data) => ({ revision: content.revision, digest: content.digest })
@@ -162,6 +165,8 @@ export async function approvalChains(c: Context, op: string, b: Data): Promise<D
   requireThat(op === 'approval-chain-delete' || Array.isArray(b.steps) && b.steps.length > 0, 'Add at least one review step')
   const active = await people(c)
   const steps = op === 'approval-chain-delete' ? [] : b.steps.map((step: Data, i: number) => {
+   requireThat(step && typeof step === 'object' && !Array.isArray(step), 'Each review step must be an object')
+   requireThat((step.members === undefined || Array.isArray(step.members)) && (step.groups === undefined || Array.isArray(step.groups)), 'Reviewer people and groups must be lists')
    const members: string[] = [...new Set<string>((Array.isArray(step.members) ? step.members : []).map((v: unknown) => text(v, 'Reviewer email', 320).toLowerCase()))]
    const groups: string[] = [...new Set<string>((Array.isArray(step.groups) ? step.groups : []).map((v: unknown) => get(c.s, 'access-group', v).id))]
    requireThat(members.length + groups.length > 0, 'Each step needs people or groups')
@@ -217,7 +222,7 @@ export async function approvalChainView(c: Context, scenarioId: string) {
    const reviewers = await eligiblePeople(c, sub!, step)
    return { ...step, reviewers, status: index < next ? 'approved' : index === next && sub!.status !== 'returned' ? reviewers.length ? 'waiting' : 'blocked' : 'pending', reason: reviewers.length ? '' : 'No active reviewer has current chain membership, every department source and required Pay detail', canApprove: !c.x.actor.agent && scenario.status === 'working' && !changed && sub!.status === 'reviewing' && index === next && !eligible(c, c.x, sub!, step) }
   })) : []
-  rows.push({ department: department.id, name: department.name, nextVersion: chain ? { number: chain.number, steps: chain.steps.map((step: Data) => ({ name: step.name })) } : null, configuration: manage ? chain ?? null : null, submission: sub ? { ...sub, ...(changed ? { status: 'reviewing' } : {}) } : null, steps, changed, canReturn: !!sub && scenario.status === 'working' && ['reviewing', 'submitted'].includes(sub.status) && await mayReturn(c, sub) })
+  rows.push({ department: department.id, name: department.name, recordedVersion: version?.number ?? null, history: (sub?.history ?? []).map((event: Data) => { const saved = event.chainVersion ? find(c.s, 'approval-chain-version', event.chainVersion) : null, next = event.nextChainVersion ? find(c.s, 'approval-chain-version', event.nextChainVersion) : null; return { ...event, versionNumber: saved?.number ?? next?.number ?? null, nextVersionNumber: next?.number ?? null, stepName: saved?.steps.find((step: Data) => step.id === event.step)?.name ?? null } }), nextVersion: chain ? { number: chain.number, steps: chain.steps.map((step: Data) => ({ name: step.name })) } : null, configuration: manage ? chain ?? null : null, submission: sub ? { ...sub, ...(changed ? { status: 'reviewing' } : {}) } : null, steps, changed, canReturn: !!sub && scenario.status === 'working' && ['reviewing', 'submitted'].includes(sub.status) && await mayReturn(c, sub) })
  }
  return { scenario: scenario.id, manage, departments: rows, people: manage ? active.filter(p => ['finance', 'contributor'].includes(personAccess(c, p).role ?? '')).map(p => ({ email: p.email, name: p.name })) : [], groups: manage ? all(c.s, 'access-group').map(g => ({ id: g.id, name: g.name })) : [] }
 }

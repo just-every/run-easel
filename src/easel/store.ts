@@ -31,9 +31,9 @@ export function authority(a: Actor, finance = false) {
 }
 
 export async function load(db: D1Database) {
- const [meta, rows] = await db.batch([db.prepare('SELECT revision FROM e_meta WHERE id=1'), db.prepare('SELECT * FROM e_records ORDER BY kind, id')])
+ const [meta, rows, captures] = await db.batch([db.prepare('SELECT revision FROM e_meta WHERE id=1'), db.prepare('SELECT * FROM e_records ORDER BY kind, id'), db.prepare("SELECT 'main' AS destination,kind,id,revision,value FROM e_approval_captures ORDER BY kind,id")])
  const revision = Number((meta.results[0] as any).revision)
- const state: State = new Map(rows.results.map((r: any) => [key(r.kind, r.id), { destination: r.destination, kind: r.kind, id: r.id, revision: r.revision, value: JSON.parse(r.value) }]))
+ const state: State = new Map([...rows.results, ...captures.results].map((r: any) => [key(r.kind, r.id), { destination: r.destination, kind: r.kind, id: r.id, revision: r.revision, value: JSON.parse(r.value) }]))
  return { revision, state }
 }
 
@@ -54,11 +54,13 @@ export async function save(db: D1Database, a: Actor, before: State, after: State
  for (const [k, r] of after) {
   if (before.get(k)?.revision === r.revision) continue
   q.push(eventStatement(db, a, changeEvent(before.get(k), r)))
+  if (['approval-chain-version', 'approval-content'].includes(r.kind)) { q.push(db.prepare('INSERT INTO e_approval_captures(kind,id,revision,value) VALUES(?,?,?,?)').bind(r.kind, r.id, r.revision, JSON.stringify(r.value))); continue }
   q.push(db.prepare('INSERT INTO e_records(destination,kind,id,revision,value) VALUES(?,?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET revision=excluded.revision,value=excluded.value').bind(r.destination, r.kind, r.id, r.revision, JSON.stringify(r.value)))
  }
  for (const [k, r] of before) if (!after.has(k)) {
   q.push(eventStatement(db, a, changeEvent(r, undefined)))
-  q.push(db.prepare('DELETE FROM e_records WHERE kind=? AND id=?').bind(r.kind, r.id))
+  const table = ['approval-chain-version', 'approval-content'].includes(r.kind) ? 'e_approval_captures' : 'e_records'
+  q.push(db.prepare(`DELETE FROM ${table} WHERE kind=? AND id=?`).bind(r.kind, r.id))
  }
  q.push(...extra)
  for (const s of snapshots) {

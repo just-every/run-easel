@@ -174,3 +174,34 @@ export async function restoreFlow(h) {
   if (recoveryDestination) await rm(recoveryDestination, { recursive: true, force: true })
  }
 }
+
+/** A bounded real CLI round trip for added model records, without rerunning
+ * the separate corruption/recovery matrix above. */
+export async function restoreModelRecords(h, kinds) {
+ const original = await archive(h.db), root = process.cwd(), destination = await mkdtemp(join(tmpdir(), 'easel-record-restore-'))
+ try {
+  await fresh(root, destination)
+  await writeArchive(destination, original)
+  const imported = await cli(destination)
+  assert.equal(imported.code, 0, imported.log)
+  const { getPlatformProxy } = createRequire(join(root, 'package.json'))('wrangler')
+  const proxy = await getPlatformProxy({ configPath: join(destination, 'wrangler.jsonc'), persist: { path: join(destination, '.wrangler/state/v3') }, remoteBindings: false })
+  try {
+   const actual = (await proxy.env.DB.prepare("SELECT 'e_records' AS source,* FROM e_records UNION ALL SELECT 'e_approval_captures' AS source,'main' AS destination,kind,id,revision,value FROM e_approval_captures ORDER BY kind,id").all()).results.filter(r => kinds.includes(r.kind)).map(({ source, ...row }) => source === 'e_approval_captures' ? { source, kind: row.kind, id: row.id, revision: row.revision, value: row.value } : { source, ...row })
+   const expected = original.filter(r => r.kind === 'part').flatMap(p => p.items).filter(i => i.kind === 'row' && ['e_records', 'e_approval_captures'].includes(i.table) && kinds.includes(i.row.kind)).map(i => ({ source: i.table, ...i.row })).sort((a,b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
+   assert.ok(expected.length > 0)
+   assert.deepEqual(actual, expected, 'Real rer import preserves chain versions, exact captures and complete submission history')
+  } finally { await proxy.dispose() }
+  const exported = await new Promise((resolve, reject) => {
+   const env = { ...process.env, CI: 'true', WRANGLER_SEND_METRICS: 'false' }; delete env.RER_LOCAL_OPERATION
+   const child = spawn(process.execPath, [__rerTestEntry, 'export', '--output', 'exports/roundtrip.rer', '--non-interactive', '--json', '--no-queue'], { cwd: destination, env, stdio: ['ignore','pipe','pipe'] })
+   let log = ''; child.stdout.on('data', b => { log += b }); child.stderr.on('data', b => { log += b }); child.once('error', reject); child.once('close', code => resolve({code,log}))
+  })
+  assert.equal(exported.code, 0, exported.log)
+  const again = []
+  for await (const record of fileRecords(join(destination, 'exports/roundtrip.rer'))) if (record.kind === 'part') again.push(...record.items.filter(i => i.kind === 'row' && ['e_records', 'e_approval_captures'].includes(i.table) && kinds.includes(i.row.kind)))
+  const originalRows = original.filter(r => r.kind === 'part').flatMap(p => p.items).filter(i => i.kind === 'row' && ['e_records', 'e_approval_captures'].includes(i.table) && kinds.includes(i.row.kind))
+  const order = rows => rows.sort((a,b) => a.row.kind.localeCompare(b.row.kind) || a.row.id.localeCompare(b.row.id))
+  assert.deepEqual(order(again), order(originalRows), 'Real rer re-export retains the reviewed chain and history')
+ } finally { await rm(destination, { recursive: true, force: true }) }
+}

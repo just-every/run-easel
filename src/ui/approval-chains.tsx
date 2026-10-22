@@ -34,10 +34,10 @@ export function ApprovalChains({ state, refresh, budget }: Pick<Shared, 'state' 
    const sub = row.submission, review = sub?.review
    return <article key={row.department} aria-label={`${row.name} approval chain`} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
     <h3>{row.name}</h3>
-    {review && <p>Submitted revision {review.content.revision} · {sub.status}. <small>Content {review.content.digest.slice(0, 12)}</small></p>}
+    {review && <p>Submitted revision {review.content.revision} · chain version {row.recordedVersion} · {sub.status}. <small>Content {review.content.digest.slice(0, 12)}</small></p>}
     {row.changed && <p role="status">Department inputs changed. Review will restart at step one.</p>}
     {row.steps.length ? <ol className="plain">{row.steps.map((step: D, i: number) => <li key={step.id}>
-     <strong>{i + 1}. {step.name}</strong> — <span className="pill">{step.status}</span>
+     <strong>{step.name}</strong> — <span className="pill">{step.status}</span>
      {step.reason && <p role="status">Blocked: {step.reason}</p>}
      {step.reviewers.length > 0 && <p className="muted">Eligible now: {step.reviewers.join(', ')}</p>}
      {step.canApprove && <Action label={`Approve ${row.name}: ${step.name}`} confirm="Approve this department's exact submitted content?" run={async () => { await command('approval-step', { scenario: budget.id, department: row.department, step: step.id, pass: review.pass, digest: review.content.digest }); await reload() }} />}
@@ -47,7 +47,7 @@ export function ApprovalChains({ state, refresh, budget }: Pick<Shared, 'state' 
      <ChainEditor key={row.configuration?.version ?? 'new'} row={row} view={view} reload={reload} />
      {row.configuration && sub && ['reviewing', 'submitted'].includes(sub.status) && <Form submit={`Restart ${row.name} on version ${row.configuration.number}`} onSubmit={async v => { await command('approval-chain-restart', { scenario: budget.id, department: row.department, pass: review?.pass, version: row.configuration.version, reason: v.reason }); await reload() }}><Field label={`Reason to restart ${row.name}`} name="reason" /></Form>}
     </>}
-    {sub && <details><summary>{row.name} review history</summary><ol>{sub.history.map((entry: D, i: number) => <li key={i}><strong>{entry.status}</strong> · {entry.by} · {date(entry.at)}{entry.reason && ` — ${entry.reason}`}{entry.content && <small> · revision {entry.content.revision}, content {entry.content.digest.slice(0, 12)}</small>}{entry.voidedDecisions?.length > 0 && <span> · {entry.voidedDecisions.length} prior decision(s) voided</span>}</li>)}</ol></details>}
+    {sub && <details><summary>{row.name} review history</summary><ol>{row.history.map((entry: D, i: number) => <li key={i}><strong>{{ requested: 'Requested', submitted: 'Submitted', 'chain-submitted': 'Review started', 'step-approved': 'Step approved', returned: 'Returned', 'chain-restarted': 'Review restarted' }[entry.status as string] ?? entry.status}</strong>{entry.stepName && `: ${entry.stepName}`}{entry.versionNumber && ` · chain version ${entry.versionNumber}`}{entry.nextVersionNumber && entry.nextVersionNumber !== entry.versionNumber && ` → ${entry.nextVersionNumber}`} · {entry.by} · {date(entry.at)}{entry.reason && ` — ${entry.reason}`}{entry.content && <small> · revision {entry.content.revision}, content {entry.content.digest.slice(0, 12)}</small>}{entry.voidedDecisions?.length > 0 && <span> · {entry.voidedDecisions.length} prior decision(s) voided</span>}</li>)}</ol></details>}
    </article>
   })}
  </section>

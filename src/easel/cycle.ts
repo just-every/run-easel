@@ -28,7 +28,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
    const dept = get(s, 'department', d)
    const prior = find(s, 'submission', `${budget.id}|${dept.id}`)
    requireThat(!prior || !['submitted', 'reviewing'].includes(prior.status), `${dept.name} has already submitted`, 409)
-   put(s, 'submission', `${budget.id}|${dept.id}`, { scenario: budget.id, department: dept.id, status: 'requested', due, requestedBy: x.actor.email, requestedAt: c.now, history: [...(prior?.history ?? []), { status: 'requested', by: x.actor.email, at: c.now }] })
+   put(s, 'submission', `${budget.id}|${dept.id}`, { scenario: budget.id, department: dept.id, status: 'requested', due, requestedBy: x.actor.email, requestedAt: c.now, history: [...(prior?.history ?? []), { status: 'requested', by: x.actor.email, at: c.now, step: null, chainVersion: find(s, 'approval-chain', dept.id)?.version ?? null, content: null }] })
   }
   c.activity.push({ action: op, record: budget.id, scenario: budget.id, detail: { departments: ids, due } })
   return { submissions: all(s, 'submission').filter(x => x.scenario === budget.id) }
