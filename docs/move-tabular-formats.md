@@ -1,5 +1,3 @@
-# Original competitor exports
-
 `parseTabular(provider, files, options)` reads original Planful, Anaplan, Runway and Pigment exports. It does not assume that customers have identical models or column headings. The buyer's `options.tables` describes each original table; the separate `mapping` chooses Easel destinations. Each fixture package has a `manifest.json` containing both, the original files to upload, and `expected.json` with independently calculated amounts. Manifest and expected files are instructions/evidence, not provider exports to upload.
 
 All identifiers are synthetic `synthetic-easel-<n>` replacements. In particular, Pigment GUID values have intentionally been replaced by these safe synthetic identifiers; the column layout and relationships are retained.

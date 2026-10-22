@@ -1,5 +1,3 @@
-# Saved Adaptive Planning exports
-
 This adapter reads uploaded originals; it makes no provider request. The Easel
 upload bundle identifies each original by `name`, exactly one `text` or `base64`,
 and optional `call`, `version`, and `sheet`. This wrapper is Easel transport, not
