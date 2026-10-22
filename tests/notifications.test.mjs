@@ -95,8 +95,9 @@ test('CYCLE-003 mentions, returns, pending approval and triggered tasks notify e
 test('Private Slack notifications require the mapped native person’s consent and recheck exact human, team, private IM and live authority without fallback', async t => {
  const { privateSlackProvider } = await import('./private-slack-runtime.mjs')
  const provider = privateSlackProvider()
+ let afterIdentity
  let now = '2026-11-01T12:00:00.000Z'
- const h = await harness({ now: () => now, outbound: provider.fetch, bindings: { SLACK_WEBHOOK_URL: 'https://chat.example.test/synthetic-easel-2' } }); t.after(() => h.close())
+ const h = await harness({ now: () => now, outbound: async request => { const response = await provider.fetch(request); if (new URL(request.url).pathname === '/api/conversations.info' && afterIdentity) { const change = afterIdentity; afterIdentity = null; await change() } return response }, bindings: { SLACK_WEBHOOK_URL: 'https://chat.example.test/synthetic-easel-2' } }); t.after(() => h.close())
  const post = async (op, body, cookie = h.owner, status = 200) => { const r = await h.send(`/api/easel/slack-private/${op}`, body, cookie); assert.equal(r.status, status, `${op}: ${JSON.stringify(r.value)}`); return r.value }
  const status = cookie => h.get('/api/easel/slack-private', cookie)
  await h.command('workspace', { name: 'Private owner questions', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01', horizon: 24 })
@@ -171,6 +172,13 @@ test('Private Slack notifications require the mapped native person’s consent a
   assert.ok(['blocked', 'pending'].includes(asked.notification.status))
   await cancel(asked.q); provider[target] = {}
  }
+ // A permission change while Slack verifies the IM is checked again before the post.
+ const beforePermissionRace = provider.posts.length
+ afterIdentity = () => h.command('member', { email: 'sales@example.test', name: 'Sales', role: 'contributor', departments: [], active: true })
+ asked = await ask()
+ assert.equal(provider.posts.length, beforePermissionRace, 'Removing source access during identity verification prevents the private post')
+ await cancel(asked.q)
+ await h.command('member', { email: 'sales@example.test', name: 'Sales', role: 'contributor', departments: [sales.id], active: true })
  // Known refusal is retryable only by explicit finance action, with captured body/key.
  provider.sendMode = 'refused'; asked = await ask(); assert.equal(asked.notification.status, 'pending')
  const refused = provider.posts.at(-1); provider.sendMode = 'accepted'

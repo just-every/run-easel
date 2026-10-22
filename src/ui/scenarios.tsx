@@ -1,5 +1,6 @@
 import { Sandboxes, OfficialCases } from './sandboxes'
 import { LongRange } from './long-range'
+import { Modeler } from './modeler'
 import { CashHealth } from './cash-health'
 import { useEffect, useState } from 'react'
 import { assumptionText } from './assumptions'
@@ -46,6 +47,7 @@ export function Scenarios({ state, refresh }: Shared) {
    {me.role === 'finance' && <SaveReforecast scenarios={state.scenarios} refresh={refresh} />}
   </section>
 
+  {me.role === 'finance' && <Modeler state={state} refresh={refresh} />}
   <section className="card">
    <h2>Compare</h2>
    <div className="row"><ScenarioPicker label="From" scenarios={state.scenarios} value={a} onChange={setA} /><ScenarioPicker label="To" scenarios={state.scenarios} value={b} onChange={setB} /></div>

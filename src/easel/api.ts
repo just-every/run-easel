@@ -1,4 +1,8 @@
 import { privateSlackStatus, privateSlackConnection, privateSlackBinding } from './agents/private-slack'
+import { modelerStatus, modelerSettings } from './agents/modeler-settings'
+import { modelerPreview } from './agents/modeler-request'
+import { beginModeler, authorizeModeler, finishModeler, modelerProposal } from './agents/modeler-run'
+import { performModeler } from './agents/modeler-provider'
 import { commentaryStatus, commentarySettings, commentaryConnection } from './agents/commentary-settings'
 import { commentaryPreview } from './agents/commentary-request'
 import { beginCommentary, authorizeCommentary, finishCommentary } from './agents/commentary-run'
@@ -179,6 +183,33 @@ api.post('/api/easel/slack-private/:op', async c => {
  return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 api.get('/api/easel/commentary/status', c => read(c, ctx => commentaryStatus(ctx, c.env)))
+api.get('/api/easel/modeler/status', c => read(c, modelerStatus))
+api.get('/api/easel/modeler/proposal/:id', c => read(c, ctx => modelerProposal(ctx, c.req.param('id'))))
+api.post('/api/easel/modeler/settings/:op', async c => {
+ const ctx = await open(c), result = await modelerSettings(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
+})
+api.post('/api/easel/modeler/preview', async c => {
+ const input = await body(c)
+ return read(c, ctx => modelerPreview(ctx, input))
+})
+api.post('/api/easel/modeler/generate', async c => {
+ const ctx = await open(c), intent = await beginModeler(ctx, c.env, await body(c))
+ await commit(ctx)
+ let outcome
+ try {
+  const current = await open(c), authorized = await authorizeModeler(current, intent.id)
+  await readFence(current.db, current.x.actor, current.revision)
+  outcome = await performModeler(c.env, authorized)
+ } catch (error) {
+  if (!(error instanceof Fault)) throw error
+  outcome = { status: 'refused' as const, reason: error.message }
+ }
+ const current = await open(c), result = await finishModeler(current, intent.id, outcome)
+ await commit(current)
+ return c.json(publicLedger(await erasedView(current.db, result)))
+})
 api.post('/api/easel/commentary/settings/:op', async c => {
  const ctx = await open(c), result = await commentarySettings(ctx, c.env, c.req.param('op'), await body(c))
  await commit(ctx)

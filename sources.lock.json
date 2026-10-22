@@ -946,6 +946,30 @@
       "sha256": "b92df71fa2c821c9fd01b97d524d074c67f60f7343441e780240e9fc05bb3dbe",
       "executable": false
     },
+    "src/easel/agents/modeler-build.ts": {
+      "sha256": "30de2151520dd94da43f206cb573e4d4586f7185be45cf79df3ceae70d2b3e16",
+      "executable": false
+    },
+    "src/easel/agents/modeler-provider.ts": {
+      "sha256": "e6f1ca80263bac8ca023d378e078acc5d4d935b948371b567063f458d0adb819",
+      "executable": false
+    },
+    "src/easel/agents/modeler-request.ts": {
+      "sha256": "70862d7b32c6ff77abd162856dec60e106df3173166e4b0b0410e94afc0c6e1e",
+      "executable": false
+    },
+    "src/easel/agents/modeler-run.ts": {
+      "sha256": "d81d016afa81e7d0260ba817d3f610ddd697280599603ca9f8c90cfa77cfa4db",
+      "executable": false
+    },
+    "src/easel/agents/modeler-schema.ts": {
+      "sha256": "85247e910c71951ea3b37fa46cdaa281996ee8932dbcad56e5b46856cd57299d",
+      "executable": false
+    },
+    "src/easel/agents/modeler-settings.ts": {
+      "sha256": "eece5caebb675d3bcf9beb30a189bacaef0eeb48b63b0bb18911e9c9c5875442",
+      "executable": false
+    },
     "src/easel/agents/owner-question-input.ts": {
       "sha256": "b5c4678bcad0c95704446f224fe480188cb5e9dc43bbac198240cf5be4f00f0f",
       "executable": false
@@ -983,7 +1007,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "c05884868729773a7961cee036334b91717cf6e599103cbada9d5e9f1ee91ecd",
+      "sha256": "1166143c98898556b4e95c85329ad6c550b6e9571518716307c92a8730354d0e",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1615,7 +1639,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "cb5b85a8dcfccc5c6fa7663c15918e0890bd0238f7c2c9704e9ddb00d810cb58",
+      "sha256": "9944b966ca4329b806ced334597330869fa6b4d63791279ef06054a19129634a",
       "executable": false
     },
     "src/easel/ramp.ts": {
@@ -3778,6 +3802,10 @@
       "sha256": "164b7dc1c9700a01b23551652b34b03d95ab5e848bddf11620417733c7fa37e4",
       "executable": false
     },
+    "src/ui/modeler.tsx": {
+      "sha256": "e132a2f0d70e55649d1de755e837cc5ef58738294bc0665a3a2d7f425309e66f",
+      "executable": false
+    },
     "src/ui/move-import.tsx": {
       "sha256": "ce2dbe1046247f70b17cbfd9cd7a88435d23223d320f2ebaa7cbff7ba9c37d2a",
       "executable": false
@@ -3863,7 +3891,7 @@
       "executable": false
     },
     "src/ui/scenarios.tsx": {
-      "sha256": "f838169252ec3fe966bf4290cf2d42d2f5c7856ea30304f563c0797f9f2f7691",
+      "sha256": "b580c6d09e341e9a3830e6e06e7ce2e85e8460545ad06aa3e00408a56d440cc2",
       "executable": false
     },
     "src/ui/scroll-style.ts": {
@@ -4322,6 +4350,18 @@
       "sha256": "c37c1ffb8f8ed4780d041250d9f68c4810d16bfb0f4512132f0e6fe72560e293",
       "executable": false
     },
+    "tests/modeler-browser-runtime.mjs": {
+      "sha256": "34998e88384be1e40633b1c4b53f16aa2577f2546bc61c650e1967eb93d3307e",
+      "executable": false
+    },
+    "tests/modeler-browser.mjs": {
+      "sha256": "87789eca25bbeaffa9bad11fe938f5c538495168c4df8f984f1c1090d4273a39",
+      "executable": false
+    },
+    "tests/modeler-proposal-fixture.mjs": {
+      "sha256": "86076af3d84b2d9231c98f6779c8882863dc35a8f8bc47a77475e2a270a693ea",
+      "executable": false
+    },
     "tests/move-browser.mjs": {
       "sha256": "e323b2a637d9e4736944e7f1f048a70cf6ddcd349cbb13a0ef816b1381901247",
       "executable": false
@@ -4339,7 +4379,7 @@
       "executable": false
     },
     "tests/notifications.test.mjs": {
-      "sha256": "aec21ad1a35af5358973a8ba2bb7581fe4ea131226ddff70f7e991f5970488a3",
+      "sha256": "71be50cb4611e2b7522571ec5853ce65857d342becb283326d86037d88569717",
       "executable": false
     },
     "tests/open-export-browser-journey.mjs": {
@@ -4511,7 +4551,7 @@
       "executable": false
     },
     "tests/structure-versions.test.mjs": {
-      "sha256": "f92a5385dd409fc3b141516f6cbb94c5116ee10b931a087ec37b5cf2eacfe791",
+      "sha256": "0c3fc486d938003ccd4b478fa4591748ccda147e6795ce45cb927b7bd969c109",
       "executable": false
     },
     "tests/taxes-browser.mjs": {

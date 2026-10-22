@@ -1,4 +1,5 @@
 import { entityDimensions, boundEntity } from './entity-scope'
+import { requireModelerPromotion } from './agents/modeler-settings'
 import { requireDimensionAccess, validateDimensions } from './dimensions'
 import { nativeBindings, requireNativeSources } from './native-input'
 // Scenario inputs, branching and agent-ready proposals. A proposal is a
@@ -199,6 +200,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
  }
  if (op === 'proposal-promote') {
   requireCapability(x, 'approvals', s)
+  requireModelerPromotion(c, get(s, 'scenario', b.id))
   const p = proposal(s, b.id, x)
   requireThat(p.proposalStatus === 'submitted', 'Only a submitted proposal can be promoted', 409)
   const reviewed = integer(b.revision, 'Reviewed proposal revision', 1, Number.MAX_SAFE_INTEGER)
