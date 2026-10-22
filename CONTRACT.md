@@ -927,7 +927,9 @@ Agents keep the plan feasible and honest, not just modeled. Each clause names wh
 
 *Acceptance:* with provider fakes, a refresh that slips a large deal by two quarters breaks the cash floor; one decision item names the crossing month and cites the deal ID and stage change; the plan's revision is unchanged.
 
-*Status:* partial.
+Current semantics (sx-easel-c41, cash slice). After every accepted or undone actuals file, month close, promoted proposal, Plaid refresh, change to the agreed cash floor or runway minimum and explicit `constraint-check`, the official working forecast is recalculated and each breached agreed constraint opens one decision item (`GET /api/easel/constraints`, finance): the first crossing month, the gap (floor shortfall or runway) and, from a comparison with the last kept forecast or else the approved budget, the input rows added, removed or changed since then (by origin: a hire that now starts earlier, a contract that moved, a new vendor), without pay detail for readers who may not see it. The owner who agreed the constraint is notified once when the item opens; the item refreshes while the breach persists, clears when it ends and stays rejected until it clears if the owner rejected every response. The watch changes nothing in the plan. Not yet built: covenant tests (FIN-003), department budget limits, and the pipeline deal ID and stage-change causes that need REV-001 and the CONNECT-* provider refreshes.
+
+*Status:* partial. Gap: deal ID and stage-change cause tracing (REV-001 connectors), covenant tests and department budget limits.
 
 #### AGENT-002 — Feasible responses for the owner to choose.
 *What the agent does:* for an open decision item, it searches the levers finance has marked as adjustable, such as hire start dates by role, discretionary spend lines, collection terms, a credit-line draw and price changes. It returns three to five responses that restore the constraint, each with the least change it needs. Each response is a proposal bound to the forecast revision (`EASEL-012`), with its changed inputs, moved cells, the new lowest cash and runway, and what it costs (for example revenue forgone by a delayed sales hire).
@@ -938,7 +940,9 @@ Agents keep the plan feasible and honest, not just modeled. Each clause names wh
 
 *Acceptance:* for the `AGENT-001` item, the agent returns at least three proposals that each satisfy the floor in a recalculation; a lever not marked adjustable is unchanged in all of them; promotion of one goes through `EASEL-012`.
 
-*Status:* partial.
+Current semantics (sx-easel-c41). Finance (approvals permission) marks levers adjustable with a bound on the official working forecast: delay a not-yet-started hire by up to N months (needs Pay detail), cut a recurring or one-off expense by up to N percent, or collect a contract N days sooner. Only those inputs, found by origin and only while they have not started, are ever changed. `constraint-respond {item, revision}` searches single levers (smallest change that restores the constraint on a recalculation of the whole forecast), then combinations of the levers that cannot do it alone, keeps one response per set of levers, ranks by total change then revenue forgone and creates up to five draft proposals bound to the forecast revision; each states its changes, the new lowest cash and shortest runway, the revenue forgone and its moved cells. A response must restore the cash floor and the runway minimum in every forecast month. `constraint-reject {item, reason}` closes the drafts with the owner's reason; promotion of the chosen proposal is the ordinary `proposal-submit` and `proposal-promote` at its exact revision, after which the item clears. The agent calls no model and writes only draft proposals. Credit-line draw levers inherit onto FIN-003 and price levers onto REV-001.
+
+*Status:* done. Evidence: `src/easel/agents/levers.ts`, `src/easel/agents/agent-evaluate.ts`, `src/easel/agents/constraint-watch.ts`, `src/easel/agents/constraint-responses.ts`, `src/ui/constraints.tsx`, `tests/constraint-responses.test.mjs` and `tests/constraint-responses-browser.mjs` (AGENT-002).
 
 #### AGENT-003 — Asking owners for uncertain assumptions.
 *What the agent does:* when a response or forecast depends on an uncertain input (a deal's close date, a hire's start, a large customer's payment date or a vendor renewal), it asks the input's owner a structured question by email, Slack or [Nook](https://github.com/just-every/run-nook), for example "Will Acme sign before 30 November? Yes, No or a new date". It records the answer as a sourced assumption with the person and time, and recalculates.
@@ -1124,8 +1128,8 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 50 | 17 | 20 | 87 |
-| All | 67 | 17 | 20 | 104 |
+| Target and push further | 51 | 16 | 20 | 87 |
+| All | 68 | 16 | 20 | 104 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1222,8 +1226,8 @@ Judged from the code and tests at commit `360bd41f1fb8dd97530d7a9ee8c7baa62f0e5f
 | `MOBILE-001` | Review and approve at phone width | target | done | `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001): complete planning/review journeys at 390, persisted exact-revision approval/promotion, dashboard cash equals API, page overflow checks |  |
 | `MOBILE-002` | Native iOS and Android apps | target | missing |  | No native apps or push notifications |
 | `HOST-001` | Hosted operation on the buyer's Cloudflare account | target | partial | `tests/browser.mjs` `deploy.json` | `rer deploy --dry-run` runs; a real deployment, scheduled handler, delivered mail and hosted backup and restore are not exercised |
-| `AGENT-001` | Constraint watch | push-further | partial | `src/easel/engine.ts` `src/easel/views.ts` | Cash forecasts and scenario comparisons exist; constraints, refresh-triggered checks, decision items and cause tracing to sources are missing |
-| `AGENT-002` | Feasible responses for the owner to choose | push-further | partial | `src/easel/plan.ts` `tests/easel.test.mjs` | Exact-revision proposals and promotion exist; lever bounds and an agent that searches for constraint-restoring responses are missing |
+| `AGENT-001` | Constraint watch | push-further | partial | `src/easel/agents/constraint-watch.ts` `src/easel/agents/agent-evaluate.ts` `tests/constraint-responses.test.mjs` `tests/constraint-responses-browser.mjs` | Cash floor and runway breaches open one decision item with the crossing month, the gap and input-level causes after refreshes, closes, promotions and constraint changes; deal ID and stage-change causes (REV-001), covenant tests (FIN-003) and department budget limits are missing |
+| `AGENT-002` | Feasible responses for the owner to choose | push-further | done | `src/easel/agents/levers.ts` `src/easel/agents/constraint-responses.ts` `src/ui/constraints.tsx` `tests/constraint-responses.test.mjs` `tests/constraint-responses-browser.mjs` | Adjustable levers with bounds; three to five recalculated draft proposals per item with new lowest cash, runway and revenue forgone; promotion through exact-revision proposals; credit-draw and price levers inherit onto FIN-003 and REV-001 |
 | `AGENT-003` | Asking owners for uncertain assumptions | push-further | missing |  | No structured owner questions, sourced assumptions or escalation |
 | `AGENT-004` | Learning from the company's own forecast errors | push-further | done | `src/easel/agents/forecast-learning.ts` `src/easel/agents/learning-measures.ts` `src/easel/agents/learning-backtest.ts` `src/easel/agents/learning-commands.ts` `src/easel/agents/deal-outcomes.ts` `src/ui/forecast-learning.tsx` `tests/forecast-learning.test.mjs` `tests/forecast-learning-browser.mjs` | Kept-forecast error split into timing, driver and permanent; close-date, hire and collection-lag misses measured from reviewed history; six-to-twelve-forecast backtests; draft proposals promoted only by finance; stage probabilities and churn wait on REV-001 and REV-002 drivers |
 | `AGENT-005` | Source-change guard | push-further | partial | `src/easel/actuals.ts` `tests/easel.test.mjs` | Unmapped accounts and departments block file acceptance; live-feed change detection, mapping proposals and impact lists are missing |

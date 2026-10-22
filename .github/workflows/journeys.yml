@@ -124,3 +124,8 @@ jobs:
         run: node tests/bi-feeds-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/bi-feeds
+
+      - name: AGENT-002 constraint watch and responses at desktop and phone widths
+        run: node tests/constraint-responses-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/constraints
