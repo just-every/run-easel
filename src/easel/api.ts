@@ -17,6 +17,7 @@ import { dimensionCommands } from './dimensions'
 import { dimensionMapping } from './dimension-mapping'
 import { dimensionView, dimensionWorkbook } from './dimension-view'
 import { savedReport, savedReportWorkbook } from './saved-reports'
+import { plaidConnection, plaidStatus } from './plaid-connection'
 import { weeklyCashWorkbook } from './weekly-cash-workbook'
 import { weeklyCash, weeklyCashCommand } from './weekly-cash'
 import { publicLedger } from './ledger-public'
@@ -160,6 +161,16 @@ api.post('/api/easel/tokens/:op', async c => {
  return c.json(await tokenAdmin(await open(c), c.req.raw, c.env, op, await body(c)))
 })
 
+api.get('/api/easel/connections/plaid', c => read(c, plaidStatus))
+api.post('/api/easel/connections/plaid/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ ctx.extra = await plaidConnection(ctx, c.env, c.req.param('op'), await body(c))
+ if (needsCashAlertCheck(ctx)) await evaluateCashAlerts(ctx)
+ await commit(ctx)
+ await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
+ return c.json(await plaidStatus(ctx))
+})
 api.get('/api/easel/connections/gauge', c => read(c, ctx => gaugeStatus(ctx, c.env)))
 api.post('/api/easel/connections/gauge/:op', async c => {
  const ctx = await open(c), op = c.req.param('op'), input = await body(c)
@@ -291,11 +302,11 @@ api.get('/api/easel/scenario/:id', async c => {
  return c.json(publicLedger(await erasedView(ctx.db, value)))
 })
 api.get('/api/easel/weekly-cash/:id/document.xlsx', async c => {
- const ctx = await open(c), view = await weeklyCash(ctx, c.req.param('id'), c.req.query('start'))
+ const ctx = await open(c), view = await weeklyCash(ctx, c.req.param('id'), c.req.query('start'), c.req.query('basis'))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(weeklyCashWorkbook(view), 'easel-weekly-cash')
 })
-api.get('/api/easel/weekly-cash/:id', c => read(c, ctx => weeklyCash(ctx, c.req.param('id'), c.req.query('start'))))
+api.get('/api/easel/weekly-cash/:id', c => read(c, ctx => weeklyCash(ctx, c.req.param('id'), c.req.query('start'), c.req.query('basis'))))
 api.get('/api/easel/drivers/:id', c => read(c, ctx => driversView(ctx, c.req.param('id'))))
 api.get('/api/easel/translation/:scenario', c => read(c, ctx => translationView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/translation-variance/:month', c => read(c, ctx => constantCurrencyVariance(ctx, c.req.param('month'))))

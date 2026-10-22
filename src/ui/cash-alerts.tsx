@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Action, api, command, decimalText, Field, Form, money as format, Person, Table, useDate, type D } from './shared'
 
-type Rule = { id: string; name: string; kind: 'floor' | 'below-plan' | 'runway'; basis?: 'amount' | 'percent'; amountCents?: number; percentBps?: number; runwayHundredths?: number; intervalDays: number; enabled: boolean; revision: number; currency: string; lastCheckedAt?: string; blocked?: string }
+type Rule = { id: string; name: string; kind: 'floor' | 'below-plan' | 'bank-below-plan' | 'runway'; basis?: 'amount' | 'percent'; amountCents?: number; percentBps?: number; runwayHundredths?: number; intervalDays: number; enabled: boolean; revision: number; currency: string; lastCheckedAt?: string; blocked?: string }
 type Send = { n: number; at: string; reason: 'breach' | 'worse' | 'interval'; headline: string; detail: string[]; cause: string; recipients: string[] }
 type Alert = { id: string; rule: string; ruleName: string; status: 'open' | 'ended'; openedAt: string; sends: Send[]; acknowledgments: { by: string; at: string; send: number }[]; endedAt?: string; endedReason?: string; revision: number }
 type Check = { date: string; zone: string; scheduledAt: string; ranAt: string; sent: string[] }
@@ -10,7 +10,7 @@ type List = { zone: string; checkHour: number; rules: Rule[]; alerts: Alert[]; c
 const REASON = { breach: 'New breach', worse: 'Worsened', interval: 'Interval reminder' }
 const condition = (r: Rule, money: (n?: number) => string) => r.kind === 'floor' ? 'Forecast cash below the agreed floor'
  : r.kind === 'runway' ? `Runway below ${decimalText(r.runwayHundredths)} months`
- : `Actual cash more than ${r.basis === 'amount' ? money(r.amountCents) : `${decimalText(r.percentBps)}%`} below plan`
+ : `${r.kind === 'bank-below-plan' ? 'Bank' : 'Actual'} cash more than ${r.basis === 'amount' ? money(r.amountCents) : `${decimalText(r.percentBps)}%`} below plan`
 
 /** Finance-only: rules, the alerts they opened, their sends and acknowledgments (REPORT-006). */
 export function CashAlerts({ state }: { state: D }) {
@@ -28,7 +28,7 @@ export function CashAlerts({ state }: { state: D }) {
  const last = list?.checks[0]
  return <section className="card" aria-label="Cash alerts">
   <h2>Cash alerts</h2>
-  <p className="muted">Checked after every actuals refresh and month close, and daily at {String(list?.checkHour ?? 8).padStart(2, '0')}:00 {list?.zone ?? state.workspace.timeZone}. A breach notifies active finance once, by each person's notification preference; it notifies again only when it worsens or after its re-alert interval. Actual cash is forecast closing cash on accepted actuals, not a bank balance.</p>
+  <p className="muted">Checked after every actuals refresh and month close, and daily at {String(list?.checkHour ?? 8).padStart(2, '0')}:00 {list?.zone ?? state.workspace.timeZone}. A breach notifies active finance once, by each person's notification preference; it notifies again only when it worsens or after its re-alert interval. Actual cash uses accepted ledger figures. Bank rules use a fresh Plaid observation against the approved budget’s dated cash on that date; bank balances are not ledger actuals.</p>
   {error && <p role="alert" className="error">{error}</p>}
   {last && <p>Last scheduled check {displayDate(last.date)}: scheduled {zoneTime(last.scheduledAt, last.zone)}, ran {zoneTime(last.ranAt, last.zone)}.</p>}
   <Action label="Check cash alerts" run={async () => { setChecked(await command('cash-alert-check', {})); await reload() }} />
@@ -75,9 +75,9 @@ function RuleForm({ rule, currency, saved }: { rule: Rule | null; currency: stri
  }}>
   <Field label="Rule name" name="name" defaultValue={rule?.name} />
   <label>Alert when<select aria-label="Alert when" name="kind" value={kind} onChange={e => setKind(e.target.value as Rule['kind'])}>
-   <option value="floor">Forecast cash falls below the agreed floor</option><option value="below-plan">Actual cash is below plan</option><option value="runway">Runway falls below a minimum</option>
+   <option value="floor">Forecast cash falls below the agreed floor</option><option value="below-plan">Actual cash is below plan</option><option value="bank-below-plan">Observed Plaid bank cash is below plan</option><option value="runway">Runway falls below a minimum</option>
   </select></label>
-  {kind === 'below-plan' && <>
+  {['below-plan','bank-below-plan'].includes(kind) && <>
    <label>Shortfall measured as<select aria-label="Shortfall measured as" name="basis" value={basis} onChange={e => setBasis(e.target.value as 'amount' | 'percent')}><option value="amount">An amount</option><option value="percent">A percent of plan</option></select></label>
    {basis === 'amount' ? <Field label={`Shortfall amount (${currency})`} name="amount" defaultValue={decimalText(rule?.amountCents)} hint="Alerts when actual cash is more than this below the approved budget." />
     : <Field label="Shortfall percent" name="percent" defaultValue={decimalText(rule?.percentBps)} hint="Alerts when actual cash is more than this percent below the approved budget." />}

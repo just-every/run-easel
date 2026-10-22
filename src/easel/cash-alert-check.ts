@@ -1,3 +1,5 @@
+import { plaidCashSource } from './plaid-connection'
+import { periodForKey } from './fiscal-calendar'
 // Scheduled cash alerts (REPORT-006). Enabled finance rules are checked after
 // accepted or undone actuals refreshes, month closes, cash-constraint and rule
 // saves, finance's explicit check and the daily company-zone scheduled check.
@@ -24,6 +26,9 @@ const CAUSES: Record<string, (detail: Data) => string> = {
  'cash-constraints': () => 'changed the agreed cash floor or runway minimum',
  'cash-alert-rule-save': () => 'saved a cash alert rule',
  'cash-alert-check': () => 'ran a cash alert check',
+ 'plaid-cash-refreshed': () => 'refreshed Plaid bank cash',
+ 'plaid-cash-refresh-failed': () => 'recorded a failed Plaid bank refresh',
+ 'plaid-disconnected': () => 'disconnected Plaid',
 }
 export const needsCashAlertCheck = (c: Context) => c.activity.some(e => e.action in CAUSES)
 
@@ -87,10 +92,30 @@ async function belowPlanFinding(c: Context, rule: Data, forecast: Data, calc: Ca
   detail: [`${monthLabel(month)} closing cash: actual ${money(actual.closing)} against the approved budget's ${money(plan.closing)}, ${money(shortfall)}${shortfallBps === null ? '' : ` (${formatHundredths(shortfallBps)}%)`} below plan; this rule alerts above ${threshold}.`, 'Actual cash is the forecast closing cash on accepted actuals (ledger figures, not bank balances).', `Approved budget snapshot SHA-256 ${budget.sha256}.`] }
 }
 
+async function bankBelowPlanFinding(c: Context, rule: Data, forecast: Data, calc: Calculation): Promise<Finding> {
+ let bank: Data
+ try { bank = await plaidCashSource(c) } catch (error) { if (error instanceof Fault) return blocked(error.message); throw error }
+ const budget = await snapshot(c.db, forecast.budgetSnapshot), planned = budget.body.calculation as Calculation
+ if (bank.currency !== calc.currency || planned.currency !== bank.currency) return blocked('Bank, budget and forecast currencies must agree; no exchange rate is inferred.')
+ if (!planned.dailyCash) return blocked('The approved budget predates dated cash schedules; no daily bank comparison is inferred.')
+ const when = bank.asOf.slice(0, 10), w = budget.body.workspace
+ if (when < periodForKey(w, planned.months[0]).startDate || when > periodForKey(w, planned.months.at(-1)!).endDate) return blocked('The bank observation is outside the approved budget horizon.')
+ if (planned.cash.some(m => periodForKey(w, m.month).startDate <= when && m.incompleteReasons?.length)) return blocked('Budget cash is incomplete for this bank comparison.')
+ const planCents = planned.cash[0].opening + planned.dailyCash.filter(r => r.date <= when).reduce((sum, r) => sum + r.collections - r.payments, 0)
+ if (rule.basis === 'percent' && planCents <= 0) return blocked('Planned bank-date cash is not positive, so a percentage shortfall has no value.')
+ const shortfall = planCents - bank.balanceCents
+ const breached = rule.basis === 'amount' ? shortfall > rule.amountCents : BigInt(shortfall) * 10000n > BigInt(planCents) * BigInt(rule.percentBps)
+ if (!breached) return clear
+ const money = (n: number) => formatMoney(n, bank.currency)
+ return { state: 'breach', numbers: { date: when, bankCents: bank.balanceCents, planCents, shortfallCents: shortfall, shortfallBps: planCents > 0 ? mulDiv(shortfall, 10000, planCents) : null, asOf: bank.asOf, budgetSnapshot: budget.id, budgetSha256: budget.sha256 },
+  headline: `bank cash is ${money(shortfall)} below plan on ${when}`,
+  detail: [`Plaid bank balance ${money(bank.balanceCents)} observed ${bank.asOf}, across ${bank.accountCount} depository accounts; not ledger actuals.`, `Approved budget dated cash ${money(planCents)}; shortfall ${money(shortfall)}. Threshold: ${rule.basis === 'amount' ? money(rule.amountCents) : `${formatHundredths(rule.percentBps)}%`}.`, `Approved budget snapshot SHA-256 ${budget.sha256}.`] }
+}
+
 /** Worsening is an earlier crossing or breach month, lower cash, a larger shortfall or lower runway than at the last send. */
 function worse(kind: string, now: Data, last: Data) {
  if (kind === 'floor') return now.crossingMonth < last.crossingMonth || now.lowestCents < last.lowestCents
- if (kind === 'below-plan') return now.shortfallCents > last.shortfallCents
+ if (kind === 'below-plan' || kind === 'bank-below-plan') return now.shortfallCents > last.shortfallCents
  const rank = (n: Data) => n.runwayHundredths ?? Number.NEGATIVE_INFINITY
  return now.month < last.month || rank(now) < rank(last)
 }
@@ -120,7 +145,7 @@ export async function evaluateCashAlerts(c: Context, scheduled?: { cause: string
   else if (rule.currency !== w.currency) finding = blocked('The reporting currency changed; review and save this rule in the new currency.')
   else {
    if (!calc && !calcError) try { calc = await workingCalculation(c, forecast.id) } catch (e) { if (e instanceof Fault && e.status === 409) calcError = e.message; else throw e }
-   finding = calcError || !calc ? blocked(calcError) : rule.kind === 'floor' ? floorFinding(c, forecast, calc) : rule.kind === 'runway' ? runwayFinding(rule, forecast, calc) : await belowPlanFinding(c, rule, forecast, calc)
+   finding = calcError || !calc ? blocked(calcError) : rule.kind === 'floor' ? floorFinding(c, forecast, calc) : rule.kind === 'runway' ? runwayFinding(rule, forecast, calc) : rule.kind === 'bank-below-plan' ? await bankBelowPlanFinding(c, rule, forecast, calc) : await belowPlanFinding(c, rule, forecast, calc)
   }
   put(c.s, 'cash-alert-rule', rule.id, { ...rule, lastCheckedAt: c.now, blocked: finding.state === 'blocked' ? finding.reason : '' })
   const open = all(c.s, 'cash-alert').find(a => a.rule === rule.id && a.status === 'open')
