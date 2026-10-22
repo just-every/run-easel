@@ -1,3 +1,4 @@
+import { scopedReader } from '../group-projections'
 // Model drafting is opt-in. Credentials live only in sealed, non-archived custody.
 import type { Bindings } from '../../auth.server'
 import { requireCapability, requireFinance, requireMember } from '../access'
@@ -10,6 +11,7 @@ export const COMMENTARY_CONNECTION = 'model:variance-commentary'
 const PURPOSE = 'easel:openai:variance-commentary:v1'
 export function commentaryAuthority(c: Context, finance = false) {
  requireMember(c.x)
+ requireThat(!scopedReader(c.x), 'Model commentary requires the same complete variance scope as the native variance view', 403)
  requireThat(!c.x.actor.token && !c.x.actor.agent && !c.x.actor.scheduler, 'Use a native signed-in person for model commentary', 403)
  if (finance) requireFinance(c.x)
  requireThat(c.x.role !== 'viewer', 'Only a variance writer can request model commentary', 403)

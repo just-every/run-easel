@@ -911,7 +911,7 @@
       "executable": false
     },
     "src/easel/agents/commentary-settings.ts": {
-      "sha256": "852d9b2f20b3ffd609689bf2c239b661f937f676f02b1a066d0d55a2c4d2127f",
+      "sha256": "30c39f6400c15041f9f80dc7db724578fdd7e6202829cc2b538469b40905b591",
       "executable": false
     },
     "src/easel/agents/constraint-responses.ts": {
@@ -4519,7 +4519,7 @@
       "executable": false
     },
     "tests/variance-commentary.test.mjs": {
-      "sha256": "f0b94c41dac95a4f5d88f5385c300b8bfdd93b1b4e5333660ed2b0706d9617eb",
+      "sha256": "a007431c8da4c725b7be5667e6729fab12b227146174916f4db15f4f8b89be01",
       "executable": false
     },
     "tests/weekly-cash-browser.mjs": {

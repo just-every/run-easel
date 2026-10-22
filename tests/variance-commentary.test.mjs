@@ -209,4 +209,11 @@ test('AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint cal
  } finally { await archiveService.exports.abort(archiveId) }
  await h.command('explanation-confirm', scope, author)
  assert.deepEqual(await h.get(`/api/easel/snapshot/${published.snapshot}`), frozen)
+ const region = await h.command('dimension', { name: 'Region' })
+ const east = await h.command('dimension-member', { dimension: region.id, name: 'East' })
+ await h.command('member', { email: 'commentary@example.test', name: 'Scoped writer', role: 'contributor', departments: [eng.id], dimensionMembers: { [region.id]: [east.id] } })
+ await post('settings/resume', {})
+ await h.get('/api/easel/variance/2026-01', author, 403)
+ await post('preview', scope, author, 403)
+ assert.equal(calls.length, 4, 'A scoped writer cannot bypass the ordinary variance door by requesting a model draft')
 })
