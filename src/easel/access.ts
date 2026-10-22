@@ -32,7 +32,8 @@ function currentAccess(s: State, a: Actor): Access {
   else if (modes.includes('read')) scenarioGrants[sc.id] = 'read'
  }
  const scenarioDimensions = Object.fromEntries(all(s, 'scenario').flatMap(sc => { const e = boundEntity(s, sc); return e ? [[sc.id, { [e.dimension]: e.member }]] : [] }))
- return { readGrants, editGrants, scenarioDimensions, actor: a, role, departments, readDepartments, payDetail, capabilities, dimensionRead, dimensionEdit, groups: groups.map(g => g.id), scenarioGrants, groupOnly,
+ const dimensionLimited = (groups.length > 0 || groupOnly || Object.keys(directDimensions).length > 0) && !hasFullScope(s, { actor:a, role, departments, readGrants })
+ return { dimensionLimited, readGrants, editGrants, scenarioDimensions, actor: a, role, departments, readDepartments, payDetail, capabilities, dimensionRead, dimensionEdit, groups: groups.map(g => g.id), scenarioGrants, groupOnly,
   statementDepartments: unique([...direct, ...groups.flatMap(g => g.departments.owners)]).filter(id => readDepartments.includes(id)) }
 }
 

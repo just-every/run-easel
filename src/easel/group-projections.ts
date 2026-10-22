@@ -3,7 +3,7 @@ import type { Calculation, Cell, Line } from './engine'
 import type { Access, State } from './types'
 
 export const scopedDepartment = (x: Access, department: string) => !x.groupOnly && x.role === 'viewer' || seesDepartmentDetail(x, department)
-export const scopedReader = (x: Access) => x.dimensionLimited === true || x.role !== 'finance' && (x.groupOnly === true || (x.groups?.length ?? 0) > 0 || Object.keys(x.dimensionRead ?? {}).length > 0)
+export const scopedReader = (x: Access) => x.dimensionLimited === true || x.role !== 'finance' && (x.groupOnly === true || Object.keys(x.dimensionRead ?? {}).length > 0)
 /** A constrained reader receives sums of authorized source slices. Company cash,
  * balance-sheet stocks and unsupported derived metrics cannot be inferred from a slice. */
 export function scopedCalculation(s: State, x: Access, calc: Calculation, lines: Line[]): Calculation {

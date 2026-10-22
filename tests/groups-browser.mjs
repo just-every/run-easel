@@ -22,10 +22,12 @@ try {
  const budget = (await api(finance.context, server.origin, 'state')).scenarios[0]
  const input = { scenario: budget.id, name: 'Eastern retainers', line: line.id, department: sales.id, start: '2026-01', kind: 'volume', startVolume: '10', rate: '250', dimensions: { [dimension.id]: east.id } }
  await cmd('revenue', input); await cmd('revenue', { ...input, name: 'Western private contract', rate: '1950', dimensions: { [dimension.id]: west.id } })
+ await cmd('revenue', { ...input, name: 'Engineering West services', department: engineering.id, rate: '100', dimensions: { [dimension.id]: west.id } })
  const sandbox = await cmd('sandbox-create', { from: budget.id, name: 'Commercial outlook' })
  await cmd('member', { email: 'sales@dev.localhost', name: 'Sam Sales', role: 'contributor', departments: [sales.id] })
  planner = await session(browser, root, server.origin, 'sales', 1440)
  await cmd('member', { email: 'sales@dev.localhost', name: 'Sam Sales', role: 'contributor', departments: [], groupOnly: true })
+ await cmd('group-save', { name: 'Western engineering', members: ['sales@dev.localhost'], departments: { edit: [engineering.id] }, dimensions: { [dimension.id]: { edit: [west.id] } } })
  await finance.page.reload(); await finance.page.getByRole('navigation', { name: 'Easel' }).waitFor()
  let group
  for (const width of [1440, 390]) {
@@ -58,6 +60,7 @@ try {
   const models = card(planner.page, 'Revenue drivers')
   await models.getByRole('cell', { name: 'Eastern retainers', exact: true }).waitFor()
   assert.equal(await models.getByRole('cell', { name: 'Western private contract', exact: true }).count(), 0)
+  await models.getByRole('cell', { name: 'Engineering West services', exact: true }).waitFor()
   await models.getByLabel('Revenue model name', { exact: true }).fill(`Engineering expansion ${width}`)
   await models.getByLabel('Revenue line', { exact: true }).selectOption(line.id)
   await models.getByLabel('Department', { exact: true }).selectOption(engineering.id)

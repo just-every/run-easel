@@ -186,6 +186,7 @@ test('Independent grants preserve department and dimension pairings across reads
  const grant = (name, department, member) => ({ name, members: ['paired@example.test'], departments: { edit: [department] }, dimensions: { [region.id]: { edit: [member] } } })
  await h.command('group-save', grant('A', sales.id, east.id))
  await h.command('group-save', grant('B', marketing.id, west.id))
+ await h.command('request-submissions', { scenario: budget.id, departments: [sales.id, marketing.id] })
  const read = async cookie => h.get(`/api/easel/scenario/${budget.id}`, cookie)
  const view = await read(person)
  assert.deepEqual(new Set(view.inputs.revenue.map(r => r.name)), new Set(['Sales East', 'Marketing West']))
