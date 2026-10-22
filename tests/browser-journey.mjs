@@ -43,7 +43,7 @@ const confirmExplanation = async details => {
 }
 /** Waits until the page has no Easel API request in flight for a moment. */
 export const settle = async page => { for (let quiet = 0; quiet < 3;) { await page.waitForTimeout(100); quiet = page.inflight() === 0 ? quiet + 1 : 0 } }
-function track(page) {
+export function track(page) {
  let n = 0
  const mine = r => r.url().includes('/api/easel/')
  page.on('request', r => { if (mine(r)) n++ })

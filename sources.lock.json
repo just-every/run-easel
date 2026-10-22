@@ -3787,7 +3787,7 @@
       "executable": false
     },
     "tests/browser-journey.mjs": {
-      "sha256": "54eff2b31a020ca8522e5a9a3d80dd68fb13a9e656ab3ae911682852e3914808",
+      "sha256": "300fef4b9d316153e591675d7d579036a47540dd6ba87e603f0c26597b95e7b3",
       "executable": false
     },
     "tests/browser-lobby.mjs": {
@@ -4187,7 +4187,7 @@
       "executable": false
     },
     "tests/sheet-browser.mjs": {
-      "sha256": "791a099e808a29d0f69c17b6f336faa6827b96cb1f04be60ca54f4cb9be0e5b1",
+      "sha256": "ff8855fa3f937160e34b1b7556e85d91a512b30edd35c2c9b0999f4f9b8c4aec",
       "executable": false
     },
     "tests/sheet-pull-flow.mjs": {
