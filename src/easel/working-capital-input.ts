@@ -24,7 +24,14 @@ export function collectionInput(b: Data): Data {
  return { collectionMethod: method, collectionCurve: curve.sort((a: Data, b: Data) => a.days - b.days) }
 }
 export function paymentInput(b: Data): Data {
- const method = choice(b.paymentMethod ?? (supplied(b.dpoDays) ? 'dpo' : supplied(b.paymentTermDays) ? 'terms' : 'lag'), ['lag', 'dpo', 'terms'] as const, 'a payment method')
+ const method = choice(b.paymentMethod ?? (supplied(b.dpoDays) ? 'dpo' : supplied(b.paymentTermDays) ? 'terms' : 'lag'), ['lag', 'dpo', 'terms', 'date'] as const, 'a payment method')
+ requireThat(method === 'date' || !supplied(b.paymentDate), 'Choose an explicit planned payment date to enter a date')
+ if (method === 'date') {
+  requireThat(b.kind === 'one-off', 'An explicit planned payment date requires a one-off expense')
+  requireThat(!supplied(b.dpoDays) && !supplied(b.paymentTermDays), 'Choose a payment date or vendor days, never both')
+  requireThat(typeof b.paymentDate === 'string', 'Enter a planned payment date YYYY-MM-DD')
+  return { paymentMethod: method, paymentDate: b.paymentDate }
+ }
  requireThat(!(supplied(b.dpoDays) && supplied(b.paymentTermDays)), 'Choose either DPO or vendor payment terms')
  if (method === 'lag') { requireThat(!supplied(b.dpoDays) && !supplied(b.paymentTermDays), 'Choose day-based payment timing to enter DPO or terms'); return {} }
  return method === 'dpo' ? { paymentMethod: method, dpoDays: integer(b.dpoDays, 'DPO (days)', 0, 365) } : { paymentMethod: method, paymentTermDays: integer(b.paymentTermDays, 'Days after invoice month end', 0, 365) }

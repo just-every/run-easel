@@ -317,10 +317,10 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   if (lineById.get(a.line)?.nonCash || inventoryLines.has(`${a.line}|${a.department}`)) continue
   if (type === 'revenue' && contractActualKeys.has(`${a.line}|${a.department}|${a.month}`)) continue
   if (specialKeys.has(`${a.line}|${a.department}|${a.month}`)) continue
-  const candidates = (type === 'revenue' ? revenueTiming : expenseTiming).get(lineDepartmentKey(a)) ?? []
+  const candidates = ((type === 'revenue' ? revenueTiming : expenseTiming).get(lineDepartmentKey(a)) ?? []).filter(i => i.paymentMethod !== 'date' || i.start === a.month)
   const hasDayTiming = candidates.some(i => i.collectionMethod || i.paymentMethod || formulaSet.has(i))
   if (hasDayTiming) {
-   const policies = new Set(candidates.map(i => JSON.stringify(type === 'revenue' ? [i.collectionMethod ?? 'lag', i.dsoDays ?? null, i.collectionCurve ?? null, i.collectionLag ?? collectionLag] : [i.paymentMethod ?? 'lag', i.dpoDays ?? null, i.paymentTermDays ?? null])))
+   const policies = new Set(candidates.map(i => JSON.stringify(type === 'revenue' ? [i.collectionMethod ?? 'lag', i.dsoDays ?? null, i.collectionCurve ?? null, i.collectionLag ?? collectionLag] : [i.paymentMethod ?? 'lag', i.dpoDays ?? null, i.paymentTermDays ?? null, i.paymentDate ?? null])))
    if (policies.size > 1) throw new Fault(409, `${a.month}: accepted aggregate rows on line ${lineById.get(a.line)?.name ?? a.line} have drivers with different cash timing. Review this line's timing or supply attributed source data; no receipt or payment allocation is inferred.`)
   }
   const input = candidates.length === 1 || hasDayTiming ? candidates[0] : {}

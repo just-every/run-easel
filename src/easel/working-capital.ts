@@ -27,6 +27,9 @@ export function timedCash(input: Data, month: string, amount: number, collection
  const method = collection ? input.collectionMethod : input.paymentMethod
  const date = workspace ? periodForKey(workspace, month).endDate : monthEnd(month)
  const period = (date: string) => workspace ? datePeriod(workspace, date) : date.slice(0, 7)
+ if (!collection && method === 'date' && month === input.start) {
+  return { events: [{ month, date: input.paymentDate, amount, collection, label }], trace: `One-off planned payment on ${input.paymentDate}; explicit date within the expense accounting period, overriding the scenario monthly lag. Planning estimate, not a payment or provider bill.` }
+ }
  if (collection && method === 'curve') {
   const parts = apportion(amount, input.collectionCurve.map((r: Data) => r.bps))
   const dates = input.collectionCurve.map((r: Data) => afterDays(date, r.days))

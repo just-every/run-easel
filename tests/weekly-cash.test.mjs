@@ -16,11 +16,15 @@ test('FIN-007 dated plan collections, payroll, spend and funding reconcile to mo
  await h.command('revenue', { scenario, name: 'Customer agreement', kind: 'contract', department: dept.id, line: revenue.id, start: '2026-01', startDate: '2026-01-15', termMonths: '12', contractValue: '12000', billingCadence: 'monthly', dsoDays: '10' })
  const positionBody = { scenario, title: 'Private payroll sentinel', holder: 'Private person sentinel', department: dept.id, line: salary.id, start: '2026-01', annualSalary: '12000.12', onCostPercent: '0', payDay: '15', secondPayDay: '31', payMonthOffset: '0' }
  const position = await h.command('position', positionBody)
- await h.command('expense', { scenario, name: 'Annual software', kind: 'one-off', department: dept.id, line: spend.id, start: '2026-01', amount: '120' })
+ const expenseBody = { scenario, name: 'Annual software', kind: 'one-off', department: dept.id, line: spend.id, start: '2026-01', amount: '120', paymentMethod: 'date', paymentDate: '2026-01-09' }
+ const expense = await h.command('expense', expenseBody)
  await h.command('debt', { scenario, name: 'Equipment loan', debtKind: 'term', line: interest.id, department: dept.id, start: '2026-01', maturity: '2026-12', opening: '1200', rateKind: 'fixed', annualRate: '0', amortization: 'equal-principal', amortizationStart: '2026-01', termMonths: '12', draws: {}, repayments: {} })
  const path = (start = '2026-01-01', id = scenario) => `/api/easel/weekly-cash/${id}?start=${start}`
  const plan = await h.get(`/api/easel/scenario/${scenario}`)
  const daily = plan.calculation.dailyCash
+ assert.deepEqual(daily.find(r => r.date === '2026-01-09'), { date: '2026-01-09', collections: 0, payments: 12000, assumed: false }, 'planned spend settles on its explicit date, without assuming month end')
+ assert.equal(plan.inputs.expense[0].paymentDate, '2026-01-09')
+ assert.match(plan.calculation.cells.find(c => c.line === spend.id && c.month === '2026-01').sources[0].trace, /planned payment on 2026-01-09/)
  assert.deepEqual(daily.find(r => r.date === '2026-01-15'), { date: '2026-01-15', collections: 0, payments: 50001, assumed: false }, 'first semimonthly run receives the odd cent')
  assert.equal(daily.find(r => r.date === '2026-01-25').collections, 100000, 'contract invoice date plus exact DSO')
  assert.equal(daily.find(r => r.date === '2026-02-15').payments, 50001)
@@ -28,12 +32,17 @@ test('FIN-007 dated plan collections, payroll, spend and funding reconcile to mo
  for (const invalid of [{ secondPayDay: '15' }, { secondPayDay: '14' }, { secondPayDay: '32' }, { payDay: '', secondPayDay: '31' }]) {
   await h.command('position', { ...positionBody, ...invalid, id: position.id }, h.owner, 400)
  }
+ for (const invalid of [{ paymentDate: '' }, { paymentDate: '2026-02-30' }, { paymentDate: '2026-02-01' }, { paymentDate: '2025-12-31' }, { kind: 'recurring' }, { line: salary.id }, { paymentMethod: 'lag' }, { dpoDays: '10' }]) {
+  await h.command('expense', { ...expenseBody, ...invalid, id: expense.id }, h.owner, 400)
+ }
  assert.deepEqual((await h.get(`/api/easel/scenario/${scenario}`)).calculation, plan.calculation, 'invalid schedule edits do not change any output')
  const view = await h.get(path())
  assert.equal(view.weeks.length, 13)
+ assert.equal(view.weeks[1].payments, 12000, 'the one-off lands in its planned week')
+ assert.equal(view.weeks[1].assumedDates, false)
  assert.equal(view.weeks.find(w => w.start <= '2026-01-15' && w.end >= '2026-01-15').payments, 50001)
  assert.equal(view.weeks.find(w => w.start <= '2026-01-25' && w.end >= '2026-01-25').collections, 100000)
- assert.equal(view.weeks.find(w => w.start <= '2026-01-31' && w.end >= '2026-01-31').payments, 50000 + 12000 + 10000 + 5000, 'second payroll run, one-off, principal and opening payables retain monthly sums')
+ assert.equal(view.weeks.find(w => w.start <= '2026-01-31' && w.end >= '2026-01-31').payments, 50000 + 10000 + 5000, 'second payroll run, principal and opening payables retain monthly sums; dated spend is not charged twice')
  assert.ok(view.weeks.find(w => w.start <= '2026-01-31' && w.end >= '2026-01-31').assumedDates)
  for (const r of view.reconciliation) assert.equal(r.difference, 0, `${r.month}: dated cash equals monthly closing to the cent`)
  for (const [i, w] of view.weeks.entries()) {
@@ -69,6 +78,14 @@ test('FIN-007 dated plan collections, payroll, spend and funding reconcile to mo
  assert.doesNotMatch(JSON.stringify(book.worksheets.map(s => s.getSheetValues())), /Private payroll sentinel|Private person sentinel/)
  assert.doesNotMatch(JSON.stringify(await h.get(path(), board)), /Private payroll sentinel|Private person sentinel/)
  await h.command('weekly-cash-override', override, board, 403)
+ await h.command('expense', { ...expenseBody, id: expense.id }, board, 403)
+ const dim = await h.command('dimension', { name: 'Region' })
+ const east = await h.command('dimension-member', { dimension: dim.id, name: 'East' })
+ await h.command('group-save', { name: 'Regional cash reader', members: ['board@example.test'], departments: { read: [dept.id], edit: [], owners: [] }, dimensions: { [dim.id]: { read: [east.id], edit: [] } }, capabilities: [] })
+ await h.command('member', { email: 'board@example.test', name: 'Board', role: 'viewer', groupOnly: true })
+ await h.get(path(), board, 403)
+ await h.get(`/api/easel/weekly-cash/${scenario}/document.xlsx?start=2026-01-01`, board, 403)
+ await h.command('member', { email: 'board@example.test', name: 'Board', role: 'viewer', groupOnly: false })
  const token = await h.command('branch', { from: scenario, name: 'Private cash plan' })
  // Prior earned payroll remains accrued until both runs; a position bonus is paid
  // once on the first bonus-period pay day, without shifting it by the regular offset.
@@ -89,6 +106,43 @@ test('FIN-007 dated plan collections, payroll, spend and funding reconcile to mo
  await h.command('weekly-cash-override', override, h.owner, 409)
  await h.command('weekly-cash-override', { ...override, scenario: approval.forecast.id, adjustment: '100' })
  assert.deepEqual(await h.get(path()), frozen)
+ const forecast = await h.get(`/api/easel/scenario/${approval.forecast.id}`)
+ await h.command('expense', { ...expenseBody, scenario: approval.forecast.id, id: forecast.inputs.expense[0].id, paymentDate: '2026-01-02' })
+ assert.deepEqual(await h.get(path()), frozen, 'changing the working spend date cannot rewrite approved weekly cash')
  await h.command('scenario-cash', { scenario: token.id, basis: 'estimate', opening: '50000', collectionLag: 0, paymentLag: 0 })
  assert.deepEqual(await h.get(path()), frozen)
+})
+
+test('FIN-007 explicit one-off dates honor retail boundaries and accepted actual amounts without inventing aggregate timing', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Retail dated cash', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01', calendar: '4-4-5', retailStartDate: '2026-01-25' })
+ const department = await h.command('department', { name: 'Operations' })
+ const line = await h.command('line', { name: 'Planned supplier spend', type: 'operating-expense' })
+ const scenario = (await h.get('/api/easel/state')).scenarios[0].id
+ await h.command('scenario-cash', { scenario, basis: 'estimate', opening: '1000', collectionLag: 0, paymentLag: 2 })
+ const body = { scenario, department: department.id, line: line.id, kind: 'one-off', start: '2026-01', name: 'Retail one-off', amount: '100.01', paymentMethod: 'date', paymentDate: '2026-02-21' }
+ const expense = await h.command('expense', body)
+ const planned = await h.get(`/api/easel/scenario/${scenario}`)
+ assert.deepEqual(planned.calculation.dailyCash, [{ date: '2026-02-21', collections: 0, payments: 10001, assumed: false }])
+ assert.equal(planned.calculation.cash[0].payments, 10001, 'explicit same-period date overrides the two-period scenario lag')
+ assert.equal(planned.calculation.cash[2].payments, 0)
+ for (const paymentDate of ['2026-01-24', '2026-02-22', '2026-02-30']) await h.command('expense', { ...body, id: expense.id, paymentDate }, h.owner, 400)
+ const approved = await h.command('approve-budget', { scenario, revision: planned.scenario.revision })
+ await h.command('account-map', { account: '500', target: line.id })
+ await h.command('department-map', { source: 'Operations', department: department.id })
+ const actuals = { filename: 'synthetic-easel-1.csv', csv: 'Date,Account,Department,Amount\n2026-02-01,500,Operations,150.03\n2026-03-01,500,Operations,20.01\n', columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount' }, dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive' }
+ const preview = await h.kit('actuals', 'preview', actuals)
+ await h.kit('actuals', 'commit', { ...actuals, fingerprint: preview.fingerprint })
+ await h.command('close-month', { scenario: approved.forecast.id, month: '2026-01' })
+ let closed = await h.get(`/api/easel/scenario/${approved.forecast.id}`)
+ assert.equal(closed.calculation.dailyCash.find(r => r.date === '2026-02-21').payments, 15003, 'closed actual amount keeps the unique reviewed same-period date')
+ for (const row of (await h.get(`/api/easel/weekly-cash/${approved.forecast.id}?start=2026-01-25`)).reconciliation) assert.equal(row.difference, 0)
+ await h.command('close-month', { scenario: approved.forecast.id, month: '2026-02' })
+ closed = await h.get(`/api/easel/scenario/${approved.forecast.id}`)
+ assert.equal(closed.calculation.dailyCash.find(r => r.date === '2026-05-23').payments, 2001, 'a later aggregate actual uses its own period plus scenario lag, never the earlier one-off date')
+ const cloned = closed.inputs.expense[0]
+ await h.command('expense', { ...body, scenario: approved.forecast.id, id: cloned.id, paymentDate: '2026-02-20' })
+ await h.command('expense', { ...body, scenario: approved.forecast.id, name: 'Conflicting supplier date', paymentDate: '2026-02-19' })
+ await h.get(`/api/easel/scenario/${approved.forecast.id}`, h.owner, 409)
+ assert.deepEqual((await h.get(`/api/easel/scenario/${scenario}`)).calculation, planned.calculation, 'working actuals and date changes never rewrite approved cash')
 })

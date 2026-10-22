@@ -1,7 +1,7 @@
 import { boundEntity, entityDimensions } from './entity-scope'
 import { dimensionStructure, validateDimensions } from './dimensions'
 import { nativeInput, nativeBindings } from './native-input'
-import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
+import { datePeriod, periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { compensationInput } from './compensation'
 import { commissionPosition, commissionInput } from './commissions'
 import { headcountInput } from './headcount-input'
@@ -121,7 +121,9 @@ function validateBaseInput(s: State, kind: InputKind, b: Data, scenario: string)
   if ((b.paymentMethod && b.paymentMethod !== 'lag') || b.dpoDays !== undefined || b.paymentTermDays !== undefined) requireThat(!l.nonCash && !l.payroll && !['prepaid', 'bonus'].includes(kindOf), 'Vendor timing requires a cash, non-payroll vendor expense')
   const working = workingExpenseInput(b, base)
   if (working) return working
-  Object.assign(base, paymentInput(b))
+  const payment = paymentInput(b)
+  if (payment.paymentMethod === 'date') requireThat(datePeriod(workspace(s), payment.paymentDate) === start, 'Planned payment date must be within the one-off expense accounting period')
+  Object.assign(base, payment)
   const linked = commercialInput(s, b, scenario, base)
   if (linked) return linked
   return { ...base, kind: kindOf, amountCents: cents(b.amount, kindOf === 'one-off' ? 'Amount' : 'Monthly amount', { negative: true }) }

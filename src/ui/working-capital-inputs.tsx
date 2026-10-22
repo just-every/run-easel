@@ -60,17 +60,18 @@ export function ExpenseForm({row,lines,depts,onSave}:{row:D|null;lines:Option[];
    <Field label="First bonus pay month" name="payMonth" type="month" defaultValue={row?.payMonth} hint="At or after the first quarter ends. Settles at month end and every three months thereafter; final accrual month receives the cent remainder." />
   </>:<>
    <Field label="End month" name="end" type="month" required={false} defaultValue={row?.end} />
-   <VendorFields row={row} />
+   <VendorFields key={kind} row={row} dated={kind==='one-off'} />
   </>}
  </Form>
 }
 
-export function VendorFields({row}:{row:D|null}) {
- const [method,setMethod]=useState(row?.paymentMethod??'lag')
+export function VendorFields({row,dated=false}:{row:D|null;dated?:boolean}) {
+ const [method,setMethod]=useState(!dated&&row?.paymentMethod==='date'?'lag':row?.paymentMethod??'lag')
  return <>
-   <label>Vendor payment timing<select aria-label="Vendor payment timing" name="paymentMethod" value={method} onChange={e=>setMethod(e.target.value)}><option value="lag">Scenario monthly lag</option><option value="dpo">Days payables outstanding</option><option value="terms">Vendor payment terms</option></select></label>
+   <label>Vendor payment timing<select aria-label="Vendor payment timing" name="paymentMethod" value={method} onChange={e=>setMethod(e.target.value)}><option value="lag">Scenario monthly lag</option><option value="dpo">Days payables outstanding</option><option value="terms">Vendor payment terms</option>{dated&&<option value="date">Planned payment date</option>}</select></label>
    {method==='dpo'&&<Field label="DPO (days)" name="dpoDays" type="number" defaultValue={row?.dpoDays??30} />}
    {method==='terms'&&<Field label="Vendor term days" name="paymentTermDays" type="number" defaultValue={row?.paymentTermDays??30} />}
-   {method!=='lag'&&<p className="muted wide">The invoice is assumed dated at month end; payment follows by the entered number of exact calendar days.</p>}
+   {method==='date'&&<Field label="Planned payment date" name="paymentDate" type="date" defaultValue={row?.paymentDate} hint="Within this one-off expense accounting period. Overrides monthly lag; a planning estimate, not a payment." />}
+   {['dpo','terms'].includes(method)&&<p className="muted wide">The invoice is assumed dated at month end; payment follows by the entered number of exact calendar days.</p>}
  </>
 }
