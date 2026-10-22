@@ -4007,7 +4007,7 @@
       "executable": false
     },
     "tests/forecast-learning-browser.mjs": {
-      "sha256": "11876c61e8dcad0c80850ca9a8d3d233d0b68a4ea0bdb4b71a147a930ccecad8",
+      "sha256": "168ac15e1616b2a018060af07ef845896c544904f77ed0f28d82809bbd762de1",
       "executable": false
     },
     "tests/forecast-learning.test.mjs": {

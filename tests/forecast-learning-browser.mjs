@@ -48,13 +48,12 @@ try {
  for (const width of [1440, 390]) {
   if (width === 390) { await finance.context.close(); finance = await session(browser, root, server.origin, 'owner', width) }
   const page = finance.page
-  page.on('dialog', d => d.accept())
   await page.reload(); await page.locator('h1').first().waitFor()
   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Review', exact: true }).click()
   const card = page.getByRole('region', { name: 'Forecast learning' }).or(page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Forecast learning', exact: true }) }))
   await card.first().waitFor()
   const section = card.first()
-  await section.getByText('Kept before Jan 2026', { exact: false }).waitFor()
+  await section.getByRole('cell', { name: /^Jan 2026/ }).waitFor()
   if (width === 1440) {
    assert.match(await section.innerText(), /No assumption is measured yet/)
    await section.getByLabel('Deal history', { exact: true }).fill(deals)
