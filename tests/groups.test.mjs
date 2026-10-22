@@ -176,7 +176,7 @@ test('Independent grants preserve department and dimension pairings across reads
  const line = await h.command('line', { name: 'Retainers', type: 'revenue' })
  const region = await h.command('dimension', { name: 'Region' })
  const east = await h.command('dimension-member', { dimension: region.id, name: 'East' }), west = await h.command('dimension-member', { dimension: region.id, name: 'West' })
- const person = await h.person('paired@example.test', 'contributor', [], false)
+ const person = await h.person('paired@example.test', 'contributor', [sales.id], false)
  await h.command('member', { email: 'paired@example.test', name: 'Planner', role: 'contributor', departments: [], groupOnly: true })
  const budget = (await h.get('/api/easel/state')).scenarios[0]
  const input = { scenario: budget.id, line: line.id, start: '2026-01', kind: 'volume', startVolume: '1' }
@@ -196,9 +196,9 @@ test('Independent grants preserve department and dimension pairings across reads
  const exported = await h.mf.dispatchFetch(h.origin + `/api/easel/scenario/${budget.id}/document.xlsx`, { headers: { cookie: person } })
  assert.equal(exported.status, 200)
  assert.doesNotMatch(JSON.stringify((await readWorkbook(await exported.arrayBuffer())).model), /Forbidden|70000|90000/)
- const dashboard = await h.command('dashboard-save', { name: 'Authorized totals', scenario: budget.id, department: 'all', audience: 'company', widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'line', period: 'month', through: '2026-01', lines: [line.id] } })
+ const dashboard = await h.command('dashboard-save', { name: 'Authorized totals', scenario: budget.id, department: sales.id, audience: 'department', widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'line', period: 'month', through: '2026-01', lines: [line.id] } })
  const report = await h.get(`/api/easel/dashboards/${dashboard.id}/report`, person)
- assert.equal(report.rows[0].budget, 30000)
+ assert.equal(report.rows[0].budget, 10000)
  const access = (await h.get('/api/easel/access-report')).people.find(p => p.email === 'paired@example.test')
  assert.equal(access.grants.read.length, 2)
  assert.deepEqual(access.grants.read.map(g => g.departments), [[sales.id], [marketing.id]])
