@@ -14,7 +14,7 @@ import { scenarioInputs } from '../model'
 import { monthLabel } from '../months'
 import { notify } from '../notify'
 import { snapshot } from '../store'
-import { all, find, put, type Data } from '../types'
+import { all, Fault, find, put, type Data } from '../types'
 import { formatHundredths, formatMoney } from '../units'
 import { constraints } from './agent-evaluate'
 import { workspace } from '../model'
@@ -43,10 +43,13 @@ export function sourceChanges(c: Context, reference: Data, current: Data): Data[
  return out.slice(0, 50)
 }
 
+/** A snapshot saved by an earlier request, or one this request is about to save. */
+const body = async (c: Context, id: string): Promise<Data> => c.snapshots.find(s => s.id === id)?.body ?? (await snapshot(c.db, id)).body
+
 async function referenceInputs(c: Context, forecast: Data) {
  const kept = forecast.priorForecasts?.at(-1)
- if (kept) return { label: `the forecast kept before closing ${monthLabel(kept.month)}`, inputs: (await snapshot(c.db, kept.snapshot)).body.inputs as Data }
- if (forecast.budgetSnapshot) return { label: 'the approved budget', inputs: (await snapshot(c.db, forecast.budgetSnapshot)).body.inputs as Data }
+ if (kept) return { label: `the forecast kept before closing ${monthLabel(kept.month)}`, inputs: (await body(c, kept.snapshot)).inputs as Data }
+ if (forecast.budgetSnapshot) return { label: 'the approved budget', inputs: (await body(c, forecast.budgetSnapshot)).inputs as Data }
  return null
 }
 
@@ -56,7 +59,7 @@ export async function watchConstraints(c: Context) {
  const agreement = workspace(c.s).cashAgreement
  if (!forecast || !agreement) return []
  let calc
- try { calc = await workingCalculation(c, forecast.id) } catch (error) { if (error instanceof CalculationPending) return []; throw error }
+ try { calc = await workingCalculation(c, forecast.id) } catch (error) { if (error instanceof CalculationPending || error instanceof Fault) return []; throw error }
  const k = constraints(c, calc, forecast)
  const money = (n: number) => formatMoney(n, calc.currency)
  const found: Record<string, Data | null> = { 'cash-floor': k.floorBreach, runway: k.runwayBreach }
