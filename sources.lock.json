@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "2d4d471b90c179b23ae68b4a3c78b832e06128e129f41c801834fae8a24f391e",
+      "sha256": "5b4dd3c963c60122c479c2e4e50f5441f8bb8eefb5e82423c992063291ad5f93",
       "executable": false
     },
     "DEMO.md": {
@@ -3531,7 +3531,7 @@
       "executable": false
     },
     "src/ui/cash-alerts.tsx": {
-      "sha256": "e572d3d0de230be5a685db8bd10b2346a9d2dbff85b7312afea75c7950414a7d",
+      "sha256": "db9ac9a3e07fd5aaeea81d4a59d8a61d401dde54a9f3e2e82c90fa438cb59fb8",
       "executable": false
     },
     "src/ui/cash-health.tsx": {
@@ -4159,7 +4159,7 @@
       "executable": false
     },
     "tests/plaid-cash-browser.mjs": {
-      "sha256": "0ae736ad94d7b72b4c5c0f3092acb8b8cb33e7a24978ac63f9863daf72a32bbe",
+      "sha256": "09a2fb08ded912907541e63fdf8580ff787073cdb935420d152f152fced0b38e",
       "executable": false
     },
     "tests/plaid-cash.test.mjs": {

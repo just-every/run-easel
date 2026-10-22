@@ -112,7 +112,9 @@ try {
     await alerts.getByLabel('Rule name', { exact: true }).fill('Bank 50k under plan')
     await alerts.getByLabel('Alert when', { exact: true }).selectOption('bank-below-plan')
     await alerts.getByLabel('Shortfall amount (USD)', { exact: true }).fill('50000')
-    await Promise.all([page.waitForResponse(r => r.url().endsWith('/command/cash-alert-rule-save') && r.ok()), alerts.getByRole('button', { name: 'Add cash alert rule', exact: true }).click()])
+    const savedRule = page.waitForResponse(r => r.url().endsWith('/command/cash-alert-rule-save'))
+    await alerts.getByRole('button', { name: 'Add cash alert rule', exact: true }).click()
+    const saved = await savedRule; assert.equal(saved.status(), 200, await saved.text())
    }
    await alerts.getByText(/bank cash is .* below plan on/).waitFor()
    await noOverflow(page, `CONNECT-009 bank cash alert ${width}`)

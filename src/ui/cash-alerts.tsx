@@ -70,7 +70,7 @@ function RuleForm({ rule, currency, saved }: { rule: Rule | null; currency: stri
  const [basis, setBasis] = useState<'amount' | 'percent'>(rule?.basis ?? 'amount')
  return <Form submit={rule ? 'Save cash alert rule' : 'Add cash alert rule'} onSubmit={async v => {
   await command('cash-alert-rule-save', { ...(rule ? { id: rule.id, revision: rule.revision } : {}), name: v.name, kind, intervalDays: Number(v.intervalDays), enabled: v.enabled,
-   ...(kind === 'below-plan' ? { basis, ...(basis === 'amount' ? { amount: v.amount } : { percent: v.percent }) } : kind === 'runway' ? { runway: v.runway } : {}) })
+   ...(['below-plan','bank-below-plan'].includes(kind) ? { basis, ...(basis === 'amount' ? { amount: v.amount } : { percent: v.percent }) } : kind === 'runway' ? { runway: v.runway } : {}) })
   await saved()
  }}>
   <Field label="Rule name" name="name" defaultValue={rule?.name} />
