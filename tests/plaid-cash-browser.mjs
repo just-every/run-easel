@@ -64,7 +64,8 @@ try {
     await card.getByRole('checkbox').check()
     const response = page.waitForResponse(r => r.url().endsWith('/connections/plaid/connect'))
     await card.getByRole('button', { name: 'Connect Plaid', exact: true }).click()
-    assert.equal((await response).status(), 200)
+    const connected = await response
+    assert.equal(connected.status(), 200, await connected.text())
    }
    const refreshed = page.waitForResponse(r => r.url().endsWith('/connections/plaid/refresh'))
    await card.getByRole('button', { name: 'Refresh bank cash', exact: true }).click()
@@ -88,6 +89,7 @@ try {
    assert.equal(view.weeks[0].opening, initialCents + priorOverride)
    assert.match(view.basis, /not ledger actuals/)
    assert.equal(view.weeks.length, 13)
+   await cash.getByLabel('Week starting', { exact: true }).selectOption(view.weeks[0].start)
    await cash.getByLabel('Cash adjustment', { exact: true }).fill(width === 1440 ? '-25.01' : '-50.02')
    await cash.getByLabel('Adjustment note', { exact: true }).fill(`Finance bank timing review ${width}`)
    await Promise.all([page.waitForResponse(r => r.url().endsWith('/command/weekly-cash-override') && r.ok()), cash.getByRole('button', { name: 'Save weekly adjustment', exact: true }).click()])

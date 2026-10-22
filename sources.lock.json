@@ -4159,7 +4159,7 @@
       "executable": false
     },
     "tests/plaid-cash-browser.mjs": {
-      "sha256": "fb38067ab8e18c926978af26ef1a8b2ca04b6cfcb98c77af0c4498e97d79bea1",
+      "sha256": "0ae736ad94d7b72b4c5c0f3092acb8b8cb33e7a24978ac63f9863daf72a32bbe",
       "executable": false
     },
     "tests/plaid-cash.test.mjs": {
