@@ -3687,7 +3687,7 @@
       "executable": false
     },
     "src/ui/sheet-links.tsx": {
-      "sha256": "8a05d082ebf40baa53158790fdeed5cc691fba7d77027abbb65ed2c9baf48cc2",
+      "sha256": "b98ff7ecdd0e46546fe1bf9d94f1b2f64f4602647b0e3021e49ad981e8ca8097",
       "executable": false
     },
     "src/ui/starter-models.tsx": {
@@ -4191,7 +4191,7 @@
       "executable": false
     },
     "tests/sheet-pull-flow.mjs": {
-      "sha256": "9c048ccf6137ba68400b0eae9c6846c641e663f4871350e9900bb7fdb0482d93",
+      "sha256": "8dd4fa090a893767050d14ff8889f7967cdbbdb4a32a2b950d997b64ea1cbca8",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {

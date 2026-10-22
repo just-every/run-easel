@@ -63,9 +63,9 @@ function SheetLinksContent({ state, refresh }: Props) {
     <Field label="Offline refresh token" name="refreshToken" type="password" hint="The OAuth bundle is sealed on the server. Saved credentials are never returned to this form." />
    </Form>
    {connection.connected && <Action label="Disconnect Google Sheets" kind="danger" run={async () => {
-    await api('connections/sheets/disconnect', {}); setNotice('The stored OAuth bundle was removed. Saved baselines and proposals remain.'); await changed()
+    await api('connections/sheets/disconnect', {}); setNotice('The stored OAuth bundle was removed and all range schedules were disabled. Saved baselines and proposals remain.'); await changed()
    }} />}
-   <p className="muted">Disconnect asks Google to revoke the grant and removes the local OAuth bundle even when revocation cannot be confirmed. If Google does not confirm revocation, remove this app in your Google Account → Security → Third-party connections.</p>
+   <p className="muted">Disconnect disables all range schedules, asks Google to revoke the grant and removes the local OAuth bundle even when revocation cannot be confirmed. Google revocation can affect other grants for this OAuth project. If Google does not confirm revocation, remove this app in your Google Account → Security → Third-party connections.</p>
    {connection.connected && <SheetLinkForm state={state} saved={changed} />}
   </>}
   {links && <>

@@ -37,7 +37,9 @@ export async function proveSheetPull(t) {
  const schedule=await h.command('schedule',{scenario:scenario.id,name:'Sales capacity',department:department.id,line:line.id,values:{'2026-02':'100','2026-03':'200'}})
  const viewer=await h.person('board@example.test','viewer'), contributor=await h.person('sales@example.test','contributor',[department.id])
  const post=async(path,body,cookie=h.owner,status=200)=>{const r=await h.send(`/api/easel/${path}`,body,cookie);assert.equal(r.status,status,r.text);return r.value}
+ const finance=await h.person('finance@example.test','finance',[],false)
  for(const cookie of [viewer,contributor])await post('connections/sheets/connect',credentials,cookie,403)
+ await h.get('/api/easel/connections/sheets',finance,403)
  await post('connections/sheets/connect',credentials)
  const status=await h.get('/api/easel/connections/sheets');assert.equal(status.connected,true)
  for(const secret of Object.values(credentials))assert.ok(!JSON.stringify(status).includes(secret))
@@ -69,6 +71,18 @@ export async function proveSheetPull(t) {
  columns=3;missing=true;link=await run('2026-01-10T16:01:00.000Z');assert.match(link.error,/HTTP 404/);assert.deepEqual(link.baseline,baseline);assert.equal(await count(),1);missing=false
  await h.command('proposal-promote',{id:proposal.scenario.id,revision:proposal.scenario.revision})
  assert.deepEqual((await h.get(`/api/easel/scenario/${scenario.id}`)).inputs.schedule[0].values,{'2026-02':12525,'2026-03':23575})
+ // An explicitly saved schedule cannot retain a removed Pay grant.
+ await post('sheet-links/disable',{id:link.id,revision:link.revision})
+ await h.command('pay-detail',{email:'finance@example.test',granted:true})
+ const current=(await h.get(`/api/easel/scenario/${scenario.id}`)).inputs.schedule[0]
+ const ownConfig={...config,name:'Finance-owned capacity',mappings:config.mappings.map(m=>({...m,schedule:current.id}))}
+ const ownPreview=await post('sheet-links/preview',ownConfig,finance)
+ const ownLink=await post('sheet-links/save',{...ownConfig,digest:ownPreview.digest},finance)
+ await h.command('pay-detail',{email:'finance@example.test',granted:false})
+ const beforeBlockedReads=reads
+ await run('2026-01-10T17:01:00.000Z')
+ const stopped=(await h.get('/api/easel/sheet-links')).links.find(l=>l.id===ownLink.id)
+ assert.match(stopped.error,/permissions/i);assert.equal(reads,beforeBlockedReads);assert.equal(await count(),1)
  const beforeDisconnectReads=reads
  for(const code of [200,503,302]) {
   revokeStatus=code
@@ -80,7 +94,7 @@ export async function proveSheetPull(t) {
   await post('connections/sheets/connect',credentials)
  }
  unreachable=true;const disconnected=await post('connections/sheets/disconnect',{});assert.equal(disconnected.providerRevocation.status,'not-confirmed');assert.equal(disconnected.providerRevocation.httpStatus,null)
- const after=await run('2026-01-10T17:01:00.000Z');assert.equal(after.enabled,false);assert.equal(reads,beforeDisconnectReads);assert.equal(revokes,4)
+ const after=await run('2026-01-10T18:01:00.000Z');assert.equal(after.enabled,false);assert.equal(reads,beforeDisconnectReads);assert.equal(revokes,4)
  const audit=await h.get('/api/easel/activity');assert.ok(audit.some(e=>e.action==='sheets-connected'));assert.ok(audit.some(e=>e.action==='sheet-link-proposed'));assert.ok(audit.some(e=>e.action==='sheet-link-failed'))
  for(const secret of [...Object.values(credentials),accessToken])assert.ok(!JSON.stringify(audit).includes(secret))
 }
