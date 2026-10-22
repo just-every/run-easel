@@ -943,11 +943,11 @@
       "executable": false
     },
     "src/easel/agents/source-guard-detection.ts": {
-      "sha256": "6768ddc983f60db51aec0dc32a1e74ece47e0463481c274a7b24a28479b3c454",
+      "sha256": "a56db4cf035bb29114d4c984f0b3ee28cd56500bc927aa08a604b68cfeda03ee",
       "executable": false
     },
     "src/easel/agents/source-guard.ts": {
-      "sha256": "e2a6e9df12e1ee733d2c27c739a5922365a29f6795f5c26dcef593813caef385",
+      "sha256": "03ceaa4aaad149debbdb6491c49a2848eca5f5a628b01799c03a437441b0ab89",
       "executable": false
     },
     "src/easel/api.ts": {
@@ -4251,7 +4251,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "2a8ad68d1681a5b2c29f0c2368093287461acea3ef1145c3aae3b6e84a91bc4d",
+      "sha256": "933a8ea3456444d7f7a2c065f97fbb776de82cd1177116a8f122ff639ddbf0e5",
       "executable": false
     },
     "tests/mcp.test.mjs": {
@@ -4423,7 +4423,7 @@
       "executable": false
     },
     "tests/source-guard-browser.mjs": {
-      "sha256": "bd843a7fc306cfe741bf234da5ef36a33d36f6e7861a04e2fd913daf15e7203c",
+      "sha256": "a83a3e79413311dae5576e1c396e416c31a74d454ac8d8ef655d9dfe93304584",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {

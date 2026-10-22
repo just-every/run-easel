@@ -34,7 +34,15 @@ function unresolved(c:Context,g:Data) {
  })
 }
 
-export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g),impacts:sourceImpacts(c,g.month),history:(g.history ?? []).map((h:Data)=>({...h,impacts:sourceImpacts(c,h.month)}))})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
+function visibleImpacts(c:Context,g:Data) {
+ const impacts=sourceImpacts(c,g.month)
+ if(g.status==='completed' && !unresolved(c,g).length) for(const [kind,rows] of Object.entries(impacts)) for(const row of rows) {
+  if(row.status.includes('unchanged'))continue
+  row.status=kind==='scenarios'?'working; source refresh accepted':kind==='reports'?'source accepted; available to refresh':kind==='packs'?'draft; accepted source available':'source accepted; ordinary rule checks resumed'
+ }
+ return impacts
+}
+export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g),impacts:visibleImpacts(c,g),history:(g.history ?? []).map((h:Data)=>({...h,impacts:visibleImpacts(c,h)}))})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null

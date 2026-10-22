@@ -32,6 +32,6 @@ export function sourceImpacts(c: Context, month: string) {
   scenarios:scenarios.map(s=>({id:s.id,name:s.name,status:s.status==='frozen' || s.snapshot ? 'captured; unchanged' : 'working; dependent conclusions held'})),
   reports:[{id:'actuals',name:'Actuals reconciliation',status:'dependent month held'},...all(c.s,'dashboard').filter(d=>d.report && canSeeDashboard(c.s,c.x,d) && scenarios.some(s=>s.id===d.scenario)).map(d=>({id:d.id,name:d.name,status:'source-dependent report'}))],
   packs:all(c.s,'pack').filter(p=>(p.months ?? [p.month]).some((m:string)=>m>=month)).map(p=>({id:p.id,name:p.title,status:p.status==='published'?'published snapshot; unchanged':'draft; refresh held'})),
-  alerts:all(c.s,'cash-alert-rule').filter(r=>r.enabled && r.kind!=='bank-below-plan').map(r=>({id:r.id,name:r.name,status:'blocked until source review'})),
+  alerts:all(c.s,'cash-alert-rule').filter(r=>r.enabled && r.kind!=='bank-below-plan').map(r=>({id:r.id,name:r.name,status:'held until reviewed refresh accepted'})),
  }
 }

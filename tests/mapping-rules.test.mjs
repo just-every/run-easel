@@ -446,7 +446,9 @@ test('Source refresh proposes a reasoned mapping and exact impacts, blocks incom
  assert.equal(guard.decisions.at(-1).at,'2026-02-01T18:00:00Z')
  assert.match(guard.decisions.at(-1).reason,/next coverage period/)
  await h.kit('actuals','commit',{...file,fingerprint:preview.fingerprint})
- assert.equal((await h.get('/api/easel/source-guard')).guards[0].status,'completed')
+ const acceptedGuard=(await h.get('/api/easel/source-guard')).guards[0]
+ assert.equal(acceptedGuard.status,'completed')
+ assert.ok(acceptedGuard.impacts.alerts.every(a=>/source accepted/.test(a.status)))
  checks=await h.command('cash-alert-check',{})
  assert.deepEqual(checks.blocked,[])
  const unreviewed=guardActuals('610','Renamed software source','151')
