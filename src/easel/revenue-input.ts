@@ -16,7 +16,9 @@ export function libraryRevenueInput(b: Data, base: Data, workspace: CalendarWork
  if (b.kind === 'usage') {
   const growthBps = decimal(b.growthPercent ?? '0', 'Monthly usage growth %', 2, { negative: true, max: 100000n })
   requireThat(growthBps >= -10000, 'Monthly usage growth cannot be below -100%')
-  return { ...base, kind: 'usage', startUsage: hundredths(b.startUsage, 'Starting monthly usage'), growthBps, unitPriceCents: cents(b.unitPrice, 'Price per usage unit') }
+  const metric = typeof b.warehouseMetric === 'string' ? b.warehouseMetric.trim() : ''
+  requireThat(!metric || /^[a-z][a-z0-9_]{0,59}$/.test(metric), 'Warehouse metric names use lowercase letters, digits and underscores')
+  return { ...base, kind: 'usage', startUsage: hundredths(b.startUsage, 'Starting monthly usage'), growthBps, unitPriceCents: cents(b.unitPrice, 'Price per usage unit'), ...(metric ? { warehouseMetric: metric } : {}) }
  }
  if (b.kind === 'services') return { ...base, kind: 'services', monthlyHours: hundredths(b.monthlyHours, 'Monthly available hours per active position'), utilizationBps: percentBps(b.utilizationPercent, 'Billable utilization %'), hourlyRateCents: cents(b.hourlyRate, 'Billable hourly rate') }
  if (b.kind === 'milestones') {

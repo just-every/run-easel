@@ -1,5 +1,4 @@
 import { workingCalculation } from './calculation'
-import { aggregateFinancing } from './financing-view'
 // Monthly review: actual against the approved budget and the forecast kept
 // before the month closed, with the accepted rows and plan sources behind
 // each difference. Drafts state what the evidence shows and mark anything
@@ -15,6 +14,8 @@ import { type Calculation, type Cell } from './engine'
 import { departments, lines, model, workspace } from './model'
 import { addMonths, monthLabel, monthsBetween, range } from './months'
 import { snapshot } from './store'
+import { packNumbers, packPeriod, templateBody } from './pack-body'
+import { packTemplate, PACK_SECTIONS } from './pack-template'
 import { versionComparison } from './version-comparison'
 import { formatMoney } from './units'
 import { all, find, get, put, requireThat, text, uid, type Access, type Data, type State } from './types'
@@ -130,11 +131,24 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   requireCapability(x, 'publishing', s)
   const month = typeof b.month === 'string' ? b.month : ''
   const forecast = forecastFor(s, month)
-  requireThat(!all(s, 'pack').some(p => p.month === month && p.status === 'draft'), `A draft pack for ${monthLabel(month)} already exists`, 409)
-  const id = uid()
-  put(s, 'pack', id, { month, forecast: forecast.id, status: 'draft', title: `${monthLabel(month)} review`, decisions: [], createdBy: x.actor.email, createdAt: c.now })
-  c.activity.push({ action: op, record: id, detail: { month } })
+  const period = await packPeriod(c, forecast, b), template = packTemplate(c, b.template), last = period.months.at(-1)!
+  requireThat(!all(s, 'pack').some(p => p.month === last && p.status === 'draft' && (p.period ?? 'month') === period.period), `A draft pack for ${period.label} already exists`, 409)
+  const id = uid(), draft = { months: period.months, forecast: forecast.id, template: template.id }
+  const { fingerprint } = await packNumbers(c, draft)
+  put(s, 'pack', id, { month: last, period: period.period, months: period.months, label: period.label, forecast: forecast.id, status: 'draft', title: `${period.label} review`, template: template.id, sections: template.sections, decisions: [], generated: { fingerprint, at: c.now, by: x.actor.email }, refreshes: [], createdBy: x.actor.email, createdAt: c.now })
+  c.activity.push({ action: op, record: id, detail: { month: last, period: period.period, template: template.id } })
   return get(s, 'pack', id)
+ }
+ if (op === 'pack-refresh') {
+  requireCapability(x, 'publishing', s)
+  const pack = get(s, 'pack', b.pack)
+  requireThat(pack.status === 'draft', 'A published pack cannot be refreshed; start a new pack for the period', 409)
+  const { fingerprint } = await packNumbers(c, pack)
+  const changed = fingerprint !== pack.generated?.fingerprint
+  const commentary = all(s, 'explanation').filter(e => (pack.months ?? [pack.month]).includes(e.month)).length
+  put(s, 'pack', pack.id, { ...pack, generated: { fingerprint, at: c.now, by: x.actor.email }, refreshes: [...(pack.refreshes ?? []), { at: c.now, by: x.actor.email, before: pack.generated?.fingerprint ?? null, after: fingerprint, changed }] })
+  c.activity.push({ action: op, record: pack.id, detail: { changed, commentaryKept: commentary } })
+  return { pack: get(s, 'pack', pack.id), changed, commentaryKept: commentary }
  }
  if (op === 'pack-decision') {
   requireCapability(x, 'publishing', s)
@@ -151,39 +165,15 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const pack = get(s, 'pack', b.pack)
   requireThat(pack.status === 'draft', 'This pack is already published', 409)
   const w = workspace(s)
-  const v = await variance(c, pack.month)
-  for (const row of v.rows) {
-   if (row.payroll || row.explanation?.status !== 'confirmed') continue
-   const ids = row.explanation.citationIds ?? [], visible = new Set(row.citations.map(source => source.id))
-   requireThat(Array.isArray(ids) && ids.every((id: unknown) => typeof id === 'string' && visible.has(id)), 'An explanation citation changed; review its sources before publishing', 409)
-  }
-  const forecast = get(s, 'scenario', pack.forecast)
-  const forecastCalc = await workingCalculation(c, forecast.id, forecast.actualsThrough)
-  const budget = await snapshot(c.db, forecast.budgetSnapshot)
-  const fiscalStart = addMonths(w.planStart, Math.floor(monthsBetween(w.planStart, pack.month) / 12) * 12)
-  const ytd = range(fiscalStart, 12).filter(m => m <= pack.month)
-  const reportLines: Data[] = [...new Map([...lines(s), ...budget.body.lines].map(l => [l.id, l])).values()]
-  const lineRows = reportLines.map(l => ({
-   line: l.name, type: l.type,
-   actual: forecastCalc.lineTotals[l.id]?.[pack.month] ?? 0, budget: budget.body.calculation.lineTotals[l.id]?.[pack.month] ?? 0,
-   ytdActual: ytd.reduce((a, m) => a + (forecastCalc.lineTotals[l.id]?.[m] ?? 0), 0), ytdBudget: ytd.reduce((a, m) => a + (budget.body.calculation.lineTotals[l.id]?.[m] ?? 0), 0),
-  }))
-  const batches = all(s, 'batch').filter(x => x.status === 'accepted' && x.periods.includes(pack.month)).map(x => ({ file: x.file, sha256: x.sha256, rows: x.accepted, acceptedBy: x.acceptedBy, acceptedAt: x.acceptedAt }))
+  const { numbers, fingerprint } = await packNumbers(c, pack)
+  requireThat(b.fingerprint === undefined || b.fingerprint === fingerprint, 'The numbers changed after you reviewed this pack; refresh it and review the changes before publishing', 409)
+  const sections: string[] = pack.sections ?? [...PACK_SECTIONS]
   const snapshotId = uid()
-  c.snapshots.push({ id: snapshotId, kind: 'pack', scenario: forecast.id, label: pack.title, body: {
-   ...(forecastCalc.formulaValues?.length ? {nativeDefinitions:{scenario:{id:forecast.id,name:forecast.name,revision:forecast.revision},inputs:all(s,'formula').filter(f=>f.scenario===forecast.id),formulaValues:forecastCalc.formulaValues,sources:forecastCalc.nativeSources??{}}}:{}),
-   title: pack.title, company: w.name, month: pack.month, currency: w.currency, status: 'published',
-   versionComparison: { currency: w.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
-   budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
-   lines: lineRows, profit: { month: forecastCalc.profit.find(p => p.month === pack.month), budget: budget.body.calculation.profit.find((p: Data) => p.month === pack.month) },
-   ...(forecastCalc.contracts ? { contracts: { ...forecastCalc.contracts, rows: [], invoices: [] }, balanceSheet: forecastCalc.balanceSheet, cashFlow: forecastCalc.cashFlow } : {}),
-   ...(forecastCalc.workingCapital ? { workingCapital: { ...forecastCalc.workingCapital, rows: [], issues: [] } } : {}),
-   ...(forecastCalc.financing ? { financing: aggregateFinancing(forecastCalc.financing) } : {}),
-   assets: forecastCalc.months.map(month => ({ month, ...Object.fromEntries(['openingBookValue', 'depreciation', 'disposalBookValue', 'closingBookValue', 'capex', 'disposalProceeds'].map(key => [key, (forecastCalc.assets ?? []).filter(a => a.month === month).reduce((n, a) => n + Number(a[key as keyof typeof a]), 0)])) })),
-   cash: forecastCalc.cash.map(m => ({ ...(m.incompleteReasons ? { incompleteReasons: m.incompleteReasons } : {}), month: m.month, closing: m.closing, budget: budget.body.calculation.cash.find((b: Data) => b.month === m.month)?.closing ?? null })),
-   // Pack audience projections omit private native definitions and individual pay detail.
-   variances: v.rows.map(r => ({ line: r.lineName, department: r.departmentName, actual: r.actual, budget: r.budget, priorForecast: r.priorForecast, variance: r.variance, favourable: r.favourable, explanation: !r.payroll && r.explanation?.status === 'confirmed' ? { text: r.explanation.text, status: r.explanation.status, citationIds: r.explanation.citationIds ?? [], confirmedBy: r.explanation.confirmedBy ?? null } : null, evidence: [...lines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
-   sources: batches, decisions: pack.decisions, publishedBy: { email: x.actor.email, name: x.actor.name }, publishedAt: c.now,
+  c.snapshots.push({ id: snapshotId, kind: 'pack', scenario: pack.forecast, label: pack.title, body: {
+   ...templateBody(numbers, sections),
+   title: pack.title, company: w.name, month: pack.month, period: pack.period ?? 'month', months: pack.months ?? [pack.month], label: pack.label ?? monthLabel(pack.month), currency: w.currency, status: 'published',
+   template: pack.template ?? 'default', sections, fingerprint,
+   decisions: sections.includes('decisions') ? pack.decisions : [], publishedBy: { email: x.actor.email, name: x.actor.name }, publishedAt: c.now,
   } })
   put(s, 'pack', pack.id, { ...pack, status: 'published', snapshot: snapshotId, publishedBy: x.actor.email, publishedAt: c.now })
   c.activity.push({ action: op, record: pack.id, detail: { month: pack.month, snapshot: snapshotId } })

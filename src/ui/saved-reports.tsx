@@ -1,3 +1,4 @@
+import { BiFeeds } from './bi-feeds'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { Action, api, command, decimalText, Field, Form, money, options, Table, type D } from './shared'
@@ -20,6 +21,7 @@ export function SavedReportPanel({ id }: { id: string }) {
   <Table caption={view.name} heads={['Row', 'Period', 'Actual', view.sourceName, ...(view.comparisonName ? [view.comparisonName] : []), 'Variance', 'Variance %', 'Prior-year actual', 'YoY change', 'YoY %', ...(view.versions ?? []).map((v: D) => v.name)]}>
    {view.rows.map((r: D) => <tr key={`${r.row}:${r.period}`}><th scope="row">{r.name}{r.rollup ? ' (total)' : ''}</th><td>{r.period}</td><td className="num">{money(r.actual, view.currency)}</td><td className="num">{money(r.budget, view.currency)}</td>{view.comparisonName && <td className="num">{money(r.comparison, view.currency)}</td>}<td className={`num${r.highlight ? ' error' : ''}`}>{money(r.variance, view.currency)}{r.highlight && ' · Above threshold'}</td><td className="num">{percent(r.varianceBps)}</td><td className="num">{money(r.priorYearActual, view.currency)}</td><td className="num">{money(r.yoy, view.currency)}</td><td className="num">{percent(r.yoyBps)}</td>{(view.versions ?? []).map((v: D) => <td className="num" key={v.id}>{money(r.versions[v.id], view.currency)}</td>)}</tr>)}
   </Table><p><a href={`/api/easel/dashboards/${encodeURIComponent(id)}/report.xlsx`} download>Download report (Excel)</a></p>
+  <BiFeeds id={id} />
  </>
 }
 

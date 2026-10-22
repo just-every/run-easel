@@ -28,7 +28,9 @@ export function libraryRevenue(r: Data, positions: Data[], lastMonth: string, cu
   if (r.kind === 'seats' || r.kind === 'usage') {
    const seats = r.kind === 'seats', growth = seats ? r.expansionBps : r.growthBps, price = seats ? r.priceCents : r.unitPriceCents
    const prior = quantity
+   const measured = seats ? undefined : r.warehouseActuals?.[month]
    if (index > 0) quantity = safe(mulDiv(quantity, 10000 + growth, 10000), r.name)
+   if (measured) { quantity = safe(measured.hundredths, r.name); source(month, mulDiv(quantity, price, 100), `warehouse metric ${r.warehouseMetric} for this month, ${formatHundredths(quantity)} units from the finance-approved query (read ${measured.fetchedAt}), × ${money(price)} per unit = ${money(mulDiv(quantity, price, 100))}; later months grow from this measured quantity`); continue }
    const amount = mulDiv(quantity, price, 100)
    source(month, amount, `${seats ? 'seats' : 'usage units'} ${formatHundredths(quantity)}${index === 0 ? ' (starting quantity; expansion/growth begins next month)' : ` = prior ${formatHundredths(prior)} × (1 + ${formatBps(growth)} monthly ${seats ? 'expansion' : 'growth'}), rounded to hundredths`} × ${money(price)} per ${seats ? 'seat per month' : 'unit'} = ${money(amount)}`)
   } else if (r.kind === 'services') {

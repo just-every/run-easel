@@ -114,3 +114,13 @@ jobs:
         run: node tests/forecast-learning-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/forecast-learning
+
+      - name: REPORT-003 quarter board pack at desktop and phone widths
+        run: node tests/board-pack-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/board-pack
+
+      - name: REPORT-007 BI dataset, warehouse metrics and drops at desktop and phone widths
+        run: node tests/bi-feeds-browser.mjs
+        env:
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/bi-feeds

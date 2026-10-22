@@ -1,5 +1,6 @@
 import { boundEntity, entityDimensions } from './entity-scope'
 import { dimensionStructure, validateDimensions } from './dimensions'
+import { warehouseActuals } from './warehouse-metrics'
 import { nativeInput, nativeBindings } from './native-input'
 import { datePeriod, periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { compensationInput } from './compensation'
@@ -41,7 +42,7 @@ export function model(s: State, scenarioId: string): Model {
  return {
   workspace: { currency: scenario.currency ?? boundEntity(s, scenario)?.currency ?? w.currency, planStart: w.planStart, horizon: scenario.horizon ?? w.horizon, fiscalYearStart: w.fiscalYearStart, calendar: w.calendar ?? 'calendar-month', ...(w.retailStartDate ? { retailStartDate: w.retailStartDate } : {}) },
   lines: lines(s), departments: departments(s), scenario, dimensionStructure: dimensionStructure(s),
-  inputs: { formula: scenarioInputs(s, scenarioId, 'formula'), revenue: scenarioInputs(s, scenarioId, 'revenue'), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
+  inputs: { formula: scenarioInputs(s, scenarioId, 'formula'), revenue: scenarioInputs(s, scenarioId, 'revenue').map(r => r.kind === 'usage' && r.warehouseMetric ? { ...r, warehouseActuals: warehouseActuals(s, r.warehouseMetric) } : r), position: scenarioInputs(s, scenarioId, 'position'), expense: scenarioInputs(s, scenarioId, 'expense'), schedule: scenarioInputs(s, scenarioId, 'schedule'), allocation: scenarioInputs(s, scenarioId, 'allocation'), 'asset-category': scenarioInputs(s, scenarioId, 'asset-category'), asset: scenarioInputs(s, scenarioId, 'asset'), debt: scenarioInputs(s, scenarioId, 'debt'), equity: scenarioInputs(s, scenarioId, 'equity'), 'tax-policy': scenarioInputs(s, scenarioId, 'tax-policy'), 'workbook-model': scenarioInputs(s,scenarioId,'workbook-model') },
  }
 }
 

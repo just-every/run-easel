@@ -68,11 +68,16 @@ import { evaluateMetricTasks, needsMetricRefresh } from './metric-tasks'
 import { longRange, longRangeList, longRangeView } from './long-range'
 import { longRangeWorkbook } from './long-range-workbook'
 import { handleMcp } from './mcp'
-import { packCsv, packHtml } from './pack-documents'
+import { PACK_TYPES, packFileName, renderPack, type PackFormat } from './pack-formats'
+import { packPreview } from './pack-preview'
+import { biDropCommands, biDropList } from './bi-drops'
+import { dataset, datasetCsv, datasetJson, datasetParquet } from './dataset'
+import { warehouseCommand, warehouseConnection, warehouseStatus } from './warehouse'
+import { packSave, packStoreConnection, packStoreStatus } from './pack-store'
+import { packTemplateCommands, packTemplates, SECTION_LABELS } from './pack-template'
 import { plan } from './plan'
 import { parallelMonth, parallelList, parallelView, parallelTemplate } from './parallel-month'
 import { scenarioWorkbook, scenarioCsv, comparisonWorkbook, varianceWorkbook } from './report-workbooks'
-import { packWorkbook } from './pack-workbook'
 import { actualsWorkbook, activityWorkbook } from './operational-workbooks'
 import { review, variance } from './review'
 import { reforecasts } from './reforecasts'
@@ -84,7 +89,7 @@ import { actor, load, readFence, save, snapshot } from './store'
 import { openExport } from './open-export'
 import { tokenAdmin } from './token-admin'
 import { tokenRate, tokenUse } from './token-auth'
-import { Fault, get, requireThat, type Actor, type Data } from './types'
+import { choice, Fault, get, requireThat, type Actor, type Data } from './types'
 import { actualsView, compareView, scenarioView, snapshotView, stateView, paySafePack } from './views'
 import { workbookCommand } from './workbook'
 import { moveImport } from './move-import'
@@ -123,7 +128,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const { state, revision } = await load(c.env.DB)
  const current = access(state, a)
  if (a.token) requireMember(current)
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -367,7 +372,7 @@ api.get('/api/easel/variance/:month/document.xlsx', async c => {
  return spreadsheet(bytes, 'easel-variance')
 })
 
-api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
+api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx|pdf|pptx)}', async c => {
  const ctx = await open(c)
  requireThat(ctx.x.role, 'Finance has not added you to this plan yet', 403)
  const pack = get(ctx.s, 'pack', c.req.param('id'), 'pack')
@@ -375,13 +380,53 @@ api.get('/api/easel/pack/:id/:format{document\\.(html|csv|xlsx)}', async c => {
  requireThat(pack.status === 'published', 'This pack is not published yet', 409)
  const sn = paySafePack(await snapshot(ctx.db, pack.snapshot))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
- if (c.req.param('format') === 'document.xlsx') return spreadsheet(packWorkbook(sn), `easel-review-${pack.month}`)
- const csv = c.req.param('format') === 'document.csv'
- const name = `easel-review-${pack.month}.${csv ? 'csv' : 'html'}`
- return new Response(csv ? packCsv(sn) : packHtml(sn), { headers: { 'content-type': csv ? 'text/csv; charset=utf-8' : 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="${name}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
+ const format = c.req.param('format').slice('document.'.length) as PackFormat, bytes = renderPack(sn, format)
+ return new Response(bytes as any, { headers: { 'content-type': PACK_TYPES[format], 'content-disposition': `attachment; filename="${packFileName(sn, format)}"`, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'" } })
+})
+api.get('/api/easel/pack/:id/preview', c => read(c, ctx => packPreview(ctx, c.req.param('id'))))
+api.post('/api/easel/pack/:id/save', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const result = await packSave(ctx, runtimeBindings(c.env), c.req.param('id'), (await body(c)).store)
+ await commit(ctx)
+ return c.json(result)
+})
+api.get('/api/easel/dataset/:id', async c => {
+ const ctx = await open(c), d = await dataset(ctx, c.req.param('id'))
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const format = choice(c.req.query('format') ?? 'json', ['json', 'csv', 'parquet'] as const, 'a dataset format')
+ const headers = { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' }
+ if (format === 'csv') return new Response(datasetCsv(d), { headers: { ...headers, 'content-type': 'text/csv; charset=utf-8' } })
+ if (format === 'parquet') return new Response(datasetParquet(d) as any, { headers: { ...headers, 'content-type': 'application/vnd.apache.parquet' } })
+ return c.json(datasetJson(d))
+})
+api.get('/api/easel/bi-drops', c => read(c, async ctx => biDropList(ctx)))
+api.get('/api/easel/warehouse', c => read(c, warehouseStatus))
+api.post('/api/easel/warehouse/:warehouse/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const extra = await warehouseConnection(ctx, runtimeBindings(c.env), c.req.param('warehouse'), c.req.param('op'), await body(c))
+ await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ return c.json(await warehouseStatus(ctx))
+})
+api.post('/api/easel/warehouse-command/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const result = await warehouseCommand(ctx, runtimeBindings(c.env), c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(result)
+})
+api.get('/api/easel/pack-templates', c => read(c, async ctx => { requireMember(ctx.x); return { templates: packTemplates(ctx), sections: SECTION_LABELS } }))
+api.get('/api/easel/connections/pack-stores', c => read(c, packStoreStatus))
+api.post('/api/easel/connections/pack-stores/:store/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const extra = await packStoreConnection(ctx, runtimeBindings(c.env), c.req.param('store'), c.req.param('op'), await body(c))
+ await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ return c.json(await packStoreStatus(ctx))
 })
 
-const commands = [learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)

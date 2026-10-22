@@ -7,6 +7,7 @@ import { DepartmentStatements } from './department-statements'
 import { PackActionDepartment } from './pack-action-departments'
 import { DecisionFollowup } from './decision-followup'
 import { ForecastLearning } from './forecast-learning'
+import { PackDraftStatus, PackSave, PackStart, PackStores } from './pack-tools'
 import { Action, addMonths, api, command, Field, Form, money, monthLabel, Person, Table, type D } from './shared'
 import { Dots, glue } from './dots'
 import { ConstantCurrency } from './translation'
@@ -30,7 +31,9 @@ export function Review({ state, refresh }: Shared) {
  useEffect(() => { if (month) { const url = new URL(window.location.href); url.searchParams.set('reviewMonth', month); window.history.replaceState(window.history.state, '', url) } }, [month])
  const next = forecast ? (forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : state.workspace.planStart) : ''
  const reviewState = { ...state, actorNames: { ...state.actorNames, ...v?.actorNames } }
- const packs = state.packs.filter((p: D) => !month || p.month === month)
+ const packs = state.packs.filter((p: D) => !month || p.month === month || p.months?.includes(month))
+ const [fingerprints, setFingerprints] = useState<Record<string, string>>({}), [stores, setStores] = useState<D[]>([])
+ useEffect(() => { if (me.role === 'finance') api('connections/pack-stores').then(setStores, () => setStores([])) }, [me.role, state])
  return <>
   <section className="card">
    <h2>Monthly review</h2>
@@ -72,21 +75,25 @@ export function Review({ state, refresh }: Shared) {
   <section className="card">
    <h2>Review packs</h2>
    {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}
+   {me.role === 'finance' && month && <PackStart closedMonths={closedMonths} month={month} refresh={refresh} />}
+   {me.role === 'finance' && <PackStores onChange={() => api('connections/pack-stores').then(setStores, () => {})} />}
    {packs.map((p: D) => <div key={p.id} className="pack">
     <Dots as="h3">{p.title}{p.status}</Dots>
     {p.decisions.length > 0 && <ul className="plain">{p.decisions.map((d: D) => <li key={d.id}>{d.text}{d.owner ? ` — ${d.owner}` : ''}{d.due && <>, due <span className="date-token">{displayDate(d.due)}</span></>}{p.progress?.[d.id] ? ` (${p.progress[d.id].status})` : ''}
      {p.status === 'published' && me.role === 'finance' && p.progress?.[d.id]?.status !== 'done' && <Action kind="quiet" label="Mark done" run={async () => { await command('action-status', { pack: p.id, decision: d.id, status: 'done' }); await refresh() }} />}
      <PackActionDepartment state={state} pack={p} decision={d} refresh={refresh} /></li>)}</ul>}
     {p.status === 'draft' && me.role === 'finance' && <>
+     <PackDraftStatus pack={p} refresh={refresh} onFingerprint={f => setFingerprints(x => x[p.id] === f ? x : { ...x, [p.id]: f })} />
      <Form submit="Record decision" onSubmit={async (x, form) => { await command('pack-decision', { pack: p.id, ...x }); form.reset(); await refresh() }}>
       <Field label="Decision or action" name="text" />
       <Field label="Owner" name="owner" required={false} />
       <Field label="Due" name="due" type="date" required={false} />
       <Field label="Department" name="department" required={false} defaultValue="" options={state.departments.map((d: D) => ({ value: d.id, label: d.name }))} />
      </Form>
-     <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id }); await refresh() }} />
+     <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id, fingerprint: fingerprints[p.id] }); await refresh() }} />
     </>}
-    {p.status === 'published' && <Dots as="p" className="downloads"><>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span></><a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a><a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a><a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a></Dots>}
+    {p.status === 'published' && <Dots as="p" className="downloads"><>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span></><a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a><a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a><a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a><a href={`/api/easel/pack/${p.id}/document.pdf`} download>Download pack (PDF)</a><a href={`/api/easel/pack/${p.id}/document.pptx`} download>Download pack (PowerPoint)</a></Dots>}
+    {p.status === 'published' && me.role === 'finance' && <PackSave pack={p} stores={stores} refresh={refresh} />}
    </div>)}
    {!packs.length && <p className="muted">No packs for this month yet.</p>}
   </section>

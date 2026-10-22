@@ -1,4 +1,5 @@
 import { PlaidConnection } from './plaid-connection'
+import { WarehouseInputs } from './warehouse'
 import { SheetLinks } from './sheet-links'
 import { Entities } from './entities'
 import { Groups } from './groups'
@@ -87,6 +88,7 @@ export function Settings({ state, refresh }: Shared) {
   <AccountRules state={state} refresh={refresh} />
   {state.me.role === 'finance' && <GaugeConnection />}
   {state.me.role === 'finance' && <PlaidConnection />}
+  {state.me.role === 'finance' && <WarehouseInputs />}
   <SheetLinks state={state} refresh={refresh} />
   <section className="card">
    <h2>Account mappings</h2>

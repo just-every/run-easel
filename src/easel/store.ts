@@ -40,10 +40,11 @@ export async function load(db: D1Database) {
 export type Activity = { action: string; record: string; scenario?: string; before?: number; after?: number; detail?: Data }
 export type Snapshot = { id: string; kind: 'approval' | 'forecast' | 'pack' | 'reforecast'; scenario: string; label: string; body: Data }
 
-export async function sha256(text: string) {
- const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+export async function sha256Bytes(bytes: Uint8Array) {
+ const digest = await crypto.subtle.digest('SHA-256', bytes as unknown as ArrayBuffer)
  return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('')
 }
+export const sha256 = (text: string) => sha256Bytes(new TextEncoder().encode(text))
 
 /** `at` is the save's own time; only the demo seeder passes one, so its story's records carry the story's moments. */
 export async function save(db: D1Database, a: Actor, before: State, after: State, revision: number, activity: Activity[], snapshots: Snapshot[] = [], finance = false, extra: D1PreparedStatement[] = [], at = new Date().toISOString()) {

@@ -7,7 +7,13 @@ import { formatMoney } from './units'
 import type { Data } from './types'
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
-const csvCell = (v: unknown) => { const s = String(v ?? ''); return /[",\n\r]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? "'" : '') + s.replace(/"/g, '""')}"` : s }
+export const csvCell = (v: unknown) => { const s = String(v ?? ''); return /[",\n\r]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? "'" : '') + s.replace(/"/g, '""')}"` : s }
+
+const has = (b: Data, section: string) => !b.sections || b.sections.includes(section)
+const chartSvg = (chart: Data, currency: string) => {
+ const values = chart.series.flatMap((s: Data) => s.values), max = Math.max(1, ...values), min = Math.min(0, ...values), span = max - min, slot = 600 / chart.months.length, bar = slot * 0.7 / chart.series.length, y = (v: number) => 170 - (v - min) / span * 150
+ return `<svg role="img" aria-label="${esc(chart.title)}" viewBox="0 0 700 210" width="100%" style="max-width:700px"><text x="0" y="14" font-size="10">${esc(formatMoney(max, currency))}</text><text x="0" y="172" font-size="10">${esc(formatMoney(min, currency))}</text>${chart.months.map((m: string, i: number) => chart.series.map((s: Data, k: number) => `<rect x="${90 + i * slot + slot * 0.15 + k * bar}" y="${Math.min(y(s.values[i]), y(0))}" width="${bar}" height="${Math.max(0.5, Math.abs(y(s.values[i]) - y(0)))}" fill="${k % 2 ? '#a6a6a6' : '#26598c'}"><title>${esc(s.name)} ${esc(m)}: ${esc(formatMoney(s.values[i], currency))}</title></rect>`).join('') + `<text x="${90 + i * slot + 2}" y="186" font-size="9">${esc(m.slice(5))}</text>`).join('')}<text x="90" y="205" font-size="10">${chart.series.map((s: Data, k: number) => `${k % 2 ? 'Grey' : 'Blue'} = ${esc(s.name)}`).join('   ')}</text></svg>`
+}
 
 export function packHtml(sn: Data): string {
  const b = sn.body, money = (n: number | null) => n === null || n === undefined ? '—' : formatMoney(n, b.currency)
@@ -19,40 +25,42 @@ export function packHtml(sn: Data): string {
 <h1>${esc(b.title)} · ${esc(b.company)}</h1>
 <p class="meta">Published by ${esc(b.publishedBy.name)} (${esc(b.publishedBy.email)}) at ${esc(date(b.publishedAt))}. Snapshot ${esc(sn.id)}, SHA-256 ${esc(sn.sha256)}.</p>
 <p class="meta">Approved budget: revision ${esc(b.budget.revision)}, approved by ${esc(b.budget.approvedBy?.name)} at ${esc(b.budget.approvedAt)} (snapshot SHA-256 ${esc(b.budget.sha256)}). Forecast: ${esc(b.forecast.name)} revision ${esc(b.forecast.revision)}, actuals through ${esc(monthLabel(b.forecast.actualsThrough))}.</p>
-<h2>Profit and loss, ${esc(monthLabel(b.month))}</h2>
+${has(b, 'kpis') ? `<h2>Key figures</h2><table><thead><tr><th>KPI</th><th>Actual</th><th>Budget</th></tr></thead><tbody>${b.kpis.map((k: Data) => row([k.label, k.unit === 'count' ? k.actual : money(k.actual), k.unit === 'count' ? k.budget : money(k.budget)])).join('')}</tbody></table>` : ''}
+${has(b, 'statements') ? `<h2>Profit and loss, ${esc(b.label ?? monthLabel(b.month))}</h2>
 <table><thead><tr><th>Line</th><th>Actual</th><th>Budget</th><th>Year to date actual</th><th>Year to date budget</th></tr></thead><tbody>
 ${b.lines.map((l: Data) => row([l.line, money(l.actual), money(l.budget), money(l.ytdActual), money(l.ytdBudget)])).join('')}
 ${row(['Profit', money(b.profit.month?.profit), money(b.profit.budget?.profit), '', ''])}
-</tbody></table>
-<h2>Variances and explanations</h2>
+</tbody></table>` : ''}
+${has(b, 'charts') ? b.charts.map((chart: Data) => `<h2>${esc(chart.title)}</h2>${chartSvg(chart, b.currency)}`).join('') : ''}
+${has(b, 'commentary') ? `<h2>Variances and explanations</h2>
 <table><thead><tr><th>Line · department</th><th>Actual</th><th>Budget</th><th>Variance</th><th>Explanation</th><th>Evidence</th></tr></thead><tbody>
 ${b.variances.map((v: Data) => row([`${v.line} · ${v.department}`, money(v.actual), money(v.budget), `${money(v.variance)}${v.favourable === null ? '' : v.favourable ? ' (favourable)' : ' (unfavourable)'}`, v.explanation ? `${v.explanation.text} [${v.explanation.status}${v.explanation.confirmedBy ? ` by ${v.explanation.confirmedBy}` : ''}]` : 'No explanation recorded', v.evidence.join('; ')])).join('')}
-</tbody></table>
-${b.versionComparison ? `<h2>Actual against every version</h2><p>Δ = actual minus version. — means an absent month or, for Δ, differing currencies.</p><table><thead><tr><th>Line · department</th><th>Actual (${esc(b.currency)})</th>${b.versionComparison.versions.map((v: Data) => `<th>${esc(v.name)} (${esc(v.currency)}) · revision ${esc(v.revision)}</th>`).join('')}</tr></thead><tbody>${b.versionComparison.rows.map((r: Data) => row([`${r.lineName} · ${r.departmentName}`, money(r.actual), ...b.versionComparison.versions.map((v: Data) => { const value = r.comparisons.find((c: Data) => c.id === v.id); return `${value.amount === null ? '—' : formatMoney(value.amount, v.currency)} · Δ ${money(value.variance)}` })])).join('')}</tbody></table>` : ''}
-<h2>Cash</h2>
+</tbody></table>` : ''}
+${has(b, 'commentary') && b.versionComparison ? `<h2>Actual against every version</h2><p>Δ = actual minus version. — means an absent month or, for Δ, differing currencies.</p><table><thead><tr><th>Line · department</th><th>Actual (${esc(b.currency)})</th>${b.versionComparison.versions.map((v: Data) => `<th>${esc(v.name)} (${esc(v.currency)}) · revision ${esc(v.revision)}</th>`).join('')}</tr></thead><tbody>${b.versionComparison.rows.map((r: Data) => row([`${r.lineName} · ${r.departmentName}`, money(r.actual), ...b.versionComparison.versions.map((v: Data) => { const value = r.comparisons.find((c: Data) => c.id === v.id); return `${value.amount === null ? '—' : formatMoney(value.amount, v.currency)} · Δ ${money(value.variance)}` })])).join('')}</tbody></table>` : ''}
+${has(b, 'statements') ? `<h2>Cash</h2>
 <table><thead><tr><th>Month</th><th>Forecast closing cash</th><th>Budget closing cash</th><th>Completeness</th></tr></thead><tbody>
 ${b.cash.map((m: Data) => row([monthLabel(m.month), money(m.closing), money(m.budget), m.incompleteReasons?.join(' ') ?? ''])).join('')}
-</tbody></table>
-${b.contracts ? `<h2>Bookings, billings, revenue and collections</h2><p>Captured contract planning assumptions; invoices and collections are not billing actuals.</p><table><thead><tr><th>Month</th><th>Bookings</th><th>Billings</th><th>Revenue</th><th>Collections</th><th>Receivables</th><th>Deferred revenue</th></tr></thead><tbody>${b.contracts.months.map((m: Data) => row([monthLabel(m.month), ...['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue'].map(k => money(m[k]))])).join('')}</tbody></table>` : ''}
-${statement('Balance sheet', b.balanceSheet, [['cash', 'Cash'], ['prepaid', 'Prepaid expenses'], ['accruedLiabilities', 'Accrued liabilities'], ['receivables', 'Receivables'], ['deferredRevenue', 'Deferred revenue'], ['assets', 'Assets'], ['liabilities', 'Liabilities'], ['equity', 'Equity'], ['balanceDifference', 'Reconciliation difference']])}
-${statement('Indirect cash flow', b.cashFlow, [['netIncome', 'Net income'], ['prepaidChange', 'Prepaid change'], ['accruedLiabilitiesChange', 'Accrued liabilities change'], ['receivablesChange', 'Receivables change'], ['deferredRevenueChange', 'Deferred revenue change'], ['operating', 'Operating cash'], ['investing', 'Investing cash'], ['financing', 'Financing cash'], ['closing', 'Closing cash'], ['difference', 'Reconciliation difference']])}
-<h2>Decisions and actions</h2>
-${b.decisions.length ? `<table><thead><tr><th>Decision or action</th><th>Owner</th><th>Due</th></tr></thead><tbody>${b.decisions.map((d: Data) => row([d.text, d.owner, date(d.due)])).join('')}</tbody></table>` : '<p>No decisions recorded.</p>'}
-<h2>Sources</h2>
+</tbody></table>` : ''}
+${has(b, 'appendix') && b.contracts ? `<h2>Bookings, billings, revenue and collections</h2><p>Captured contract planning assumptions; invoices and collections are not billing actuals.</p><table><thead><tr><th>Month</th><th>Bookings</th><th>Billings</th><th>Revenue</th><th>Collections</th><th>Receivables</th><th>Deferred revenue</th></tr></thead><tbody>${b.contracts.months.map((m: Data) => row([monthLabel(m.month), ...['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue'].map(k => money(m[k]))])).join('')}</tbody></table>` : ''}
+${has(b, 'statements') ? statement('Balance sheet', b.balanceSheet, [['cash', 'Cash'], ['prepaid', 'Prepaid expenses'], ['accruedLiabilities', 'Accrued liabilities'], ['receivables', 'Receivables'], ['deferredRevenue', 'Deferred revenue'], ['assets', 'Assets'], ['liabilities', 'Liabilities'], ['equity', 'Equity'], ['balanceDifference', 'Reconciliation difference']]) : ''}
+${has(b, 'statements') ? statement('Indirect cash flow', b.cashFlow, [['netIncome', 'Net income'], ['prepaidChange', 'Prepaid change'], ['accruedLiabilitiesChange', 'Accrued liabilities change'], ['receivablesChange', 'Receivables change'], ['deferredRevenueChange', 'Deferred revenue change'], ['operating', 'Operating cash'], ['investing', 'Investing cash'], ['financing', 'Financing cash'], ['closing', 'Closing cash'], ['difference', 'Reconciliation difference']]) : ''}
+${has(b, 'decisions') ? `<h2>Decisions and actions</h2>
+${b.decisions.length ? `<table><thead><tr><th>Decision or action</th><th>Owner</th><th>Due</th></tr></thead><tbody>${b.decisions.map((d: Data) => row([d.text, d.owner, date(d.due)])).join('')}</tbody></table>` : '<p>No decisions recorded.</p>'}` : ''}
+${has(b, 'appendix') ? `<h2>Sources</h2>
 <table><thead><tr><th>Accepted import</th><th>SHA-256</th><th>Rows</th><th>Accepted by</th></tr></thead><tbody>
 ${b.sources.map((x: Data) => row([x.file, x.sha256, x.rows, `${x.acceptedBy} at ${date(x.acceptedAt)}`])).join('')}
-</tbody></table>
+</tbody></table>` : ''}
 </body></html>`
 }
 
 export function packCsv(sn: Data): string {
  const b = sn.body
  const lines = [['section', 'line', 'department', 'actual_minor', 'budget_minor', 'variance_minor', 'explanation', 'explanation_status', 'version_name', 'version_currency', 'version_minor', 'version_variance_minor'].join(',')]
- for (const l of b.lines) lines.push(['line', l.line, '', l.actual, l.budget, l.actual - l.budget, '', '', '', '', '', ''].map(csvCell).join(','))
- for (const v of b.variances) lines.push(['variance', v.line, v.department, v.actual, v.budget, v.variance, v.explanation?.text ?? '', v.explanation?.status ?? '', '', '', '', ''].map(csvCell).join(','))
- for (const m of b.cash) if (m.incompleteReasons?.length) lines.push(['cash-incomplete', m.month, '', m.closing, '', '', m.incompleteReasons.join(' '), 'incomplete', '', '', '', ''].map(csvCell).join(','))
+ for (const l of b.lines ?? []) lines.push(['line', l.line, '', l.actual, l.budget, l.actual - l.budget, '', '', '', '', '', ''].map(csvCell).join(','))
+ for (const v of b.variances ?? []) lines.push(['variance', v.line, v.department, v.actual, v.budget, v.variance, v.explanation?.text ?? '', v.explanation?.status ?? '', '', '', '', ''].map(csvCell).join(','))
+ for (const m of b.cash ?? []) if (m.incompleteReasons?.length) lines.push(['cash-incomplete', m.month, '', m.closing, '', '', m.incompleteReasons.join(' '), 'incomplete', '', '', '', ''].map(csvCell).join(','))
  if (b.contracts) for (const m of b.contracts.months) for (const key of ['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue', 'unbilledRevenue']) lines.push(['contract', `${m.month} ${key}`, '', m[key], '', '', 'Captured planning schedule', '', '', '', '', ''].map(csvCell).join(','))
- for (const d of b.decisions) lines.push(['decision', d.text, d.owner, '', '', '', d.due, '', '', '', '', ''].map(csvCell).join(','))
+ for (const d of b.decisions ?? []) lines.push(['decision', d.text, d.owner, '', '', '', d.due, '', '', '', '', ''].map(csvCell).join(','))
  if (b.versionComparison) for (const r of b.versionComparison.rows) for (const v of b.versionComparison.versions) {
   const value = r.comparisons.find((c: Data) => c.id === v.id)
   lines.push(['version-comparison', r.lineName, r.departmentName, r.actual, '', '', '', '', v.name, v.currency, value.amount, value.variance].map(csvCell).join(','))
