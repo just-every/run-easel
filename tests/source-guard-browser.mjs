@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict'
+import { mkdir } from 'node:fs/promises'
+import { join,resolve } from 'node:path'
+import { sheetBrowserRuntime } from './sheet-browser-runtime.mjs'
+import { noOverflow,settle,track } from './browser-journey.mjs'
+const {chromium}=await import(process.env.EASEL_PLAYWRIGHT_MODULE??'@playwright/test')
+const evidence=resolve(process.env.EASEL_EVIDENCE??'.cache/easel-source-guard')
+await mkdir(evidence,{recursive:true})
+const runtime=await sheetBrowserRuntime()
+let browser,page
+try {
+ browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIUM_PATH?{executablePath:process.env.EASEL_CHROMIUM_PATH}:{}),args:['--use-mock-keychain','--password-store=basic']})
+ const context=await browser.newContext()
+ const post=async(path,body)=>{const response=await context.request.post(`${runtime.origin}${path}`,{headers:{origin:runtime.origin},data:body,maxRedirects:0});assert.equal(response.status(),200,await response.text());return response.json()}
+ const cmd=(op,b)=>post(`/api/easel/command/${op}`,b)
+ const claimed=await context.request.post(`${runtime.origin}/auth/bootstrap`,{headers:{origin:runtime.origin},data:{token:runtime.bootstrap,displayName:'Fran Finance'},maxRedirects:0});assert.equal(claimed.status(),303)
+ await cmd('workspace',{name:'Source Guard Co',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+ const department=await cmd('department',{name:'Operations'}),software=await cmd('line',{name:'Software',type:'operating-expense'})
+ await cmd('department-map',{source:'Operations',department:department.id})
+ const state=await(await context.request.get(`${runtime.origin}/api/easel/state`)).json(),budget=state.scenarios[0]
+ await cmd('scenario-cash',{scenario:budget.id,basis:'estimate',opening:'10000',collectionLag:0,paymentLag:0})
+ await cmd('expense',{scenario:budget.id,name:'Software plan',kind:'recurring',department:department.id,line:software.id,start:'2026-01',amount:'100'})
+ const version=await(await context.request.get(`${runtime.origin}/api/easel/scenario/${budget.id}`)).json()
+ const forecast=(await cmd('approve-budget',{scenario:budget.id,revision:version.scenario.revision})).forecast
+ await cmd('cash-constraints',{floor:'0',runwayMinimum:'0'})
+ await cmd('cash-alert-rule-save',{name:'Cash floor',kind:'floor'})
+ page=await context.newPage();track(page)
+ await page.goto(`${runtime.origin}/setup`)
+ await page.getByLabel('I confirm this owner account is ready to use.',{exact:true}).check()
+ await page.getByRole('button',{name:'Finish setup',exact:true}).click()
+ await page.getByRole('navigation',{name:'Easel'}).waitFor()
+ const panel=()=>page.getByRole('region',{name:'Source change guard',exact:true})
+ const action=async(op,click)=>{const waiting=page.waitForResponse(r=>r.url().endsWith(`/command/${op}`));await click();const response=await waiting;assert.equal(response.status(),200,await response.text());await settle(page);return response.json()}
+ for(const width of [1440,390]) {
+  await page.setViewportSize({width,height:1000})
+  await page.goto(`${runtime.origin}/app?tab=actuals`)
+  await panel().getByRole('heading',{name:'Source change guard',exact:true}).waitFor()
+  const source=`synthetic-easel-${width}`,account=String(width),label=`Ledger ${width}`
+  await panel().getByLabel('Source ID',{exact:true}).fill(source)
+  await panel().getByLabel('Source label',{exact:true}).fill(label)
+  await panel().getByLabel('Source forecast',{exact:true}).selectOption(forecast.id)
+  await panel().getByLabel('Coverage month',{exact:true}).fill('2026-01')
+  await panel().getByLabel('Source observed at',{exact:true}).fill(new Date().toISOString())
+  await panel().getByLabel('Next source update expected at',{exact:true}).fill(new Date(Date.now()+86400000).toISOString())
+  await panel().getByLabel('Expected payroll runs',{exact:true}).fill('Reviewed payroll,2026-01-31,1')
+  await panel().getByLabel('Source ledger CSV',{exact:true}).fill(`Date,Account,Name,Department,Amount\n2026-01-31,${account},Software subscriptions,Operations,100\n`)
+  let guard=await action('source-guard-stage',()=>panel().getByRole('button',{name:'Stage source refresh',exact:true}).click())
+  const issue=guard.issues.find(i=>i.kind==='account'),payroll=guard.issues.find(i=>i.kind==='payroll')
+  await panel().getByText(issue.proposals[0].reason,{exact:false}).last().waitFor()
+  assert.match(await panel().innerText(),/Missing payroll run/)
+  const checks=await cmd('cash-alert-check',{})
+  assert.deepEqual(checks.sent,[]);assert.ok(checks.blocked.length)
+  await noOverflow(page,`Source guard blocked ${width}`)
+  await panel().screenshot({path:join(evidence,`source-guard-blocked-${width}.png`)})
+  await panel().getByLabel(`Decision for ${issue.id}`,{exact:true}).selectOption('map')
+  await panel().getByLabel(`Mapping target for ${issue.id}`,{exact:true}).selectOption(software.id)
+  await panel().getByLabel(`Review reason for ${issue.id}`,{exact:true}).fill('Finance checked the account name and ledger code')
+  guard=await action('source-guard-review',()=>panel().getByRole('button',{name:`Review account ${account}`,exact:true}).click())
+  await panel().getByLabel(`Decision for ${payroll.id}`,{exact:true}).selectOption('exclude')
+  await panel().getByLabel(`Review reason for ${payroll.id}`,{exact:true}).fill('Finance verified the register belongs to the next coverage period')
+  await action('source-guard-review',()=>panel().getByRole('button',{name:'Review payroll 2026-01-31',exact:true}).last().click())
+  await panel().getByText('Source review complete; accept the reviewed ledger file through Upload actuals',{exact:true}).last().waitFor()
+  await noOverflow(page,`Source guard reviewed ${width}`)
+  await panel().screenshot({path:join(evidence,`source-guard-reviewed-${width}.png`)})
+ }
+ console.log('Source guard: native stage, reasoned software mapping, payroll hold, affected items and audited finance review at 1440/390')
+} catch(error) {if(page&&!page.isClosed())await page.screenshot({path:join(evidence,'source-guard-failed.png'),fullPage:true}).catch(()=>{});throw error}
+finally {await browser?.close();await runtime.close()}
