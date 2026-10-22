@@ -1,3 +1,5 @@
+import { sheetConnection, sheetStatus } from './sheet-connection'
+import { sheetLinkCommands, sheetLinks } from './sheet-links'
 import { CalculationPending } from './calculation-status'
 import { canSeeScenario } from './scenario-access'
 import { backgroundScenario, INLINE_INPUT_ROWS } from './calculation-dispatch'
@@ -169,6 +171,24 @@ api.post('/api/easel/connections/gauge/:op', async c => {
   await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
  }
  return c.json(await gaugeStatus(ctx, c.env))
+})
+api.get('/api/easel/connections/sheets', c => read(c, ctx => sheetStatus(ctx, runtimeBindings(c.env))))
+api.post('/api/easel/connections/sheets/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const extra = await sheetConnection(ctx, runtimeBindings(c.env), c.req.param('op'), await body(c))
+ await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
+ return c.json(await sheetStatus(ctx))
+})
+api.get('/api/easel/sheet-links', c => read(c, async ctx => sheetLinks(ctx)))
+api.post('/api/easel/sheet-links/:op', async c => {
+ const ctx = await open(c), op = c.req.param('op')
+ requireThat(['preview', 'save', 'pull', 'disable'].includes(op), 'Unknown sheet link action', 404)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const result = await sheetLinkCommands(ctx, runtimeBindings(c.env), `sheet-link-${op}`, await body(c))
+ if (op === 'preview') await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ else await commit(ctx)
+ return c.json(result)
 })
 const newNotifications = (ctx: Awaited<ReturnType<typeof open>>) => [...ctx.s.values()].filter(r => r.kind === 'notification' && !ctx.before.has(`notification:${r.id}`)).map(r => r.id)
 api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.env)))

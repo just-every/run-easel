@@ -1,3 +1,4 @@
+import { SheetLinks } from './sheet-links'
 import { Entities } from './entities'
 import { Groups } from './groups'
 import { Dimensions } from './dimensions'
@@ -84,6 +85,7 @@ export function Settings({ state, refresh }: Shared) {
   <Dimensions state={state} refresh={refresh} />
   <AccountRules state={state} refresh={refresh} />
   {state.me.role === 'finance' && <GaugeConnection />}
+  <SheetLinks state={state} refresh={refresh} />
   <section className="card">
    <h2>Account mappings</h2>
    <Table caption="Source accounts" heads={['Account', 'Name', 'Maps to']}>{state.accountMaps.map((m: D) => <tr key={m.id}><td>{m.id}</td><td>{m.name}</td><td>{target(m.target)}</td></tr>)}</Table>

@@ -891,7 +891,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "6adaa3a495a284796124b3a1a8c2674b5e8138897118369cee6d7fb33748c1d3",
+      "sha256": "2969ad2eaa11f0e2420b3d548a8447fe3f13750b40b91fbe41a02f1520be28a6",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -1528,6 +1528,26 @@
     },
     "src/easel/setup.ts": {
       "sha256": "d821c384cc55d8b53694f39172c0edd62730729f1ef54d82ee380f7d14f6a0a4",
+      "executable": false
+    },
+    "src/easel/sheet-connection.ts": {
+      "sha256": "55d67e70c764c05dec968b192bba981a28f615f311210476e289534e64213ee7",
+      "executable": false
+    },
+    "src/easel/sheet-links.ts": {
+      "sha256": "f07faf91d53d5fcb847f6820cee6ea0ccfef6eb2620d7238fe09d2dbdb2583b8",
+      "executable": false
+    },
+    "src/easel/sheet-provider.ts": {
+      "sha256": "9f173cc763638e2a9e8c2965a651fb595f4f9b6cacfb0a95019ff70fb5ea3327",
+      "executable": false
+    },
+    "src/easel/sheet-schedule.ts": {
+      "sha256": "5a5c3d9d7a18e9260d3dcbaef1b54ce73f6c5a2df8a5e180dd10464488f4e2f5",
+      "executable": false
+    },
+    "src/easel/sheet-source.ts": {
+      "sha256": "c6b35dce1cc678f5c213f043406586244508306e1dc93199e09ae7c4a84e8bb2",
       "executable": false
     },
     "src/easel/starter-catalog.ts": {
@@ -3227,7 +3247,7 @@
       "executable": false
     },
     "src/server.ts": {
-      "sha256": "8dc87cec7b446df8736b3f959264c593fd30682568b732a441afe83833a76428",
+      "sha256": "d42d2c5d9248345b51268871e7071fa8f4556aae70d8d7e609745165f80d0f38",
       "executable": false
     },
     "src/site/docs/build/manifest.ts": {
@@ -3655,11 +3675,19 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "427664b9b1ac972851126d381b58f095e769a32dca4432c200e61de2da8a3036",
+      "sha256": "b82f27297f32d359f9be0c1f5c87d71fc0ad946cb647e980315fc5477fa8779b",
       "executable": false
     },
     "src/ui/shared.tsx": {
       "sha256": "50c0bd8831e8c8ac471a7204367d0fa1f92b849bc853fb69f42eaa3b2833aeb2",
+      "executable": false
+    },
+    "src/ui/sheet-link-form.tsx": {
+      "sha256": "9b753cc8a8a9c281d0183ceeac31fdcba10eba7745630e6073cd3e33129ffbb1",
+      "executable": false
+    },
+    "src/ui/sheet-links.tsx": {
+      "sha256": "8a05d082ebf40baa53158790fdeed5cc691fba7d77027abbb65ed2c9baf48cc2",
       "executable": false
     },
     "src/ui/starter-models.tsx": {
@@ -3871,7 +3899,7 @@
       "executable": false
     },
     "tests/easel-worker.ts": {
-      "sha256": "92ff0e32efc01e452f32fa2a2b4402e6bbc1c91b8e83aad8e3a80c809d8a2bce",
+      "sha256": "0c76be45858c199c8f18ea6b259710a3c95dfb0c7209994cc8073cb2c2be7227",
       "executable": false
     },
     "tests/easel.test.mjs": {
@@ -4154,6 +4182,10 @@
       "sha256": "d6caa994a5df83fd270033fcb2a9c54ce9b5c2dfdaae41e5b801e29d4b710f5a",
       "executable": false
     },
+    "tests/sheet-pull-flow.mjs": {
+      "sha256": "2420944fb21afe6a044b8b0ae1eb1d623465c30744d921113f6f2330c11a3eca",
+      "executable": false
+    },
     "tests/spreadsheet-export.test.mjs": {
       "sha256": "793a672131ea35fb0da428197d12030424e9bf2740b54bb3f57512c49196deea",
       "executable": false
@@ -4231,7 +4263,7 @@
       "executable": false
     },
     "tests/workbook-undo.test.mjs": {
-      "sha256": "8c6175584a8bc2c0e97193556ca3e6c20b870e4abe3eba9220a5dd57aa84f35d",
+      "sha256": "247fb79b8738714181b21f8bf94b79dcba8b64f6319398c679f9470d0c302712",
       "executable": false
     },
     "tests/working-capital-browser.mjs": {

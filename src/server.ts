@@ -1,3 +1,4 @@
+import { runSheetSchedules } from './easel/sheet-schedule'
 import { runSavedReportSchedules } from './easel/saved-report-dispatch'
 import { withDemo } from './modules/demo/index.mjs'
 import { seedDemo } from './demo'
@@ -33,6 +34,6 @@ export default withDemo({
   async scheduled(_controller, env) {
     await runCalendarSchedule(env)
     await runActionChases(env)
-    await runSavedReportSchedules(env); await runCashAlertSchedule(env)
+    await runSavedReportSchedules(env); await runCashAlertSchedule(env); await runSheetSchedules(env)
   },
 } satisfies ExportedHandler<Bindings>, { seed: seedDemo })

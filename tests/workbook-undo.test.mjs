@@ -80,3 +80,8 @@ test('Anaplan, Runway and Pigment original configurable exports retain structure
   try {await proveMove(h,provider)} finally {await h.close()}
  }
 })
+
+test('Scheduled Google Sheets ranges submit exact changed-cell proposals and refuse missing or reshaped sources with sealed native custody', async t => {
+ const { proveSheetPull } = await import('./sheet-pull-flow.mjs')
+ await proveSheetPull(t)
+})
