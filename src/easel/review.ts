@@ -73,7 +73,7 @@ export async function variance(c: Context, month: string) {
    ...hypotheses,
   ].filter(Boolean).join(' ')
   const saved = find(s, 'explanation', `${month}|${k}`)
-  const explanation: Data | null = saved && (!payroll || seesPayDetail(c.x, department)) ? { ...saved, ...(saved.citationIds ? { citationIds: detail ? saved.citationIds : [] } : {}) } : null
+  const explanation: Data | null = saved && (!payroll || seesPayDetail(c.x, department)) ? { ...saved, ...(saved.citationIds ? { citationIds: detail ? saved.citationIds : [] } : {}), ...(saved.claims ? { claims: saved.claims.map((claim: Data) => ({ ...claim, citationIds: detail ? claim.citationIds : [] })) } : {}) } : null
   rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, payroll, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation, comparisons })
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))

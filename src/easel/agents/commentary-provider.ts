@@ -43,7 +43,7 @@ export async function performCommentary(env: Bindings, intent: Data): Promise<Co
  try {
   const key = await commentaryKey(env)
   const response = await fetch('https://api.openai.com/v1/responses', {
-   method: 'POST', redirect: 'error', signal: AbortSignal.timeout(60_000),
+   method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(60_000),
    headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify(intent.request),
   })
   if (!response.ok) { await response.body?.cancel(); return { status: 'refused', reason: `OpenAI refused the request (HTTP ${response.status}); allowance retained` } }

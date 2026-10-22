@@ -1,3 +1,4 @@
+import { CommentaryModel } from './commentary-model'
 import { OwnerQuestions } from './owner-questions'
 import { useDate } from './shared'
 import { useEffect, useState } from 'react'
@@ -69,6 +70,7 @@ export function Review({ state, refresh }: Shared) {
     </>}
    </details>)}
   </section>}
+  {v && me.role !== 'viewer' && <CommentaryModel state={state} month={month} refresh={refresh} />}
   {v && <ConstantCurrency month={month} />}
   {v?.versions && <ReforecastComparison versions={v.versions} rows={v.rows} currency={currency} />}
   {(me.role === 'finance' || me.role === 'contributor') && closedMonths.includes(month) && <DepartmentStatements state={state} month={month} setMonth={setMonth} refresh={refresh} />}

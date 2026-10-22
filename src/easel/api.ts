@@ -1,3 +1,7 @@
+import { commentaryStatus, commentarySettings, commentaryConnection } from './agents/commentary-settings'
+import { commentaryPreview } from './agents/commentary-request'
+import { beginCommentary, authorizeCommentary, finishCommentary } from './agents/commentary-run'
+import { performCommentary } from './agents/commentary-provider'
 import { sourceGuardCommands, sourceGuardView } from './agents/source-guard'
 import { ownerQuestions, ownerQuestionView } from './agents/owner-questions'
 import { approvalChains, approvalChainView } from './approval-chains'
@@ -161,6 +165,39 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
 api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/forecast-learning/:scenario', c => read(c, ctx => forecastLearning(ctx, c.req.param('scenario'))))
 api.get('/api/easel/source-guard', c => read(c, async ctx => sourceGuardView(ctx)))
+api.get('/api/easel/commentary/status', c => read(c, ctx => commentaryStatus(ctx, c.env)))
+api.post('/api/easel/commentary/settings/:op', async c => {
+ const ctx = await open(c), result = await commentarySettings(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
+})
+api.post('/api/easel/commentary/connection/:op', async c => {
+ const ctx = await open(c)
+ ctx.extra = await commentaryConnection(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return read(c, current => commentaryStatus(current, c.env))
+})
+api.post('/api/easel/commentary/preview', async c => {
+ const input = await body(c)
+ return read(c, ctx => commentaryPreview(ctx, input))
+})
+api.post('/api/easel/commentary/generate', async c => {
+ const ctx = await open(c), intent = await beginCommentary(ctx, c.env, await body(c))
+ await commit(ctx)
+ let outcome
+ try {
+  const current = await open(c)
+  const authorized = await authorizeCommentary(current, intent.id)
+  await readFence(current.db, current.x.actor, current.revision)
+  outcome = await performCommentary(c.env, authorized)
+ } catch (error) {
+  if (!(error instanceof Fault)) throw error
+  outcome = { status: 'refused' as const, reason: error.message }
+ }
+ const current = await open(c), result = await finishCommentary(current, intent.id, outcome)
+ await commit(current)
+ return c.json(publicLedger(await erasedView(current.db, result)))
+})
 api.get('/api/easel/owner-questions', c => read(c, ownerQuestionView))
 api.get('/api/easel/deal-history', c => read(c, async ctx => { requireFinance(ctx.x); return { deals: dealHistory(ctx) } }))
 api.get('/api/easel/payroll/:scenario', c => read(c, ctx => payrollView(ctx, c.req.param('scenario'))))

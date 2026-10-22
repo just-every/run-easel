@@ -898,6 +898,22 @@
       "sha256": "10164d55d41cc4aedccbf47dfd0cbec0cacc1494bddcaf256c9f2393a7639b82",
       "executable": false
     },
+    "src/easel/agents/commentary-provider.ts": {
+      "sha256": "484dbffc2ee287c17c94779975b2570cf98f9ab10b1094aacd716976c9a13fb3",
+      "executable": false
+    },
+    "src/easel/agents/commentary-request.ts": {
+      "sha256": "e353c1e168e41309017e8d015e7a9e19ce31d562bb307b19c4a9f610989541b5",
+      "executable": false
+    },
+    "src/easel/agents/commentary-run.ts": {
+      "sha256": "595d654a3e2df275ab1ae6973786325e066f895804904d86ae15a91316d54075",
+      "executable": false
+    },
+    "src/easel/agents/commentary-settings.ts": {
+      "sha256": "852d9b2f20b3ffd609689bf2c239b661f937f676f02b1a066d0d55a2c4d2127f",
+      "executable": false
+    },
     "src/easel/agents/constraint-responses.ts": {
       "sha256": "85eb1a07e2586a4aac046e780817f76ba825b64cd69881683cb20a23ae2ed9e3",
       "executable": false
@@ -951,7 +967,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "6846678c026d0d87bc6ec973aee86312053cfee167e9b7d63553a9dc16d3f7fa",
+      "sha256": "cdb197c6b77d85acc9d35f5fb48d9774b663266a62df963e72b9a4a1d3aa90f1",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1607,7 +1623,7 @@
       "executable": false
     },
     "src/easel/review.ts": {
-      "sha256": "56486b3757500c6ab6de77869675622669ddd9a91f383d4e8c41dfcc2f9e18c1",
+      "sha256": "4b8b4b21812ae43ea348492ee78d637f29ee5fc6184d42ac1993faaf2633c80b",
       "executable": false
     },
     "src/easel/sandboxes.ts": {
@@ -3662,6 +3678,10 @@
       "sha256": "18a683f8085d67c1a80a0f4b25bfb6260ce053756c6beb662e53b9e4e2e85555",
       "executable": false
     },
+    "src/ui/commentary-model.tsx": {
+      "sha256": "439d283d343a74bb831c48fa260b21ab2bdb4ddd713822e50f5ec0542cb0d9e2",
+      "executable": false
+    },
     "src/ui/commercial-costs.tsx": {
       "sha256": "c3cc91792146954a55e97ec9f5ecc374184b8c72833492160a362c26906978bc",
       "executable": false
@@ -3811,7 +3831,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "fbb6e46b879dd05ebbbd42a378fa278996f7148938b20159433ac6138e50c92e",
+      "sha256": "173fbe0102547059c66635fe87edb2e2f2e93321f62c7763933b0ce68e745003",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -4032,6 +4052,14 @@
     },
     "tests/cash-health.test.mjs": {
       "sha256": "71c085340ee2875344717f88c4ba3a08c25253a9789f93d778e3d4543c28b057",
+      "executable": false
+    },
+    "tests/commentary-model-browser.mjs": {
+      "sha256": "386afeb042f4ad8035b8edb28fc574c212b03f5c3d6ff50e4005619133a1752f",
+      "executable": false
+    },
+    "tests/commentary-model-runtime.mjs": {
+      "sha256": "f2de2910b58165bd95e5065b0ae265ad74f25aa066cda3b709c7669d8814f781",
       "executable": false
     },
     "tests/compensation-access-browser.mjs": {
@@ -4491,7 +4519,7 @@
       "executable": false
     },
     "tests/variance-commentary.test.mjs": {
-      "sha256": "a09ddbe930dbb8b3b34040b4153ba8e23c2f084973e259ada13f499de03ddf35",
+      "sha256": "f0b94c41dac95a4f5d88f5385c300b8bfdd93b1b4e5333660ed2b0706d9617eb",
       "executable": false
     },
     "tests/weekly-cash-browser.mjs": {
