@@ -1,9 +1,9 @@
 import { applyD1ImportBatches, canonicalJson, createD1ImportJob, planD1Import, readD1ImportJob, readD1ImportUndoReport, resumeD1Import, sha256, undoD1Import, type ImportMapping, type SourceBundle } from '../modules/import-kit/src/d1/index'
 import { access, requireFinance, requireMember, requirePayDetail } from './access'
 import type { Context, KitStep } from './context'
-import { base64, journalContext, kitContext } from './kit'
+import { base64 } from './kit'
+import { moveContext, MOVE_NAMESPACE, structureAssumptions } from './move-journal'
 import { moveIdentityMapping } from './move-identities'
-import { transformErased, type ErasureMap } from './erasure-map.mjs'
 import { mapMove } from './move-mapping'
 import { parseAdaptive } from './move-adaptive'
 import { parseTabular } from './move-tabular'
@@ -11,23 +11,6 @@ import { moveBytes, type MoveArtifact } from './move-source'
 import { filterCalculation } from './views'
 import { all, choice, find, get, put, requireThat, text, type Data } from './types'
 
-export const MOVE_NAMESPACE = 'easel-incumbent-files'
-function context(c: Context, destination: string, mapping: string, job?: {mapping_version:string;principal_id:string}) {
- const ctx = job ? journalContext(c.db,c.x.actor,destination,MOVE_NAMESPACE,job) : kitContext(c.db,c.x.actor,destination,MOVE_NAMESPACE,mapping)
- const imp = all(c.s,'move-import').find(i=>i.destination===destination)
- const maps = all(c.s,'erasure').filter(m=>!imp || !['undoing','undone'].includes(imp.status) || (imp.undoErasureReceipts ?? []).includes(m.id)) as (Data & ErasureMap)[]
- ctx.storage.targets.ownedContent = row => {
-  let revision = row.revision
-  for (const map of [...maps].reverse()) {const redaction=(map.redactions ?? []).find((r:Data)=>r.kind===row.targetKind && r.id===row.targetId && r.to===revision);if(redaction)revision=redaction.from}
-  return {revision,value:transformErased(row.value,maps),attachment:row.attachment ?? null}
- }
- const predicate = ctx.authorization!.predicate!
- ctx.authorization = { ...ctx.authorization!, predicate: (...args) => {
-  const auth = predicate(...args) as {sql:string;params:unknown[]}
-  return c.x.actor.baseRole === 'owner' ? auth : {sql:`(${auth.sql}) AND (EXISTS(SELECT 1 FROM e_records WHERE kind='pay-grant' AND id=? AND json_extract(value,'$.granted')=1) OR EXISTS(SELECT 1 FROM e_records WHERE kind='access-group' AND json_extract(value,'$.payDetail')=1 AND EXISTS(SELECT 1 FROM json_each(value,'$.members') WHERE value=?)))`,params:[...auth.params,c.x.actor.email,c.x.actor.email]}
- } }
- return ctx
-}
 export async function previewMove(c: Context, b: Data) {
  requireMember(c.x)
  const provider = choice(b.provider, ['adaptive','planful','anaplan','runway','pigment'] as const, 'an export provider')
@@ -43,12 +26,14 @@ export async function previewMove(c: Context, b: Data) {
  const mapping = b.mapping ?? {}
  const identity = sha256(canonicalJson({provider,artifacts:originals.map(({file,bytes})=>({...file,text:undefined,base64:undefined,sha256:sha256(bytes)})),options:b.options ?? {},mapping}))
  const id = `move-${identity.slice(0,24)}`, destination = `incumbent:${identity.slice(0,24)}`
+ const prior = find(c.s,'move-import',id)
+ requireThat(!prior || ['undone','failed'].includes(prior.status),'This export is already imported or awaiting continuation; continue it or undo it first',409)
  const mapped = mapMove(source,c.s,mapping,id,c.x.actor.email,provider)
  const artifacts = originals.map(({file,bytes})=>({name:file.name,sha256:sha256(bytes),size:bytes.length,original:{status:'available' as const,base64:base64(bytes)}}))
  const identities = moveIdentityMapping(mapped.state,source,files,artifacts,mapping,b.options ?? {},provider,destination,mapped.positions)
  mapped.records.push({kind:'move-personnel-mapping',id:`${id}:identities`,value:identities,location:'reviewed-personnel-associations'})
  // Binding current assumptions and target rows makes a stale review fail before writing.
- const ctx = context(c,destination,`move-v1:${sha256(canonicalJson({provider,identity,records:mapped.records,targets:[...c.s.values()].filter(r=>['workspace','department','line','dimension','dimension-member'].includes(r.kind))})).slice(0,24)}`)
+ const ctx = moveContext(c,destination,`move-v1:${sha256(canonicalJson({provider,identity,records:mapped.records,targets:structureAssumptions(c,destination)})).slice(0,24)}`,undefined,true)
  const records = mapped.records.map((r,i)=>({namespace:MOVE_NAMESPACE,kind:r.kind,sourceId:String(i),payload:{targetId:r.id,value:r.value},payloadHash:sha256(canonicalJson({targetId:r.id,value:r.value})),artifactHash:artifacts[0].sha256,location:{artifact:artifacts[0].name,pointer:r.location}}))
  const bundle: SourceBundle = {diagnostics:[],artifacts,records}
  const map: ImportMapping = {version:ctx.mappingVersion,map:record=>({effects:[{targetKind:record.kind,targetId:(record.payload as Data).targetId,value:(record.payload as Data).value}]})}
@@ -76,7 +61,7 @@ export async function moveImport(c: Context, op: string, b: Data): Promise<KitSt
   const prior = find(c.s,'move-import',p.id)
   requireThat(!prior || ['undone','failed'].includes(prior.status), 'This export is already imported',409)
   const attempt = (prior?.attempt ?? 0)+1
-  put(c.s,'move-import',p.id,{destination:p.destination,provider:p.provider,files:p.artifacts.map(({name,sha256})=>({name,sha256})),scenarios:p.mapped.scenarios,status:'importing',attempt,createdBy:c.x.actor.email,createdAt:c.now,unmapped:p.mapped.unmapped,reconciliation:p.mapped.reconciliation,created:p.mapped.created})
+  put(c.s,'move-import',p.id,{destination:p.destination,provider:p.provider,files:p.artifacts.map(({name,sha256})=>({name,sha256})),scenarios:p.mapped.scenarios,rows:p.mapped.records.length,assumptions:structureAssumptions(c,p.destination),status:'importing',attempt,createdBy:c.x.actor.email,createdAt:c.now,unmapped:p.mapped.unmapped,reconciliation:p.mapped.reconciliation,created:p.mapped.created})
   c.activity.push({action:'move-import-started',record:p.id,detail:{provider:p.provider,scenarios:p.mapped.scenarios}})
   return {result:{},kit:async()=>{
    const job = await createD1ImportJob(p.plan,{...p.ctx,reviewedFingerprint:p.fingerprint,operationKey:`${p.fingerprint}:${attempt}`})
@@ -90,7 +75,7 @@ export async function moveImport(c: Context, op: string, b: Data): Promise<KitSt
   const imp = get(c.s,'move-import',b.id)
   const job = await c.db.prepare('SELECT id,state,mapping_version,principal_id FROM ik_jobs WHERE destination=? AND namespace=? ORDER BY rowid DESC LIMIT 1').bind(imp.destination,MOVE_NAMESPACE).first<any>()
   requireThat(job,'This import has no journal yet; preview again',409)
-  const ctx = context(c,imp.destination,job.mapping_version,job)
+  const ctx = moveContext(c,imp.destination,job.mapping_version,job,op==='resume')
   if (op === 'status') return {result:{import:imp,job:await readD1ImportJob(job.id,ctx),undo:['undone','undoing'].includes(job.state)?await readD1ImportUndoReport(job.id,ctx):null}}
   if (op === 'resume') {requireThat(imp.status==='importing','This import is not waiting to continue',409);return {result:{},kit:()=>resumeD1Import(job.id,ctx),record:(after,result)=>finish(after,imp.id,result)}}
   requireThat(['imported','undoing'].includes(imp.status),'Only a completed import can be undone',409)

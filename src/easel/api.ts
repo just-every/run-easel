@@ -384,8 +384,9 @@ api.post('/api/easel/import/:kit/:op', async c => {
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
  const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
- const imported = [...ctx.s.values()].find(row => row.kind === 'workbook-import' && (row.id === b.id || ctx.before.get(`workbook-import:${row.id}`)?.revision !== row.revision))?.value
- if (kit === 'workbook' && step.kit && imported && imported.rows > INLINE_INPUT_ROWS) return c.json(await startCalculationJob(ctx, [imported.scenario], async id => { ctx.calculationJob = id; return executeImport(c, ctx, step) }, promise => c.executionCtx.waitUntil(promise)), 202)
+ const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
+ const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value
+ if (['workbook','incumbent'].includes(kit) && step.kit && imported && imported.rows > INLINE_INPUT_ROWS) return c.json(await startCalculationJob(ctx, kit === 'incumbent' ? imported.scenarios : [imported.scenario], async id => { ctx.calculationJob = id; return executeImport(c, ctx, step) }, promise => c.executionCtx.waitUntil(promise)), 202)
  return executeImport(c, ctx, step)
 })
 

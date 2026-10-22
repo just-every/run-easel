@@ -891,7 +891,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "78046eab0afff7a5c156dc8bbb1d4a23842c5cb0e848a053b06fb64c524f1b6c",
+      "sha256": "6adaa3a495a284796124b3a1a8c2674b5e8138897118369cee6d7fb33748c1d3",
       "executable": false
     },
     "src/easel/approved.ts": {
@@ -1351,7 +1351,11 @@
       "executable": false
     },
     "src/easel/move-import.ts": {
-      "sha256": "ffd31cec558fe27a88776bae84567a5bc71d85b5337fea68e05babd8a5ec202f",
+      "sha256": "68a93f08e54756d3d78a9a263483d264dfb8fbcef4390e8af8d33464be27a91c",
+      "executable": false
+    },
+    "src/easel/move-journal.ts": {
+      "sha256": "a53da098be486af196bd18862127f456cf6d88b21ada3dfec3ab14ea127d950d",
       "executable": false
     },
     "src/easel/move-mapping.ts": {
@@ -3571,7 +3575,7 @@
       "executable": false
     },
     "src/ui/move-import.tsx": {
-      "sha256": "e4b10b3f622305d6061a2be704d89999d8c35483a354c8b93d836d4e989ad0c2",
+      "sha256": "390300bc43bd7996d2850756edf814f071f58934b0f557e5523fedde3bb67b1a",
       "executable": false
     },
     "src/ui/native-formulas-form.tsx": {
@@ -4032,6 +4036,10 @@
     },
     "tests/model-scale.mjs": {
       "sha256": "c37c1ffb8f8ed4780d041250d9f68c4810d16bfb0f4512132f0e6fe72560e293",
+      "executable": false
+    },
+    "tests/move-browser.mjs": {
+      "sha256": "a0cfd7af951a228434be9f10c7be08de0bca9032eba169db6463257f8d970ea2",
       "executable": false
     },
     "tests/move-fixtures.mjs": {
