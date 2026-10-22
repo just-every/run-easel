@@ -9,6 +9,8 @@ import { zonedInstant } from './calendar-time'
 import type { Context } from './context'
 import { workspace } from './model'
 import { EVENT_LABEL, canReadNotification, preference } from './notify'
+import { PRIVATE_SLACK_ACCEPTED, privateSlackCapture, privateSlackReady, privateSlackRoute, sendPrivateSlack } from './agents/private-slack'
+import { readFence } from './store'
 import { all, find, get, put, type Data } from './types'
 
 type Saved = Context & { revision: number; before: Context['s'] }
@@ -27,7 +29,7 @@ async function mail(env: Bindings, key: string, to: string, message: Data) {
   return sender ? await sender.send({ deliveryId: key, from: env.MAIL_FROM ?? '', to: [to], subject: message.subject, text: message.text, html: `<div style="white-space:pre-wrap;overflow-wrap:anywhere">${escape(message.text)}</div>`, headers: {} }) : { status: 'rejected', code: 'mail_not_configured' }
  } catch (error) { return error instanceof Error && error.name === 'MailValidationError' ? { status: 'rejected', code: 'mail_configuration_or_message_invalid' } : { status: 'uncertain', code: 'mail_outcome_unknown' } }
 }
-const labelFor = (status: string, channel: string, code = '') => status === 'accepted' ? ACCEPTED_LABEL[channel] : status === 'suppressed' ? 'Local development: email suppressed, not sent' : status === 'uncertain' ? 'Outcome unknown; never retried automatically' : `Refused or not configured (${code}); finance can retry`
+const labelFor = (status: string, channel: string, code = '') => status === 'accepted' ? channel === 'slack-private' ? PRIVATE_SLACK_ACCEPTED : ACCEPTED_LABEL[channel] : status === 'suppressed' ? 'Local development: email suppressed, not sent' : status === 'uncertain' ? 'Outcome unknown; never retried automatically' : `Refused or not configured (${code}); finance can retry`
 
 /** Immediate delivery of new or retried notifications; digest-preference ones wait for the digest. */
 export async function deliverNotifications(ids: string[], original: Bindings, open: Open, commit: Commit) {
@@ -37,15 +39,22 @@ export async function deliverNotifications(ids: string[], original: Bindings, op
   let n = get(c.s, 'notification', id)
   const record = (status: string, extra: Data = {}) => { n = { ...n, ...extra, status, history: [...n.history, { status, at: c.now, reason: extra.reason ?? '' }] }; put(c.s, 'notification', id, n); c.activity.push({ action: 'notification-result', record: id, detail: { status, channel: n.channel, reason: extra.reason ?? '' } }) }
   if (!['new', 'pending'].includes(n.status)) continue
-  const pref = n.status === 'new' ? preference(c, n.recipient) : { mode: n.channel === 'email' ? 'email' : 'chat', channel: n.channel }
+  const pref = n.status === 'new' ? privateSlackRoute(c, n) ? { mode: 'chat', channel: 'slack-private' } : preference(c, n.recipient) : { mode: n.channel === 'email' ? 'email' : 'chat', channel: n.channel }
   if (pref.mode === 'digest') { record('digest-queued', { channel: 'digest' }); await commit(c); continue }
   const channel = pref.mode === 'email' ? 'email' : pref.channel
   if (!(await canReadNotification(c, n))) { record('blocked', { channel, reason: 'The recipient can no longer read this record', completedAt: c.now }); await commit(c); continue }
-  if (channel !== 'email' && !(await chatReady(c, env, channel))) { record('blocked', { channel, reason: 'That chat channel is no longer connected', completedAt: c.now }); await commit(c); continue }
-  const message = n.message ?? (channel === 'email' ? { subject: `${EVENT_LABEL[n.event]}: ${n.title}`, text: [`${EVENT_LABEL[n.event]}.`, '', n.title, '', ...(n.body ? [n.body, ''] : []), `Open it in Easel: ${link(env.AUTH_ORIGIN, n)}`].join('\n') } : { subject: NOTICE, text: NOTICE })
+  const detailed = channel === 'email' || channel === 'slack-private'
+  const message = n.message ?? { ...(detailed ? { subject: `${EVENT_LABEL[n.event]}: ${n.title}`, text: [`${EVENT_LABEL[n.event]}.`, '', n.title, '', ...(n.body ? [n.body, ''] : []), `Open it in Easel: ${link(env.AUTH_ORIGIN, n)}`].join('\n') } : { subject: NOTICE, text: NOTICE }), ...(channel === 'slack-private' ? { privateSlack: privateSlackCapture(c, n.recipient) } : {}) }
+  if (channel === 'slack-private' ? !(await privateSlackReady(c, env, n.recipient, message.privateSlack)) : channel !== 'email' && !(await chatReady(c, env, channel))) { record('blocked', { channel, reason: 'The selected chat route is not currently authorized and ready', completedAt: c.now }); await commit(c); continue }
   record('sending', { channel, message, attempts: n.attempts + 1, dispatchedAt: c.now })
   await commit(c)
-  const outcome: Data = channel === 'email' ? await mail(env, n.key, n.recipient, message) : await sendChat(c, env, channel as ChatChannel, n.key, NOTICE)
+  let outcome: Data
+  if (channel === 'slack-private') {
+   c = await open(); n = get(c.s, 'notification', id)
+   if (!(await canReadNotification(c, n))) { record('blocked', { reason: 'The recipient can no longer read this record', completedAt: c.now }); await commit(c); continue }
+   await readFence(c.db, c.x.actor, c.revision)
+   outcome = await sendPrivateSlack(c, env, n.recipient, n.key, message)
+  } else outcome = channel === 'email' ? await mail(env, n.key, n.recipient, message) : await sendChat(c, env, channel as ChatChannel, n.key, NOTICE)
   c = await open(); n = get(c.s, 'notification', id)
   const status = statusOf(outcome)
   record(status, { reason: outcome.code ?? '', label: labelFor(status, channel, outcome.code), completedAt: c.now, ...(status === 'suppressed' ? { message: null } : {}) })

@@ -51,7 +51,7 @@ export async function notificationView(c: Context, env: Bindings) {
  const channels = []
  for (const ch of CHAT_CHANNELS) if (await chatReady(c, env, ch)) channels.push(ch)
  const permitted: Data[] = []
- for (const n of all(c.s, 'notification').filter(n => n.recipient === c.x.actor.email)) if (!['owner-question', 'owner-question-escalation'].includes(n.event) || await canReadNotification(c, n)) permitted.push(n)
+ for (const n of all(c.s, 'notification').filter(n => n.recipient === c.x.actor.email)) if (!['owner-question', 'owner-question-escalation', 'cash-alert'].includes(n.event) || await canReadNotification(c, n)) permitted.push(n)
  return { preference: preference(c, c.x.actor.email), channels, notifications: permitted.map((n): Data => ({ ...n, message: undefined })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50) }
 }
 
@@ -68,5 +68,9 @@ export async function savePreference(c: Context, env: Bindings, b: Data) {
 const get = (c: Context) => preference(c, c.x.actor.email)
 
 export async function canReadNotification(c: Context, n: Data) {
+ if (n.event === 'cash-alert') {
+  const current = await c.db.prepare("SELECT role FROM oa_operators WHERE email=? AND status='active'").bind(n.recipient).first<{role:string}>()
+  return !!current && ['owner', 'admin'].includes(current.role)
+ }
  if (['owner-question', 'owner-question-escalation'].includes(n.event)) { const q = find(c.s, 'owner-question', n.record); return !!q && q.status !== 'canceled' && (n.event !== 'owner-question' || q.status === 'open') && await canReadQuestion(c, q, n.recipient) }
  return n.event === 'approval-step-pending' ? canReceiveChainNotice(c, n) : canRead(c, n.recipient, n.department) }

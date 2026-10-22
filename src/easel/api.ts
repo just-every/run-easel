@@ -1,3 +1,4 @@
+import { privateSlackStatus, privateSlackConnection, privateSlackBinding } from './agents/private-slack'
 import { commentaryStatus, commentarySettings, commentaryConnection } from './agents/commentary-settings'
 import { commentaryPreview } from './agents/commentary-request'
 import { beginCommentary, authorizeCommentary, finishCommentary } from './agents/commentary-run'
@@ -165,6 +166,18 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
 api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/forecast-learning/:scenario', c => read(c, ctx => forecastLearning(ctx, c.req.param('scenario'))))
 api.get('/api/easel/source-guard', c => read(c, async ctx => sourceGuardView(ctx)))
+api.get('/api/easel/slack-private', c => read(c, ctx => privateSlackStatus(ctx, c.env)))
+api.post('/api/easel/slack-private/connection/:op', async c => {
+ const ctx = await open(c)
+ ctx.extra = await privateSlackConnection(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return read(c, current => privateSlackStatus(current, c.env))
+})
+api.post('/api/easel/slack-private/:op', async c => {
+ const ctx = await open(c), result = await privateSlackBinding(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
+})
 api.get('/api/easel/commentary/status', c => read(c, ctx => commentaryStatus(ctx, c.env)))
 api.post('/api/easel/commentary/settings/:op', async c => {
  const ctx = await open(c), result = await commentarySettings(ctx, c.env, c.req.param('op'), await body(c))

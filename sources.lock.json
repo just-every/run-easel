@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "03ab7b8609eb428805c46ffee293971f7fd56f1c07ac60c2e4ff317d9b5e47c0",
+      "sha256": "2ce1e167bb4d86115f54ae9a72fae4b3a63e6c4ccc9337de52de0a98f1164c75",
       "executable": false
     },
     "base-copies.json": {
@@ -958,6 +958,22 @@
       "sha256": "1be36d59ba06a2297c777e1a52751994f24b4c29e83ff49c1637201ae7058a84",
       "executable": false
     },
+    "src/easel/agents/private-slack-binding.ts": {
+      "sha256": "7b7f0d6177fad6cd4aacc02326ca1ce0b2f52b53217b927a136d919756482abf",
+      "executable": false
+    },
+    "src/easel/agents/private-slack-provider.ts": {
+      "sha256": "d67a6729dbd86d37e75420bac44623ba225656b85f2c224b22712b56d7dc0f3f",
+      "executable": false
+    },
+    "src/easel/agents/private-slack-settings.ts": {
+      "sha256": "a9748deeaf5c16846cc53c8950ac237983b6e7b6b0a7ea3ce72bce5e82ffa607",
+      "executable": false
+    },
+    "src/easel/agents/private-slack.ts": {
+      "sha256": "c825abd9bd9a92ddf9bdcebd24dca0783de54bb8c383dbb856397fa1dbbb3982",
+      "executable": false
+    },
     "src/easel/agents/source-guard-detection.ts": {
       "sha256": "a56db4cf035bb29114d4c984f0b3ee28cd56500bc927aa08a604b68cfeda03ee",
       "executable": false
@@ -967,7 +983,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "cdb197c6b77d85acc9d35f5fb48d9774b663266a62df963e72b9a4a1d3aa90f1",
+      "sha256": "c05884868729773a7961cee036334b91717cf6e599103cbada9d5e9f1ee91ecd",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1491,11 +1507,11 @@
       "executable": false
     },
     "src/easel/notify-dispatch.ts": {
-      "sha256": "1db42b1c9ac57c9968ce05a5076bec50323f7ab48dea6765a230d514a3999e27",
+      "sha256": "2bbef66e43860de6fa79fded2f38b5c634c5e3a82a86904e045df80bbeb8d692",
       "executable": false
     },
     "src/easel/notify.ts": {
-      "sha256": "9d34caf77f76eb768fe848ff905dab45336fef776947aa8b5a5ef65e43810a3c",
+      "sha256": "0672f45001d4ac4b397c22dc8312d449d7acd3224cd1b1b03d29736848aeaebb",
       "executable": false
     },
     "src/easel/open-export.ts": {
@@ -3814,6 +3830,10 @@
       "sha256": "ea8df0ea17a0e7e9092aa7539d6845ea2177d927901179b6245410f8bb71f9a9",
       "executable": false
     },
+    "src/ui/private-slack.tsx": {
+      "sha256": "120942cf95b2c891dc71652a77b12cd004b2e1ffaa1d4c6187f1d1d470b3d79d",
+      "executable": false
+    },
     "src/ui/reforecast-comparison.tsx": {
       "sha256": "4c63e8cd381ae3e7719ec169f728a4f271c96537912e8612b314ebd84ce4ea24",
       "executable": false
@@ -3831,7 +3851,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "173fbe0102547059c66635fe87edb2e2f2e93321f62c7763933b0ce68e745003",
+      "sha256": "cb1b010889e8db7c03e1d814fdbb7748b69bd3fd0226a59ecb81102a5ed7707c",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -4319,7 +4339,7 @@
       "executable": false
     },
     "tests/notifications.test.mjs": {
-      "sha256": "e4d15e9e9078a5b187daaeaae28fc7014d821c234887f400f2c38491fab79adc",
+      "sha256": "aec21ad1a35af5358973a8ba2bb7581fe4ea131226ddff70f7e991f5970488a3",
       "executable": false
     },
     "tests/open-export-browser-journey.mjs": {
@@ -4376,6 +4396,14 @@
     },
     "tests/plaid-cash.test.mjs": {
       "sha256": "40294b6317448799e022f86c40f835d7dafa5ba9a61529f05a76b835c97b5765",
+      "executable": false
+    },
+    "tests/private-slack-browser.mjs": {
+      "sha256": "11df6704c41d463355447c2cee7d466139aecb2d30158fcafbe2c6db864e5712",
+      "executable": false
+    },
+    "tests/private-slack-runtime.mjs": {
+      "sha256": "3fcd6d9c370bb8ec847ea1eff4beef539db6cfa6090452263d403b26d176f889",
       "executable": false
     },
     "tests/provider-fakes.mjs": {
