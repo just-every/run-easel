@@ -33,7 +33,7 @@ try {
  })
  page = await context.newPage(); track(page)
  for (const width of [1440, 390]) {
-  const signedOut = await context.request.post(`${runtime.origin}/auth/signout`, { headers: { origin: runtime.origin }, maxRedirects: 0 })
+  const signedOut = await context.request.post(`${runtime.origin}/auth/signout`, { headers: { origin: runtime.origin }, data: {}, maxRedirects: 0 })
   assert.equal(signedOut.status(), 303)
   await page.setViewportSize({ width, height: 1000 }); await page.goto(`${runtime.origin}/signin`)
   const link = page.getByRole('link', { name: 'Company SAML sign-in', exact: true })
