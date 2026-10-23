@@ -13,5 +13,8 @@ export async function packPreview(c: Context, id: string) {
  const pack = get(c.s, 'pack', id, 'pack')
  requireThat(pack.status === 'draft', 'A published pack is read from its snapshot', 409)
  const { numbers, fingerprint } = await packNumbers(c, pack)
- return { pack, fingerprint, stale: fingerprint !== pack.generated?.fingerprint, body: templateBody(numbers, pack.sections ?? [...PACK_SECTIONS]) }
+ // A draft has the published pack's aggregate audience: native definitions,
+ // including referenced versions' complete inputs, stay server-side provenance.
+ const { nativeDefinitions: _provenance, ...body } = templateBody(numbers, pack.sections ?? [...PACK_SECTIONS])
+ return { pack, fingerprint, stale: fingerprint !== pack.generated?.fingerprint, body }
 }

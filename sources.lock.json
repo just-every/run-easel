@@ -1651,7 +1651,7 @@
       "executable": false
     },
     "src/easel/pack-preview.ts": {
-      "sha256": "1ae6f2f70b85c0cb06c4da13e3196fd30fd7ff609fac9a7549406e2279d7cf80",
+      "sha256": "1bcd78dd4253059c0c51350f898fdffaf2d42bc91b1e145504a90a44b54df43c",
       "executable": false
     },
     "src/easel/pack-store-provider.ts": {
@@ -4139,7 +4139,7 @@
       "executable": false
     },
     "tests/board-pack.test.mjs": {
-      "sha256": "86302f97e42625ee97e46454f5b2243b21cc6717f7da1b2d65f6c19f812fa70a",
+      "sha256": "28af731dbee16051725329f9cbb35f7570132b03acb4208898fd94a5a67f5c1f",
       "executable": false
     },
     "tests/browser-identity.mjs": {
