@@ -24,6 +24,14 @@
       "reason": "The only email in this dependency lock is the public glob package maintainer contact in npm deprecation metadata pulled by ExcelJS. No owner or user data; dependency metadata is retained verbatim.",
       "reviewer": "sx-easel-c43 builder",
       "date": "2026-10-23"
+    },
+    {
+      "rule": "hygiene.email",
+      "path": "pnpm-lock.yaml",
+      "blob": "2c6df4c2f372f703d007bda2cebd585827d5785a",
+      "reason": "The only email in this dependency lock is the public glob package maintainer contact in npm deprecation metadata pulled by ExcelJS. No owner or user data; dependency metadata is retained verbatim.",
+      "reviewer": "dm-easel-r79l builder",
+      "date": "2026-10-23"
     }
   ]
 }
