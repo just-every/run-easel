@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { fakeIdentityProvider, userEmail, oidcEmail, patchSchema } from './enterprise-idp.mjs'
+import { fakeIdentityProvider, userEmail, oidcEmail, patchSchema, SAML } from './enterprise-idp.mjs'
 import { harness } from './harness.mjs'
 
 function cookies(response) { return response.headers.getSetCookie().map(value => value.split(';')[0]).filter(value => !value.endsWith('=')) }

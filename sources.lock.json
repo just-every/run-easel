@@ -4283,11 +4283,11 @@
       "executable": false
     },
     "tests/enterprise-identity.test.mjs": {
-      "sha256": "e51610711d774e27056e0fa6c3af692bf103dc40ec33e0a807db3facdda81f05",
+      "sha256": "867c0bd760f9e0c9c1ec77ec7f27f1936f19a4ea1d547bd63ff12392a409db72",
       "executable": false
     },
     "tests/enterprise-idp.mjs": {
-      "sha256": "474c4e71e7eafb7136e53565ff7c788f3b7338d846888f82e0e4e5ae807eeddc",
+      "sha256": "8e19ef399b274850246dd8efe390ae2e1422293e2aadef42f5ff00b53ab7578e",
       "executable": false
     },
     "tests/entities-browser.mjs": {
