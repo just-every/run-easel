@@ -3,14 +3,28 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { createServer } from 'node:https'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
-import { fakeIdentityProvider } from './enterprise-idp.mjs'
+import { fakeIdentityProvider, SAML } from './enterprise-idp.mjs'
 import { noOverflow, track } from './browser-journey.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-enterprise-identity')
 await mkdir(evidence, { recursive: true })
 const idp = fakeIdentityProvider(), binding = JSON.parse(idp.bindings.EASEL_SAML_CONFIG)
 binding.subjectEmails = { 'synthetic-easel-2': 'owner@example.test' }
+// Browser routing does not intercept a server redirect's target. Serve the
+// external fake on another HTTPS site so DNS and cross-site cookies stay real.
+let requests = 0
+const providerServer = createServer(idp.tls, async (request, response) => {
+ try {
+  const result = await idp.provider(new Request(new URL(request.url, SAML)))
+  const content = (await result.text()).replace('</form>', '<button type="submit">Return to Easel</button></form>')
+  requests++
+  response.writeHead(result.status, { 'content-type': 'text/html', 'cache-control': 'no-store' }); response.end(content)
+ } catch { response.writeHead(500); response.end('Synthetic identity provider failed') }
+})
+await new Promise((resolve, reject) => { providerServer.once('error', reject); providerServer.listen(0, '127.0.0.1', resolve) })
+binding.idpSsoUrl = `https://localhost:${providerServer.address().port}/saml/sso`
 const runtime = await builtBrowserRuntime({ https: true, bindings: { EASEL_SAML_CONFIG: JSON.stringify(binding) } })
 let browser, page
 try {
@@ -24,13 +38,6 @@ try {
  await setup.goto(`${runtime.origin}/setup`); await setup.getByRole('checkbox').check(); await setup.getByRole('button', { name: 'Finish setup' }).click(); await setup.close()
  const enabled = await context.request.post(`${runtime.origin}/auth/settings/identity`, { headers: { origin: runtime.origin }, data: { idpSignIn: true } })
  assert.equal(enabled.status(), 200)
- let requests = 0
- await context.route(`${binding.idpSsoUrl}**`, async route => {
-  const response = await idp.provider(new Request(route.request().url()))
-  const content = (await response.text()).replace('</form>', '<button type="submit">Return to Easel</button></form>')
-  requests++
-  await route.fulfill({ status: response.status, contentType: 'text/html', body: content })
- })
  page = await context.newPage(); track(page)
  page.on('requestfailed', request => { if (request.isNavigationRequest()) console.error('Navigation failed:', new URL(request.url()).pathname, request.failure()?.errorText) })
  page.on('response', response => { if (response.request().isNavigationRequest()) console.log('Navigation:', response.status(), new URL(response.url()).origin, new URL(response.url()).pathname) })
@@ -57,4 +64,4 @@ try {
  }
  assert.equal(requests, 2)
 } catch (error) { if (page && !page.isClosed()) console.error('Last page:', new URL(page.url()).origin, new URL(page.url()).pathname, (await page.locator('body').innerText().catch(() => '')).slice(0, 200)); if (page && !page.isClosed()) await page.screenshot({ path: join(evidence, 'enterprise-failed.png'), fullPage: true }).catch(() => {}); throw error }
-finally { await browser?.close(); await runtime.close() }
+finally { await browser?.close(); providerServer.closeAllConnections(); await new Promise(resolve => providerServer.close(resolve)); await runtime.close() }

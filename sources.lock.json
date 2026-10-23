@@ -4287,7 +4287,7 @@
       "executable": false
     },
     "tests/enterprise-identity-browser.mjs": {
-      "sha256": "54779ea98a4b6ec8db9c4c4c1c3b36c0b264ffbc0b5d20847af91ac8f1357ff3",
+      "sha256": "4ed0e7cf74d34fd899547349c92f0fcc5b1a4c91030346e34bb63e6a218acc29",
       "executable": false
     },
     "tests/enterprise-identity-flow.mjs": {
@@ -4295,7 +4295,7 @@
       "executable": false
     },
     "tests/enterprise-idp.mjs": {
-      "sha256": "8e19ef399b274850246dd8efe390ae2e1422293e2aadef42f5ff00b53ab7578e",
+      "sha256": "69a5ddd1fd262b8c94c7a77a52ac61aa65cf01b36593e2497042637b6093a39e",
       "executable": false
     },
     "tests/entities-browser.mjs": {

@@ -68,7 +68,7 @@ export function fakeIdentityProvider() {
   }
   throw new Error(`Unexpected fake IdP request: ${url.origin}${url.pathname}`)
  }
- return { provider, bearer, saml(option) { nextSaml = option }, oidc(claims) { nextOidc = claims }, bindings: {
+ return { provider, bearer, tls: { key: material.privateKey, cert: material.cert }, saml(option) { nextSaml = option }, oidc(claims) { nextOidc = claims }, bindings: {
   EASEL_SAML_CONFIG: JSON.stringify({ id: 'synthetic-easel-1', issuer: SAML, idpSsoUrl: SAML + '/sso', idpCert: material.cert, spEntityId: 'synthetic-easel-1:sp', subjectEmails: { 'synthetic-easel-2': userEmail } }),
   EASEL_OIDC_PROVIDERS: JSON.stringify([{ id: 'synthetic-easel-1', preset: 'okta', issuer: OIDC, clientId: 'synthetic-easel-1', tokenAuthMethod: 'client_secret_basic', clientSecret, subjectEmails: { 'synthetic-easel-3': oidcEmail } }]),
   OIDC_TRANSACTION_SECRET: `${randomUUID()}${randomUUID()}`, EASEL_SCIM_CONFIG: JSON.stringify({ ownerEmail: 'owner@example.test', role: 'contributor' }), EASEL_SCIM_TOKEN: bearer,
