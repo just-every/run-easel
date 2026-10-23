@@ -1,3 +1,4 @@
+import { requireAgent, governance } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { dimensionAllowed, requireDepartment } from '../access'
 import type { Context } from '../context'
@@ -14,6 +15,7 @@ export const COMMENTARY_SCHEMA = {
  },
 }
 export async function commentaryPreview(c: Context, b: Data) {
+ requireAgent(c, 'commentary')
  commentaryAuthority(c)
  const config = commentaryConfig(c)
  requireThat(config.enabled && !config.stopped, 'Variance commentary is disabled or stopped', 409)
@@ -38,6 +40,6 @@ export async function commentaryPreview(c: Context, b: Data) {
  const reserveMicroUsd = Number((numerator + 999_999n) / 1_000_000n)
  requireThat(Number.isSafeInteger(reserveMicroUsd) && reserveMicroUsd > 0, 'The conservative allowance is outside the supported range')
  const explanationRevision = c.s.get(`explanation:${view.month}|${row.line}|${row.department}`)?.revision ?? null
- const fingerprint = sha256(canonicalJson({ request, person: c.x.actor.id, session: c.x.actor.session, version: c.x.actor.version, explanationRevision, settingsRevision: config.revision, connectionRevision: find(c.s, 'connection', COMMENTARY_CONNECTION)?.revision }))
+ const fingerprint = sha256(canonicalJson({ governanceRevision: governance(c.s).revision, request, person: c.x.actor.id, session: c.x.actor.session, version: c.x.actor.version, explanationRevision, settingsRevision: config.revision, connectionRevision: find(c.s, 'connection', COMMENTARY_CONNECTION)?.revision }))
  return { ...scope, fingerprint, request, reserveMicroUsd, inputTokenAllowance, maxOutputTokens: MAX_COMMENTARY_OUTPUT, settingsRevision: config.revision, connectionRevision: find(c.s, 'connection', COMMENTARY_CONNECTION)?.revision, costBasis: 'Conservative allowance, not provider-reported cost' }
 }

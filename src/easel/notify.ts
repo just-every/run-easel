@@ -1,3 +1,4 @@
+import { agentEnabled } from './agents/governance'
 import { canReadQuestion } from './agents/owner-questions'
 import { canReceiveChainNotice } from './approval-chains'
 // Notifications from discussions and events (CYCLE-003). Commands record one
@@ -68,6 +69,7 @@ export async function savePreference(c: Context, env: Bindings, b: Data) {
 const get = (c: Context) => preference(c, c.x.actor.email)
 
 export async function canReadNotification(c: Context, n: Data) {
+ if (n.event === 'action-chase' && !agentEnabled(c.s, 'chases') || ['owner-question', 'owner-question-escalation'].includes(n.event) && !agentEnabled(c.s, 'questions')) return false
  if (n.event === 'cash-alert') {
   const current = await c.db.prepare("SELECT role FROM oa_operators WHERE email=? AND status='active'").bind(n.recipient).first<{role:string}>()
   return !!current && ['owner', 'admin'].includes(current.role)

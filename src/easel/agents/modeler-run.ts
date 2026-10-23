@@ -1,3 +1,4 @@
+import { requireAgentBudget } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import type { Bindings } from '../../auth.server'
 import type { Context } from '../context'
@@ -16,6 +17,7 @@ export async function beginModeler(c: Context, _env: Bindings, b: Data) {
  requireThat(b.fingerprint === preview.fingerprint, 'The source plan, settings or authority changed; preview again', 409)
  requireThat(!all(c.s, 'modeler-run').some(r => r.fingerprint === preview.fingerprint), 'This request already has a recorded attempt; review its outcome before another request', 409)
  requireThat(BigInt(modelerAllowance(c)) + BigInt(preview.reserveMicroUsd) <= BigInt(settings.budgetMicroUsd), 'The monthly modeler budget cannot cover this conservative allowance', 409)
+ requireAgentBudget(c, preview.reserveMicroUsd)
  const intent = { ...preview, id: uid(), status: 'pending', billingMonth: c.now.slice(0, 7), person: c.x.actor.email, personFence: fence(c), agent: 'Modeler', model: preview.request.model, createdAt: c.now }
  put(c.s, 'modeler-run', intent.id, intent)
  c.activity.push({ action: 'modeler-intent', record: intent.id, scenario: intent.from, detail: { agent: 'Modeler', person: intent.person, model: intent.model, fingerprint: intent.fingerprint, sourceRevision: intent.sourceRevision, reserveMicroUsd: intent.reserveMicroUsd, costBasis: intent.costBasis } })

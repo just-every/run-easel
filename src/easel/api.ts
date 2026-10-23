@@ -1,3 +1,6 @@
+import { missionList, missionCommand } from './agents/missions'
+import { analystPreview, beginAnalyst, authorizeAnalyst, finishAnalyst } from './agents/analyst'
+import { governanceStatus, governanceSettings, requireAgent } from './agents/governance'
 import { gustoStatus, gustoConnection } from './gusto-connection'
 import { gustoImport } from './gusto-import'
 import { privateSlackStatus, privateSlackConnection, privateSlackBinding } from './agents/private-slack'
@@ -146,6 +149,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const { state, revision } = await load(c.env.DB)
  const current = access(state, a)
  if (a.token) requireMember(current)
+ if (a.agent) requireAgent({ s: state }, 'mcp')
  if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
@@ -191,6 +195,32 @@ api.post('/api/easel/slack-private/connection/:op', async c => {
 })
 api.post('/api/easel/slack-private/:op', async c => {
  const ctx = await open(c), result = await privateSlackBinding(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
+})
+api.post('/api/easel/analyst/preview', async c => { const input = await body(c); return read(c, ctx => analystPreview(ctx, input)) })
+api.post('/api/easel/analyst/generate', async c => {
+ const ctx = await open(c), intent = await beginAnalyst(ctx, await body(c))
+ await commit(ctx)
+ let outcome
+ try {
+  const current = await open(c), authorized = await authorizeAnalyst(current, intent.id)
+  await readFence(current.db, current.x.actor, current.revision)
+  outcome = await performCommentary(c.env, authorized)
+ } catch (error) { if (!(error instanceof Fault)) throw error; outcome = { status: 'refused' as const, reason: error.message } }
+ const current = await open(c), result = await finishAnalyst(current, intent.id, outcome)
+ await commit(current)
+ return c.json(publicLedger(await erasedView(current.db, result)))
+})
+api.get('/api/easel/missions', c => read(c, missionList))
+api.post('/api/easel/missions/:op', async c => {
+ const ctx = await open(c), result = await missionCommand(ctx, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(publicLedger(await erasedView(ctx.db, result)))
+})
+api.get('/api/easel/agents/status', c => read(c, governanceStatus))
+api.post('/api/easel/agents/settings/:op', async c => {
+ const ctx = await open(c), result = await governanceSettings(ctx, c.req.param('op'), await body(c))
  await commit(ctx)
  return c.json(publicLedger(await erasedView(ctx.db, result)))
 })

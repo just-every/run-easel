@@ -1,3 +1,4 @@
+import { requireAgent, governance } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { workingCalculation } from '../calculation'
 import type { Context } from '../context'
@@ -12,6 +13,7 @@ export const MAX_MODELER_OUTPUT = 4096
 const pick = (value: Data, keys: string[]) => Object.fromEntries(keys.filter(key => value[key] !== undefined).map(key => [key, value[key]]))
 export const modelerSourceFingerprint = async (c: Context, from: string) => sha256(canonicalJson({ model: model(c.s, from), calculation: await workingCalculation(c, from) }))
 export async function modelerPreview(c: Context, b: Data) {
+ requireAgent(c, 'modeler')
  modelerAuthority(c)
  const settings = modelerConfig(c), provider = commentaryConfig(c)
  requireThat(settings.enabled && !settings.stopped, 'Modeler is disabled or stopped', 409)
@@ -43,6 +45,6 @@ export async function modelerPreview(c: Context, b: Data) {
  const sourceFingerprint = sha256(canonicalJson({ model: m, calculation }))
  const providerFingerprint = sha256(canonicalJson({ model: provider.model, inputRateMicroUsd: provider.inputRateMicroUsd, outputRateMicroUsd: provider.outputRateMicroUsd, consentAt: provider.consentAt, consentBy: provider.consentBy }))
  const connectionRevision = find(c.s, 'connection', COMMENTARY_CONNECTION)?.revision
- const fingerprint = sha256(canonicalJson({ request, sourceFingerprint, providerFingerprint, settingsRevision: settings.revision, connectionRevision, person: c.x.actor.id, session: c.x.actor.session, version: c.x.actor.version }))
+ const fingerprint = sha256(canonicalJson({ governanceRevision: governance(c.s).revision, request, sourceFingerprint, providerFingerprint, settingsRevision: settings.revision, connectionRevision, person: c.x.actor.id, session: c.x.actor.session, version: c.x.actor.version }))
  return { from: from.id, sourceRevision: from.revision, requestText, request, fingerprint, sourceFingerprint, providerFingerprint, connectionRevision, settingsRevision: settings.revision, inputTokenAllowance, maxOutputTokens: MAX_MODELER_OUTPUT, reserveMicroUsd, costBasis: 'Conservative allowance, not provider-reported cost' }
 }

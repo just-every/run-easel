@@ -1,3 +1,4 @@
+import { agentEnabled, requireAgent } from './governance'
 // AGENT-002: three to five responses that restore a broken constraint, found
 // only among the levers finance marked adjustable. Every response is
 // recalculated in full before it is offered and created as a draft proposal
@@ -32,6 +33,7 @@ const revenue = (calc: Calculation, months: string[]) => calc.profit.filter(p =>
 
 export async function constraintCommands(c: Context, op: string, b: Data): Promise<Data | undefined> {
  if (!['constraint-check', 'constraint-respond', 'constraint-reject'].includes(op)) return undefined
+ if (op !== 'constraint-reject') requireAgent(c, 'responses')
  requireCapability(c.x, 'approvals', c.s); requireFinance(c.x)
  if (op === 'constraint-check') {
   // The API runs the watch for this action after every command that can move a constraint.

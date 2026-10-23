@@ -1,3 +1,4 @@
+import { agentEnabled, requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 // Deterministic owner questions: an authenticated answer is evidence, never
 // permission for an agent to promote a forecast.
@@ -44,6 +45,7 @@ export async function ownerQuestionView(c: Context) {
  return { enabled: questionsEnabled(c), questions, inputs: fullFinance && forecast ? datedInputs(c, forecast.id).map(({input, ...row}) => row) : [], owners }
 }
 export async function escalateQuestions(c: Context) {
+ if (!agentEnabled(c.s, 'questions')) return []
  const ids: string[] = []
  if (!questionsEnabled(c)) return ids
  for (const q of all(c.s, 'owner-question').filter(q => q.status === 'open' && !q.escalatedAt && q.dueAt <= c.now)) {
@@ -67,6 +69,7 @@ export async function ownerQuestions(c: Context, op: string, b: Data): Promise<D
  }
  requireThat(questionsEnabled(c), 'Finance has stopped owner questions', 409)
  if (op === 'owner-question-escalate') { finance(c); return { notifications: await escalateQuestions(c) } }
+ if (op === 'owner-question-ask' || op === 'owner-question-propose') requireAgent(c, 'questions')
  if (op === 'owner-question-ask') {
   finance(c)
   const forecast = get(c.s, 'scenario', b.scenario)
