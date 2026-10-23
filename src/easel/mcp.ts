@@ -1,3 +1,4 @@
+import { requireAgent } from './agents/governance'
 import { backgroundScenario } from './calculation-dispatch'
 import { activeCalculationJob, readCalculationJob, startCalculationJob } from './calculation-jobs'
 import { canSeeScenario } from './scenario-access'
@@ -73,6 +74,7 @@ function matches(value: unknown, schema: Data): boolean {
 }
 
 async function invoke(c: Context, name: string, b: Data): Promise<Data> {
+ requireAgent(c, 'mcp')
  requireThat(tools.some(t => t.name === name), 'This tool is not available to agents', 403)
  if (name === 'scenarios') { const s = await stateView(c); requireThat('scenarios' in s, 'Plan access required', 403); return { scenarios: s.scenarios, lines: s.lines, departments: s.departments, workspace: s.workspace } }
  if (name === 'calculation_status') return readCalculationJob(c, b.id)

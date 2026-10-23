@@ -1,3 +1,4 @@
+import { requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { requireCapability, requireFinance, requirePayDetail } from '../access'
 import { actualsCommand, readActuals } from '../actuals'
@@ -58,6 +59,7 @@ export function completeSourceGuards(c:Context,batch:Data) {
  }
 }
 export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Data|undefined> {
+ if (['source-guard-stage', 'source-guard-propose'].includes(op)) requireAgent(c, 'sources')
  if(!['source-guard-stage','source-guard-review'].includes(op))return
  authority(c)
  if(op==='source-guard-stage') {

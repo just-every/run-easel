@@ -1059,7 +1059,11 @@ The safe output is limited to planned salary positions, volume revenue drivers a
 
 *Acceptance:* with a model fake, a viewer asks about payroll by department and receives totals only; a planted salary is absent from the request sent to the model fake and from the answer.
 
-*Status:* missing.
+Current aggregate analyst slice (sx-easel-c44; conservative default pending ct). A native member explicitly previews and consents to each request. The fixed chosen-model endpoint receives whitelisted visible monthly cells and available aggregate cash only, without positions, source traces, original rows or compensation inputs. The model selects citations; the server validates them against that exact request and renders native totals, discarding all provider prose. Requests reserve the shared monthly allowance before egress, never retry automatically, and recheck source, live authority, key and governance revisions before acceptance. Output is labeled agent work and remains read-only.
+
+*Acceptance evidence:* `tests/agent-governance.test.mjs`, “Analyst sends only viewer-visible department totals, validates cited cells and discards private model prose with live stop and allowance fences”, proves viewer totals, absent planted salaries at the model edge and answer, invented citation refusal, unchanged plan, stop and budget. `tests/agent-governance-browser.mjs` covers the native reviewed request and cited answer at 1440 and 390.
+
+*Status:* partial. Gap: private what-if creation and general cited explanatory answers are not implemented; ct approval of aggregate-only model consent, shared key reuse, allowance and discarded-prose defaults is pending.
 
 #### AGENT-010 — Recurring missions.
 *What the agent does:* a validated analysis (for example a weekly cash brief, a month-end flux review or a pipeline coverage check) is saved as a mission that runs on a schedule and delivers its result to named people. The result carries the same citations and labels as `AGENT-009`.
@@ -1070,7 +1074,11 @@ The safe output is limited to planned salary positions, volume revenue drivers a
 
 *Acceptance:* with a fake clock, mail and model fakes, a weekly cash brief runs Monday, is delivered to two people, and reports stale sources when a connector is stale.
 
-*Status:* missing.
+Current weekly slice (sx-easel-c44; conservative default pending ct). Native company-wide finance approves a previously answered analysis and an exact audience of active native finance people. The saved scenario, analysis month and question run Monday at 08:00 in the saved company zone, under the still-active approving person's scheduler authority. Each occurrence and each mail intent is durable before egress, with no automatic retry of unknown outcomes. Current recipient authority, mission enablement and global stop are rechecked before sends. Existing Gauge, Gusto and Plaid connection observations are read without refreshing them; previously connected sources that are disconnected, lack their excluded key, have errors, no refresh, future observations or observations older than 24 hours produce a stale notice instead of a model report. This conservative observation cutoff does not implement CONNECT-005 scheduling. Agent and model labels and cell citations travel in the result.
+
+*Acceptance evidence:* `tests/agent-governance.test.mjs`, “Approved Monday missions use named finance authority, deliver once to two current people and replace stale connector analysis with a notice under a fake clock”, proves Sunday and pre-08:00 refusal, Monday delivery to two people, deduplication, Plaid freshness after a native fake-provider refresh, stale notice without model egress, audience refusal and mission stop. `tests/agent-governance-browser.mjs` covers native approval and stop at 1440 and 390.
+
+*Status:* partial. Gap: ct approval of scheduled model consent, finance-only audience and conservative connector observation cutoff; other recipient scopes and configurable schedules are not implemented.
 
 #### AGENT-011 — Agent governance.
 *What the agent does:* every in-product agent runs under a named person's or service's authority and filtering. It uses the owner's chosen model provider and key, within a monthly USD budget, and every action and model call is recorded in the audit trail (`AUDIT-001`). Agent output is labeled as agent work.
@@ -1083,7 +1091,11 @@ AGENT-006's deterministic action chases ship before this clause: they call no mo
 
 *Acceptance:* with a model fake, an agent run is recorded with its person, model and cost; at the budget, further runs are refused; the stop switch ends a running agent; an agent call to approve or promote is refused by the server.
 
-*Status:* partial.
+Current global governance slice (sx-easel-c44; conservative default pending ct). Native company-wide finance controls enablement for the current agent catalogue, a shared monthly USD ceiling in addition to existing individual model allowances, and one global stop. Existing agents retain their shipped native enabling rules until finance changes governance; new Analyst and Recurring missions start disabled. The model, fixed endpoint and sealed archive-excluded owner key remain the AGENT-007 provider configuration. A reservation is an audited conservative allowance rather than provider-reported cost, and attempts retain it on unknown or refused outcomes. Changing governance invalidates outstanding model previews and results, including a stop followed by resume. The stop covers current commentary, modeler, analyst, missions, MCP calls, constraint watch and responses, owner questions, learning, source staging and scheduled action chases; passive source safety holds remain enforced. Agents cannot acquire approval, publication or connection capabilities, and the closed MCP catalogue refuses approve, close, publish, promote, connect, pay and hire operations. Later agent doors inherit these same checks before shipping.
+
+*Acceptance evidence:* `tests/variance-commentary.test.mjs`, “AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation”, proves audited person, model and reserved cost basis, shared budget refusal, individual disablement, global stop during a model call including resume before its return, and machine action refusals. `tests/agent-governance.test.mjs` additionally proves direct service-token approval and promotion refusal and the global stop for those clients. `tests/decision-followup.test.mjs`, “AGENT-006 follows a published hiring delay: promoted forecast effect, chase before the due date, owner revision and stop, finance-approved change and the realized payroll saving after July closes”, proves chase enablement and global stop. `tests/structure-versions.test.mjs` retains the isolated modeler and independent promotion proof. `tests/agent-governance-browser.mjs` covers finance controls and global stop at 1440 and 390.
+
+*Status:* partial. Gap: ct approval of retained existing enablement, new-agent opt-in, shared allowance, provider custody inheritance and global stop defaults.
 
 ## Homepage claims
 
@@ -1162,8 +1174,8 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 54 | 17 | 16 | 87 |
-| All | 71 | 17 | 16 | 104 |
+| Target and push further | 54 | 19 | 14 | 87 |
+| All | 71 | 19 | 14 | 104 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1268,6 +1280,6 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | `AGENT-006` | Following decisions through to results | push-further | done | `src/easel/decision-followup.ts` `src/ui/decision-followup.tsx` `tests/decision-followup.test.mjs` `tests/decision-followup-browser.mjs` | Decisions cite captured promotion effects; company-zone chases before due dates; reasoned owner revisions and stops; finance-approved decision changes; realized payroll, revenue and cash against the approved assumption, with roster headcount and Gauge capacity unavailable unless reviewed |
 | `AGENT-007` | Variance commentary grounded in sources | push-further | partial | `tests/variance-commentary.test.mjs` (AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation; AGENT-007 accepted citations stay in their visible variance and unconfirmed commentary never publishes) `tests/commentary-model-browser.mjs` | Model-fake drafting, checked citations and human publication ship; ct approval of explicit provider consent, sealed custody and conservative allowance default pending |
 | `AGENT-008` | Modeler agent | push-further | partial | `tests/structure-versions.test.mjs` (AGENT-008 reviewed model requests create only atomic tested draft proposals with exact diffs and independent promotion authority) `tests/modeler-browser.mjs` | Model-fake named positions/drivers/formulas, tested diffs and independent promotion permission proven; ct generation/consent/custody/allowance default approval pending |
-| `AGENT-009` | Analyst with cited answers | push-further | missing |  | No in-product analyst; Easel calls no model |
-| `AGENT-010` | Recurring missions | push-further | missing |  | No saved or scheduled missions |
-| `AGENT-011` | Agent governance | push-further | partial | `src/easel/access.ts` `src/easel/store.ts` | Every request runs with a person's role and a session-fenced save; model-provider settings, budgets, agent labels, a stop switch and an agent action refusal list are missing |
+| `AGENT-009` | Analyst with cited answers | push-further | partial | `tests/agent-governance.test.mjs` (Analyst sends only viewer-visible department totals, validates cited cells and discards private model prose with live stop and allowance fences) `tests/agent-governance-browser.mjs` | Aggregate cited analyst ships; private what-ifs and explanatory answers missing; ct consent and custody default approval pending |
+| `AGENT-010` | Recurring missions | push-further | partial | `tests/agent-governance.test.mjs` (Approved Monday missions use named finance authority, deliver once to two current people and replace stale connector analysis with a notice under a fake clock) `tests/agent-governance-browser.mjs` | Approved weekly finance missions and stale notices ship; ct scheduled consent, audience and freshness default approval pending; other audiences and schedules missing |
+| `AGENT-011` | Agent governance | push-further | partial | `tests/variance-commentary.test.mjs` (AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation) `tests/decision-followup.test.mjs` `tests/structure-versions.test.mjs` `tests/agent-governance-browser.mjs` | Global stop, per-agent controls, shared allowance, audits and refusal list ship; ct governance default approval pending |

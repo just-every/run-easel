@@ -1,3 +1,4 @@
+import { agentEnabled, requireAgent } from './agents/governance'
 // AGENT-006: published decisions followed through to results. Easel calls no
 // model; the follow-up is deterministic. A decision may cite the promoted
 // proposal that implemented it, whose promotion captured the forecast just
@@ -103,6 +104,7 @@ export async function followup(c: Context, op: string, b: Data): Promise<Data | 
 
 /** One chase per open action and due date, from CHASE_DAYS company-zone days before it until the day before. */
 export async function planChases(c: Context) {
+ if (!agentEnabled(c.s, 'chases')) return []
  const zone = workspace(c.s).timeZone ?? 'America/New_York'
  const today = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(c.now))
  const ids: string[] = []
@@ -113,7 +115,7 @@ export async function planChases(c: Context) {
   const sent = notify(c, 'action-chase', [owner], { title: `${f.text.slice(0, 160)} (due ${f.due})`, tab: 'review', record: pack.id, department: f.department })
   const id = `${pack.id}|${decision.id}`, record = find(c.s, 'action-followup', id) ?? { pack: pack.id, decision: decision.id, chases: [], history: [], changes: [] }
   put(c.s, 'action-followup', id, { ...record, chases: [...record.chases, { due: f.due, at: c.now, recipient: owner, notification: sent[0], zone }] })
-  c.activity.push({ action: 'action-chased', record: id, detail: { due: f.due, recipient: owner, zone } })
+  c.activity.push({ action: 'action-chased', record: id, detail: { agent: 'Action chases', person: c.x.actor.scheduler?.email ?? c.x.actor.email, due: f.due, recipient: owner, zone } })
   ids.push(...sent)
  }
  return ids

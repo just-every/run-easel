@@ -67,6 +67,7 @@ export function requireMember(x: Access) { requireThat(x.role, 'Finance has not 
 export function requireFinance(x: Access) { requireThat(x.role === 'finance', 'Only finance can do this', 403) }
 export function requireCapability(x: Access, capability: Capability, state?: State) {
  requireMember(x)
+ requireThat(!(x.actor.agent || x.actor.scheduler) || !['approvals', 'publishing', 'connections'].includes(capability), 'Agents cannot approve, close, publish, promote or connect', 403)
  requireThat(x.capabilities?.includes(capability) || !x.capabilities && x.role === 'finance' && capability !== 'compensation', `The ${capability} permission is required`, 403)
  if (state && ['approvals', 'publishing'].includes(capability)) {
   requireThat(hasFullScope(state, x), 'Company-wide approval and publishing require access to every department and dimension member', 403)
