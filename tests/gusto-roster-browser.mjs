@@ -75,7 +75,10 @@ try{
   const view=await call(`headcount/${f.scenario}`),month=view.months.find(row=>row.month===current&&row.department===f.department.id)
   assert.equal(month.actualHeadcount,2);assert.equal(month.actualHires,2);assert.equal(month.actualDepartures,1);assert.equal(month.backfills,1);assert.equal(month.actualCostCents,1785000)
   const slip=(Date.parse(`${current}-${String(Math.min(13,day)).padStart(2,'0')}`)-Date.parse(`${previous}-10`))/86400000
-  await headcount.getByRole('cell',{name:`${slip} days`,exact:true}).waitFor()
+  await headcount.getByRole('cell',{name:`${slip} days`,exact:true}).scrollIntoViewIfNeeded()
+  await noOverflow(page,`Gusto slippage ${width}`);await headcount.screenshot({path:join(evidence,`gusto-slippage-${width}.png`)})
+  await headcount.getByRole('cell',{name:'$17,850.00',exact:true}).scrollIntoViewIfNeeded()
+  await noOverflow(page,`Gusto payroll cost ${width}`);await headcount.screenshot({path:join(evidence,`gusto-cost-${width}.png`)})
   await noOverflow(page,`Gusto connected headcount ${width}`);await headcount.screenshot({path:join(evidence,`gusto-headcount-${width}.png`)})
   assert.deepEqual(await call(`scenario/${f.scenario}`),before)
   await page.goto(`${runtime.origin}/app?tab=settings`)

@@ -1,3 +1,4 @@
+import './gusto.css'
 import { useEffect, useState } from 'react'
 import { Action, api, Field, Form, money, options, Table, type D } from './shared'
 
@@ -16,7 +17,7 @@ export function GustoConnection() {
   setDraft(current=>({...current!,employeeMap:{...current!.employeeMap,[id]:{...current!.employeeMap[id],[field]:value,...(field==='positionOrigin'?{unplanned:value==='__unplanned',positionOrigin:value==='__unplanned'?'':value}:{})}}}));setReviewed(false)
  }
  const identities=preview?[...new Set([...preview.roster,...preview.runs].map((r:D)=>r.employeeId))] as string[]:[]
- return <section className="card" aria-label="Gusto payroll connection">
+ return <section className="card gusto-connection" aria-label="Gusto payroll connection">
   <h2>Payroll connection</h2><h3>Gusto</h3>
   <p className="muted">Pull employees, dated compensation and processed payroll from an authorized company token. Finance reviews each employee’s department and planned position before accepting observations. Pulls are manual and read only.</p>
   {error&&<p role="alert" className="error">{error}</p>}

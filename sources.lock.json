@@ -3866,8 +3866,12 @@
       "sha256": "650a4bd721854f81c6b43542831076a21b7a7a539ca00cb2c73d3df5d079ca15",
       "executable": false
     },
+    "src/ui/gusto.css": {
+      "sha256": "87197e8c2e67d23d2e14693ae9a79de4b0f2c1ea232eacb544113979cc141c2a",
+      "executable": false
+    },
     "src/ui/gusto.tsx": {
-      "sha256": "4baeaf73a79c0b69422afd249377329c67df181fb67e83fae43f05f0e065a0b1",
+      "sha256": "36886b8d8232852e0a462d8f77c3fddfb47a2a6871a696fbf0d949d8d2bd5a68",
       "executable": false
     },
     "src/ui/headcount.tsx": {
@@ -4391,7 +4395,7 @@
       "executable": false
     },
     "tests/gusto-roster-browser.mjs": {
-      "sha256": "37c4295bcba56d5f063731b1146dfd9a592643d9f850dc3fad7f1dc92d8f1b09",
+      "sha256": "8f4ac5db3519ad96f3be1bde5dba244189fe19444e511b32ed0c1106da825d55",
       "executable": false
     },
     "tests/gusto-roster-flow.mjs": {
