@@ -50,7 +50,7 @@ export function GaugeConnection() {
     <Field label="Connection check month" name="month" type="month" defaultValue={new Date().toISOString().slice(0, 7)} hint="Reads Gauge's aggregate for this month and records connection health. No utilization is imported." />
    </Form>}
    {connection.connected && <Form submit="Save Gauge schedule" onSubmit={async v => { await api('connections/gauge/schedule', { cadence: v.cadence, month: v.month, consent: v.consent === true }); await load() }}>
-    <label>Observation cadence<select name="cadence" defaultValue={connection.refreshSchedule?.cadence ?? 'manual'}><option value="manual">Manual</option><option value="hourly">Hourly</option><option value="nightly">Nightly at 03:00</option><option value="weekly">Monday at 03:00</option></select></label>
+    <Field label="Observation cadence" name="cadence" defaultValue={connection.refreshSchedule?.cadence ?? 'manual'} options={[{ value: 'manual', label: 'Manual' }, { value: 'hourly', label: 'Hourly' }, { value: 'nightly', label: 'Nightly at 03:00' }, { value: 'weekly', label: 'Monday at 03:00' }]} />
     <Field label="Scheduled observation month" name="month" type="month" defaultValue={connection.refreshSchedule?.month ?? new Date().toISOString().slice(0, 7)} />
     <Field label={`Allow scheduled read-only observations in ${connection.timeZone}`} name="consent" type="checkbox" required={false} />
    </Form>}

@@ -3879,7 +3879,7 @@
       "executable": false
     },
     "src/ui/gauge-connection.tsx": {
-      "sha256": "23f1beed5f13a6fe46e99ef6ff451f8f3f35eeb8cf88533717f2e919cc4241da",
+      "sha256": "cec7c158c72cf908459d2b1359fc4f4a41f182376ead2e6b0384ccb427d92829",
       "executable": false
     },
     "src/ui/gauge-utilization.tsx": {
