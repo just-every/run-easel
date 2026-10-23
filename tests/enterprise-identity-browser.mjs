@@ -32,7 +32,8 @@ try {
   await route.fulfill({ status: response.status, contentType: 'text/html', body: content })
  })
  page = await context.newPage(); track(page)
- page.on('console', message => { if (message.type() === 'error') console.error('Browser:', message.text()) })
+ page.on('requestfailed', request => { if (request.isNavigationRequest()) console.error('Navigation failed:', new URL(request.url()).pathname, request.failure()?.errorText) })
+ page.on('response', response => { if (response.request().isNavigationRequest()) console.log('Navigation:', response.status(), new URL(response.url()).origin, new URL(response.url()).pathname) })
  for (const width of [1440, 390]) {
   const signedOut = await context.request.post(`${runtime.origin}/auth/signout`, { headers: { origin: runtime.origin }, data: {}, maxRedirects: 0 })
   assert.equal(signedOut.status(), 204)
@@ -55,5 +56,5 @@ try {
   console.log(`ACCESS-002 ${width}: native sign-in, HTTPS signed SAML round-trip and authenticated app passed`)
  }
  assert.equal(requests, 2)
-} catch (error) { if (page && !page.isClosed()) await page.screenshot({ path: join(evidence, 'enterprise-failed.png'), fullPage: true }).catch(() => {}); throw error }
+} catch (error) { if (page && !page.isClosed()) console.error('Last page:', new URL(page.url()).origin, new URL(page.url()).pathname, (await page.locator('body').innerText().catch(() => '')).slice(0, 200)); if (page && !page.isClosed()) await page.screenshot({ path: join(evidence, 'enterprise-failed.png'), fullPage: true }).catch(() => {}); throw error }
 finally { await browser?.close(); await runtime.close() }
