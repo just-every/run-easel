@@ -1287,7 +1287,7 @@
       "executable": false
     },
     "src/easel/enterprise-identity/signin.ts": {
-      "sha256": "da9e465fce502e4b14750876ac836c02266d5c2d0862375c6ed1b1f8823119b7",
+      "sha256": "814aa3d6c65a9740dd8d4aae647940ca568a4bfb1d6b85c51f2e82ed832399ad",
       "executable": false
     },
     "src/easel/entity-access.ts": {
