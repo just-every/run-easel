@@ -23,11 +23,13 @@ fixtures cannot stand in for are listed at the end.
 | EASEL-001 to EASEL-015 | done | `pnpm test:easel` (`tests/easel.test.mjs`): one flow test per clause | The deployed request path (auth then the Hono API) on real workerd and D1 with every migration, a real owner claim and real email-link sign-in for each contributor and viewer. No application fake. |
 | EASEL-001 to EASEL-015 (as a person) | done | `node tests/browser.mjs`: planning journey at 1440 px, review journey at 390 px | Real `rer dev` with dev identity (owner, finance, sales, engineering, board), clicking only what a person can: setup, July CSV move-in with mapping and rejected rows, budget, submissions, approval, month close, cell traces, August move-in, variance explanations, pack publish and download, downside branch and comparison, a contributor proposal promoted by finance, the workbook move-in. Every tab at both widths is checked for horizontal overflow and screenshotted. |
 | EASEL-016 | done | `node tests/browser.mjs` | `rer export`, refused import into a non-empty installation (exit 4), a second fresh clone set up with a different owner, refused corrupt archive, restore, then the restored owner sees the same state, every scenario's calculation, every snapshot and the reconciliation, the pack downloads, and the re-export has identical rows. |
-| EASEL-017 | done | `node tests/browser.mjs`, `rer verify`, GitHub Verify | install, setup, check, describe, dev, setup rerun, build, preview (health 200, signed-out API 401), deploy --dry-run, export, import, reset, from a fresh clone of committed HEAD; `verify` runs build, typecheck, the flow tests, the emitted Worker's HTTP checks and the outbox email-link sign-in. |
+| EASEL-017 | done | `node tests/browser.mjs`, `tests/approval-chains-browser.mjs`, `rer verify`, GitHub Verify | install, setup, check, describe, dev, setup rerun, build, preview (health 200, signed-out API 401), deploy --dry-run, export, import, reset, from a fresh clone of committed HEAD. `rer verify` runs build, typecheck and the flow tests; branch Verify also exercises emitted Worker health, unclaimed setup and native email-link sign-in/approval at 1440/390 in `tests/approval-chains-browser.mjs`. |
 
-GitHub **Verify** runs `rer install`, `rer verify` and `tests/browser.mjs` on
-every push and keeps the journey screenshots, the downloaded pack and the
-archives as an artifact of that run.
+GitHub **Verify** runs on pull requests, main pushes and manual dispatch. Its
+parallel jobs check source integrity, types, the site build, domain flows and
+the built Worker's native approval journey. The installation, restore and
+broader browser journeys in `tests/browser.mjs` run in **Installation journeys**
+on release tags, nightly and manual dispatch; that workflow retains their proof.
 
 A source edit to the ramp rule (`src/easel/ramp.ts`) was demonstrated on a
 running installation: the working forecast's January subscription revenue

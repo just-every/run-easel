@@ -1183,7 +1183,7 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | `EASEL-014` | Published review pack with decisions | published | done | `tests/easel.test.mjs` |  |
 | `EASEL-015` | Excel workbook move-in with provenance | published | done | `tests/easel.test.mjs` `tests/workbook-undo.test.mjs` |  |
 | `EASEL-016` | Complete export and clean restore | published | done | `tests/browser.mjs` `tests/review-fixes.test.mjs` |  |
-| `EASEL-017` | Owned runtime on Base | published | done | `tests/browser.mjs` `.github/workflows/verify.yml` |  |
+| `EASEL-017` | Owned runtime on Base | published | done | `tests/browser.mjs` `tests/approval-chains-browser.mjs` (emitted Worker health, unclaimed setup and native sign-in/approval at 1440/390) `.github/workflows/verify.yml` |  |
 | `CONNECT-001` | QuickBooks Online actuals connector | target | missing |  | No QuickBooks Online OAuth, history backfill, pull, idempotent re-pull or trial-balance reconciliation; actuals arrive only as uploaded CSV files |
 | `CONNECT-002` | Xero actuals connector | target | missing |  | No Xero connector or tracking-category mapping |
 | `CONNECT-003` | NetSuite actuals connector | target | missing |  | No NetSuite SuiteQL connector or subsidiary mapping |
