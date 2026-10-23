@@ -4287,7 +4287,7 @@
       "executable": false
     },
     "tests/enterprise-identity-browser.mjs": {
-      "sha256": "193baadd0629e877da910c2fb12ea7ff47d3d4adbda139d3edfb40ae27caca2c",
+      "sha256": "4054e619cc8f2e65f55f599eeb68f8ca0e16b40498df148a70746e026f233aa9",
       "executable": false
     },
     "tests/enterprise-identity-flow.mjs": {
