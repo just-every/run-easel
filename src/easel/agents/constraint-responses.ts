@@ -11,8 +11,8 @@ import type { Calculation } from '../engine'
 import { scenarioInputs } from '../model'
 import { addMonths } from '../months'
 import { plan } from '../plan'
-import { formatMoney } from '../units'
-import { find, get, put, requireThat, text, type Data } from '../types'
+import { formatMoney, cents } from '../units'
+import { find, get, put, remove, requireThat, text, type Data } from '../types'
 import { constraints, evaluator, restored } from './agent-evaluate'
 import { applyLever, LEVER_UNIT, levers, type LeverKind } from './levers'
 import { CONSTRAINTS } from './constraint-watch'
@@ -32,9 +32,20 @@ const grid = (lever: Data) => {
 const revenue = (calc: Calculation, months: string[]) => calc.profit.filter(p => months.includes(p.month)).reduce((n, p) => n + p.revenue, 0)
 
 export async function constraintCommands(c: Context, op: string, b: Data): Promise<Data | undefined> {
- if (!['constraint-check', 'constraint-respond', 'constraint-reject'].includes(op)) return undefined
+ if (!['constraint-check', 'constraint-respond', 'constraint-reject', 'department-limit-save', 'department-limit-delete'].includes(op)) return undefined
  if (op !== 'constraint-reject') requireAgent(c, 'responses')
  requireCapability(c.x, 'approvals', c.s); requireFinance(c.x)
+ if (op === 'department-limit-save' || op === 'department-limit-delete') {
+  requireAgent(c, 'constraints')
+  const department = get(c.s, 'department', b.department)
+  const month = text(b.month, 'Limit month', 7)
+  requireThat(/^\d{4}-\d{2}$/.test(month) && Number(month.slice(5)) >= 1 && Number(month.slice(5)) <= 12, 'Choose a valid limit month')
+  const id = `${department.id}:${month}`
+  if (op === 'department-limit-delete') remove(c.s, 'department-limit', id)
+  else put(c.s, 'department-limit', id, { department: department.id, month, limitCents: cents(b.limit, 'Department spending limit'), owner: c.x.actor.email, agreedAt: c.now })
+  c.activity.push({ action: op, record: id, detail: { department: department.id, month } })
+  return { saved: true }
+ }
  if (op === 'constraint-check') {
   // The API runs the watch for this action after every command that can move a constraint.
   c.activity.push({ action: op, record: 'constraints', detail: {} })
@@ -52,6 +63,7 @@ export async function constraintCommands(c: Context, op: string, b: Data): Promi
   c.activity.push({ action: op, record: item.id, detail: { reason } })
   return get(c.s, 'decision-item', item.id)
  }
+ requireThat(item.constraint === 'cash-floor' || item.constraint === 'runway', 'Covenant and department items need a human-reviewed proposal; automatic responses cover cash and runway only', 409)
  requireThat(item.status === 'open', 'Only an open decision item gets responses', 409)
  requireThat(!(item.responses ?? []).some((r: Data) => ['draft', 'submitted'].includes(find(c.s, 'scenario', r.proposal)?.proposalStatus)), 'Responses already exist: promote one or reject them all first', 409)
  const forecast = get(c.s, 'scenario', item.forecast)

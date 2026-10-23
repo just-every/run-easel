@@ -26,7 +26,7 @@ export async function commentaryModelRuntime() {
    assert.ok(!JSON.stringify(body).includes('synthetic-private-payroll'))
    assert.ok(!JSON.stringify(body).includes(provider.key))
    return Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ claims: [
-    { text: 'Accepted compute costs exceeded the approved budget.', label: 'evidence', citationIds: [source.acceptedRows[0].id] },
+    { text: 'Accepted compute costs exceeded the approved budget.', label: 'evidence', citationIds: [(source.question?.includes('payroll') ? source.acceptedRows.find(row => row.line === 'Payroll') ?? source.acceptedRows[0] : source.acceptedRows[0]).id] },
     { text: 'Additional capacity may explain the increase.', label: 'hypothesis', citationIds: [] },
    ] }) }] }] })
   },

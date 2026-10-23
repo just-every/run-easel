@@ -1,7 +1,8 @@
 import type { Bindings } from '../../auth.server'
 import { operatorMail } from '../../mail.server.mjs'
-import { access, requireCapability, requireFinance } from '../access'
+import { access, requireCapability, requireCapabilityGrant, requireFinance } from '../access'
 import type { Context } from '../context'
+import { scenarioAccess } from '../scenario-access'
 import { workspace } from '../model'
 import { readFence, load, save } from '../store'
 import { currentTime } from '../time'
@@ -31,8 +32,9 @@ export async function missionCommand(c: Context, op: string, b: Data) {
  requireThat(Array.isArray(b.recipients) && b.recipients.length > 0 && b.recipients.length <= 20, 'Choose one to twenty named finance recipients')
  const recipients = [...new Set<string>(b.recipients.map((email: unknown) => text(email, 'Recipient', 254).toLowerCase()))]
  for (const email of recipients) requireThat(await c.db.prepare("SELECT id FROM oa_operators WHERE email=? AND status='active' AND role IN ('owner','admin')").bind(email).first(), 'Mission delivery currently requires active native finance recipients', 403)
+ requireThat(!scenarioAccess(c.s, c.x, run.scenario).sandbox && (!run.compare || !scenarioAccess(c.s, c.x, run.compare).sandbox), 'Private sandbox analysis cannot be delivered as a mission', 403)
  const zone = workspace(c.s).timeZone ?? ['America', 'New_York'].join('/')
- const mission = { id: uid(), name: text(b.name, 'Mission name', 120), owner: c.x.actor.email, ownerId: c.x.actor.id, scenario: run.scenario, month: run.month, question: run.question, validatedRun: run.id, recipients, zone, schedule: 'Monday at 08:00', enabled: true, approvedAt: c.now, approvedBy: c.x.actor.email }
+ const mission = { id: uid(), name: text(b.name, 'Mission name', 120), owner: c.x.actor.email, ownerId: c.x.actor.id, scenario: run.scenario, month: run.month, question: run.question, compare: run.compare ?? '', validatedRun: run.id, recipients, zone, schedule: 'Monday at 08:00', enabled: true, approvedAt: c.now, approvedBy: c.x.actor.email }
  put(c.s, 'agent-mission', mission.id, mission)
  c.activity.push({ action: 'mission-approved', record: mission.id, detail: { agent: 'Recurring missions', owner: mission.owner, recipients, schedule: mission.schedule, zone, validatedRun: run.id } })
  return mission
@@ -61,6 +63,7 @@ export async function runMissions(env: Bindings) {
   const open = async () => { const { state, revision } = await load(env.DB); return { s: state, before: new Map(state), revision, x: access(state, actor), db: env.DB, activity: [], snapshots: [], now: await currentTime(env) } as Context & { before: State; revision: number } }
   const commit = async (c: Awaited<ReturnType<typeof open>>) => save(env.DB, actor, c.before, c.s, c.revision, c.activity)
   let c = await open()
+  try { requireFinance(c.x); requireCapabilityGrant(c.x, 'approvals', c.s); scenarioAccess(c.s, c.x, m.scenario); if (m.compare) scenarioAccess(c.s, c.x, m.compare) } catch { continue }
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: m.zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(c.now))
   if (new Date(`${date}T00:00:00Z`).getUTCDay() !== 1 || c.now < zonedInstant(date, 8, m.zone)) continue
   const id = `${m.id}:${date}`, mission = find(c.s, 'agent-mission', m.id)
@@ -91,6 +94,7 @@ export async function runMissions(env: Bindings) {
   }
   for (const recipient of m.recipients) {
    c = await open(); const run = get(c.s, 'mission-run', id)
+   try { requireFinance(c.x); requireCapabilityGrant(c.x, 'approvals', c.s) } catch { continue }
    if (!agentEnabled(c.s, 'missions') || governance(c.s).revision !== run.governanceRevision || !find(c.s, 'agent-mission', m.id)?.enabled || run.deliveries[recipient]) continue
    if (!await c.db.prepare("SELECT id FROM oa_operators WHERE email=? AND status='active' AND role IN ('owner','admin')").bind(recipient).first()) continue
    // Durable intent precedes mail. Unknown outcomes are never retried.

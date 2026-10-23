@@ -20,10 +20,10 @@ import { formatHundredths, formatMoney } from '../units'
 import { constraints } from './agent-evaluate'
 import { workspace } from '../model'
 
-const WATCH = new Set(['actuals-accepted', 'actuals-undone', 'close-month', 'proposal-promoted', 'cash-constraints', 'constraint-check', 'plaid-cash-refreshed'])
+const WATCH = new Set(['actuals-accepted', 'actuals-undone', 'close-month', 'proposal-promoted', 'cash-constraints', 'constraint-check', 'plaid-cash-refreshed', 'department-limit-save', 'department-limit-delete', 'debt-added', 'debt-changed', 'input-deleted'])
 export const needsConstraintCheck = (c: Context) => c.activity.some(e => WATCH.has(e.action))
 export const CONSTRAINTS = { 'cash-floor': 'Cash floor', runway: 'Runway minimum' } as const
-const KINDS = ['revenue', 'position', 'expense', 'schedule'] as const
+const KINDS = ['revenue', 'position', 'expense', 'schedule', 'debt'] as const
 const IGNORED = new Set(['id', 'scenario', 'dimensions', 'revision'])
 
 const scalar = (v: unknown) => v === null || ['string', 'number', 'boolean'].includes(typeof v)
@@ -59,16 +59,35 @@ export async function watchConstraints(c: Context) {
  if (!agentEnabled(c.s, 'constraints')) return []
  const forecast = all(c.s, 'scenario').find(s => s.kind === 'forecast' && s.status === 'working' && !s.alternativeBudget)
  const agreement = workspace(c.s).cashAgreement
- if (!forecast || !agreement) return []
+ if (!forecast) return []
  let calc
  try { calc = await workingCalculation(c, forecast.id) } catch (error) { if (error instanceof CalculationPending || error instanceof Fault) return []; throw error }
  const k = constraints(c, calc, forecast)
  const money = (n: number) => formatMoney(n, calc.currency)
  const found: Record<string, Data | null> = { 'cash-floor': k.floorBreach, runway: k.runwayBreach }
- const reference = (k.floorBreach || k.runwayBreach) ? await referenceInputs(c, forecast) : null
- const current = { revenue: scenarioInputs(c.s, forecast.id, 'revenue'), position: scenarioInputs(c.s, forecast.id, 'position'), expense: scenarioInputs(c.s, forecast.id, 'expense'), schedule: scenarioInputs(c.s, forecast.id, 'schedule') }
+ const labels: Record<string, string> = { ...CONSTRAINTS }, owners: Record<string, string> = {}
+ for (const row of calc.financing?.covenants ?? []) {
+  if (forecast.actualsThrough && row.month <= forecast.actualsThrough) continue
+  const type = `covenant:${row.sourceId}:${row.kind}`
+  labels[type] = `Covenant ${row.kind}`
+  if (!(type in found)) found[type] = null
+  if (!found[type] && row.status === 'breach') found[type] = { ...row, gap: row.kind === 'maximum-leverage' ? (row.denominator > 0 ? Number(BigInt(row.numerator) - BigInt(row.threshold) * BigInt(row.denominator) / 10000n) : row.numerator) : row.threshold - row.numerator }
+ }
+ for (const rule of all(c.s, 'department-limit')) {
+  const type = `department:${rule.id}`
+  labels[type] = `${getDepartment(rule.department)} budget limit`; owners[type] = rule.owner
+  const cells = calc.cells.filter(cell => cell.department === rule.department && cell.month === rule.month && getLine(cell.line).type !== 'revenue')
+  const amount = cells.reduce((sum, cell) => sum + cell.amount, 0)
+  found[type] = (!forecast.actualsThrough || rule.month > forecast.actualsThrough) && amount > rule.limitCents ? { month: rule.month, amountCents: amount, limitCents: rule.limitCents, gapCents: amount - rule.limitCents, department: rule.department, rows: cells.flatMap(cell => cell.sources.map(row => ({ kind: row.kind, origin: row.id, amount: row.amount }))) } : null
+ }
+ // Removed constraints clear their existing items on the next check.
+ for (const item of all(c.s, 'decision-item').filter(item => item.forecast === forecast.id)) if (!(item.constraint in found)) found[item.constraint] = null
+ function getDepartment(id: string) { return find(c.s, 'department', id)?.name ?? 'Department' }
+ function getLine(id: string) { return find(c.s, 'line', id) ?? {} }
+ const reference = Object.values(found).some(Boolean) ? await referenceInputs(c, forecast) : null
+ const current = { revenue: scenarioInputs(c.s, forecast.id, 'revenue'), position: scenarioInputs(c.s, forecast.id, 'position'), expense: scenarioInputs(c.s, forecast.id, 'expense'), schedule: scenarioInputs(c.s, forecast.id, 'schedule'), debt: scenarioInputs(c.s, forecast.id, 'debt') }
  const opened: string[] = []
- for (const type of Object.keys(CONSTRAINTS) as (keyof typeof CONSTRAINTS)[]) {
+ for (const type of Object.keys(found)) {
   const id = `${forecast.id}|${type}`, item = find(c.s, 'decision-item', id), breach = found[type]
   if (!breach) {
    if (item?.status === 'open' || item?.status === 'rejected') {
@@ -77,16 +96,18 @@ export async function watchConstraints(c: Context) {
    }
    continue
   }
-  const summary = type === 'cash-floor'
+  const summary = type.startsWith('covenant:') ? `${labels[type]} breaks in ${monthLabel(breach.month)}; gap ${breach.gap} cents of ${breach.kind === 'maximum-leverage' ? 'debt above the permitted amount' : 'required minimum'}. ${breach.trace}`
+   : type.startsWith('department:') ? `${labels[type]} breaks in ${monthLabel(breach.month)}; spend ${money(breach.amountCents)}, limit ${money(breach.limitCents)}, ${money(breach.gapCents)} over.`
+   : type === 'cash-floor'
    ? `Forecast cash falls below the ${money(breach.floorCents)} floor in ${monthLabel(breach.month)}; lowest ${money(breach.lowestCents)} in ${monthLabel(breach.lowestMonth)}, ${money(breach.gapCents)} short.`
    : `Runway falls to ${breach.runwayHundredths === null ? 'zero (cash exhausted)' : `${formatHundredths(breach.runwayHundredths)} months`} in ${monthLabel(breach.month)}, below the ${formatHundredths(breach.minimumHundredths)}-month minimum.`
   const causes = reference ? { reference: reference.label, changes: sourceChanges(c, reference.inputs, current) } : { reference: null, changes: [] }
   const open = !item || item.status === 'cleared'
   if (item?.status === 'rejected') { put(c.s, 'decision-item', id, { ...item, breach, summary, causes, forecastRevision: forecast.revision, updatedAt: c.now }); continue }
-  put(c.s, 'decision-item', id, { ...(open ? { responses: [] } : item), id, forecast: forecast.id, constraint: type, status: 'open', month: breach.month, breach, summary, causes, forecastRevision: forecast.revision, owner: agreement.by, openedAt: open ? c.now : item!.openedAt, updatedAt: c.now })
+  put(c.s, 'decision-item', id, { ...(open ? { responses: [] } : item), id, forecast: forecast.id, constraint: type, label: labels[type], status: 'open', month: breach.month, breach, summary, causes, forecastRevision: forecast.revision, owner: owners[type] ?? agreement?.by ?? forecast.createdBy, openedAt: open ? c.now : item!.openedAt, updatedAt: c.now })
   if (open) {
    c.activity.push({ action: 'decision-item-opened', record: id, detail: { constraint: type, month: breach.month, forecastRevision: forecast.revision } })
-   notify(c, 'decision-item', [agreement.by], { title: `${CONSTRAINTS[type]}: ${summary}`, tab: 'review', record: id, department: '' }, { includeActor: true })
+   notify(c, 'decision-item', [owners[type] ?? agreement?.by ?? forecast.createdBy], { title: `${labels[type]}: ${summary}`, tab: 'review', record: id, department: '' }, { includeActor: true })
    opened.push(id)
   }
  }

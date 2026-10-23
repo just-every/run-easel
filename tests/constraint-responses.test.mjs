@@ -89,3 +89,41 @@ test('AGENT-001 AGENT-002 a promoted change that breaks the cash floor opens one
  const rejected = await h.command('constraint-reject', { item: second.id, reason: 'The board will raise money instead.' })
  assert.equal(rejected.status, 'rejected')
 })
+
+
+test('Native covenant and department breaches cite exact gaps, notify once and clear without editing the forecast', async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Covenant studio', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const d = await h.command('department', { name: 'Operations' })
+ const line = await h.command('line', { name: 'Operating costs', type: 'operating-expense' })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('scenario-cash', { scenario: budget.id, basis: 'estimate', opening: '1000', collectionLag: 0, paymentLag: 0 })
+ const spend = await h.command('expense', { scenario: budget.id, name: 'Unplanned vendor', department: d.id, line: line.id, kind: 'recurring', start: '2026-01', amount: '100' })
+ const { forecast } = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })
+ const debt = { scenario: forecast.id, name: 'Credit facility', debtKind: 'credit', department: d.id, line: line.id, start: '2026-01', maturity: '2026-12', limit: '500', draws: { '2026-01': '100' }, annualRate: '0', covenants: { minimumCash: '1100', minimumLiquidity: '1500', maximumLeverage: '3' } }
+ const source = await h.command('debt', debt)
+ await h.command('department-limit-save', { department: d.id, month: '2026-01', limit: '99' })
+ const original = await h.get(`/api/easel/scenario/${forecast.id}`)
+ let items = (await h.get('/api/easel/constraints')).items
+ assert.equal(items.length, 4)
+ const limit = items.find(i => i.constraint.startsWith('department:'))
+ assert.equal(limit.breach.gapCents, 100); assert.equal(limit.owner, 'owner@example.test')
+ assert.ok(limit.breach.rows.some(row => row.origin === spend.originId))
+ for (const kind of ['minimum-cash', 'minimum-liquidity', 'maximum-leverage']) {
+  const item = items.find(i => i.constraint === `covenant:${source.originId}:${kind}`)
+  assert.equal(item.month, '2026-01'); assert.equal(item.breach.gap, 10000)
+  assert.ok(item.causes.changes.some(row => row.origin === source.originId))
+ }
+ const messages = h.messages.length
+ await h.command('constraint-check', {})
+ assert.equal(h.messages.length, messages)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${forecast.id}`), original)
+ const viewer = await h.person('viewer@example.test', 'viewer')
+ await h.command('department-limit-save', { department: d.id, month: '2026-01', limit: '200' }, viewer, 403)
+ await h.command('department-limit-save', { department: d.id, month: '2026-01', limit: '100' })
+ assert.equal((await h.get('/api/easel/constraints')).items.find(i => i.id === limit.id).status, 'cleared')
+ await h.command('debt', { ...debt, id: source.id, covenants: {} })
+ await h.command('constraint-check', {})
+ assert.ok((await h.get('/api/easel/constraints')).items.every(i => i.status === 'cleared'))
+ await h.command('department-limit-delete', { department: d.id, month: '2026-01' })
+})

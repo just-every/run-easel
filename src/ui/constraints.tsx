@@ -14,21 +14,30 @@ export function ConstraintWatch({ state, forecast, refresh }: { state: D; foreca
  if (!view && !error) return null
  return <section className="card" aria-label="Constraint watch">
   <h2>Constraint watch</h2>
-  <p className="muted">After every refresh, close and promoted change the agent checks the agreed cash floor and runway minimum. A breach opens one decision item naming the crossing month, the gap and the input changes behind it. Responses use only the levers you mark adjustable here, are recalculated before they are offered and arrive as draft proposals; nothing changes until you submit and promote one.</p>
+  <p className="muted">After every refresh, close and promoted change the agent checks the agreed cash floor, runway minimum, financing covenants and department spending limits. A breach opens one decision item naming the crossing month, the gap and the input changes behind it. Responses use only the levers you mark adjustable here, are recalculated before they are offered and arrive as draft proposals; nothing changes until you submit and promote one.</p>
   {error && <p role="alert" className="error">{error}</p>}
   {view && <>
    {view.items.length === 0 && <p>No decision items: the forecast keeps every agreed constraint.</p>}
    {view.items.map((item: D) => <div key={item.id} className="pack" aria-label={`Decision item ${item.constraint}`}>
-    <h3>{item.constraint === 'cash-floor' ? 'Cash floor' : 'Runway minimum'} · {item.status}</h3>
+    <h3>{item.label ?? (item.constraint === 'cash-floor' ? 'Cash floor' : 'Runway minimum')} · {item.status}</h3>
     <p>{item.summary}</p>
     {item.causes?.changes?.length > 0 && <><p className="muted">Input changes since {item.causes.reference}:</p><ul className="plain">{item.causes.changes.slice(0, 8).map((c: D) => <li key={`${c.kind}:${c.origin}`}>{c.name} · {c.change}{c.fields.slice(0, 3).map((f: D) => ` · ${f.field} ${f.from ?? '—'} → ${f.to ?? '—'}`).join('')}</li>)}</ul></>}
-    {item.status === 'open' && !item.responses?.length && <>
+    {item.status === 'open' && ['cash-floor', 'runway'].includes(item.constraint) && !item.responses?.length && <>
      <Action label="Find responses" run={async () => { await command('constraint-respond', { item: item.id, revision: forecast.revision }); await load(); await refresh() }} />
     </>}
     {item.responses?.length > 0 && <><p className="muted">Draft proposals bound to forecast revision {item.forecastRevision} (promote one under Scenarios, or reject them all):</p>
      <ul className="plain">{item.responses.map((r: D) => <li key={r.proposal}>{r.changes.join('; ')} — lowest cash {money(r.newLowestCash.closingCents, currency)} in {monthLabel(r.newLowestCash.month)}; revenue forgone {money(r.cost.revenueForgoneCents, currency)}</li>)}</ul></>}
     {item.status === 'open' && item.responses?.length > 0 && <Form submit="Reject every response" onSubmit={async (v, form) => { await command('constraint-reject', { item: item.id, reason: v.reason }); form.reset(); await load(); await refresh() }}><Field label="Reason for rejecting every response" name="reason" /></Form>}
    </div>)}
+   <details><summary>Department spending limits</summary>
+    <p>Monthly operating expense and cost of sales totals, including payroll. The finance person saving a limit owns its decision item.</p>
+    {view.departmentLimits.map((rule: D) => <p key={rule.id}>{state.departments.find((d: D) => d.id === rule.department)?.name} · {monthLabel(rule.month)} · {money(rule.limitCents, currency)} <Action label="Remove limit" run={async () => { await command('department-limit-delete', rule); await load() }} /></p>)}
+    <Form submit="Save department limit" onSubmit={async v => { await command('department-limit-save', v); await load() }}>
+     <Field label="Limit department" name="department" options={state.departments.map((d: D) => ({ value: d.id, label: d.name }))} />
+     <Field label="Limit month" name="month" type="month" defaultValue={state.workspace.planStart} />
+     <Field label="Spending limit" name="limit" />
+    </Form>
+   </details>
    <h3>Adjustable levers</h3>
    {view.levers.length === 0 && <p className="muted">None marked: the agent changes nothing it was not allowed to.</p>}
    <ul className="plain">{view.levers.map((l: D) => <li key={l.id}>{l.label} · up to {l.max} {l.kind === 'hire-start' ? 'months' : l.kind === 'spend-cut' ? 'percent' : 'days'} <Action kind="quiet" label={`Remove ${l.label}`} run={async () => { await command('lever-delete', { id: l.id }); await load() }} /></li>)}</ul>

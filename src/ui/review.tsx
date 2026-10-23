@@ -42,7 +42,7 @@ export function Review({ state, refresh }: Shared) {
  useEffect(() => { if (me.role === 'finance') api('connections/pack-stores').then(setStores, () => setStores([])) }, [me.role, state])
  return <>
   {me.role === 'finance' && <AgentGovernance />}
-  <Analyst state={state} />
+  <Analyst state={state} refresh={refresh} />
   <section className="card">
    <h2>Monthly review</h2>
    {v && <p><a href={`/api/easel/variance/${month}/document.xlsx`} download>Download variances (Excel)</a></p>}

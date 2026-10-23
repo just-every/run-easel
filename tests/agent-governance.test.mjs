@@ -77,7 +77,8 @@ test('Analyst sends only viewer-visible department totals, validates cited cells
 
 test('Approved Monday missions use named finance authority, deliver once to two current people and replace stale connector analysis with a notice under a fake clock', async t => {
  let now = '2026-01-04T15:00:00.000Z'
- const { h, calls, post, ask } = await setup(t, { now: () => now })
+ let uncertain = false
+ const { h, calls, post, ask } = await setup(t, { now: () => now, mailResponse: message => { if (uncertain && message.subject.startsWith('Easel mission:')) throw new Error('Synthetic unknown mail outcome'); return Response.json({ id: 'synthetic-easel-mail' }) } })
  await h.person('finance@example.test', 'finance')
  const viewer = await h.person('viewer@example.test', 'viewer')
  const answer = await ask(h.owner, 'What is the cash position for this weekly cash brief?')
@@ -101,6 +102,61 @@ test('Approved Monday missions use named finance authority, deliver once to two 
  assert.deepEqual(view.runs.map(r => r.status), ['completed', 'stale'])
  assert.ok(view.runs.every(r => Object.values(r.deliveries).every(status => status === 'accepted')))
  await h.get('/api/easel/missions', viewer, 403)
+ now = '2026-01-19T13:00:00.000Z'
+ await post('./connections/plaid/refresh')
+ uncertain = true; await run()
+ assert.equal(mail().length, 6)
+ await run(); assert.equal(mail().length, 6, 'Unknown mail outcomes never retry')
+ uncertain = false
+ now = '2026-03-09T11:59:00.000Z'; await post('./connections/plaid/refresh'); await run(); assert.equal(mail().length, 6)
+ now = '2026-03-09T12:00:00.000Z'; await run(); assert.equal(mail().length, 8, 'Monday 08:00 follows company daylight saving time')
  await post('./missions/stop', { id: mission.id })
- now = '2026-01-19T13:00:00.000Z'; await run(); assert.equal(mail().length, 4)
+ now = '2026-03-16T12:00:00.000Z'; await run(); assert.equal(mail().length, 8)
+})
+
+
+test('Cited reference differences and private expense what-ifs retain live authority and leave the official plan unchanged', async t => {
+ const { h, post, input, department } = await setup(t)
+ const line = await h.command('line', { name: 'Software', type: 'operating-expense' })
+ await h.command('scenario-cash', { scenario: input.scenario, basis: 'estimate', opening: '1000', collectionLag: 0, paymentLag: 0 })
+ const expense = await h.command('expense', { scenario: input.scenario, name: 'Software subscription', kind: 'recurring', department: department.id, line: line.id, start: '2026-01', amount: '200' })
+ const revenueLine = await h.command('line', { name: 'Customer revenue', type: 'revenue' })
+ const customer = await h.command('revenue', { scenario: input.scenario, name: 'Native customer', kind: 'contract', start: '2026-01', department: department.id, line: revenueLine.id, startDate: '2026-01-01', contractValue: '1200', termMonths: 12, billingCadence: 'monthly', dsoDays: 0 })
+ const reference = await h.command('branch', { from: input.scenario, name: 'Reference plan' })
+ const source = await h.get(`/api/easel/scenario/${input.scenario}`)
+ const ask = async cookie => {
+  const b = { ...input, compare: reference.id }, preview = await post('./analyst/preview', b, cookie)
+  return post('./analyst/generate', { ...b, fingerprint: preview.fingerprint, consent: true }, cookie)
+ }
+ const viewer = await h.person('viewer@example.test', 'viewer')
+ const viewed = await ask(viewer)
+ assert.ok(viewed.explanation[0].text.includes('difference 0 cents'))
+ assert.equal(viewed.explanation[0].citationIds.length, 2)
+ await post('./analyst/what-if', { run: viewed.id, origin: expense.originId, name: 'Viewer attempt', amount: '100' }, viewer, 403)
+ const answer = await ask(h.owner)
+ const result = await post('./analyst/what-if', { run: answer.id, origin: expense.originId, name: 'Private lower spend', amount: '100' })
+ const privateView = await h.get(`/api/easel/scenario/${result.scenario}`)
+ await post('./analyst/preview', { ...input, compare: result.scenario }, h.owner, 403)
+ assert.deepEqual(privateView.scenario.sandbox.grants, {})
+ assert.equal(privateView.inputs.expense[0].amountCents, 10000)
+ assert.equal(privateView.calculation.cash[0].closing - source.calculation.cash[0].closing, 10000)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${input.scenario}`), source)
+ const lostInput = { ...input, question: 'What if we lose our native customer?' }, lostPreview = await post('./analyst/preview', lostInput)
+ const lostAnswer = await post('./analyst/generate', { ...lostInput, fingerprint: lostPreview.fingerprint, consent: true })
+ const lost = await post('./analyst/what-if', { run: lostAnswer.id, kind: 'remove-revenue', origin: customer.originId, name: 'Lose customer' })
+ const lostView = await h.get(`/api/easel/scenario/${lost.scenario}`)
+ assert.equal(lostView.inputs.revenue.length, 0)
+ assert.ok(lost.cash[1].closing < source.calculation.cash[1].closing)
+ assert.deepEqual(await h.get(`/api/easel/scenario/${input.scenario}`), source)
+ const other = await h.person('other@example.test', 'finance')
+ await h.get(`/api/easel/scenario/${result.scenario}`, other, 404)
+ await post('./analyst/what-if', { run: answer.id, origin: expense.originId, name: 'Repeat', amount: '100' }, h.owner, 409)
+ const privateInput = { scenario: result.scenario, month: input.month, question: 'Private spend comparison' }
+ const p = await post('./analyst/preview', privateInput)
+ const privateAnswer = await post('./analyst/generate', { ...privateInput, fingerprint: p.fingerprint, consent: true })
+ await post('./missions/approve', { run: privateAnswer.id, name: 'Private mission refused', recipients: ['owner@example.test'], consent: true }, h.owner, 403)
+ await h.command('expense', { scenario: input.scenario, id: expense.id, name: expense.name, kind: expense.kind, department: department.id, line: line.id, start: expense.start, amount: '250' })
+ const stale = await post('./analyst/preview', input)
+ await h.command('expense', { scenario: input.scenario, id: expense.id, name: expense.name, kind: expense.kind, department: department.id, line: line.id, start: expense.start, amount: '260' })
+ await post('./analyst/generate', { ...input, fingerprint: stale.fingerprint, consent: true }, h.owner, 409)
 })

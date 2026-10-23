@@ -1,5 +1,5 @@
 import { missionList, missionCommand } from './agents/missions'
-import { analystPreview, beginAnalyst, authorizeAnalyst, finishAnalyst } from './agents/analyst'
+import { analystPreview, beginAnalyst, authorizeAnalyst, finishAnalyst, analystWhatIf } from './agents/analyst'
 import { governanceStatus, governanceSettings, requireAgent } from './agents/governance'
 import { gustoStatus, gustoConnection } from './gusto-connection'
 import { gustoImport } from './gusto-import'
@@ -110,7 +110,7 @@ import { actor, load, readFence, save, snapshot } from './store'
 import { openExport } from './open-export'
 import { tokenAdmin } from './token-admin'
 import { tokenRate, tokenUse } from './token-auth'
-import { choice, Fault, get, requireThat, type Actor, type Data } from './types'
+import { all, choice, Fault, get, requireThat, type Actor, type Data } from './types'
 import { actualsView, compareView, scenarioView, snapshotView, stateView, paySafePack } from './views'
 import { workbookCommand } from './workbook'
 import { moveImport } from './move-import'
@@ -211,6 +211,11 @@ api.post('/api/easel/analyst/generate', async c => {
  const current = await open(c), result = await finishAnalyst(current, intent.id, outcome)
  await commit(current)
  return c.json(publicLedger(await erasedView(current.db, result)))
+})
+api.post('/api/easel/analyst/what-if', async c => {
+ const ctx = await open(c), result = await analystWhatIf(ctx, await body(c))
+ await commit(ctx)
+ return c.json(result)
 })
 api.get('/api/easel/missions', c => read(c, missionList))
 api.post('/api/easel/missions/:op', async c => {
@@ -546,7 +551,7 @@ api.get('/api/easel/dataset/:id', async c => {
  if (format === 'parquet') return new Response(datasetParquet(d) as any, { headers: { ...headers, 'content-type': 'application/vnd.apache.parquet' } })
  return c.json(datasetJson(d))
 })
-api.get('/api/easel/constraints', c => read(c, async ctx => { requireFinance(ctx.x); return { items: decisionItems(ctx), levers: levers(ctx) } }))
+api.get('/api/easel/constraints', c => read(c, async ctx => { requireFinance(ctx.x); return { items: decisionItems(ctx), levers: levers(ctx), departmentLimits: all(ctx.s, 'department-limit') } }))
 api.get('/api/easel/bi-drops', c => read(c, async ctx => biDropList(ctx)))
 api.get('/api/easel/warehouse', c => read(c, warehouseStatus))
 api.post('/api/easel/warehouse/:warehouse/:op', async c => {
