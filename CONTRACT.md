@@ -1157,7 +1157,7 @@ How the owner-approved scope for Easel (16 October 2026) maps to clauses.
 
 ## Status
 
-Judged from the code and named public-door journeys recorded below (23 October 2026).
+Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab13e` (23 October 2026).
 
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
