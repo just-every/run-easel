@@ -612,3 +612,21 @@ The Scenarios modeler reuses the chosen model, declared rates and sealed OpenAI 
 `POST /modeler/preview {from,request}` returns the exact planning request, model snapshot and safe output schema for human review, including any permitted pay assumptions. `/modeler/generate` takes the same body plus `fingerprint,consent:true`. A fenced intent reserves allowance before one fixed-endpoint, no-tool call. The server accepts only planned salary positions, volume revenue drivers and native formulas bound to existing permitted metadata. It validates every operation and recalculates a separate draft in an isolated context; exact expected-value checks must cover every moved line and formula before anything is saved. Unsupported operations, bad checks, stale sources, stopped settings and changed authority create no partial proposal. Unknown outcomes are never retried automatically.
 
 `GET /modeler/proposal/:id` returns the agent label, reused structure, added formula definitions, input and cell differences, and checked expected values, with changed-source/proposal proof labeled stale. The official scenario stays unchanged. Ordinary exact-revision submission and human promotion still apply; modeler promotion independently requires model-structure permission. The adopted generation/consent/custody/allowance defaults await ct approval, and AGENT-011 carries global governance.
+
+## Linked Office reports
+
+`GET /api/office/manifest/PowerPoint` and `/Word` download this installation's sideload manifests. They contain the same-origin task pane URL, never credentials. See [Office installation](docs/office-reporting.md).
+
+`GET /api/easel/dashboards/:id/office?period=&kind=table|chart|number&metric=budget|actual|comparison|variance|priorYearActual|yoy&row=&source=&through=` reads aggregate saved-report content with current audience, source availability and Pay filtering. Source and through selectors pin the inserted link to its chosen report version/horizon; changed selectors, unavailable periods or inaccessible rows refuse. `row=unassigned` selects a permitted unassigned-department row. The corresponding `/office.xlsx` door returns the existing aggregate report workbook with live formulas after the same selector checks.
+
+The Office.js adapter stores only selectors and document object IDs. Explicit insertion exports values into the operator's document; refresh fetches every source under the current person's authority before document mutation. Easel cannot recall previously exported document bytes.
+
+## Enterprise identity
+
+Enterprise identity is off unless the owner configures it. See [identity configuration](docs/enterprise-identity.md) for the SAML/OIDC relying-party settings and the separately authorized `/scim/v2` provisioning API. SCIM does not use personal API credentials or native session cookies. Identity configuration, provider keys, replay transactions and machine associations are excluded from portable exports; restored installations need explicit configuration.
+
+## Connected Gusto observations
+
+`GET /api/easel/connections/gusto` and `POST /api/easel/connections/gusto/connect|disconnect` require a native finance session with company-wide Pay detail and connections authority. Connection accepts an explicitly consented read-only company token; this manual observation door does not claim the future PEOPLE-001 OAuth flow.
+
+`POST /api/easel/import/gusto/preview|commit|status|resume|undo` uses the existing payroll journal. Preview pulls complete employee and processed-payroll source pages, shows explicit employee mappings and changes no plan. Commit refetches and requires the reviewed fingerprint. Exact pay dates and dated complete roster observations feed `/api/easel/headcount/:scenario`. Accepted prior payroll IDs do not duplicate when windows overlap; source changes refuse rather than overwrite history. See [source fields and costs](docs/gusto-roster.md).

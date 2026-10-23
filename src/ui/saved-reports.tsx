@@ -1,3 +1,4 @@
+import { OfficeReports } from './office-reports'
 import { BiFeeds } from './bi-feeds'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
@@ -83,6 +84,7 @@ export function SavedReports({ state, refresh }: Shared) {
   {!reports.length && <p>No saved reports are available.</p>}
   {creator && definition && <div className="row"><button className="quiet" type="button" onClick={() => setEdit('edit')}>Edit report</button><Action kind="danger" label="Delete report" confirm={`Delete ${definition.name}?`} run={async () => { await command('report-delete', { id: definition.id, revision: definition.revision }); await saved('') }} /></div>}
  </section>
+ <OfficeReports report={definition} />
  {edit && <ReportEditor key={`${edit}:${definition?.id}:${definition?.revision}`} state={state} definition={edit === 'new' ? null : definition ?? null} saved={saved} cancel={() => setEdit(null)} />}
  {definition && <section className="card"><h2>{definition.name}</h2><SavedReportPanel key={`${definition.id}:${definition.revision}`} id={definition.id} /></section>}
  {state.me.role === 'finance' && <ReportSchedules state={state} reports={reports} />}

@@ -32,7 +32,7 @@ export async function payrollView(c: Context, scenario: string) {
  const imports = all(c.s, 'payroll-import').filter(i => i.status === 'imported' && i.scenario === scenario)
  const rosters = all(c.s, 'roster-actual').filter(r => imports.some(i => i.destination === r.batch))
  const latest = new Map<string, string>()
- for (const r of rosters) if (!latest.has(r.provider) || r.asOf > latest.get(r.provider)!) latest.set(r.provider, r.asOf)
+ for (const r of imports.filter(i => i.kind === 'roster')) if (!latest.has(r.provider) || r.asOf > latest.get(r.provider)!) latest.set(r.provider, r.asOf)
  const current = rosters.filter(r => r.asOf === latest.get(r.provider))
  const buckets = rosterBuckets(c.s, scenario, current)
  const counts = Object.fromEntries(Object.entries(buckets).map(([k, v]) => [k, v.length]))

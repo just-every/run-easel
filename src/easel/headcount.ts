@@ -56,6 +56,6 @@ export async function headcountView(c: Context, scenario: string) {
    }
   })
  })
- return {scenario,currency:m.workspace.currency,source:'Reviewed roster and payroll-register files; connected provider roster pull unavailable',months,history,
+ return {scenario,currency:m.workspace.currency,source:imports.some(i => i.source === 'gusto') ? 'Reviewed files and accepted connected Gusto roster and payroll observations' : 'Reviewed roster and payroll-register files',months,history,
   positions:positions.filter(p => seesPayDetail(c.x,p.department)).map(p => ({id:p.id,originId:p.originId,title:p.title,department:p.department,plannedStartDate:p.plannedStartDate || null,backfillOrigin:p.backfillOrigin || null,attritionBps:p.attritionBps ?? 0}))}
 }

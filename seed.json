@@ -313,6 +313,24 @@
       "clauses": [
         "MODEL-007"
       ]
+    },
+    {
+      "id": "office-reporting",
+      "clauses": [
+        "REPORT-004"
+      ]
+    },
+    {
+      "id": "enterprise-identity",
+      "clauses": [
+        "ACCESS-002"
+      ]
+    },
+    {
+      "id": "gusto-roster-observations",
+      "clauses": [
+        "PEOPLE-001"
+      ]
     }
   ],
   "nonGoals": [

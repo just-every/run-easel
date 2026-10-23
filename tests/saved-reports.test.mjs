@@ -213,3 +213,11 @@ test('Saved report dimension and account hierarchies preserve source cuts, froze
  const independent = await h.command('report-save', { ...base, name: 'Independent events', report: { row: 'line', period: 'month', through: '2026-01', lines: [events.id] } })
  assert.equal((await h.get(`/api/easel/dashboards/${independent.id}/report`)).rows.find(r => r.period === '2026-01').actual, 7000)
 })
+
+// REPORT-004's Office.js host is an explicit acceptance boundary; application
+// values and authority still travel through the real Worker and D1 routes.
+test('Linked Office reports insert a native table and number into a pptx and refresh in place under live report authority', async t => {
+ const h = await harness(); t.after(() => h.close())
+ const { officeReportFlow } = await import('./office-report-flow.mjs')
+ await officeReportFlow(h)
+})

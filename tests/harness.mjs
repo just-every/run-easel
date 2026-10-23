@@ -2,6 +2,7 @@
 // applied, real owner claim and real email-link sign-in through the
 // provider boundary. Only the mail provider is replaced in this test runtime.
 import assert from 'node:assert/strict'
+import { builtinModules } from 'node:module'
 import { createServer } from 'node:net'
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -27,7 +28,13 @@ export async function harness(options = {}) {
    resolveDir: join(process.cwd(), 'src'), loader: 'js',
   }))
  } }
- const bundle = await build({ plugins: [mailProvider], entryPoints: ['tests/easel-worker.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral', conditions: ['workerd', 'worker', 'browser'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' } })
+ // Match Workers' nodejs_compat resolution for CommonJS protocol libraries.
+ const nodeBuiltins = { name: 'workers-node-builtins', setup(build) {
+  const names = new Set(builtinModules.map(n => n.replace(/^node:/, '')))
+  build.onResolve({ filter: /^[a-z][a-z0-9_/-]*$/i }, args => names.has(args.path) ? { path: args.path, namespace: 'worker-builtin' } : undefined)
+  build.onLoad({ filter: /.*/, namespace: 'worker-builtin' }, args => ({ contents: `import value from 'node:${args.path}'; module.exports = value;`, loader: 'js' }))
+ } }
+ const bundle = await build({ plugins: [mailProvider, nodeBuiltins], entryPoints: ['tests/easel-worker.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral', mainFields: ['module', 'main'], conditions: ['workerd', 'worker', 'browser'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' } })
  const mf = new Miniflare({
   ...convertV4MiniflareOptions({
    host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],

@@ -1,3 +1,5 @@
+import { gustoStatus, gustoConnection } from './gusto-connection'
+import { gustoImport } from './gusto-import'
 import { privateSlackStatus, privateSlackConnection, privateSlackBinding } from './agents/private-slack'
 import { modelerStatus, modelerSettings } from './agents/modeler-settings'
 import { modelerPreview } from './agents/modeler-request'
@@ -28,6 +30,8 @@ import { dimensionCommands } from './dimensions'
 import { dimensionMapping } from './dimension-mapping'
 import { dimensionView, dimensionWorkbook } from './dimension-view'
 import { savedReport, savedReportWorkbook } from './saved-reports'
+import { officeReport, officeWorkbook } from './office-report'
+import { officeManifest } from './office-manifest'
 import { plaidConnection, plaidStatus } from './plaid-connection'
 import { weeklyCashWorkbook } from './weekly-cash-workbook'
 import { weeklyCash, weeklyCashCommand } from './weekly-cash'
@@ -166,6 +170,14 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(publicLedger(await erasedView(ctx.db, result)) as any)
 }
+
+api.get('/api/easel/connections/gusto', c => read(c, ctx => gustoStatus(ctx)))
+api.post('/api/easel/connections/gusto/:op', async c => {
+ const ctx = await open(c)
+ ctx.extra = await gustoConnection(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return read(c, current => gustoStatus(current))
+})
 
 api.get('/api/easel/headcount/:scenario', c => read(c, ctx => headcountView(ctx, c.req.param('scenario'))))
 api.get('/api/easel/forecast-learning/:scenario', c => read(c, ctx => forecastLearning(ctx, c.req.param('scenario'))))
@@ -359,6 +371,17 @@ api.get('/api/easel/department-statements/:id/document.xlsx', async c => {
  const ctx = await open(c), view = await departmentStatementView(ctx, c.req.param('id'))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(departmentStatementWorkbook(view), 'easel-department-statement')
+})
+
+api.get('/api/office/manifest/:host', c => {
+ const host = choice(c.req.param('host'), ['PowerPoint', 'Word'] as const, 'Office host')
+ return c.body(officeManifest(runtimeBindings(c.env).AUTH_ORIGIN, host), 200, { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'no-store', 'content-disposition': `attachment; filename=easel-${host.toLowerCase()}.xml` })
+})
+api.get('/api/easel/dashboards/:id/office', c => read(c, ctx => officeReport(ctx, c.req.param('id'), c.req.query())))
+api.get('/api/easel/dashboards/:id/office.xlsx', async c => {
+ const ctx = await open(c), bytes = await officeWorkbook(ctx, c.req.param('id'), c.req.query())
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return spreadsheet(bytes, 'easel-office-report')
 })
 
 api.get('/api/easel/reports', c => read(c, async ctx => savedReportList(ctx)))
@@ -556,11 +579,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto', 'Unknown move-in kit', 404)
  const ctx = await open(c)
  if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
  const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value
