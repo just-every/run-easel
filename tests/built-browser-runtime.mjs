@@ -6,13 +6,13 @@ import { dirname, join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { freePort } from './browser-runtime.mjs'
 export async function builtBrowserRuntime(options = {}) {
- const directory = await mkdtemp(join(tmpdir(), 'easel-built-browser-')), port = await freePort(), origin = `http://127.0.0.1:${port}`
+ const directory = await mkdtemp(join(tmpdir(), 'easel-built-browser-')), port = await freePort(), origin = `${options.https ? 'https' : 'http'}://127.0.0.1:${port}`
  const configPath = resolve('dist/server/wrangler.json'), workerDir = dirname(configPath), config = JSON.parse(await readFile(configPath, 'utf8')), entry = resolve(workerDir, config.main), scripts = []
  async function enumerate(path) { for (const file of await readdir(path, { withFileTypes: true })) { const full = join(path, file.name); if (file.isDirectory()) await enumerate(full); else if (/\.m?js$/.test(file.name)) scripts.push(full) } }
  await enumerate(workerDir)
  const bootstrap = 'synthetic-easel-bootstrap-token-01234567890123456789'
  const mf = new Miniflare({ ...convertV4MiniflareOptions({
-  host: '127.0.0.1', port, inspectorPort: 0, modules: [entry, ...scripts.filter(p => p !== entry)].map(path => ({ type: 'ESModule', path })), modulesRoot: workerDir,
+  host: '127.0.0.1', port, inspectorPort: 0, ...(options.https ? { https: true } : {}), modules: [entry, ...scripts.filter(p => p !== entry)].map(path => ({ type: 'ESModule', path })), modulesRoot: workerDir,
   compatibilityDate: config.compatibility_date, compatibilityFlags: config.compatibility_flags, d1Databases: { DB: 'easel-built-browser' },
   bindings: { AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'synthetic-easel-session-secret-01234567890123456789', SETUP_TOKEN: bootstrap, MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>', ...(typeof options.bindings === 'function' ? options.bindings(origin) : options.bindings) },
   assets: { directory: resolve(workerDir, config.assets.directory), binding: 'ASSETS', run_worker_first: true, routerConfig: { has_user_worker: true }, assetConfig: { html_handling: config.assets.html_handling, not_found_handling: config.assets.not_found_handling } },

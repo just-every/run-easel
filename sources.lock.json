@@ -3907,7 +3907,7 @@
       "executable": false
     },
     "src/ui/office-reports.tsx": {
-      "sha256": "fb055e60e08a6a4c8d05bb629aa4e8527fa3b72af9fa7b48f753da4a4d82a988",
+      "sha256": "544adea4300c0253736d26daf44f35979c4d95ec2dffd4ec583613edfa475f45",
       "executable": false
     },
     "src/ui/office-runtime.ts": {
@@ -4155,7 +4155,7 @@
       "executable": false
     },
     "tests/built-browser-runtime.mjs": {
-      "sha256": "e8ddbe09178427f054aa94444baf85ab9ef0cd473f2d82c84729af5559efd642",
+      "sha256": "cf266566f0cf9271c4a2461654b470a8478815e104bf03b273bf5110c812eafd",
       "executable": false
     },
     "tests/calculation-background.mjs": {
@@ -4279,11 +4279,15 @@
       "executable": false
     },
     "tests/enterprise-identity-browser.mjs": {
-      "sha256": "fb3df8258aeab2de26eedf43c85a9d9b7967bc6f1b8b6b2981788db751e0e27f",
+      "sha256": "77e1c2372067b60932857e256f7d7a080c97a68d400a63bafe9342bb81a18879",
       "executable": false
     },
     "tests/enterprise-identity.test.mjs": {
-      "sha256": "dabe54156d819688f700846d1ecce299f0f649ba5de0d7e11c476412d19cf02a",
+      "sha256": "e51610711d774e27056e0fa6c3af692bf103dc40ec33e0a807db3facdda81f05",
+      "executable": false
+    },
+    "tests/enterprise-idp.mjs": {
+      "sha256": "474c4e71e7eafb7136e53565ff7c788f3b7338d846888f82e0e4e5ae807eeddc",
       "executable": false
     },
     "tests/entities-browser.mjs": {
@@ -4387,11 +4391,11 @@
       "executable": false
     },
     "tests/gusto-roster-flow.mjs": {
-      "sha256": "40a3fa085c163c2ed7aede701a839bc0ce6f939adb8561faa50a278e81182104",
+      "sha256": "136e6aebe3f922819b503526689708a57a82640435637f7d72633159a6b8b8e2",
       "executable": false
     },
     "tests/gusto-roster.test.mjs": {
-      "sha256": "acfa31e6a9fb26c5393ca7c96fe06305e911e4d41fd0bf9910af2c910e7a2792",
+      "sha256": "bf889e7305ffc77b7b68da5f8fc5f396b073b41d20bc0580dac45f200ad2a1bd",
       "executable": false
     },
     "tests/harness.mjs": {

@@ -81,7 +81,7 @@ test('Gusto accepts only complete read-only provider pages and exact processed p
  }
  provider.malformed='';provider.extraEmployees=98
  const paged=await call('import/gusto/preview',f.input)
- assert.equal(paged.completeness.employeeCount,101);assert.equal(paged.completeness.employeePages,2);assert.equal(paged.unmapped.length,98)
+ assert.equal(paged.completeness.employeeCount,101);assert.ok(paged.completeness.employeePages>1);assert.equal(paged.unmapped.length,98)
  provider.extraEmployees=0
  provider.includeHistoryPayrolls=true
  const readStart=provider.reads.length

@@ -5,7 +5,7 @@ import { officeAdapter, officeHost } from './office-runtime'
 /** Uses the report page's existing controls, tables and saved version selection. */
 export function OfficeReports({ report }: { report?: D }) {
  const [view, setView] = useState<D | null>(null), [period, setPeriod] = useState(''), [kind, setKind] = useState('table'), [metric, setMetric] = useState('budget'), [row, setRow] = useState('')
- const [host, setHost] = useState<D | null>(null), [error, setError] = useState(''), [message, setMessage] = useState(''), [consent, setConsent] = useState(false)
+ const [host, setHost] = useState<D | null>(null), [error, setError] = useState(''), [message, setMessage] = useState(''), [consent, setConsent] = useState(false), [busy, setBusy] = useState(false)
  useEffect(() => {
   if (!new URL(window.location.href).searchParams.has('office')) return
   officeHost().then(setHost, e => setError(e.message))
@@ -34,7 +34,7 @@ export function OfficeReports({ report }: { report?: D }) {
    </Table>
    <p><a href={`/api/easel/dashboards/${encodeURIComponent(report!.id)}/office.xlsx?${params(binding)}`} download>Download linked report (Excel)</a></p>
    {host && <><label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />I choose to place these aggregate report values in this document. Document sharing is managed in Office.</label>
-    <button type="button" disabled={!consent} onClick={async () => { try { setError(''); const payload = await load(binding), adapter = await officeAdapter(); await adapter.insertLinked(host, payload); setMessage('Linked content inserted. Save your document to retain its links.'); setConsent(false) } catch (e) { setError((e as Error).message) } }}>Insert linked content</button>
+    <button type="button" disabled={!consent || busy} onClick={async () => { setBusy(true); setMessage(''); try { setError(''); const payload = await load(binding), adapter = await officeAdapter(); await adapter.insertLinked(host, payload); setMessage('Linked content inserted. Save your document to retain its links.'); setConsent(false) } catch (e) { setError((e as Error).message) } finally { setBusy(false) } }}>{busy ? 'Working…' : 'Insert linked content'}</button>
    </>}
   </>}
   {host && <Action label="Refresh linked content" run={async () => { setMessage(''); const adapter = await officeAdapter(), result = await adapter.refreshLinked(host, load); setMessage(`${result.updated} linked objects refreshed. Save your document to keep these values.`) }} />}

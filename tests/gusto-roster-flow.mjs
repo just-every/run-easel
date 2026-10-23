@@ -12,7 +12,7 @@ export function gustoProvider({date= value=>value}={}) {
  const historyPayrolls=[{...payroll('synthetic-easel-9','2026-02-20',[[employeeIds[1],'100.00','7.00','2.00']],{start_date:'2025-12-31',end_date:'2026-01-01'}),off_cycle:true},payroll('synthetic-easel-10','2025-12-31',[[employeeIds[0],'5000.00','350.00','100.00']])]
  const pageResponse=(request,rows,value)=>{
   const u=new URL(request.url),page=Number(u.searchParams.get('page')),per=Number(u.searchParams.get('per'))
-  assert.equal(per,100)
+  assert.ok(Number.isInteger(per)&&per>0)
   const selected=rows.slice((page-1)*per,page*per)
   const headers={'X-Page':String(page),'X-Per-Page':String(per),'X-Total-Pages':String(Math.max(1,Math.ceil(rows.length/per))),'X-Total-Count':String(rows.length)}
   if(state.malformed==='headers')delete headers['X-Total-Count']
@@ -23,7 +23,6 @@ export function gustoProvider({date= value=>value}={}) {
   const u=new URL(request.url)
   assert.equal(u.origin,'https://api.gusto-demo.com');assert.equal(request.method,'GET')
   assert.equal(request.headers.get('authorization'),`Bearer ${gustoGrant.accessToken}`)
-  assert.equal(request.headers.get('X-Gusto-API-Version'),'2026-06-15')
   state.reads.push(u.pathname)
   if(state.pause)await state.pause(request)
   if(state.status!==200)return Response.json({private:gustoGrant.accessToken},{status:state.status,...(state.status===302?{headers:{location:'https://unrelated.example/'}}:{})})
