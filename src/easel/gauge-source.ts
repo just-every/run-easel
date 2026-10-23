@@ -5,7 +5,7 @@ import type { Context } from './context'
 import { gaugeKey } from './gauge-connection'
 import { periodForKey } from './fiscal-calendar'
 import { workspace } from './model'
-import { Fault, requireThat, type Data } from './types'
+import { Fault, find, requireThat, type Data } from './types'
 
 export class GaugeFailure extends Fault {
  constructor(message: string, public rateLimit: string | null = null) { super(502, message) }
@@ -13,6 +13,7 @@ export class GaugeFailure extends Fault {
 
 export async function gaugeSource(c: Context, env: Bindings, month: string) {
  const { origin, key } = await gaugeKey(c, env)
+ if (c.x.actor.scheduler) requireThat(find(c.s, 'connection', 'gauge')?.refreshSchedule?.month === month, 'The schedule authorizes only its reviewed observation month', 403)
  const { startDate: from, endDate: to } = periodForKey(workspace(c.s), month)
  const url = new URL('/api/gauge/state', origin)
  url.searchParams.set('from', from); url.searchParams.set('to', to)

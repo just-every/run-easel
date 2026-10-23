@@ -32,7 +32,8 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
   else respond()
  })
  provider.listen(0, '127.0.0.1'); await once(provider, 'listening'); t.after(() => new Promise(r => provider.close(r)))
- const h = await harness({ bindings: { GAUGE_ORIGIN: `HTTP://127.0.0.1:${provider.address().port}/` } }); t.after(() => h.close())
+ let now = '2026-03-07T08:05:00.000Z'
+ const h = await harness({ now: () => now, bindings: { GAUGE_ORIGIN: `HTTP://127.0.0.1:${provider.address().port}/` } }); t.after(() => h.close())
  await h.command('workspace', { name: 'Cardinal Advisory', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const dept = await h.command('department', { name: 'Advisory' }), other = await h.command('department', { name: 'Engineering' })
  const line = await h.command('line', { name: 'Services', type: 'revenue' })
@@ -78,6 +79,46 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  holdReads = false
  assert.deepEqual(racing.map(r => r.status).sort(), [200, 409], 'CONNECT-010 same-revision health saves admit one result and refuse the stale writer')
  assert.deepEqual(await view(), planBeforeCheck, 'CONNECT-010 explicit health checks never import or change plan data')
+ // Scheduled observations use the same native connection door and never accept model changes.
+ const scheduleBody = { cadence: 'nightly', month: '2026-01', consent: true }
+ await post('connections/gauge/schedule', { ...scheduleBody, consent: false }, 400)
+ await post('connections/gauge/schedule', scheduleBody, 403, outsider)
+ await post('connections/gauge/schedule', scheduleBody)
+ const run = async at => { now = at; await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' }) }
+ const baseReads = reads, beforeSchedule = await view()
+ await run('2026-03-08T06:59:00.000Z'); assert.equal(reads, baseReads)
+ await run('2026-03-08T07:05:00.000Z')
+ let scheduled = await h.get('/api/easel/connections/gauge')
+ assert.equal(reads, baseReads + 1); assert.equal(scheduled.scheduledAt, '2026-03-08T07:00:00.000Z')
+ assert.equal(scheduled.dispatchedAt, now); assert.equal(scheduled.scheduleZone, 'America/New_York'); assert.equal(scheduled.stale, false)
+ const observation = scheduled.observation, successful = scheduled.lastRefresh
+ await run('2026-03-08T07:20:00.000Z'); assert.equal(reads, baseReads + 1)
+ status = 503
+ const mailBefore = h.messages.length
+ await run('2026-03-09T07:05:00.000Z')
+ scheduled = await h.get('/api/easel/connections/gauge')
+ assert.equal(scheduled.stale, true); assert.match(scheduled.error, /HTTP 503/)
+ assert.equal(scheduled.lastRefresh, successful); assert.deepEqual(scheduled.observation, observation)
+ let notices = (await h.get('/api/easel/notifications')).notifications.filter(n => n.event === 'refresh-failed' && n.createdAt === now)
+ assert.equal(notices.length, 1); assert.equal(notices[0].status, 'accepted')
+ const mail = h.messages.slice(mailBefore).filter(m => m.to.includes('owner@example.test'))
+ assert.equal(mail.length, 1); assert.match(mail[0].text, /Gauge/); assert.match(mail[0].text, /HTTP 503/); assert.match(mail[0].text, /tab=settings&record=gauge/)
+ await run('2026-03-09T07:20:00.000Z'); assert.equal(h.messages.length, mailBefore + 1)
+ assert.deepEqual(await view(), beforeSchedule)
+ status = 200
+ await run('2026-03-10T07:05:00.000Z')
+ assert.equal((await h.get('/api/easel/connections/gauge')).stale, false)
+ now = '2026-03-11T08:10:00.000Z'
+ assert.equal((await h.get('/api/easel/connections/gauge')).stale, true, 'Past the nightly schedule tolerance, an old observation is stale')
+ await post('connections/gauge/schedule', { cadence: 'hourly', month: '2026-01', consent: true })
+ const hourlyReads = reads
+ await run('2026-03-11T09:05:00.000Z'); await run('2026-03-11T09:20:00.000Z'); assert.equal(reads, hourlyReads + 1)
+ await post('connections/gauge/schedule', { cadence: 'weekly', month: '2026-01', consent: true })
+ const weeklyReads = reads
+ await run('2026-03-15T12:00:00.000Z'); assert.equal(reads, weeklyReads)
+ await run('2026-03-16T07:05:00.000Z'); assert.equal(reads, weeklyReads + 1)
+ await post('connections/gauge/schedule', { cadence: 'manual', month: '2026-01' })
+ await run('2026-03-17T12:00:00.000Z'); assert.equal(reads, weeklyReads + 1)
  const before = await view(), a = await args(), preview = await post('gauge/preview', a)
  assert.deepEqual(await view(), before, 'preview writes no model data')
  assert.equal(preview.amountCents, 1500004, '360001 seconds × 15000 cents / 3600 rounded once')

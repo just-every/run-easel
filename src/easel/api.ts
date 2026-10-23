@@ -49,6 +49,7 @@ import { payrollImport } from './payroll-import'
 import { payrollView } from './payroll-reconciliation'
 import { erasure, erasedView } from './erasure'
 import { currentTime } from './time'
+import { gaugeSchedule } from './gauge-schedule'
 import { gaugeCheck } from './gauge-check'
 import { gaugeStatus, gaugeConnection } from './gauge-connection'
 import { gaugeUtilization } from './gauge-utilization'
@@ -319,9 +320,11 @@ api.post('/api/easel/connections/plaid/:op', async c => {
 api.get('/api/easel/connections/gauge', c => read(c, ctx => gaugeStatus(ctx, c.env)))
 api.post('/api/easel/connections/gauge/:op', async c => {
  const ctx = await open(c), op = c.req.param('op'), input = await body(c)
- if (op === 'check') {
-  await gaugeCheck(ctx, c.env, input)
+ if (op === 'check' || op === 'schedule') {
+  if (op === 'schedule') gaugeSchedule(ctx, input)
+  else await gaugeCheck(ctx, c.env, input)
   await commit(ctx)
+  await deliverNotifications(newNotifications(ctx), c.env, () => open(c), commit)
  } else {
   await readFence(ctx.db, ctx.x.actor, ctx.revision)
   const extra = await gaugeConnection(ctx, c.env, op, input)

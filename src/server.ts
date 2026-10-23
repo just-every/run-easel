@@ -1,3 +1,4 @@
+import { runGaugeSchedule } from './easel/gauge-schedule'
 import { runMissions } from './easel/agents/missions'
 import { runOwnerQuestionSchedule } from './easel/agents/owner-question-schedule'
 import { runSheetSchedules } from './easel/sheet-schedule'
@@ -35,7 +36,7 @@ export default withDemo({
     })
   },
   async scheduled(_controller, env) {
-    await runCalendarSchedule(env)
+    await runGaugeSchedule(env); await runCalendarSchedule(env)
     await runActionChases(env); await runOwnerQuestionSchedule(env)
     await runSavedReportSchedules(env); await runCashAlertSchedule(env); await runSheetSchedules(env); await runBiDrops(env); await runMissions(env)
   },
