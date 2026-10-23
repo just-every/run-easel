@@ -58,7 +58,7 @@ export async function authResponse(request: Request, original: Bindings): Promis
  const env = runtimeBindings(original), url = new URL(request.url)
  if (url.pathname.startsWith('/auth/saml/') || url.pathname === '/scim/v2' || url.pathname.startsWith('/scim/v2/')) {
   const enterprise = await enterpriseIdentityResponse(request, env, operatorAuth(env))
-  if (enterprise) return enterprise
+  if (enterprise) return fontDocumentResponse(enterprise)
  }
  if (url.pathname === '/auth/owner-claim' && env.RER_OWNER_CLAIM_PUBLIC_KEYS) {
   const response = await createOwnerClaimHandler({

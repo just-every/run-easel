@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "229cf3e6f7615e9c395d61af529ce985eeff53538688d0e441d6674a2aeacfda",
+      "sha256": "640f6d413659a7b6981b117fa7ddcb5503bb9393b20fcbea29ddaecb3ce68b46",
       "executable": false
     },
     "DEMO.md": {
@@ -771,7 +771,7 @@
       "executable": false
     },
     "src/auth.server.ts": {
-      "sha256": "13eb8191556d1fedb2f8ff38ccb78cc142cd68aeca5bec58810334b7337ca59d",
+      "sha256": "bcedda109f7b4072bf0a6a023674fe79534de92aa13e1fd5a73534f8a798a78e",
       "executable": false
     },
     "src/base/contract-filter.ts": {
@@ -1271,7 +1271,7 @@
       "executable": false
     },
     "src/easel/enterprise-identity/saml.ts": {
-      "sha256": "0a300d8c4d28eb5ead8286ac5eab75ce26dd0703b87ddcd73af4bae78fc3ee2e",
+      "sha256": "166edf88a0de2fd20fa859dbeaa9536a4620ff2367236502aa2c9625a54fb5bb",
       "executable": false
     },
     "src/easel/enterprise-identity/scim-groups.ts": {
@@ -1284,6 +1284,10 @@
     },
     "src/easel/enterprise-identity/scim.ts": {
       "sha256": "8c740d423a5329069257351406f28775551367718877639536b3b09578e886be",
+      "executable": false
+    },
+    "src/easel/enterprise-identity/signin.ts": {
+      "sha256": "da9e465fce502e4b14750876ac836c02266d5c2d0862375c6ed1b1f8823119b7",
       "executable": false
     },
     "src/easel/entity-access.ts": {

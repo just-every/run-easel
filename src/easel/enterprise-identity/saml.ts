@@ -1,3 +1,4 @@
+import { samlSignInPage } from './signin'
 import { SAML, ValidateInResponseTo, type CacheProvider, type Profile } from '@node-saml/node-saml'
 import { randomBytes } from 'node:crypto'
 import { parseStringPromise, processors } from 'xml2js'
@@ -84,7 +85,7 @@ export async function samlResponse(request: Request, env: EnterpriseEnv, config:
  }
  if (action === 'start' && request.method === 'GET') {
   await identityEnabled(env)
-  return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Company sign-in · Easel</title><link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/rer-theme.css"><style>body{margin:0;background:#f7f7f5;color:#202520;font:16px system-ui,sans-serif}main{box-sizing:border-box;width:min(100%,460px);margin:12vh auto;padding:32px}h1{font-size:28px;line-height:1.2}p{line-height:1.55;color:#515951}button{font:inherit;border:0;border-radius:8px;padding:14px 20px;background:#176b52;color:white;cursor:pointer;width:100%}a{color:#176b52}</style></head><body><main><img src="/brand/mark.svg" width="40" height="40" alt="Easel"><h1>Company sign-in</h1><p>Continue to your company’s identity provider. Your existing Easel access applies when you return.</p><form method="post" action="/auth/saml/${config.id}/start"><input type="hidden" name="returnTo" value="/app"><button type="submit">Continue with SAML</button></form><p><a href="/signin">Other sign-in options</a></p></main></body></html>`, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" } })
+  return samlSignInPage(config.id)
  }
  check(request.method === 'POST', 'saml_method_not_allowed', 405)
  await identityEnabled(env)
