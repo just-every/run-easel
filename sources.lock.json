@@ -103,7 +103,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "ba6a2cc70bdd31d29b3a66569a0f8553cc4ecb2c44c35e56f5ec5fc353eb238d",
+      "sha256": "e00fddeffa5d51695a16bb20cc3ce80ac50c98524a53a5468a1c52be016ed3a1",
       "executable": false
     },
     ".gitignore": {
@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "85bc9d1fb67d8a0372acdbb2d5047105d9b1384ed9a587c4d055a663bc66a702",
+      "sha256": "0c989824f529ae0ce4b1ef026165e6800708a07f392c95e7c018d5c6d162cfd6",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "72d424ac8ae94fbec66c7d1d332391bc396469efdcebe37a8b8038acfc08a5f0",
+      "sha256": "0edd5462f06645a8b2834ff3a7f17da40c7c3932341d1a57d4eb5f8c36444e78",
       "executable": false
     },
     "DEMO.md": {
@@ -555,7 +555,7 @@
       "executable": false
     },
     "package.json": {
-      "sha256": "637f2b51bf0f4d9547c623c63de536baf8e674ae8edc5d81405f20c05a6c89d0",
+      "sha256": "b2928e7748985140dda47d658852542629334aabbc137d43dd0a516ac17d4009",
       "executable": false
     },
     "pnpm-lock.yaml": {
@@ -4099,7 +4099,7 @@
       "executable": false
     },
     "tests/approval-chains-browser.mjs": {
-      "sha256": "1683be383394df8ee070c8dbfca1fd8e44bfab9297cacb6adb20c56a66cd53d8",
+      "sha256": "e1a76c9136801047597eb7be5f75a8648fa2c82dd1d5effbaa4811e96eb2545c",
       "executable": false
     },
     "tests/approval-chains.test.mjs": {
@@ -4624,10 +4624,6 @@
     },
     "tests/rolling-forecast.test.mjs": {
       "sha256": "e07445dacc9f2fa0d6b654747ede0c3a9a95ed2a1269846b4cacc9dc03e3cd6d",
-      "executable": false
-    },
-    "tests/runtime.mjs": {
-      "sha256": "6240138f90d8d22437cd7cfc8d44b15724fedcdd95e309a5d874d077eb936107",
       "executable": false
     },
     "tests/sandboxes-browser.mjs": {
