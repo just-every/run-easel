@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "225d6551534844b154dc2e50720d24310c2b87ba32c418eac2254ffa29dcb73d",
+      "sha256": "836438f76e72604b2075df1f5590c9803e012f4d9987666a766c7d106a1fc445",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "19bbe771ec686996fd1d0f8c0312d59c410d4df43a3d17d87b9e762a6da27b4b",
+      "sha256": "a63b0a0d37d3ce4135eac4e31e1ed55f98d4bd6731947378ca9e466cf16b715d",
       "executable": false
     },
     "base-copies.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "dfff5eb383ee2bd4ee9ca2a4eb79b9ad7d5acea0ec1db46e72cf0ffafe6ead7d",
+      "sha256": "e7a68282aa586abe0e4a9a4f501fc126f11eca0ec1effeeebea6b0fe044cb9ed",
       "executable": false
     },
     "DEMO.md": {
@@ -899,7 +899,7 @@
       "executable": false
     },
     "src/easel/access.ts": {
-      "sha256": "1c4072980588cb8138faa217d4eec50483b788cb6600a8979cfbc3813949b95c",
+      "sha256": "fbb0bea83ec4b69f37b5b82b47edb2726e47994242a7825c65261f9f88c2f8d0",
       "executable": false
     },
     "src/easel/account-rules.ts": {
@@ -1183,7 +1183,7 @@
       "executable": false
     },
     "src/easel/cycle.ts": {
-      "sha256": "604abe97205a6388a7fd44f4f3996f5043c3ef254d343fa34c52434716a9285e",
+      "sha256": "8f3b08d6e6fa249e323b8d695c2118cd4023d0b0bd98e2d3ec330929fb26e3dc",
       "executable": false
     },
     "src/easel/daily-cash.ts": {
@@ -1799,7 +1799,7 @@
       "executable": false
     },
     "src/easel/sheet-connection.ts": {
-      "sha256": "55d67e70c764c05dec968b192bba981a28f615f311210476e289534e64213ee7",
+      "sha256": "41efa7df51e826a32745a1d2ed1c1af7bd90efcfc5bc8238633bac2a699c1e95",
       "executable": false
     },
     "src/easel/sheet-links.ts": {

@@ -7,7 +7,7 @@ import { scenarioAccess, requireScenarioEdit } from './scenario-access'
 // revise and submit their own scope, finance returns or approves. Approval
 // freezes the budget into an immutable snapshot and opens the forecast.
 // Closing a month keeps the prior forecast before actuals replace the plan.
-import { requireCapability, requireDepartment, requireFinance, requireMember } from './access'
+import { requireCapability, requireCapabilityGrant, requireDepartment, requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { departments, model, scenarioInputs, workspace, INPUT_KINDS } from './model'
 import { addMonths, fiscalYearLabel, monthLabel, monthsBetween } from './months'
@@ -95,7 +95,8 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
  }
  if (op === 'forecast-window') {
-  requireCapability(x, 'approvals', s)
+  // Editing a working horizon exercises the planning grant, not budget approval.
+  requireCapabilityGrant(x, 'approvals', s)
   const forecast = scenarioAccess(s, x, b.scenario)
   requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Set the window on the working forecast', 409)
   requireThat(Number(b.revision) === forecast.revision, 'The forecast changed; reload before changing its window', 409)

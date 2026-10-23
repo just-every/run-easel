@@ -1,5 +1,5 @@
 import type { Bindings } from '../auth.server'
-import { requireCapability, requireFinance, requirePayDetail } from './access'
+import { requireCapabilityGrant, requireFinance, requirePayDetail } from './access'
 import { openConnection, sealConnection } from './connection-seal'
 import type { Context } from './context'
 import { refreshSheetToken, sheetCredentials, SHEET_SCOPE, type SheetCredentials } from './sheet-provider'
@@ -8,7 +8,8 @@ import { all, find, put, requireThat, type Data } from './types'
 const PURPOSE = 'easel:google-sheets:spreadsheets.readonly:v1'
 export const SHEET_REVOCATION_WARNING = 'Google did not confirm revocation; remove this app in your Google Account → Security → Third-party connections'
 export function sheetAuthority(c: Context) {
- requireCapability(c.x, 'connections')
+ // Saved schedules use the owner's live grant; credential administration stays native below.
+ requireCapabilityGrant(c.x, 'connections')
  requireFinance(c.x)
  requirePayDetail(c.x)
  requireThat(!c.x.actor.token && !c.x.actor.agent, 'Use a signed-in finance session for Google Sheets connections and imports', 403)
