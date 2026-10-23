@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { generateKeyPairSync, randomUUID, createHash, sign } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { inflateRawSync } from 'node:zlib'
 import { SignedXml } from 'xml-crypto'
 export const SAML = 'https://synthetic-easel-1.example.test/saml'
@@ -15,7 +18,12 @@ export function fakeIdentityProvider() {
  material ??= (() => {
   const pair = generateKeyPairSync('rsa', { modulusLength: 2048 })
   const privateKey = pair.privateKey.export({ type: 'pkcs8', format: 'pem' })
-  const cert = execFileSync('openssl', ['req', '-new', '-x509', '-key', '-', '-subj', '/CN=synthetic-easel-1', '-days', '1', '-sha256'], { input: privateKey, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
+  const directory = mkdtempSync(join(tmpdir(), 'synthetic-easel-idp-')), keyPath = join(directory, 'key.pem')
+  let cert
+  try {
+   writeFileSync(keyPath, privateKey, { mode: 0o600 })
+   cert = execFileSync('openssl', ['req', '-new', '-x509', '-key', keyPath, '-subj', '/CN=synthetic-easel-1', '-days', '1', '-sha256'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+  } finally { rmSync(directory, { recursive: true, force: true }) }
   return { privateKey, cert, jwk: { ...pair.publicKey.export({ format: 'jwk' }), kid: 'synthetic-easel-1', use: 'sig', alg: 'RS256' } }
  })()
  const bearer = `${randomUUID()}${randomUUID()}`, clientSecret = `${randomUUID()}${randomUUID()}`, codes = new Map()
