@@ -96,18 +96,20 @@ export async function watchConstraints(c: Context) {
    }
    continue
   }
-  const summary = type.startsWith('covenant:') ? `${labels[type]} breaks in ${monthLabel(breach.month)}; gap ${breach.gap} cents of ${breach.kind === 'maximum-leverage' ? 'debt above the permitted amount' : 'required minimum'}. ${breach.trace}`
+  const notice = type.startsWith('covenant:') ? `${labels[type]} breaks in ${monthLabel(breach.month)}; gap ${breach.gap} cents of ${breach.kind === 'maximum-leverage' ? 'debt above the permitted amount' : 'required minimum'}.`
    : type.startsWith('department:') ? `${labels[type]} breaks in ${monthLabel(breach.month)}; spend ${money(breach.amountCents)}, limit ${money(breach.limitCents)}, ${money(breach.gapCents)} over.`
    : type === 'cash-floor'
    ? `Forecast cash falls below the ${money(breach.floorCents)} floor in ${monthLabel(breach.month)}; lowest ${money(breach.lowestCents)} in ${monthLabel(breach.lowestMonth)}, ${money(breach.gapCents)} short.`
    : `Runway falls to ${breach.runwayHundredths === null ? 'zero (cash exhausted)' : `${formatHundredths(breach.runwayHundredths)} months`} in ${monthLabel(breach.month)}, below the ${formatHundredths(breach.minimumHundredths)}-month minimum.`
+  // Financing source traces stay in the authenticated decision item, not outbound mail.
+  const summary = breach.trace ? `${notice} ${breach.trace}` : notice
   const causes = reference ? { reference: reference.label, changes: sourceChanges(c, reference.inputs, current) } : { reference: null, changes: [] }
   const open = !item || item.status === 'cleared'
   if (item?.status === 'rejected') { put(c.s, 'decision-item', id, { ...item, breach, summary, causes, forecastRevision: forecast.revision, updatedAt: c.now }); continue }
   put(c.s, 'decision-item', id, { ...(open ? { responses: [] } : item), id, forecast: forecast.id, constraint: type, label: labels[type], status: 'open', month: breach.month, breach, summary, causes, forecastRevision: forecast.revision, owner: owners[type] ?? agreement?.by ?? forecast.createdBy, openedAt: open ? c.now : item!.openedAt, updatedAt: c.now })
   if (open) {
    c.activity.push({ action: 'decision-item-opened', record: id, detail: { constraint: type, month: breach.month, forecastRevision: forecast.revision } })
-   notify(c, 'decision-item', [owners[type] ?? agreement?.by ?? forecast.createdBy], { title: `${labels[type]}: ${summary}`, tab: 'review', record: id, department: '' }, { includeActor: true })
+   notify(c, 'decision-item', [owners[type] ?? agreement?.by ?? forecast.createdBy], { title: `${labels[type]}: ${notice}`, tab: 'review', record: id, department: '' }, { includeActor: true })
    opened.push(id)
   }
  }
