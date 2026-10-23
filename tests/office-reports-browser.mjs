@@ -34,6 +34,17 @@ try {
  for (const width of [1440, 390]) for (const hostType of ['PowerPoint', 'Word']) {
   const p = await context.newPage(), owner = { context, page: p }; track(p); await p.setViewportSize({ width, height: 1000 })
   await p.addInitScript({ content: `window.officeHostName=${JSON.stringify(hostType)};${testHost}` })
+  await p.goto(`${server.origin}/app?tab=reports`)
+  const installation = p.getByRole('region', { name: 'Linked Office reports', exact: true })
+  await installation.getByRole('link', { name: 'PowerPoint manifest', exact: true }).waitFor()
+  await installation.getByRole('link', { name: 'Word manifest', exact: true }).waitFor()
+  const manifest = await context.request.get(`${server.origin}/api/office/manifest/${hostType}`)
+  assert.equal(manifest.status(), 200)
+  const source = /SourceLocation DefaultValue="([^"]+)"/.exec(await manifest.text())?.[1]
+  assert.ok(source)
+  assert.equal(new URL(source.replaceAll('&amp;', '&')).origin, server.origin, 'the install link belongs to this installation')
+  await noOverflow(p, `Office installation ${width}`)
+  await installation.screenshot({ path: join(evidence, `office-install-${width}.png`) })
   await p.goto(`${server.origin}/app?tab=reports&office=1`)
   const card = p.getByRole('region', { name: 'Linked Office reports', exact: true })
   await card.getByRole('button', { name: 'Insert linked content', exact: true }).waitFor()

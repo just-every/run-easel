@@ -4523,7 +4523,7 @@
       "executable": false
     },
     "tests/office-reports-browser.mjs": {
-      "sha256": "1724c5bedf66bd0c3537762a7bb03d2179182e651cd69932b4e04b8603fac1df",
+      "sha256": "b3059c0cac069835dc68d92be27dd1c58c8c735dd6861006b8da949d39a14f4c",
       "executable": false
     },
     "tests/open-export-browser-journey.mjs": {
