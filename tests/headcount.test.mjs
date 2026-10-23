@@ -51,3 +51,18 @@ test('PEOPLE-006 monthly reviewed-file headcount, hiring slippage, backfills, at
  await h.command('scenario-share',{scenario:sandbox.id,email:'owner@example.test',mode:'remove',revision:(await h.get(`/api/easel/scenario/${sandbox.id}`,privateFinance)).scenario.revision},privateFinance)
  await h.get(`/api/easel/headcount/${sandbox.id}`,h.owner,404)
 })
+
+test('Connected Gusto observations require reviewed employee mapping and retain dated hiring, departure, backfill, attrition and department cost through the payroll journal', async t => {
+ const { gustoObservationFlow } = await import('./gusto-roster-journeys.mjs')
+ await gustoObservationFlow(t)
+})
+
+test('Gusto accepts only complete read-only provider pages and exact processed payroll cost; failed reads, changed mappings and hidden scenarios cannot mutate observations', async t => {
+ const { gustoCompletenessFlow } = await import('./gusto-roster-journeys.mjs')
+ await gustoCompletenessFlow(t)
+})
+
+test('Gusto credentials stay sealed and archive-excluded while native live pay authority and explicit member erasure govern all retained observations and future pulls', async t => {
+ const { gustoCustodyFlow } = await import('./gusto-roster-journeys.mjs')
+ await gustoCustodyFlow(t)
+})

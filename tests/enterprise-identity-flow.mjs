@@ -1,4 +1,3 @@
-import test from 'node:test'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { fakeIdentityProvider, userEmail, oidcEmail, patchSchema, SAML } from './enterprise-idp.mjs'
@@ -31,7 +30,7 @@ async function oidcSignIn(h, idp, claims = {}) {
  return h.mf.dispatchFetch(authorized.headers.get('location'), { headers: { host: new URL(h.origin).host, cookie: cookies(start).join('; ') }, redirect: 'manual' })
 }
 
-test('ACCESS-002 fake SAML and OIDC HTTP sign-ins, SCIM live group grants and immediate deprovision preserve submission attribution', async t => {
+export async function enterpriseIdentityFlow(t) {
  const idp = fakeIdentityProvider(), h = await harness({ bindings: idp.bindings, outbound: idp.provider }); t.after(() => h.close())
  await h.command('workspace', { name: 'synthetic-easel-1', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'synthetic-easel-1' }), line = await h.command('line', { name: 'synthetic-easel-1', type: 'operating-expense' })
@@ -107,9 +106,9 @@ test('ACCESS-002 fake SAML and OIDC HTTP sign-ins, SCIM live group grants and im
  const afterErasure = await h.get('/api/easel/state')
  assert.doesNotMatch(JSON.stringify(afterErasure), /synthetic-easel-2/)
  assert.match(JSON.stringify(afterErasure.submissions), /Erased person /)
-})
+}
 
-test('Enterprise SAML refuses unverified, unassociated, expired and misdirected assertions; OIDC refuses invalid nonce and unknown subjects', async t => {
+export async function enterpriseRefusalsFlow(t) {
  const idp = fakeIdentityProvider(), h = await harness({ bindings: idp.bindings, outbound: idp.provider }); t.after(() => h.close())
  await h.command('workspace', { name: 'synthetic-easel-1', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'synthetic-easel-1' })
@@ -140,4 +139,4 @@ test('Enterprise SAML refuses unverified, unassociated, expired and misdirected 
  assert.equal(noBearer.status, 401)
  const incorrectBearer = await scim(h, { bearer: 'synthetic-easel-9' }, 'Users')
  assert.equal(incorrectBearer.status, 401)
-})
+}

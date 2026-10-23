@@ -119,7 +119,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "2081c5756b61b2893ed86b3123c9176f930fed5d2aac63e38d47ef1c239e8d74",
+      "sha256": "790633e1c7969b5a0f7f4b3e9c0588a875b1d5518f0354b7137be616bc10f438",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "617008da01a7e7e66b4ba1b231af3a506b8736a1567c6089bdb4c80276c8f420",
+      "sha256": "a1deb08d852b50547cb1dba6697ee16e3c57483737e916ac892df7575b7fc53e",
       "executable": false
     },
     "DEMO.md": {
@@ -175,7 +175,7 @@
       "executable": false
     },
     "docs/enterprise-identity.md": {
-      "sha256": "d03f821c0a948bc350b82eded9fb6c9a3e4b5a9fc398f8e3e77f8a13145edc94",
+      "sha256": "c9b4f9b72fd9196e1c3c31788e765d4f914bd1355812758cf3e653caecb221c6",
       "executable": false
     },
     "docs/first-plan.md": {
@@ -187,7 +187,7 @@
       "executable": false
     },
     "docs/gusto-roster.md": {
-      "sha256": "fac46c7e255d8340716b99be05d1ed7ae55673387d55c2e258e9636d9ff31939",
+      "sha256": "79f4e35b17b407c9d91e29dbe75016f93f9aa834a585a00fb56c4fcb9ac8b5ba",
       "executable": false
     },
     "docs/mcp.md": {
@@ -4290,8 +4290,8 @@
       "sha256": "193baadd0629e877da910c2fb12ea7ff47d3d4adbda139d3edfb40ae27caca2c",
       "executable": false
     },
-    "tests/enterprise-identity.test.mjs": {
-      "sha256": "867c0bd760f9e0c9c1ec77ec7f27f1936f19a4ea1d547bd63ff12392a409db72",
+    "tests/enterprise-identity-flow.mjs": {
+      "sha256": "ebe002fd10ba0a1a7a5efc61625f537fa3448ddf945fa0f333f04c16b684a0c3",
       "executable": false
     },
     "tests/enterprise-idp.mjs": {
@@ -4391,7 +4391,7 @@
       "executable": false
     },
     "tests/groups.test.mjs": {
-      "sha256": "b38e9c1b2843b96a3631c4c5a9e2ab47dbbff69b2c2770165c7545968b76bc65",
+      "sha256": "35815f5043026838bd16e30f908c9e6fb65b6e911f1b1b5d96f2d5b7de84852f",
       "executable": false
     },
     "tests/gusto-roster-browser.mjs": {
@@ -4402,8 +4402,8 @@
       "sha256": "136e6aebe3f922819b503526689708a57a82640435637f7d72633159a6b8b8e2",
       "executable": false
     },
-    "tests/gusto-roster.test.mjs": {
-      "sha256": "bf889e7305ffc77b7b68da5f8fc5f396b073b41d20bc0580dac45f200ad2a1bd",
+    "tests/gusto-roster-journeys.mjs": {
+      "sha256": "4e7f5da9b2619572b56b4606cb068e343c42ebd759fbbeddd8c50161fe440267",
       "executable": false
     },
     "tests/harness.mjs": {
@@ -4419,7 +4419,7 @@
       "executable": false
     },
     "tests/headcount.test.mjs": {
-      "sha256": "684ae6a7f35bf2906dc987a2f1d116ad89df3d42171e17c05094567315e98447",
+      "sha256": "f68be90bd22b4c8af8f8ac0ec2d2e4301fccb8ac8cb96f6610dc4df65bf9a578",
       "executable": false
     },
     "tests/history-browser.mjs": {

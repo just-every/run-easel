@@ -1,10 +1,9 @@
-import test from 'node:test'
 import assert from 'node:assert/strict'
 import JSZip from 'jszip'
 import { harness } from './harness.mjs'
 import { acceptGusto, employeeIds, gustoCall, gustoFixture, gustoGrant, gustoProvider } from './gusto-roster-flow.mjs'
 
-test('Connected Gusto observations require reviewed employee mapping and retain dated hiring, departure, backfill, attrition and department cost through the payroll journal',async t=>{
+export async function gustoObservationFlow(t) {
  let now='2026-01-31T12:00:00.000Z'
  const provider=gustoProvider(),h=await harness({now:()=>now,outbound:provider.outbound});t.after(()=>h.close())
  const call=gustoCall(h),f=await gustoFixture(call)
@@ -58,9 +57,9 @@ test('Connected Gusto observations require reviewed employee mapping and retain 
  assert.deepEqual((await call(`payroll/${f.scenario}`)).roster,[],'A complete empty roster cannot resurrect the preceding roster')
  await call('import/gusto/undo',{id:empty.import.id})
  assert.equal((await call(`payroll/${f.scenario}`)).roster.length,3,'Undo restores the preceding dated source')
-})
+}
 
-test('Gusto accepts only complete read-only provider pages and exact processed payroll cost; failed reads, changed mappings and hidden scenarios cannot mutate observations',async t=>{
+export async function gustoCompletenessFlow(t) {
  const provider=gustoProvider(),h=await harness({now:()=> '2026-02-28T12:00:00.000Z',outbound:provider.outbound});t.after(()=>h.close())
  const call=gustoCall(h),f=await gustoFixture(call)
  await h.send('/api/easel/connections/gusto/connect',{...gustoGrant,consent:false},h.owner).then(r=>assert.equal(r.status,400))
@@ -100,9 +99,9 @@ test('Gusto accepts only complete read-only provider pages and exact processed p
  await h.kit('gusto','preview',{...f.input,scenario:privateScenario.id},h.owner,404)
  assert.deepEqual(await call(`headcount/${f.scenario}`),stable)
  assert.ok(provider.reads.every(p=>p.startsWith(`/v1/companies/${gustoGrant.companyId}`)))
-})
+}
 
-test('Gusto credentials stay sealed and archive-excluded while native live pay authority and explicit member erasure govern all retained observations and future pulls',async t=>{
+export async function gustoCustodyFlow(t) {
  let now='2026-02-28T12:00:00.000Z'
  const provider=gustoProvider(),h=await harness({now:()=>now,outbound:provider.outbound});t.after(()=>h.close())
  const call=gustoCall(h),f=await gustoFixture(call),email='morgan@example.test'
@@ -162,4 +161,4 @@ test('Gusto credentials stay sealed and archive-excluded while native live pay a
  assert.ok((await call(`headcount/${f.scenario}`)).history.length>=6)
  await call('import/gusto/undo',{id:accepted.import.id})
  assert.deepEqual((await call(`payroll/${f.scenario}`)).runs,[])
-})
+}

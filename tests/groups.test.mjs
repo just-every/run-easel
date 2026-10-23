@@ -227,3 +227,13 @@ test('Independent grants preserve department and dimension pairings across reads
  await h.command('member', { email: 'paired@example.test', name: 'Planner', role: 'contributor', departments: [sales.id], groupOnly: false })
  assert.ok((await read(person)).inputs.revenue.some(r => r.name === 'Forbidden Sales West'), 'A direct assignment is never narrowed by the East group')
 })
+
+test('ACCESS-002 fake SAML and OIDC HTTP sign-ins, SCIM live group grants and immediate deprovision preserve submission attribution', async t => {
+ const { enterpriseIdentityFlow } = await import('./enterprise-identity-flow.mjs')
+ await enterpriseIdentityFlow(t)
+})
+
+test('Enterprise SAML refuses unverified, unassociated, expired and misdirected assertions; OIDC refuses invalid nonce and unknown subjects', async t => {
+ const { enterpriseRefusalsFlow } = await import('./enterprise-identity-flow.mjs')
+ await enterpriseRefusalsFlow(t)
+})
