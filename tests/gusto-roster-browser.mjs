@@ -28,6 +28,7 @@ let browser,page
 try{
  browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIUM_PATH?{executablePath:process.env.EASEL_CHROMIUM_PATH}:{}),args:['--use-mock-keychain','--password-store=basic']})
  const context=await browser.newContext(),call=async(path,body)=>{
+  if(path==='command/workspace')body={...body,fiscalYearStart:Number(previous.slice(5))}
   const response=body===undefined?await context.request.get(`${runtime.origin}/api/easel/${path}`):await context.request.post(`${runtime.origin}/api/easel/${path}`,{headers:{origin:runtime.origin},data:shifted(body)})
   assert.equal(response.status(),200,await response.text());return response.json()
  }

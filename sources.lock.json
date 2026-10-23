@@ -4387,7 +4387,7 @@
       "executable": false
     },
     "tests/gusto-roster-browser.mjs": {
-      "sha256": "40d90ef3ecd6e1f502940fac07c634230abb6a2654b661a839175a14ee809df3",
+      "sha256": "37c4295bcba56d5f063731b1146dfd9a592643d9f850dc3fad7f1dc92d8f1b09",
       "executable": false
     },
     "tests/gusto-roster-flow.mjs": {
@@ -4515,7 +4515,7 @@
       "executable": false
     },
     "tests/office-reports-browser.mjs": {
-      "sha256": "5d3add32031fc318a225b458d429ffacbc75570d9a0b30beca24737daf5673bb",
+      "sha256": "5bf1f904687f5ff85e27975c14f010be6aaeaff329fc8e10c7ccf5c55b9f480c",
       "executable": false
     },
     "tests/open-export-browser-journey.mjs": {
