@@ -85,7 +85,7 @@ export async function samlResponse(request: Request, env: EnterpriseEnv, config:
  }
  if (action === 'start' && request.method === 'GET') {
   await identityEnabled(env)
-  return samlSignInPage(config.id)
+  return samlSignInPage(config.id, config.idpSsoUrl)
  }
  check(request.method === 'POST', 'saml_method_not_allowed', 405)
  await identityEnabled(env)

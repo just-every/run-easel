@@ -32,6 +32,7 @@ try {
   await route.fulfill({ status: response.status, contentType: 'text/html', body: content })
  })
  page = await context.newPage(); track(page)
+ page.on('console', message => { if (message.type() === 'error') console.error('Browser:', message.text()) })
  for (const width of [1440, 390]) {
   const signedOut = await context.request.post(`${runtime.origin}/auth/signout`, { headers: { origin: runtime.origin }, data: {}, maxRedirects: 0 })
   assert.equal(signedOut.status(), 204)
