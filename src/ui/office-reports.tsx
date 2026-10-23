@@ -1,3 +1,4 @@
+import './office-reports.css'
 import { useEffect, useState } from 'react'
 import { Action, api, money, Table, type D } from './shared'
 import { officeAdapter, officeHost } from './office-runtime'
@@ -33,11 +34,13 @@ export function OfficeReports({ report }: { report?: D }) {
     {selected.filter((r: D) => kind !== 'number' || (r.row || 'unassigned') === row).map((r: D) => <tr key={r.row}><th scope="row">{r.name}</th><td className="num">{r[metric] === null ? 'Unavailable' : money(r[metric], view.currency)}</td></tr>)}
    </Table>
    <p><a href={`/api/easel/dashboards/${encodeURIComponent(report!.id)}/office.xlsx?${params(binding)}`} download>Download linked report (Excel)</a></p>
-   {host && <><label className="check"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />I choose to place these aggregate report values in this document. Document sharing is managed in Office.</label>
-    <button type="button" disabled={!consent || busy} onClick={async () => { setBusy(true); setMessage(''); try { setError(''); const payload = await load(binding), adapter = await officeAdapter(); await adapter.insertLinked(host, payload); setMessage('Linked content inserted. Save your document to retain its links.'); setConsent(false) } catch (e) { setError((e as Error).message) } finally { setBusy(false) } }}>{busy ? 'Working…' : 'Insert linked content'}</button>
+   {host && <><label className="check office-consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />I choose to place these aggregate report values in this document. Document sharing is managed in Office.</label>
+    <button type="button" className="office-insert" disabled={!consent || busy} onClick={async () => { setBusy(true); setMessage(''); try { setError(''); const payload = await load(binding), adapter = await officeAdapter(); await adapter.insertLinked(host, payload); setMessage('Linked content inserted. Save your document to retain its links.'); setConsent(false) } catch (e) { setError((e as Error).message) } finally { setBusy(false) } }}>{busy ? 'Working…' : 'Insert linked content'}</button>
    </>}
   </>}
-  {host && <Action label="Refresh linked content" run={async () => { setMessage(''); const adapter = await officeAdapter(), result = await adapter.refreshLinked(host, load); setMessage(`${result.updated} linked objects refreshed. Save your document to keep these values.`) }} />}
+  {host && <Action label="Refresh linked content" run={async () => { setMessage(''); const adapter = await officeAdapter(); let result; try { result = await adapter.refreshLinked(host, load) } catch (e) { setView(null); setConsent(false); throw e }
+   if (report) void api(`dashboards/${encodeURIComponent(report.id)}/report`).then(setView, e => { setView(null); setError(e.message) })
+   setMessage(`${result.updated} linked objects refreshed. Save your document to keep these values.`) }} />}
   {message && <p role="status">{message}</p>}
   <p className="muted">Refresh checks your current access to every linked report before changing content. Revoked access refuses refresh; values already exported into an Office document cannot be recalled by Easel.</p>
  </section>

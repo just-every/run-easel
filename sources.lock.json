@@ -3906,8 +3906,12 @@
       "sha256": "11e0915d91629963fee6bb6a6185994563636959d64d0f10ec720b9bcebba699",
       "executable": false
     },
+    "src/ui/office-reports.css": {
+      "sha256": "1e31a8c6307e2541ca2a92140244d661f343e5a195bf1985c839bb7eba5260a0",
+      "executable": false
+    },
     "src/ui/office-reports.tsx": {
-      "sha256": "544adea4300c0253736d26daf44f35979c4d95ec2dffd4ec583613edfa475f45",
+      "sha256": "b41f8ad6b3b9e8b4d477f50a5eb4f3d0dcdac3fccda9656311a4b5af13fdff4b",
       "executable": false
     },
     "src/ui/office-runtime.ts": {
@@ -4515,7 +4519,7 @@
       "executable": false
     },
     "tests/office-reports-browser.mjs": {
-      "sha256": "5bf1f904687f5ff85e27975c14f010be6aaeaff329fc8e10c7ccf5c55b9f480c",
+      "sha256": "1724c5bedf66bd0c3537762a7bb03d2179182e651cd69932b4e04b8603fac1df",
       "executable": false
     },
     "tests/open-export-browser-journey.mjs": {

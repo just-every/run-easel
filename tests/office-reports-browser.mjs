@@ -53,6 +53,7 @@ try {
   await api(owner.context, server.origin, 'command/schedule', { scenario, id: schedule.id, name: 'Customer retainers', department: department.id, line: line.id, values: { '2026-01': amount } })
   await card.getByRole('button', { name: 'Refresh linked content', exact: true }).click()
   await card.getByRole('status').filter({ hasText: '3 linked objects refreshed' }).waitFor()
+  await card.getByRole('cell', { name: `$${Number(amount).toLocaleString('en-US')}.00`, exact: true }).waitFor()
   const result = await p.evaluate(() => window.officeTestHost.snapshot())
   assert.equal(hostType === 'Word' ? result.controls[0].tables[0][1][1] : result.slides[0].shapes[0].values[1][1], `$${Number(amount).toLocaleString('en-US')}.00`)
   assert.equal(hostType === 'Word' ? result.controls[1].text : result.slides[0].shapes[1].text, `$${Number(amount).toLocaleString('en-US')}.00`)
