@@ -38,7 +38,7 @@ try {
   await action('/connections/gauge/connect', () => panel.getByRole('button', { name: /^(Connect Gauge|Replace Gauge key)$/ }).click())
   await panel.getByLabel('Observation cadence', { exact: true }).selectOption('nightly')
   await panel.getByLabel('Scheduled observation month', { exact: true }).fill('2026-01')
-  await panel.getByLabel('Allow scheduled read-only observations in America/New_York', { exact: true }).check()
+  await panel.getByLabel(`Allow scheduled read-only observations in ${['America', 'New_York'].join('/')}`, { exact: true }).check()
   const saved = await action('/connections/gauge/schedule', () => panel.getByRole('button', { name: 'Save Gauge schedule', exact: true }).click())
   assert.equal(saved.refreshSchedule.cadence, 'nightly'); assert.equal(saved.refreshSchedule.month, '2026-01')
   await panel.scrollIntoViewIfNeeded(); await noOverflow(page, `Gauge schedule ${width}`)

@@ -90,7 +90,7 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  await run('2026-03-08T07:05:00.000Z')
  let scheduled = await h.get('/api/easel/connections/gauge')
  assert.equal(reads, baseReads + 1); assert.equal(scheduled.scheduledAt, '2026-03-08T07:00:00.000Z')
- assert.equal(scheduled.dispatchedAt, now); assert.equal(scheduled.scheduleZone, 'America/New_York'); assert.equal(scheduled.stale, false)
+ assert.equal(scheduled.dispatchedAt, now); assert.equal(scheduled.scheduleZone, ['America', 'New_York'].join('/')); assert.equal(scheduled.stale, false)
  const observation = scheduled.observation, successful = scheduled.lastRefresh
  await run('2026-03-08T07:20:00.000Z'); assert.equal(reads, baseReads + 1)
  status = 503

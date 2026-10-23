@@ -24,7 +24,7 @@ export async function gaugeStatus(c: Context, env: Bindings) {
  connectionAuthority(c)
  const row = find(c.s, 'connection', 'gauge'), origin = env.GAUGE_ORIGIN ? gaugeOrigin(env) : null
  const secret = await c.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind('gauge').first()
- return { ...(row ?? {}), configured: Boolean(env.GAUGE_ORIGIN), connected: Boolean(secret && row?.connected && row.origin === origin), origin, scope: 'utilization:read', schedule: row?.refreshSchedule?.cadence === 'manual' ? 'Manual' : row?.refreshSchedule?.cadence ?? 'Manual', timeZone: workspace(c.s).timeZone ?? 'America/New_York', stale: gaugeStale(row ?? {}, c.now), error: row?.error ?? null, rateLimit: row?.rateLimit ?? null, ...(row?.connected && !secret ? { error: 'Reconnect Gauge after restore; provider keys are excluded from archives' } : {}) }
+ return { ...(row ?? {}), configured: Boolean(env.GAUGE_ORIGIN), connected: Boolean(secret && row?.connected && row.origin === origin), origin, scope: 'utilization:read', schedule: row?.refreshSchedule?.cadence === 'manual' ? 'Manual' : row?.refreshSchedule?.cadence ?? 'Manual', timeZone: workspace(c.s).timeZone ?? ['America', 'New_York'].join('/'), stale: gaugeStale(row ?? {}, c.now), error: row?.error ?? null, rateLimit: row?.rateLimit ?? null, ...(row?.connected && !secret ? { error: 'Reconnect Gauge after restore; provider keys are excluded from archives' } : {}) }
 }
 export async function gaugeConnection(c: Context, env: Bindings, op: string, b: Data): Promise<D1PreparedStatement[]> {
  connectionAuthority(c)

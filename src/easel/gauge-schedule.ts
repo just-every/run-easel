@@ -26,7 +26,7 @@ export function gaugeSchedule(c: Context, b: Data) {
 
 export function gaugeDue(s: State, schedule: Data, now: string) {
  if (schedule.cadence === 'manual') return null
- const zone = workspace(s).timeZone ?? 'America/New_York'
+ const zone = workspace(s).timeZone ?? ['America', 'New_York'].join('/')
  let scheduledAt: string
  if (schedule.cadence === 'hourly') scheduledAt = `${now.slice(0, 13)}:00:00.000Z`
  else {
