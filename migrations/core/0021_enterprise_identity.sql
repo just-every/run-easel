@@ -14,7 +14,9 @@ CREATE TABLE oa_enterprise_scim_users (
 );
 CREATE TABLE oa_enterprise_scim_groups (
  group_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES oa_operators(id),
- external_id TEXT UNIQUE
+ external_id TEXT UNIQUE,
+ group_kind TEXT NOT NULL DEFAULT 'access-group' CHECK(group_kind='access-group'),
+ FOREIGN KEY(group_kind,group_id) REFERENCES e_records(kind,id) ON DELETE CASCADE
 );
 -- Erasure changes the native email in its revision-fenced transaction. Remove
 -- provider identifiers at that same boundary, including externalId, rather than
@@ -25,7 +27,5 @@ CREATE TRIGGER oa_enterprise_erasure_user AFTER UPDATE OF email ON oa_operators
  DELETE FROM oa_provider_sessions WHERE session_id IN (SELECT id FROM oa_sessions WHERE operator_id=NEW.id);
 END;
 
-CREATE TRIGGER oa_enterprise_deleted_native_group AFTER DELETE ON e_records
- WHEN OLD.kind='access-group' BEGIN
- DELETE FROM oa_enterprise_scim_groups WHERE group_id=OLD.id;
-END;
+-- Group deletion removes its excluded association through the foreign key.
+-- This keeps the migration additive for prior-version archive restoration.

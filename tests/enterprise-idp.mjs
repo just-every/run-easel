@@ -15,7 +15,7 @@ export function fakeIdentityProvider() {
  material ??= (() => {
   const pair = generateKeyPairSync('rsa', { modulusLength: 2048 })
   const privateKey = pair.privateKey.export({ type: 'pkcs8', format: 'pem' })
-  const cert = execFileSync('openssl', ['req', '-new', '-x509', '-key', '/dev/stdin', '-subj', '/CN=synthetic-easel-1', '-days', '1', '-sha256'], { input: privateKey, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
+  const cert = execFileSync('openssl', ['req', '-new', '-x509', '-key', '-', '-subj', '/CN=synthetic-easel-1', '-days', '1', '-sha256'], { input: privateKey, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
   return { privateKey, cert, jwk: { ...pair.publicKey.export({ format: 'jwk' }), kid: 'synthetic-easel-1', use: 'sig', alg: 'RS256' } }
  })()
  const bearer = `${randomUUID()}${randomUUID()}`, clientSecret = `${randomUUID()}${randomUUID()}`, codes = new Map()

@@ -539,7 +539,7 @@
       "executable": false
     },
     "migrations/core/0021_enterprise_identity.sql": {
-      "sha256": "203075f5426d2106eb6ab82d0758b51dcf56af95b8980dbda9053430ecef5432",
+      "sha256": "6e129e59143963e00a072956e2e131be1c23549bbe20d51bb05996816387255b",
       "executable": false
     },
     "ONBOARDING.md": {
@@ -4295,7 +4295,7 @@
       "executable": false
     },
     "tests/enterprise-idp.mjs": {
-      "sha256": "69a5ddd1fd262b8c94c7a77a52ac61aa65cf01b36593e2497042637b6093a39e",
+      "sha256": "4e08578e3fcb8a9c60375235d7d45558b40913f431eca30b6113e277a8c72bab",
       "executable": false
     },
     "tests/entities-browser.mjs": {
