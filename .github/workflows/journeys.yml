@@ -1,7 +1,7 @@
 name: Installation journeys
 on:
   schedule:
-    - cron: '23 17 * * *'
+    - cron: '43 18 * * *'
   push:
     tags: ['v*']
   workflow_dispatch:

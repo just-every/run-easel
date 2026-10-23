@@ -1,3 +1,4 @@
+import { requireAgentBudget } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import type { Bindings } from '../../auth.server'
 import type { Context } from '../context'
@@ -16,6 +17,7 @@ export async function beginCommentary(c: Context, env: Bindings, b: Data) {
  requireThat(b.fingerprint === preview.fingerprint, 'The variance, authority, model settings or key changed; preview again', 409)
  requireThat((await commentaryStatus(c, env)).connected, 'Connect the owner-provided OpenAI key before drafting', 409)
  requireThat(!all(c.s, 'commentary-run').some(r => r.fingerprint === preview.fingerprint), 'This exact request already has a recorded attempt; review its outcome in Activity', 409)
+ requireAgentBudget(c, preview.reserveMicroUsd)
  const reserved = commentaryAllowance(c)
  requireThat(BigInt(reserved) + BigInt(preview.reserveMicroUsd) <= BigInt(config.budgetMicroUsd), 'The monthly commentary budget cannot cover this conservative allowance', 409)
  const id = uid()

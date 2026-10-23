@@ -1,3 +1,4 @@
+import { agentEnabled, requireAgent } from './governance'
 // AGENT-004 commands. The agent's only write is a draft proposal that cites
 // its backtest; the forecast changes only when finance submits and promotes
 // that exact proposal revision through the ordinary doors.
@@ -16,6 +17,7 @@ export async function learningCommands(c: Context, op: string, b: Data): Promise
  const deals = dealOutcomes(c, op, b)
  if (deals) return deals
  if (op !== 'learning-propose') return undefined
+ requireAgent(c, 'learning')
  requireFinance(c.x)
  const key = MEASURES.find(m => m.key === b.measure)?.key as MeasureKey | undefined
  requireThat(key, 'Choose a measured assumption')

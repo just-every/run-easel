@@ -1,3 +1,4 @@
+import { agentEnabled, requireAgent } from './governance'
 // AGENT-001 (constraint watch, cash floor and runway slice): after every
 // accepted or undone actuals refresh, month close, promoted proposal and
 // change to the agreed constraints, the official working forecast is
@@ -55,6 +56,7 @@ async function referenceInputs(c: Context, forecast: Data) {
 
 /** Opens, refreshes or clears the decision items of the official working forecast. */
 export async function watchConstraints(c: Context) {
+ if (!agentEnabled(c.s, 'constraints')) return []
  const forecast = all(c.s, 'scenario').find(s => s.kind === 'forecast' && s.status === 'working' && !s.alternativeBudget)
  const agreement = workspace(c.s).cashAgreement
  if (!forecast || !agreement) return []

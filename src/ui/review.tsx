@@ -1,3 +1,5 @@
+import { AgentGovernance } from './agent-governance'
+import { Analyst } from './analyst'
 import { CommentaryModel } from './commentary-model'
 import { OwnerQuestions } from './owner-questions'
 import { PrivateSlack } from './private-slack'
@@ -39,6 +41,8 @@ export function Review({ state, refresh }: Shared) {
  const [fingerprints, setFingerprints] = useState<Record<string, string>>({}), [stores, setStores] = useState<D[]>([])
  useEffect(() => { if (me.role === 'finance') api('connections/pack-stores').then(setStores, () => setStores([])) }, [me.role, state])
  return <>
+  {me.role === 'finance' && <AgentGovernance />}
+  <Analyst state={state} />
   <section className="card">
    <h2>Monthly review</h2>
    {v && <p><a href={`/api/easel/variance/${month}/document.xlsx`} download>Download variances (Excel)</a></p>}

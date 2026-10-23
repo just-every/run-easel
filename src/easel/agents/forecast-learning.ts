@@ -1,3 +1,4 @@
+import { requireAgent } from './governance'
 // AGENT-004: the company's own forecast errors. Every kept forecast is compared
 // with what closed afterwards; the error is split into timing (it reversed
 // inside the closed window), driver (a measured assumption miss that the
@@ -22,6 +23,7 @@ import { datePeriod } from '../fiscal-calendar'
 const MAX_ROWS = 600
 
 export async function forecastLearning(c: Context, scenario: unknown) {
+ requireAgent(c, 'learning')
  requireFinance(c.x)
  const forecast = get(c.s, 'scenario', scenario, 'forecast')
  requireThat(forecast.kind === 'forecast' && forecast.status === 'working' && forecast.actualsThrough, 'Learning reads a working forecast with at least one closed month', 409)
