@@ -144,3 +144,16 @@ test('AUDIT-001 CYCLE-005 real rer import preserves the audit trail and validate
  await h.command('pack-publish', { pack: pack.id })
  await restoreFlow(h)
 })
+
+test('a signed-in person cannot move their sign-in email onto another planning membership', async t => {
+ const h = await plan(t)
+ const board = await h.person('board@example.test', 'viewer')
+ // Finance prepares a membership before that person's own invitation is sent.
+ await h.command('member', { email: 'controller@example.test', name: 'Controller', role: 'contributor', departments: [h.sales.id] })
+ await h.command('pay-detail', { email: 'controller@example.test', granted: true })
+ const moved = await h.send('/auth/email', { email: 'controller@example.test' }, board)
+ const { me } = await h.get('/api/easel/state', board)
+ assert.deepEqual({ email: me.email, role: me.role, departments: me.departments, payDetail: me.payDetail }, { email: 'board@example.test', role: 'viewer', departments: [], payDetail: false })
+ assert.doesNotMatch(JSON.stringify(await h.get(`/api/easel/scenario/${h.budget.id}`, board)), /Private salary/)
+ assert.equal(moved.status, 404)
+})

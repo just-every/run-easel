@@ -77,7 +77,13 @@ export async function authResponse(request: Request, original: Bindings): Promis
   })(request)
   if (page) return fontDocumentResponse(page)
  }
- if (url.pathname.startsWith('/auth/')) return fontDocumentResponse(await createAuthHandler(operatorAuth(env))(request))
+ if (url.pathname.startsWith('/auth/')) {
+  // Planning membership, groups and Pay detail are granted by sign-in email, and
+  // Base's own-email change does not prove the new mailbox. Easel composes the
+  // handler without it, so the route answers like any path it does not own.
+  const { changeEmail: _unprovenEmailChange, ...auth } = operatorAuth(env)
+  return fontDocumentResponse(await createAuthHandler(auth)(request))
+ }
  if (url.pathname === '/setup' || url.pathname === '/app' || url.pathname.startsWith('/app/')) {
   const setup = await firstRunResponse(request, env, operatorAuth(env), { theme })
   if (setup) return setup
