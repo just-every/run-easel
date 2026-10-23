@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { Action, api, Field, Form, money, type D } from './shared'
 
-export function Analyst({ state, refresh }: Shared) {
+export function Analyst({ state, refresh }: Pick<Shared, 'state' | 'refresh'>) {
  const [saved, setSaved] = useState<D>({ missions: [], runs: [] })
  const [whatIf, setWhatIf] = useState<D | null>(null)
  const [expenses, setExpenses] = useState<D[]>([])

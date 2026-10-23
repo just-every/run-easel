@@ -78,7 +78,7 @@ export async function watchConstraints(c: Context) {
   labels[type] = `${getDepartment(rule.department)} budget limit`; owners[type] = rule.owner
   const cells = calc.cells.filter(cell => cell.department === rule.department && cell.month === rule.month && getLine(cell.line).type !== 'revenue')
   const amount = cells.reduce((sum, cell) => sum + cell.amount, 0)
-  found[type] = (!forecast.actualsThrough || rule.month > forecast.actualsThrough) && amount > rule.limitCents ? { month: rule.month, amountCents: amount, limitCents: rule.limitCents, gapCents: amount - rule.limitCents, department: rule.department, rows: cells.flatMap(cell => cell.sources.map(row => ({ kind: row.kind, origin: row.id, amount: row.amount }))) } : null
+  found[type] = (!forecast.actualsThrough || rule.month > forecast.actualsThrough) && amount > rule.limitCents ? { month: rule.month, amountCents: amount, limitCents: rule.limitCents, gapCents: amount - rule.limitCents, department: rule.department, rows: cells.flatMap(cell => cell.sources.map(row => ({ kind: row.kind, origin: row.id }))) } : null
  }
  // Removed constraints clear their existing items on the next check.
  for (const item of all(c.s, 'decision-item').filter(item => item.forecast === forecast.id)) if (!(item.constraint in found)) found[item.constraint] = null
@@ -114,4 +114,8 @@ export async function watchConstraints(c: Context) {
  return opened
 }
 
-export const decisionItems = (c: Context) => all(c.s, 'decision-item').sort((a, b) => b.openedAt.localeCompare(a.openedAt))
+export const decisionItems = (c: Context) => all(c.s, 'decision-item').map(item => c.x.payDetail === true ? item : {
+ ...item,
+ breach: { ...item.breach, ...(item.breach.rows ? { rows: item.breach.rows.map((row: Data) => ({ kind: row.kind, origin: row.origin })) } : {}) },
+ causes: { ...item.causes, changes: (item.causes?.changes ?? []).map((row: Data) => row.kind === 'position' ? { ...row, name: 'A planned hire', fields: row.fields.filter((field: Data) => !/salary|cents|holder|rate/i.test(field.field)) } : row) },
+}).sort((a, b) => b.openedAt.localeCompare(a.openedAt))

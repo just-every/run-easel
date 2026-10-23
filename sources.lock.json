@@ -947,7 +947,7 @@
       "executable": false
     },
     "src/easel/agents/constraint-watch.ts": {
-      "sha256": "902c577cc0632a1aa9906c5b606c140837c8e14805b53497905788b55a2e6de9",
+      "sha256": "3027a1ff26b918a68357e6aa621179248502b1b5c8c09695621e60646f63b8cf",
       "executable": false
     },
     "src/easel/agents/deal-outcomes.ts": {
@@ -3767,7 +3767,7 @@
       "executable": false
     },
     "src/ui/analyst.tsx": {
-      "sha256": "5c01fba7a3a48d3ae6b069efdd559ac6105bbe44404ede96f9d2a3871b30e74f",
+      "sha256": "717323c7045d15f4605ed443ea070f6c36c72a9d5478cf93d25927c7027f954d",
       "executable": false
     },
     "src/ui/app.tsx": {
@@ -4255,7 +4255,7 @@
       "executable": false
     },
     "tests/constraint-responses.test.mjs": {
-      "sha256": "9a7dc403a8aec3f23aaae6e969dfa2e1c71f211976668a16b97ed62f6a18a708",
+      "sha256": "968f2ec6ad4f616081ac2891c99247281750982d8cc10aacdb0ebd2701278d08",
       "executable": false
     },
     "tests/contracts-browser.mjs": {

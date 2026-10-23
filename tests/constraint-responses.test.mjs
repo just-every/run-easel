@@ -36,6 +36,8 @@ test('AGENT-001 AGENT-002 a promoted change that breaks the cash floor opens one
  assert.deepEqual([item.constraint, item.status, item.month, item.breach.gapCents, item.forecastRevision], ['cash-floor', 'open', '2026-09', 11000000, (await h.get(`/api/easel/scenario/${forecast.id}`)).scenario.revision])
  assert.equal(item.causes.reference, 'the approved budget')
  assert.deepEqual(item.causes.changes.map(x => [x.name, x.fields.find(f => f.field === 'start').from, x.fields.find(f => f.field === 'start').to]).sort(), [['Account executive A', '2026-05', '2026-03'], ['Account executive B', '2026-06', '2026-04'], ['Account executive C', '2026-07', '2026-05']])
+ const noPay = await h.person('finance-no-pay@example.test', 'finance', [], false)
+ assert.doesNotMatch(JSON.stringify((await h.get('/api/easel/constraints', noPay)).items), /Account executive [ABC]|Private Account/)
  assert.ok(h.messages.some(m => /Decision needed/.test(m.subject)), 'the owner who agreed the floor is told')
  const revision = (await h.get(`/api/easel/scenario/${forecast.id}`)).scenario.revision
  await h.command('constraint-check', {})
@@ -109,6 +111,7 @@ test('Native covenant and department breaches cite exact gaps, notify once and c
  const limit = items.find(i => i.constraint.startsWith('department:'))
  assert.equal(limit.breach.gapCents, 100); assert.equal(limit.owner, 'owner@example.test')
  assert.ok(limit.breach.rows.some(row => row.origin === spend.originId))
+ assert.ok(limit.breach.rows.every(row => !('amount' in row)), 'Decision causes retain source identity without individual compensation amounts')
  for (const kind of ['minimum-cash', 'minimum-liquidity', 'maximum-leverage']) {
   const item = items.find(i => i.constraint === `covenant:${source.originId}:${kind}`)
   assert.equal(item.month, '2026-01'); assert.equal(item.breach.gap, 10000)
