@@ -148,3 +148,35 @@ test('Source class, department and tracking rules preserve actual cuts and block
  assert.equal(blockedForecast.lineTotals[events.id]['2026-01'], 3003)
 
 })
+
+test("Snapshot reads keep actuals history inside the reader's departments and dimension grants", async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Synthetic regional history', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const sales = await h.command('department', { name: 'Sales' }), engineering = await h.command('department', { name: 'Engineering' })
+ const ads = await h.command('line', { name: 'Advertising', type: 'operating-expense' })
+ const region = await h.command('dimension', { name: 'Region' })
+ const east = await h.command('dimension-member', { dimension: region.id, name: 'East' }), west = await h.command('dimension-member', { dimension: region.id, name: 'West' })
+ await h.command('account-map', { account: '500', target: ads.id })
+ for (const department of [sales, engineering]) await h.command('department-map', { source: department.name, department: department.id })
+ for (const member of [east, west]) await h.command('dimension-map', { dimension: region.id, member: member.id, sourceKind: 'class', source: member.name, match: 'exact' })
+ const file = { filename: 'synthetic-easel-3.csv', dateFormat: 'YYYY-MM-DD', columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount', class: 'Class' }, csv: 'Date,Account,Department,Amount,Class\n2026-01-10,500,Sales,1000.00,East\n2026-01-11,500,Sales,9000.00,West\n2026-01-12,500,Engineering,7770.00,East\n' }
+ const preview = await h.kit('actuals', 'preview', file)
+ await h.kit('actuals', 'commit', { ...file, fingerprint: preview.fingerprint })
+ const eastPlanner = await h.person('east@example.test', 'contributor', [sales.id], false)
+ await h.command('member', { email: 'east@example.test', name: 'East planner', role: 'contributor', departments: [sales.id], dimensionMembers: { [region.id]: [east.id] } })
+ const salesPlanner = await h.person('sales@example.test', 'contributor', [sales.id], false)
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await h.command('schedule', { scenario: budget.id, name: 'East plan', line: ads.id, department: sales.id, dimensions: { [region.id]: east.id }, values: { '2026-01': '1' } })
+ const approved = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })
+ const history = async cookie => (await h.get(`/api/easel/snapshot/${approved.snapshot}`, cookie)).body.actualsHistory
+ const january = (cells, department) => cells.find(cell => cell.department === department && cell.month === '2026-01')
+ const complete = await history(h.owner)
+ assert.equal(january(complete.cells, sales.id).amount, 1000000); assert.equal(january(complete.cells, engineering.id).amount, 777000)
+ const scoped = await history(eastPlanner)
+ for (const cell of scoped.cells) assert.deepEqual([cell.department, cell.amount], [sales.id, 100000])
+ assert.doesNotMatch(JSON.stringify(scoped), /900000|777000/)
+ const department = await history(salesPlanner)
+ assert.equal(january(department.cells, sales.id).amount, 1000000)
+ const other = january(department.cells, engineering.id)
+ assert.deepEqual({ amount: other.amount, rows: other.rows, batches: other.batches, sources: other.dimensionSources ?? [] }, { amount: 777000, rows: 0, batches: [], sources: [] })
+})

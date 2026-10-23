@@ -1875,7 +1875,7 @@
       "executable": false
     },
     "src/easel/views.ts": {
-      "sha256": "5d33867d5374f955b23fe5f26f6856348ca73629f701c85d694dd36df76cbc47",
+      "sha256": "92cb2195753c2a61b7be8235c36eeff64751ec1142e871b943a20a4c83acc5f1",
       "executable": false
     },
     "src/easel/warehouse-metrics.ts": {
@@ -4271,7 +4271,7 @@
       "executable": false
     },
     "tests/dimensions.test.mjs": {
-      "sha256": "888df59251230442667bcda9d5797fde007accf91dc70aba0954e7b60bbce559",
+      "sha256": "01edaf82d4b923cc5fb31905b34ed47cd1632fa3f305d0537b1d84e2e9f16113",
       "executable": false
     },
     "tests/drillthrough.test.mjs": {
