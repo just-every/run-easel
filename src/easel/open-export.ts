@@ -19,8 +19,9 @@ import { zipFiles } from './xlsx-write'
 import { scenarioView } from './views'
 
 const encoder = new TextEncoder()
-// Product and import-journal tables; credentials follow the existing backup policy.
-const credentialTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key'])
+// Product and import-journal tables. Credentials and calculation receipts (each
+// a stored response for its initiating person only) follow the native backup policy.
+const excludedTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key', 'e_calculation_jobs', 'e_calculation_job_chunks'])
 const identifier = (name: string) => `"${name.replaceAll('"', '""')}"`
 function portableCell(value: unknown): unknown {
  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value) || Array.isArray(value)) {
@@ -104,7 +105,7 @@ export async function openExport(c: Context): Promise<Uint8Array> {
  const tables: Record<string, number> = {}
  const { results: schema } = await c.db.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') ORDER BY name").all<{ name: string; sql: string }>()
  const definitions = []
- for (const definition of schema.filter(t => !credentialTables.has(t.name))) {
+ for (const definition of schema.filter(t => !excludedTables.has(t.name))) {
   const table = definition.name
   const { results: columnRows } = await c.db.prepare(`PRAGMA table_info(${identifier(table)})`).all<{ name: string }>()
   const columns = columnRows.map(column => column.name)

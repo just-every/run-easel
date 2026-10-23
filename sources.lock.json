@@ -1619,7 +1619,7 @@
       "executable": false
     },
     "src/easel/open-export.ts": {
-      "sha256": "6e07a8d418c5686aa17fc0abff8a5a348091ef236a9dd3848af4cfe9dd0c248a",
+      "sha256": "7537798d6f2d45247bf5306a511d6ba7b7ce66da1b0423fc8b22ab75e73e93cd",
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
@@ -4531,7 +4531,7 @@
       "executable": false
     },
     "tests/open-export.test.mjs": {
-      "sha256": "88c15858828b2bddef3453dda00dff4f90e0b43066abe3fe0e7ebf401141fd3d",
+      "sha256": "c6f920edafd7c98a745635add0d377f1c1632e46bce0f473183b45ce616bd7c5",
       "executable": false
     },
     "tests/owner-questions-browser.mjs": {
