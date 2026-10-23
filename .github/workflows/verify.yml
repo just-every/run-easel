@@ -36,7 +36,7 @@ jobs:
         run: node --test --test-concurrency=1 --test-shard=2/2 tests/*.test.mjs
       - name: Built runtime
         if: matrix.shard == 'runtime'
-        run: pnpm exec rer build && pnpm test:runtime
+        run: pnpm exec rer build
       - name: CYCLE-007 native department approval chains
         if: matrix.shard == 'runtime'
         run: |

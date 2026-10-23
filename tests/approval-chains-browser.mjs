@@ -28,6 +28,12 @@ try {
  await mf.ready
  const db = await mf.getD1Database('DB')
  for (const file of (await readdir('migrations/core')).filter(f => f.endsWith('.sql')).sort()) await db.batch(unstable_splitSqlQuery(await readFile(`migrations/core/${file}`, 'utf8')).map(sql => db.prepare(sql)))
+ // Keep the emitted Worker's health and first-claim proof in the native flow
+ // that already starts it, rather than launching a second smoke-test Worker.
+ const health = await (await mf.dispatchFetch(`${origin}/health`)).json()
+ assert.equal(health.status, 'ok')
+ assert.equal(health.ok, true)
+ assert.deepEqual(await (await mf.dispatchFetch(`${origin}/setup/state`)).json(), { state: 'unclaimed' })
  browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
  const make = async () => { const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 } }), page = await context.newPage(); track(page); page.on('dialog', d => d.accept()); const session = { context, page }; sessions.push(session); return session }
  const owner = await make()
