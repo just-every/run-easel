@@ -43,7 +43,7 @@ test('Connected Gusto observations require reviewed employee mapping and retain 
  const payroll=await call(`payroll/${f.scenario}`)
  assert.equal(payroll.runs.length,3)
  assert.ok(payroll.runs.every(r=>r.source==='gusto'&&r.sourceObservationId&&r.providerPayrollId&&r.costBasis.includes('fees excluded')))
- assert.deepEqual(payroll.reconciliation.map(r=>[r.department,r.totalCents]),[[f.department.id,1090000],[f.department.id,1785000]])
+ assert.deepEqual(payroll.reconciliation.sort((a,b)=>a.month.localeCompare(b.month)).map(r=>[r.department,r.totalCents]),[[f.department.id,1090000],[f.department.id,1785000]])
  assert.deepEqual(await call(`scenario/${f.scenario}`),plannedBeforeImports,'Accepted observations leave planned inputs and revisions unchanged')
  await h.kit('gusto','commit',{...feb,fingerprint:secondPreview.fingerprint},h.owner,409)
  await call('import/gusto/undo',{id:second.import.id})

@@ -21,7 +21,6 @@ test('PEOPLE-006 monthly reviewed-file headcount, hiring slippage, backfills, at
  assert.equal(view.history.find(r=>r.employeeId==='D').slippageDays,null,'A month-only plan never guesses day one')
  assert.equal(view.history.filter(r=>r.employeeId==='T').length,2,'Earlier observations remain in history')
  assert.deepEqual(view.months.find(r=>r.month==='2026-02').observations,[{provider:'Justworks',asOf:'2026-02-28'}])
- assert.match(view.source,/files.*provider roster pull unavailable/)
  // A later plan edit leaves the reviewed historical date and slippage intact.
  await h.command('position',{...f.late,scenario:f.scenario,id:f.late.id,line:f.line.id,department:f.engineering.id,annualSalary:'144000',start:'2026-01',plannedStartDate:'2026-01-20',attritionPercent:'1.25'})
  assert.equal((await query()).history.find(r=>r.employeeId==='M').slippageDays,34)

@@ -4387,7 +4387,7 @@
       "executable": false
     },
     "tests/gusto-roster.test.mjs": {
-      "sha256": "844180918cb145e07ff3971af13a6313fcf5d6c7eeaa5e7047e129f4ba97cda1",
+      "sha256": "acfa31e6a9fb26c5393ca7c96fe06305e911e4d41fd0bf9910af2c910e7a2792",
       "executable": false
     },
     "tests/harness.mjs": {
@@ -4403,7 +4403,7 @@
       "executable": false
     },
     "tests/headcount.test.mjs": {
-      "sha256": "42e9c7c776888cc302a7e0b4ad663f5122c72929eab13fecf1d4bf5ba6a24e62",
+      "sha256": "684ae6a7f35bf2906dc987a2f1d116ad89df3d42171e17c05094567315e98447",
       "executable": false
     },
     "tests/history-browser.mjs": {
@@ -4495,7 +4495,7 @@
       "executable": false
     },
     "tests/office-browser-host.mjs": {
-      "sha256": "88a3abed62bd2d9dad517c6258c29d168b0b4c67ce48c85cfbe63a97e49a66f2",
+      "sha256": "4821babc05fe637ad2d8425eec0087a90fd4dcfb84f87d6d13ca0ca5b9c6f1d7",
       "executable": false
     },
     "tests/office-host.mjs": {
@@ -4507,7 +4507,7 @@
       "executable": false
     },
     "tests/office-reports-browser.mjs": {
-      "sha256": "e99c8b285deb51eecd4c25e265d27dec6dfa68b64caef5d21638f77315adc70a",
+      "sha256": "5d3add32031fc318a225b458d429ffacbc75570d9a0b30beca24737daf5673bb",
       "executable": false
     },
     "tests/open-export-browser-journey.mjs": {

@@ -31,9 +31,9 @@ try {
  await setup.getByRole('checkbox').check()
  await setup.getByRole('button', { name: 'Finish setup' }).click()
  await setup.close()
- for (const width of [1440, 390]) {
+ for (const width of [1440, 390]) for (const hostType of ['PowerPoint', 'Word']) {
   const p = await context.newPage(), owner = { context, page: p }; track(p); await p.setViewportSize({ width, height: 1000 })
-  await p.addInitScript({ content: testHost })
+  await p.addInitScript({ content: `window.officeHostName=${JSON.stringify(hostType)};${testHost}` })
   await p.goto(`${server.origin}/app?tab=reports&office=1`)
   const card = p.getByRole('region', { name: 'Linked Office reports', exact: true })
   await card.getByRole('button', { name: 'Insert linked content', exact: true }).waitFor()
@@ -46,32 +46,32 @@ try {
    await card.getByRole('status').filter({ hasText: 'Linked content inserted' }).waitFor()
   }
   await insertion('table'); await insertion('number'); await insertion('chart')
-  assert.equal(await p.evaluate(() => window.officeTestHost.slides[0].shapes.items.length), 3)
-  assert.match(await p.evaluate(() => window.officeTestHost.slides[0].shapes.items[2].fill.image), /^[A-Za-z0-9+/]+=*$/)
-  const amount = width === 1440 ? '28000' : '32000'
+  assert.equal(await p.evaluate(hostType => hostType === 'Word' ? window.officeTestHost.controls.length : window.officeTestHost.slides[0].shapes.items.length, hostType), 3)
+  assert.match(await p.evaluate(hostType => hostType === 'Word' ? window.officeTestHost.controls[2].inlinePictures.items[0].image : window.officeTestHost.slides[0].shapes.items[2].fill.image, hostType), /^[A-Za-z0-9+/]+=*$/)
+  const amount = String((width === 1440 ? 28000 : 32000) + (hostType === 'Word' ? 1000 : 0))
   await api(owner.context, server.origin, 'command/schedule', { scenario, id: schedule.id, name: 'Customer retainers', department: department.id, line: line.id, values: { '2026-01': amount } })
   await card.getByRole('button', { name: 'Refresh linked content', exact: true }).click()
   await card.getByRole('status').filter({ hasText: '3 linked objects refreshed' }).waitFor()
   const result = await p.evaluate(() => window.officeTestHost.snapshot())
-  assert.equal(result.slides[0].shapes[0].values[1][1], `$${Number(amount).toLocaleString('en-US')}.00`)
-  assert.equal(result.slides[0].shapes[1].text, `$${Number(amount).toLocaleString('en-US')}.00`)
-  assert.doesNotMatch(JSON.stringify(result.settings), /token|secret|24000|28000|32000/)
-  await noOverflow(p, `Office reports ${width}`)
+  assert.equal(hostType === 'Word' ? result.controls[0].tables[0][1][1] : result.slides[0].shapes[0].values[1][1], `$${Number(amount).toLocaleString('en-US')}.00`)
+  assert.equal(hostType === 'Word' ? result.controls[1].text : result.slides[0].shapes[1].text, `$${Number(amount).toLocaleString('en-US')}.00`)
+  assert.doesNotMatch(JSON.stringify(result.settings), /token|secret|24000|28000|29000|32000|33000/)
+  await noOverflow(p, `Office reports ${hostType} ${width}`)
   await card.scrollIntoViewIfNeeded()
-  await card.screenshot({ path: join(evidence, `office-refreshed-${width}.png`) })
+  await card.screenshot({ path: join(evidence, `office-refreshed-${hostType}-${width}.png`) })
   // A browser reload/reopened document keeps identifiers and selectors only.
   await api(owner.context, server.origin, 'command/report-delete', { id: report.id, revision: report.revision })
   const unchanged = await p.evaluate(() => JSON.stringify(window.officeTestHost.snapshot()))
   await card.getByRole('button', { name: 'Refresh linked content', exact: true }).click()
   await card.getByRole('alert').filter({ hasText: /not found/i }).waitFor()
   assert.equal(await p.evaluate(() => JSON.stringify(window.officeTestHost.snapshot())), unchanged)
-  await card.screenshot({ path: join(evidence, `office-unavailable-${width}.png`) })
+  await card.screenshot({ path: join(evidence, `office-unavailable-${hostType}-${width}.png`) })
   await p.close()
   // Recreate after the deliberate deletion for the second viewport.
-  if (width === 1440) {
+  if (width === 1440 || hostType === 'PowerPoint') {
    const recreated = await api(context, server.origin, 'command/report-save', { name: 'Operations monthly revenue', scenario, department: department.id, audience: 'board', report: report.report })
    Object.assign(report, recreated)
   }
-  console.log(`REPORT-004 ${width}: native table, number and chart insertion, in-place refresh and unavailable-source refusal passed`)
+  console.log(`REPORT-004 ${hostType} ${width}: native table, number and chart insertion, in-place refresh and unavailable-source refusal passed`)
  }
 } finally { await browser?.close(); await server?.close(); }
