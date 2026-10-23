@@ -18,7 +18,7 @@ import { dimensionAllowed, requireFinance, requireMember, seesDepartmentDetail, 
 import { reconciliation } from './actuals'
 import { actorNames } from './actor-names'
 import type { Context } from './context'
-import { type Calculation } from './engine'
+import { type Calculation, type Source } from './engine'
 import { departments, INPUT_KINDS, lines, model, scenarioInputs, workspace } from './model'
 import { snapshot, snapshotList } from './store'
 import { frozenModel } from './reforecasts'
@@ -27,6 +27,18 @@ import { all, find, get, requireThat, type Access, type Data, type State } from 
 
 export { canSeeScenario } from './scenario-access'
 
+/** Restricted compensation keeps one total per cell and dimension slice, never one amount per person. */
+function restrictedCompensation(sources: Source[]): Source[] {
+ const slices = new Map<string, Source>()
+ for (const source of sources) {
+  const key = JSON.stringify(Object.entries(source.dimensions ?? {}).sort(([a], [b]) => a.localeCompare(b)))
+  const slice = slices.get(key)
+  if (slice) slice.amount += source.amount
+  else slices.set(key, { kind: 'restricted', label: 'Compensation detail restricted', amount: source.amount, trace: 'Compensation detail restricted', ...(source.dimensions ? { dimensions: source.dimensions } : {}) })
+ }
+ return [...slices.values()]
+}
+
 export function filterCalculation(x: Access, calc: Calculation, payrollLines: string[] = [], state?: State): Calculation {
  if (state) calc = scopedCalculation(state, x, calc, all(state, 'line') as any)
  const { nativeSources: _privateSources, ...publicCalculation } = calc
@@ -34,7 +46,7 @@ export function filterCalculation(x: Access, calc: Calculation, payrollLines: st
  const visibleFormula=(id:string|undefined)=>formulaRows.filter(r=>r.originId===id).every(r=>visibleNativeDependencies(x,r.dependencies??[],state))
  calc={...publicCalculation, ...(calc.cashDrivers?{cashDrivers:calc.cashDrivers.map(d=>!visibleFormula(d.source)?{...d,source:'',label:'Formula detail restricted'}:d)}:{}), ...(calc.formulaValues?{formulaValues:formulaRows.filter(r=>visibleNativeDependencies(x,r.dependencies??[],state)).map(r=>({...r,dependencies:[]}))}:{}),cells:calc.cells.map(cell=>({...cell,sources:cell.sources.map(source=>source.kind==='formula'&&!visibleFormula(source.id)?{kind:'restricted',label:'Formula detail restricted',amount:source.amount,trace:'Formula detail restricted to its source departments and permissions'}:source)}))}
  const restricted = (department: string) => !seesPayDetail(x, department)
- calc = { ...calc, ...(calc.taxes?{taxes:{...calc.taxes,payrollRows:calc.taxes.payrollRows.filter(row=>seesPayDetail(x,row.department))}}:{}), warnings: x.payDetail ? calc.warnings : calc.warnings.map(() => 'Calculation warning; source detail requires Pay detail permission'), cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? cell.sources.map(source => ({ kind: 'restricted', label: 'Compensation detail restricted', amount: source.amount, trace: 'Compensation detail restricted', ...(source.dimensions ? { dimensions: source.dimensions } : {}) })) : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
+ calc = { ...calc, ...(calc.taxes?{taxes:{...calc.taxes,payrollRows:calc.taxes.payrollRows.filter(row=>seesPayDetail(x,row.department))}}:{}), warnings: x.payDetail ? calc.warnings : calc.warnings.map(() => 'Calculation warning; source detail requires Pay detail permission'), cells: calc.cells.map(cell => ({ ...cell, sources: (payrollLines.includes(cell.line) || cell.sources.some(source => source.kind === 'position')) && restricted(cell.department) ? restrictedCompensation(cell.sources) : cell.sources })), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(row => !(['payroll', 'bonus'].includes(row.kind) || payrollLines.includes(row.line)) || !restricted(row.department)) } } : {}) }
  if (x.role === 'finance') return calc
  return { ...calc, ...(calc.cashDrivers ? { cashDrivers: restrictDrivers(calc.cashDrivers, false, department => seesDepartmentDetail(x, department)) } : {}), ...(calc.workingCapital ? { workingCapital: { ...calc.workingCapital, rows: calc.workingCapital.rows.filter(r => seesDepartmentDetail(x, r.department)), issues: calc.workingCapital.issues.filter(r => seesDepartmentDetail(x, r.department)) } } : {}), ...(calc.contracts ? { contracts: { ...calc.contracts, rows: calc.contracts.rows.filter(r => seesDepartmentDetail(x, r.department)), invoices: calc.contracts.invoices.filter(r => seesDepartmentDetail(x, r.department)) } } : {}), ...(calc.financing ? { financing: aggregateFinancing(calc.financing) } : {}), assets: calc.assets?.map(a => seesDepartmentDetail(x, a.department) ? a : { ...a, originId: '', name: 'Detail restricted', category: '', trace: 'Detail restricted to finance and this department' }), cells: calc.cells.map(c => seesDepartmentDetail(x, c.department) ? { ...c, sources: c.sources.map(source => source.kind === 'financing' ? { kind: 'financing', label: 'Financing interest', amount: source.amount, trace: 'Interest expense; instrument terms restricted to finance' } : source) } : { ...c, sources: [{ kind: 'restricted', label: 'Detail restricted to finance and this department', amount: c.amount, trace: 'Detail restricted to finance and this department' }] }) }
 }

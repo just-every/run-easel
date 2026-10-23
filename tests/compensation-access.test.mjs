@@ -86,3 +86,24 @@ test('PEOPLE-005 separate owner pay grants filter plans, frozen reads, Excel pul
  safe(await workbookText(h,`/api/easel/pack/${pack.id}/document.xlsx`,viewer))
  assert.ok(published.snapshot)
 })
+
+test("Readers without Pay detail see one restricted payroll total per cell, never each person's amount", async t => {
+ const h = await harness(); t.after(() => h.close())
+ await h.command('workspace', { name: 'Harbour Analytics', currency: 'USD', planStart: '2026-01', fiscalYearStart: 1 })
+ const sales = await h.command('department', { name: 'Sales' })
+ const payroll = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ for (const [title, annualSalary] of [['Account executive', '60000'], ['Sales director', '120000']]) await h.command('position', { scenario: budget.id, department: sales.id, line: payroll.id, title, holder: privateName, annualSalary, start: '2026-01' })
+ const analyst = await h.person('analyst@example.test', 'finance', [], false)
+ const head = await h.person('head@example.test', 'contributor', [sales.id], false)
+ const january = view => view.calculation.cells.find(c => c.line === payroll.id && c.department === sales.id && c.month === '2026-01')
+ assert.deepEqual(january(await h.get(`/api/easel/scenario/${budget.id}`)).sources.map(s => [s.kind, s.amount]).sort((a, b) => a[1] - b[1]), [['position', 500000], ['position', 1000000]])
+ const { snapshot } = await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })
+ for (const cookie of [analyst, head]) {
+  for (const view of [await h.get(`/api/easel/scenario/${budget.id}`, cookie), (await h.get(`/api/easel/snapshot/${snapshot}`, cookie)).body]) {
+   const cell = january(view)
+   assert.equal(cell.amount, 1500000)
+   assert.deepEqual(cell.sources.map(s => [s.kind, s.amount]), [['restricted', 1500000]])
+  }
+ }
+})
