@@ -1,3 +1,4 @@
+import { PantryConnection } from './pantry'
 import { GustoConnection } from './gusto'
 import { PlaidConnection } from './plaid-connection'
 import { WarehouseInputs } from './warehouse'
@@ -88,7 +89,7 @@ export function Settings({ state, refresh }: Shared) {
   <Dimensions state={state} refresh={refresh} />
   <AccountRules state={state} refresh={refresh} />
   {state.me.role === 'finance' && <GaugeConnection />}
-  {state.me.role === 'finance' && <><GustoConnection /><PlaidConnection /></>}
+  {state.me.role === 'finance' && <><PantryConnection /><GustoConnection /><PlaidConnection /></>}
   {state.me.role === 'finance' && <WarehouseInputs />}
   <SheetLinks state={state} refresh={refresh} />
   <section className="card">

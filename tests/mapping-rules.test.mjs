@@ -513,7 +513,37 @@ test('Pantry read-only source backfills reviewed actuals, re-pulls without dupli
  provider.changed=true;await h.kit('pantry','preview',input,h.owner,409);provider.changed=false
  provider.badCursor=true;await h.kit('pantry','preview',input,h.owner,502);provider.badCursor=false
  for(const status of [401,429,302]){provider.status=status;const r=await h.send('/api/easel/pantry/ledger',input,h.owner);assert.equal(r.status,502);assert.doesNotMatch(r.text,/synthetic-easel-1/)}provider.status=200
+ const budget=(await h.get('/api/easel/state')).scenarios.find(s=>s.kind==='budget')
+ const {forecast}=await h.command('approve-budget',{scenario:budget.id,revision:budget.revision})
+ await h.command('close-month',{scenario:forecast.id,month:'2026-01'})
+ const january=await h.get('/api/easel/variance/2026-01')
+ const sources=january.rows.find(r=>r.line===revenue.id&&r.department===department.id).citations
+ assert.equal(sources.length,2)
+ for(const row of sources)assert.equal(row.providerUrl,'https://pantry.example.test/app/search?type=journal&record=synthetic-easel-4')
+ provider.extraAccounts=[{id:'synthetic-easel-20',code:'4100',name:'New services',type:'income'}]
+ provider.extraEntries=[{id:'synthetic-easel-21',entry_date:'2026-02-15',status:'posted',revision:1,lines:[{id:'synthetic-easel-22',account_id:'synthetic-easel-2',debit_cents:2500,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-23',account_id:'synthetic-easel-20',debit_cents:0,credit_cents:2500,class_name:'Operations',location_name:'East',project_name:''}]}]
+ const february={from:'2026-02-01',to:'2026-02-28'},next=await h.kit('pantry','preview',february)
+ const automatic=next.accounts.find(a=>a.account==='4100')
+ assert.equal(automatic.mappingStatus,'mapped');assert.ok(automatic.ruleIds.length)
+ assert.equal(next.source.trialBalance.opening['synthetic-easel-2'],15000)
+ await h.kit('pantry','commit',{...february,fingerprint:next.fingerprint,sourceFingerprint:next.sourceFingerprint})
+ assert.equal((await h.kit('pantry','preview',february)).unchanged,true)
+ assert.deepEqual(await h.get('/api/easel/variance/2026-01'),january)
+ provider.extraAccounts.push({id:'synthetic-easel-30',code:'8000',name:'Uncovered',type:'expense'})
+ provider.extraEntries.push({id:'synthetic-easel-31',entry_date:'2026-02-16',status:'posted',revision:1,lines:[{id:'synthetic-easel-32',account_id:'synthetic-easel-2',debit_cents:0,credit_cents:1200,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-33',account_id:'synthetic-easel-30',debit_cents:1200,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''}]})
+ const uncovered=await h.kit('pantry','preview',february)
+ assert.deepEqual(uncovered.unmappedAccounts,['8000']);assert.equal(uncovered.periods[0].blocked,true)
+ const beforeRefusal=await count()
+ await h.kit('pantry','commit',{...february,fingerprint:uncovered.fingerprint,sourceFingerprint:uncovered.sourceFingerprint},h.owner,409)
+ assert.equal(await count(),beforeRefusal)
+ assert.deepEqual(await h.get('/api/easel/variance/2026-01'),january)
+ await h.command('account-map',{account:'8000',target:'excluded'})
+ const mapped=await h.kit('pantry','preview',february)
+ await h.kit('pantry','commit',{...february,fingerprint:mapped.fingerprint,sourceFingerprint:mapped.sourceFingerprint})
  const viewer=await h.person('pantry-viewer@example.test','viewer')
+ const viewerVariance=await h.get('/api/easel/variance/2026-01',viewer)
+ assert.equal(viewerVariance.rows.find(r=>r.line===revenue.id&&r.department===department.id).actual,15000)
+ assert.ok(viewerVariance.rows.every(r=>r.citations.length===0))
  await h.get(path,viewer,403);await h.kit('pantry','preview',input,viewer,403)
  assert.equal((await h.send(path+'/disconnect',{},h.owner)).status,200)
  assert.equal(await h.db.prepare("SELECT id FROM e_connection_secrets WHERE id='pantry'").first(),null)

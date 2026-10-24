@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "18c029d69916c00351179103dbe13aebd4982aaf05ff6cd99af092417f40df6f",
+      "sha256": "f115d490efdcbbd51a8743ee3af998862ee319b12db30a94be3c81038868dafe",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "72707f341d0be2f6f05882903c40e29248ccd7c56f318510d418d5e9f8b38c17",
+      "sha256": "bfea6dfbccb07a7645e1f903377bfa5ddf56ccd4c0507b2a336a68237b8a929f",
       "executable": false
     },
     "DEMO.md": {
@@ -915,7 +915,7 @@
       "executable": false
     },
     "src/easel/actuals-read.ts": {
-      "sha256": "2a8e80a65dd310ef01b84fcd533901bcdb65e235dfae4ea9be995790c6369a57",
+      "sha256": "c2345f0196cb7d08a03415f0878c1b03bd8c7d578d157feadc899696d3af88cb",
       "executable": false
     },
     "src/easel/actuals.ts": {
@@ -3883,7 +3883,7 @@
       "executable": false
     },
     "src/ui/actuals.tsx": {
-      "sha256": "836479a52deeb246c734b81a645cce9c4436b74ceb48587cd1dea303b3a2a6de",
+      "sha256": "232429f63b3093ea99a97c8c39a17c475e7a57fdaa2cfad67d14949d90c474b9",
       "executable": false
     },
     "src/ui/agent-governance.tsx": {
@@ -4082,6 +4082,10 @@
       "sha256": "da82419390425f1dd95533139d02dd6cbc8fddc0df24d5ff3a896d171e0806d9",
       "executable": false
     },
+    "src/ui/pantry.tsx": {
+      "sha256": "23e2cdee347d07b045c0a74f1d8f491f89c0d736387bf6cd612a1262a44e003c",
+      "executable": false
+    },
     "src/ui/parallel-month.tsx": {
       "sha256": "9ad108d7f3486316963bd8ec85002d45a648f841588c24ad2fb516f13db894cd",
       "executable": false
@@ -4123,7 +4127,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "85dd2db6b23ec66947d7bb1d1c38d1bb12f3f73797b4581b0348c98223c05231",
+      "sha256": "d3b6fb6a50b6bd1a9781929e2109805f5aa8886a9954460a9bddc1b2dabd956f",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -4147,7 +4151,7 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "57c30f202f99cf44a3038ab86e2a3e6d34090817c5cb719c6ee2ffc05dfd1744",
+      "sha256": "d9f0a71558f7f746d3f5055967946d655f566caf8071db235c6c113844f9ed4c",
       "executable": false
     },
     "src/ui/shared.tsx": {
@@ -4611,7 +4615,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "78ef414458f68e62057d5c6164acd72af264f5a6daf70add9207d0cdcba99339",
+      "sha256": "68f5d047a2e74db3744aa8eca9297e09c9f6575af1922a213f0384974fd7be65",
       "executable": false
     },
     "tests/mcp.test.mjs": {
@@ -4695,11 +4699,11 @@
       "executable": false
     },
     "tests/pantry-browser.mjs": {
-      "sha256": "d8b1185df445c069e12a62fc4ffc10acfc4beb2f3853b9eb0b3d9e5cac38b7b5",
+      "sha256": "8cf0ce8bc5e8af3e5b0cd281d12653d128d8b85d2e216c38e9858da8a0dd389a",
       "executable": false
     },
     "tests/pantry-provider.mjs": {
-      "sha256": "7fb723be88fd71f641c72d0d3a49ec425f878d085751c194020d952b100404bb",
+      "sha256": "b00d1e1040a2bcc0a020336e29289e85378906e5bbe0c543b5b38a414255f4a5",
       "executable": false
     },
     "tests/parallel-month-browser.mjs": {

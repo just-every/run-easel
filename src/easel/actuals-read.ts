@@ -84,6 +84,10 @@ export async function rowsFor(db: D1Database, s: State, month: string, line: str
  return results.flatMap(r => {
   const v = JSON.parse(r.value), mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })
   if (mapping.blocked || mapping.target !== line || mapping.department !== department) return []
-  return [{ dimensions: resolveDimensions(s, v.sourceDimensions ?? { department: v.department }).dimensions, id: r.id, file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
+  let providerUrl: string | undefined
+  if (v.pantryOrigin && /^[A-Za-z0-9_-]{1,120}$/.test(v.pantryEntry)) {
+   try { const origin = new URL(v.pantryOrigin); if (!origin.username && !origin.password && origin.pathname === '/' && !origin.search && !origin.hash && (origin.protocol === 'https:' || origin.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(origin.hostname))) providerUrl = new URL('/app/search?' + new URLSearchParams({type:'journal',record:v.pantryEntry}), origin).href } catch {}
+  }
+  return [{ providerUrl, dimensions: resolveDimensions(s, v.sourceDimensions ?? { department: v.department }).dimensions, id: r.id, file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
  })
 }

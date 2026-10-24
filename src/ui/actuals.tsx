@@ -1,3 +1,4 @@
+import { PantryImport } from './pantry'
 import { SourceGuard } from './source-guard'
 import { IncumbentImport } from './move-import'
 import { BalanceActuals } from './balance-actuals'
@@ -27,6 +28,7 @@ export function Actuals({ state, refresh }: Shared) {
  const currency = state.workspace.currency
  return <>
   <SourceGuard state={state} refresh={refresh} />
+  <PantryImport state={state} refresh={refresh} />
   <CsvImport state={state} refresh={refresh} />
   <section className="card">
    <h2>Imports</h2>
