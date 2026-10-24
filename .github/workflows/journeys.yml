@@ -129,3 +129,44 @@ jobs:
         run: node tests/constraint-responses-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/constraints
+
+  model-recalculation:
+    name: MODEL-007 nightly (${{ matrix.journey }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        journey: [scale, background, browser]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - name: Install pinned dependencies
+        run: |
+          corepack enable
+          corepack install --global pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184
+          pnpm install --frozen-lockfile
+      - name: MODEL-007 measured API scale
+        if: matrix.journey == 'scale'
+        run: node tests/model-scale.mjs "nightly-${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: MODEL-007 bounded background calculation
+        if: matrix.journey == 'background'
+        run: node tests/calculation-background.mjs
+      - name: Install current browser
+        if: matrix.journey == 'browser'
+        run: |
+          npm install --prefix "$RUNNER_TEMP/easel-browser" --no-save @playwright/test@1.64.1
+          "$RUNNER_TEMP/easel-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: MODEL-007 native calculation at desktop and phone widths
+        if: matrix.journey == 'browser'
+        run: node tests/calculation-browser.mjs
+        env:
+          EASEL_PLAYWRIGHT_MODULE: ${{ runner.temp }}/easel-browser/node_modules/@playwright/test/index.mjs
+          EASEL_EVIDENCE: ${{ runner.temp }}/easel-model-calculation
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.journey == 'browser'
+        with:
+          name: easel-model-calculation
+          path: ${{ runner.temp }}/easel-model-calculation
