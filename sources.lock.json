@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "f115d490efdcbbd51a8743ee3af998862ee319b12db30a94be3c81038868dafe",
+      "sha256": "32d4d5f25bcf97b4f821fd8b10e09f7520ce290b301bb5a39a46e1ad37c92408",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "15428d3be27b6bd45a429364f7a52d8ca945c907b799b7e068db3801154a6356",
+      "sha256": "7f58de32ce2c8c5537aeca4aa8906a7752881626405f86065d526956ea4275bf",
       "executable": false
     },
     "base-copies.json": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "bfea6dfbccb07a7645e1f903377bfa5ddf56ccd4c0507b2a336a68237b8a929f",
+      "sha256": "b9586c55fa1729b8d2d152138d0c34223ae582ba57dacc7b6683b3ea2deb7755",
       "executable": false
     },
     "DEMO.md": {
@@ -767,7 +767,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "1d0511229e81774503a5e8344ab95ff7a1cc52102310b608b8953b56a9a868f5",
+      "sha256": "e3a3fc9fd70f2f071f3b0cb02b4b9b14c42846c5a6f96f002916349915a60bf3",
       "executable": false
     },
     "SOURCE.md": {
@@ -1047,7 +1047,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "ab5cb65626fca879ec0cf7a7886493cbeb89af3d52f4c050aea0b6080fff893a",
+      "sha256": "9a55476323755ab2534e7a80d20f04e800ea24b22e8b98b865f4a533186d8ffa",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1691,7 +1691,7 @@
       "executable": false
     },
     "src/easel/pantry-cash.ts": {
-      "sha256": "4a64ff17b85854ac4f68cbd7e10732d57087c6d7173c0dd436ad03dc95af7bba",
+      "sha256": "06edc5eece9e5897983480a2b5a3e149bfa053cd21f572db6b8047f9e2777973",
       "executable": false
     },
     "src/easel/pantry-connection.ts": {
@@ -1931,7 +1931,7 @@
       "executable": false
     },
     "src/easel/weekly-cash.ts": {
-      "sha256": "ead54a0c4f17726fba9d7aa0992dafde95b3cd78765a06e29673c980b4f2cce6",
+      "sha256": "6ee2735ed1810854b32b4657dfd98054dc67485dec29832137ec4af50c8c181b",
       "executable": false
     },
     "src/easel/workbook-calculation.ts": {
@@ -4703,7 +4703,7 @@
       "executable": false
     },
     "tests/pantry-live.mjs": {
-      "sha256": "b444f135894697aa596e02245d6ad531ec6b088b2a53c3eb6b0316a1af7c14ef",
+      "sha256": "c9299d6e60d957f19a033f29ce3425dca230557e79b287a5b0295db4bd8a551c",
       "executable": false
     },
     "tests/pantry-provider.mjs": {
@@ -4907,7 +4907,7 @@
       "executable": false
     },
     "tests/weekly-cash.test.mjs": {
-      "sha256": "261ffc6ce7107db32959f53a10990de1b4535a75f38fee088d1f4dc2d4192947",
+      "sha256": "07c034b18f6cb308bca39328d52c44505ea3928f35f7013fe689640b42dd74f3",
       "executable": false
     },
     "tests/workbook-undo.test.mjs": {

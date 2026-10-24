@@ -651,3 +651,27 @@ All these routes require a native finance session with company-wide connection a
 Use the existing actuals journal routes to resume or undo an import. Corrected source amounts become reviewed deltas, preserving earlier rows and frozen captures. A changed accepted account, date or dimension requires a correcting-file review. An unchanged pull returns `unchanged:true` with zero changed rows; there is nothing to commit. Full-source reads exceeding 5,000 records or the bounded response size refuse rather than accepting truncated data. Redirects, missing pagination, inconsistent ledgers and provider failures refuse without exposing response bodies or silently retaining a previous successful conclusion.
 
 Native Pantry connection and import controls, provider transaction links and integrated weekly open-item scheduling remain unfinished. Current planned and Plaid weekly views continue to work independently.
+
+
+### Reviewed Pantry weekly cash preview
+
+A native company-wide finance session can read `POST /api/easel/pantry/cash`
+with `asOf` set to today's UTC date. Review the returned events and digest,
+then call `POST /api/easel/pantry/cash-forecast` with:
+
+- `scenario` and its current numeric `revision`, `asOf`, optional `start`,
+  `sourceFingerprint` equal to that digest and `basis` set to `plan` or `bank`.
+- `replacements`: one object per reviewed planned date with `date`,
+  `collections` and `payments` in nonnegative integer minor units.
+- `additionalCollections` and `additionalPayments` in integer minor units.
+  Replacements plus these explicitly additional amounts must equal the source
+  invoice and bill totals respectively. Replacements cannot exceed that day's
+  planned cash. No customer or vendor identity match is inferred.
+
+The source is refetched and both fingerprints are checked. Unresolved dates,
+changed sources, stale revisions and captured scenarios refuse. Bank mode
+requires a bank observation on the source observation date. The thirteen-week
+preview starts after that date, keeps other planned events and noted overrides,
+and displays monthly differences without changing the monthly plan. Set
+`format` to `xlsx` for the same formula workbook. This HTTP preview does not yet
+have native source-review controls; FIN-007 remains partial.

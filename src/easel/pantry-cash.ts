@@ -2,7 +2,9 @@ import type { Bindings } from '../auth.server'
 import type { Context } from './context'
 import { pantryKey } from './pantry-connection'
 import { pantryCents, pantryDate, pantryDigest, pantryId, pantryPages } from './pantry-provider'
+import { scenarioAccess } from './scenario-access'
 import { workspace } from './model'
+import { cashDate, weeklyCash } from './weekly-cash'
 import { requireThat, type Data } from './types'
 
 const day=86400000
@@ -52,4 +54,24 @@ export async function pantryCash(c:Context,env:Bindings,b:Data) {
  }
  events.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
  return {asOf,currency:business[0].currency,events,unresolved,complete:!unresolved.length,digest:pantryDigest({asOf,events,unresolved}),basis:'Pantry open-item source preview only. Current open balances are read now; paid history is bounded by the observation date. No plan, monthly forecast, bank balance or weekly override is changed.'}
+}
+
+/** Read-only combined view. Finance accounts for every source cent explicitly;
+ * no heuristic matches a customer or bill to a planning assumption. */
+export async function pantryCashForecast(c:Context,env:Bindings,b:Data) {
+ const source=await pantryCash(c,env,b)
+ requireThat(source.complete,'Resolve every open-item date before forecasting',409)
+ requireThat(b.sourceFingerprint===source.digest,'Pantry changed after review; preview the source again',409)
+ const scenario=scenarioAccess(c.s,c.x,b.scenario)
+ requireThat(scenario&&scenario.revision===b.revision,'The scenario changed after review; review again',409)
+ requireThat(Array.isArray(b.replacements)&&b.replacements.length<=500,'Review the planned cash replacements')
+ const cents=(value:unknown)=>{requireThat(typeof value==='number'&&Number.isSafeInteger(value)&&value>=0,'Use exact nonnegative minor units');return value}
+ const seen=new Set<string>()
+ const remove=b.replacements.map((r:Data)=>{requireThat(r&&typeof r==='object'&&!Array.isArray(r),'Review a dated cash replacement');const date=cashDate(r.date);requireThat(!seen.has(date),'Review each replacement date once');seen.add(date);return {date,collections:cents(r.collections),payments:cents(r.payments)}})
+ const total=(values:number[])=>{const n=values.reduce((n,v)=>n+v,0);requireThat(Number.isSafeInteger(n),'Cash exceeds exact minor units');return n}
+ for(const [kind,field,extra] of [['invoice','collections','additionalCollections'],['bill','payments','additionalPayments']]){
+  requireThat(total(remove.map((r:Data)=>r[field]))+cents(b[extra])===total(source.events.filter(e=>e.kind===kind).map(e=>e.amount)),'Account for every source cent as replaced planned cash or explicitly additional cash')
+ }
+ const view=await weeklyCash(c,b.scenario,b.start,b.basis??'plan',{asOf:source.asOf,currency:source.currency,digest:source.digest,remove,add:source.events.map(e=>({date:e.date,collections:e.kind==='invoice'?e.amount:0,payments:e.kind==='bill'?e.amount:0}))})
+ return view
 }

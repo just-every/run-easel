@@ -1,4 +1,4 @@
-import { pantryCash } from './pantry-cash'
+import { pantryCash, pantryCashForecast } from './pantry-cash'
 import { pantryImport } from './pantry-import'
 import { pantryStatus, pantryConnection, pantryKey } from './pantry-connection'
 import { readPantryLedger } from './pantry-provider'
@@ -191,6 +191,11 @@ api.post('/api/easel/pantry/cash',async c=>{
  const ctx=await open(c),value=await pantryCash(ctx,c.env,await body(c))
  await readFence(ctx.db,ctx.x.actor,ctx.revision)
  return c.json(value)
+})
+api.post('/api/easel/pantry/cash-forecast',async c=>{
+ const ctx=await open(c),input=await body(c),value=await pantryCashForecast(ctx,c.env,input)
+ await readFence(ctx.db,ctx.x.actor,ctx.revision)
+ return input.format==='xlsx'?spreadsheet(weeklyCashWorkbook(value),'easel-pantry-weekly-cash'):c.json(value)
 })
 api.post('/api/easel/pantry/ledger', async c => {
  const ctx=await open(c),input=await body(c),key=await pantryKey(ctx,c.env)

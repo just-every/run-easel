@@ -15,7 +15,8 @@ export function cashDate(value: unknown): string {
  requireThat(typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number(value.slice(0, 4)) >= 1900 && Number(value.slice(0, 4)) <= 2200 && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && addDays(value, 0) === value, 'Use a valid cash date YYYY-MM-DD')
  return value
 }
-export async function weeklyCash(c: Context, id: string, requested?: string, requestedBasis = 'plan') {
+export type CashOverlay = { currency: string; asOf: string; digest: string; remove: {date:string;collections:number;payments:number}[]; add: {date:string;collections:number;payments:number}[] }
+export async function weeklyCash(c: Context, id: string, requested?: string, requestedBasis = 'plan', overlay?: CashOverlay) {
  requireThat(['plan', 'bank'].includes(requestedBasis), 'Choose plan or bank cash basis')
  if (requestedBasis === 'bank') bankCashAuthority(c)
  const v = await scenarioView(c, id), calc = v.calculation
@@ -24,17 +25,31 @@ export async function weeklyCash(c: Context, id: string, requested?: string, req
   requireThat(v.scenario.status === 'working', 'Bank cash is a current observation; captured versions retain their planned cash', 409)
   requireThat(bank.currency === calc.currency, 'Bank and scenario currencies differ; no exchange rate is inferred', 409)
  }
- const anchor = bank ? addDays(bank.asOf.slice(0, 10), 1) : null
+ if(overlay)requireThat(overlay.currency===calc.currency,'Source and scenario currencies differ; no exchange rate is inferred',409)
+ if(bank&&overlay)requireThat(bank.asOf.slice(0,10)===overlay.asOf,'Refresh bank cash on the open-item observation date',409)
+ if(overlay)requireThat(v.scenario.status==='working','Open items cannot replace captured cash schedules',409)
+ const anchor = bank ? addDays(bank.asOf.slice(0, 10), 1) : overlay ? addDays(overlay.asOf,1) : null
  const start = cashDate(requested || anchor || periodForKey(v.workspace, calc.months.find(m => m > (calc.actualsThrough ?? '')) ?? calc.months[0]).startDate)
  const first = periodForKey(v.workspace, calc.months[0]).startDate, last = periodForKey(v.workspace, calc.months.at(-1)!).endDate
  requireThat(start >= first && start <= last, 'Start within the captured plan horizon')
  if (!calc.dailyCash) return { available: false, reason: 'This captured version predates dated cash schedules; its monthly cash remains available.', currency: calc.currency, start, weeks: [], reconciliation: [] }
- if (anchor) requireThat(start >= anchor, 'Start bank cash after its observed balance date', 409)
- const rows = anchor ? calc.dailyCash.filter(r => r.date >= anchor) : calc.dailyCash, overrides = v.scenario.weeklyCashOverrides ?? {}
+ if (anchor) requireThat(start >= anchor, 'Start cash after its observed balance date', 409)
+ let scheduledRows=calc.dailyCash
+ if(overlay){
+  const byDate=new Map(scheduledRows.map(r=>[r.date,{...r}]))
+  for(const removed of overlay.remove){
+   const prior=byDate.get(removed.date)
+   requireThat(prior&&removed.date>overlay.asOf&&removed.collections<=prior.collections&&removed.payments<=prior.payments,'Reviewed replacement exceeds the planned dated cash; review again',409)
+   prior.collections-=removed.collections;prior.payments-=removed.payments
+  }
+  for(const added of overlay.add){const row=byDate.get(added.date)??{date:added.date,collections:0,payments:0,assumed:false};row.collections+=added.collections;row.payments+=added.payments;requireThat(Number.isSafeInteger(row.collections)&&Number.isSafeInteger(row.payments),'Cash exceeds exact minor units',409);byDate.set(added.date,row)}
+  scheduledRows=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date))
+ }
+ const rows = anchor ? scheduledRows.filter(r => r.date >= anchor) : scheduledRows, overrides = v.scenario.weeklyCashOverrides ?? {}
  const netThrough = (date: string) => rows.filter(r => r.date <= date).reduce((n, r) => n + r.collections - r.payments, 0)
  const changes = Object.entries(overrides).map(([from, value]) => ({ adjustmentCents: (value as Data).adjustmentCents as number, note: (value as Data).note as string, date: addDays(from, 6) })).filter(r => !anchor || r.date >= anchor)
  const adjustmentThrough = (date: string) => changes.filter(r => r.date <= date).reduce((n, r) => n + r.adjustmentCents, 0)
- const baseline = bank ? bank.balanceCents : calc.cash[0].opening
+ const baseline = bank ? bank.balanceCents : calc.cash[0].opening + (overlay ? calc.dailyCash.filter(r=>r.date<=overlay.asOf).reduce((n,r)=>n+r.collections-r.payments,0) : 0)
  let opening = baseline + netThrough(addDays(start, -1)) + adjustmentThrough(addDays(start, -1))
  const weeks = Array.from({ length: 13 }, (_, i) => {
   const from = addDays(start, i * 7), end = addDays(from, 6), available = end <= last
@@ -57,7 +72,7 @@ export async function weeklyCash(c: Context, id: string, requested?: string, req
   const scheduled = baseline + netThrough(date), weekly = scheduled + adjustment
   return [{ month: m.month, date, monthly: m.closing, scheduled, adjustment, weekly, difference: weekly - m.closing, incomplete: !!m.incompleteReasons?.length }]
  })
- return { available: true, currency: calc.currency, start, weeks, reconciliation, ...(bank ? { bank: { asOf: bank.asOf, balanceCents: bank.balanceCents, accountCount: bank.accountCount }, bankBasis: true } : {}), basis: bank ? `Planning estimate from Plaid bank balance observed ${bank.asOf}, ${bank.accountCount} depository accounts; not ledger actuals. Forecast events start the next UTC day; posted historical movements are not counted again. Monthly differences remain visible. Overrides before the bank observation are excluded.` : 'Planning estimate from forecast schedules; no bank balance or open invoice/bill feed. Undated cash uses period end; debt draws use period start. Overrides adjust weekly cash only and settle on week end.' }
+ return { ...(overlay?{openItems:{asOf:overlay.asOf,digest:overlay.digest},sourcePreview:true}:{}), available: true, currency: calc.currency, start, weeks, reconciliation, ...(bank ? { bank: { asOf: bank.asOf, balanceCents: bank.balanceCents, accountCount: bank.accountCount }, bankBasis: true } : {}), basis: overlay ? `Reviewed Pantry open-item forecast preview as of ${overlay.asOf}. Each source cent replaces explicitly reviewed planned cash or is explicitly marked additional. Monthly plan is unchanged; differences and weekly notes remain visible.${bank ? ' Opening uses the observed Plaid bank balance.' : ' Opening rolls planned cash through the observation date.'}` : bank ? `Planning estimate from Plaid bank balance observed ${bank.asOf}, ${bank.accountCount} depository accounts; not ledger actuals. Forecast events start the next UTC day; posted historical movements are not counted again. Monthly differences remain visible. Overrides before the bank observation are excluded.` : 'Planning estimate from forecast schedules; no bank balance or open invoices or bills feed. Undated cash uses period end; debt draws use period start. Overrides adjust weekly cash only and settle on week end.' }
 }
 export async function weeklyCashCommand(c: Context, op: string, b: Data) {
  if (op !== 'weekly-cash-override') return undefined

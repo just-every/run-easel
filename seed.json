@@ -331,6 +331,12 @@
       "clauses": [
         "PEOPLE-001"
       ]
+    },
+    {
+      "id": "pantry-actuals",
+      "clauses": [
+        "CONNECT-004"
+      ]
     }
   ],
   "nonGoals": [
