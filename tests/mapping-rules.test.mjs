@@ -252,7 +252,9 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
 
 test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
  const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
- const h = await harness(); t.after(() => h.close())
+ for(const sourceKind of ['file','pantry']) {
+ const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()
+ const h = await harness({outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
  const { revenue, expense } = await seedBalanceActuals(h.command)
  const dept = await h.command('department', { name: 'Delivery' })
  await h.command('department-map', { source: '', department: dept.id })
@@ -279,8 +281,21 @@ test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attri
  ['2026-01-31','FA-01','-500'],['2026-01-31','5300','500'],['2026-01-31','2200','600'],['2026-01-31','4100','-600'],['2026-01-31','2100','-1000'],['2026-01-31','5200','1000'],
  ]
  const ledger = { filename: 'opening-ledger.csv', dateFormat: 'YYYY-MM-DD', columns: { date: 'Date', account: 'Account', amount: 'Amount' }, csv: 'Date,Account,Amount\n' + rows.map(r => r.join(',')).join('\n') + '\n' }
- const preview = await h.kit('actuals','preview',ledger)
- await h.kit('actuals','commit',{...ledger,fingerprint:preview.fingerprint})
+ let preview
+ if(sourceKind==='pantry') {
+  await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+  provider.extraAccounts=[...new Set(rows.map(r=>r[1]))].filter(code=>!['1000','4000'].includes(code)).map((code,i)=>({id:`synthetic-easel-account-${i}`,code,name:code,type:'asset'}))
+  const chart=[{id:'synthetic-easel-2',code:'1000'},{id:'synthetic-easel-3',code:'4000'},...provider.extraAccounts]
+  provider.entries=[...new Set(rows.map(r=>r[0]))].map((date,i)=>({id:`synthetic-easel-entry-${i}`,entry_date:date,status:'posted',revision:`synthetic-easel-revision-${i}`,lines:rows.filter(r=>r[0]===date).map((r,j)=>{const amount=Math.round(Number(r[2])*100);return {id:`synthetic-easel-line-${i}-${j}`,account_id:chart.find(a=>a.code===r[1]).id,debit_cents:Math.max(amount,0),credit_cents:Math.max(-amount,0)}})}))
+  assert.equal((await h.send('/api/easel/connections/pantry/connect',pantryGrant,h.owner)).status,200)
+  const range={from:'2025-12-01',to:'2026-01-31'}
+  preview=await h.kit('pantry','preview',range)
+  assert.equal(preview.source.trialBalance.balanced,true)
+  await h.kit('pantry','commit',{...range,fingerprint:preview.fingerprint,sourceFingerprint:preview.sourceFingerprint})
+ } else {
+  preview=await h.kit('actuals','preview',ledger)
+  await h.kit('actuals','commit',{...ledger,fingerprint:preview.fingerprint})
+ }
  let b = await h.get(`/api/easel/scenario/${budget.id}`)
  const { forecast } = await h.command('approve-budget',{scenario:budget.id,revision:b.scenario.revision})
  const beforeClose = await h.get(`/api/easel/scenario/${forecast.id}`)
@@ -369,6 +384,7 @@ test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attri
  await h.command('input-delete',{kind:'asset',id:liveAsset.id})
  await h.get(`/api/easel/scenario/${forecast.id}`,h.owner,409)
  assert.deepEqual(await h.get(`/api/easel/scenario/${kept.id}`),frozen,'deleted allocation origins block working conclusions without changing the kept version')
+ }
 })
 
 // Staged source refresh and payroll completeness through the native API.
@@ -503,7 +519,8 @@ test('Pantry read-only source backfills reviewed actuals, re-pulls without dupli
  while(accepted.batch.status==='importing')accepted=await h.kit('actuals','resume',{id:accepted.batch.id})
  assert.equal(await count(),2)
  assert.equal((await h.kit('pantry','preview',input)).changedRows,0)
- provider.amount=15000;provider.revision=2
+ for(const revision of [null,7,'']){provider.revision=revision;await h.kit('pantry','preview',input,h.owner,502)}
+ provider.amount=15000;provider.revision='synthetic-easel-revision-2'
  const correction=await h.kit('pantry','preview',input)
  assert.equal(correction.changedRows,2);assert.equal(correction.accounts.find(a=>a.account==='1000').net,5000)
  await h.kit('pantry','commit',{...input,fingerprint:preview.fingerprint,sourceFingerprint:preview.sourceFingerprint},h.owner,409)
@@ -521,7 +538,7 @@ test('Pantry read-only source backfills reviewed actuals, re-pulls without dupli
  assert.equal(sources.length,2)
  for(const row of sources)assert.equal(row.providerUrl,'https://pantry.example.test/app/search?type=journal&record=synthetic-easel-4')
  provider.extraAccounts=[{id:'synthetic-easel-20',code:'4100',name:'New services',type:'income'}]
- provider.extraEntries=[{id:'synthetic-easel-21',entry_date:'2026-02-15',status:'posted',revision:1,lines:[{id:'synthetic-easel-22',account_id:'synthetic-easel-2',debit_cents:2500,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-23',account_id:'synthetic-easel-20',debit_cents:0,credit_cents:2500,class_name:'Operations',location_name:'East',project_name:''}]}]
+ provider.extraEntries=[{id:'synthetic-easel-21',entry_date:'2026-02-15',status:'posted',revision:'synthetic-easel-revision-1',lines:[{id:'synthetic-easel-22',account_id:'synthetic-easel-2',debit_cents:2500,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-23',account_id:'synthetic-easel-20',debit_cents:0,credit_cents:2500,class_name:'Operations',location_name:'East',project_name:''}]}]
  const february={from:'2026-02-01',to:'2026-02-28'},next=await h.kit('pantry','preview',february)
  const automatic=next.accounts.find(a=>a.account==='4100')
  assert.equal(automatic.mappingStatus,'mapped');assert.ok(automatic.ruleIds.length)
@@ -530,7 +547,7 @@ test('Pantry read-only source backfills reviewed actuals, re-pulls without dupli
  assert.equal((await h.kit('pantry','preview',february)).unchanged,true)
  assert.deepEqual(await h.get('/api/easel/variance/2026-01'),january)
  provider.extraAccounts.push({id:'synthetic-easel-30',code:'8000',name:'Uncovered',type:'expense'})
- provider.extraEntries.push({id:'synthetic-easel-31',entry_date:'2026-02-16',status:'posted',revision:1,lines:[{id:'synthetic-easel-32',account_id:'synthetic-easel-2',debit_cents:0,credit_cents:1200,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-33',account_id:'synthetic-easel-30',debit_cents:1200,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''}]})
+ provider.extraEntries.push({id:'synthetic-easel-31',entry_date:'2026-02-16',status:'posted',revision:'synthetic-easel-revision-1',lines:[{id:'synthetic-easel-32',account_id:'synthetic-easel-2',debit_cents:0,credit_cents:1200,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-33',account_id:'synthetic-easel-30',debit_cents:1200,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''}]})
  const uncovered=await h.kit('pantry','preview',february)
  assert.deepEqual(uncovered.unmappedAccounts,['8000']);assert.equal(uncovered.periods[0].blocked,true)
  const beforeRefusal=await count()

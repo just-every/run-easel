@@ -1703,7 +1703,7 @@
       "executable": false
     },
     "src/easel/pantry-provider.ts": {
-      "sha256": "123d9b9637bc34f3097992a689f2c6d7dea0b740643fea12e9670e63bdc3cd69",
+      "sha256": "99031f8cd981d9f9eaafe1601d1b84713da40cab05acfd3f318649ba5dcf96a9",
       "executable": false
     },
     "src/easel/parallel-month.ts": {
@@ -4615,7 +4615,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "68f5d047a2e74db3744aa8eca9297e09c9f6575af1922a213f0384974fd7be65",
+      "sha256": "5ca219e0ebed5ee089f9706536e1398a6f0e2864c5a24b522b79eb9b116e3297",
       "executable": false
     },
     "tests/mcp.test.mjs": {
@@ -4699,11 +4699,15 @@
       "executable": false
     },
     "tests/pantry-browser.mjs": {
-      "sha256": "8cf0ce8bc5e8af3e5b0cd281d12653d128d8b85d2e216c38e9858da8a0dd389a",
+      "sha256": "0cc78cee7d317c5526944e89344596d012ae177c2c3b36cf616dc457c2a33a3e",
+      "executable": false
+    },
+    "tests/pantry-live.mjs": {
+      "sha256": "b444f135894697aa596e02245d6ad531ec6b088b2a53c3eb6b0316a1af7c14ef",
       "executable": false
     },
     "tests/pantry-provider.mjs": {
-      "sha256": "b00d1e1040a2bcc0a020336e29289e85378906e5bbe0c543b5b38a414255f4a5",
+      "sha256": "c0f959aabbd0ae41629570fed9463268b0826decd59090891979d2094ed015e9",
       "executable": false
     },
     "tests/parallel-month-browser.mjs": {

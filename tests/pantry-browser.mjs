@@ -63,7 +63,7 @@ try {
   assert.equal(await connection().locator('input[type=password]').count(),0)
   await noOverflow(page,`Pantry connection ${width}`)
   await connection().screenshot({path:join(evidence,`pantry-connection-${width}.png`)})
-  if(width===390){provider.amount=15000;provider.revision=2}
+  if(width===390){provider.amount=15000;provider.revision='synthetic-easel-revision-2'}
   await page.goto(origin+'/app?tab=actuals')
   await importer().getByLabel('Pantry from date',{exact:true}).fill('2026-01-01')
   await importer().getByLabel('Pantry through date',{exact:true}).fill('2026-01-31')

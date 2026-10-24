@@ -74,7 +74,7 @@ export async function readPantryLedger(key: PantryKey, from: string, to: string)
  requireThat(new Set(accounts.map(a=>a.code)).size===accounts.length,'Pantry returned duplicate account codes',502)
  const rows: Data[]=[],ids=new Set<string>(),movement=new Map<string,number>()
  for(const entry of entries) {
-  requireThat(entry.status==='posted' && Number.isSafeInteger(entry.revision) && entry.revision>0 && Array.isArray(entry.lines),'Pantry returned an incomplete posted entry',502)
+  requireThat(entry.status==='posted' && typeof entry.revision==='string' && /^[A-Za-z0-9_-]{1,120}$/.test(entry.revision) && Array.isArray(entry.lines),'Pantry returned an incomplete posted entry',502)
   const date=pantryDate(entry.entry_date);if(date<from||date>to)continue
   let net=0
   for(const line of entry.lines) {

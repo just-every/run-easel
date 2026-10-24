@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 export const pantryGrant={key:'synthetic-easel-1',consent:true}
 export function pantryProvider() {
- const state={amount:10000,revision:1,status:200,changed:false,badCursor:false,pageSize:100,reversed:false,reads:[],extraAccounts:[],extraEntries:[]}
+ const state={amount:10000,revision:'synthetic-easel-revision-1',status:200,changed:false,badCursor:false,pageSize:100,reversed:false,reads:[],extraAccounts:[],extraEntries:[],entries:null,periods:null}
  const accounts=[{id:'synthetic-easel-2',code:'1000',name:'Cash',type:'asset'},{id:'synthetic-easel-3',code:'4000',name:'Services',type:'income'}]
  const entries=()=>[{id:'synthetic-easel-4',entry_date:'2026-01-15',status:'posted',revision:state.revision,lines:[{id:'synthetic-easel-5',account_id:accounts[0].id,debit_cents:state.amount,credit_cents:0,class_name:'Operations',location_name:'East',project_name:''},{id:'synthetic-easel-6',account_id:accounts[1].id,debit_cents:0,credit_cents:state.amount,class_name:'Operations',location_name:'East',project_name:''}]}]
  state.outbound=async request=>{
@@ -11,8 +11,8 @@ export function pantryProvider() {
   const page=(rows,envelope='records')=>{const limit=Number(u.searchParams.get('limit')??100),cursor=u.searchParams.get('cursor')??'',selected=rows.filter(r=>r.id>cursor).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,Math.min(limit,state.pageSize));return Response.json({[envelope]:selected,nextCursor:state.badCursor?cursor||'synthetic-easel-999':rows.filter(r=>r.id>cursor).length>selected.length?selected.at(-1).id:null})}
   if(path==='business')return page([{id:'1',currency:'USD'}])
   if(path==='accounts')return page([...accounts,...state.extraAccounts])
-  if(path==='periods')return page([{id:'2026-01',start_date:'2026-01-01',end_date:'2026-01-31',status:'locked'}])
-  const allEntries=[...entries(),...state.extraEntries],chart=[...accounts,...state.extraAccounts]
+  if(path==='periods')return page(state.periods??[{id:'2026-01',start_date:'2026-01-01',end_date:'2026-01-31',status:'locked'}])
+  const allEntries=state.entries??[...entries(),...state.extraEntries],chart=[...accounts,...state.extraAccounts]
   if(path==='journals')return page(allEntries,'entries')
   if(path===['reports','general-ledger'].join('/'))return Response.json({basis:'accrual',from:u.searchParams.get('from'),to:u.searchParams.get('to'),accounts:chart.map(a=>({...a,rows:allEntries.filter(e=>e.entry_date>=u.searchParams.get('from')&&e.entry_date<=u.searchParams.get('to')).flatMap(e=>e.lines.filter(l=>l.account_id===a.id).map(l=>({...l,entry_id:e.id,entry_date:e.entry_date})))}))})
   if(path===['reports','trial-balance'].join('/')){
