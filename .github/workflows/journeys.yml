@@ -129,4 +129,3 @@ jobs:
         run: node tests/constraint-responses-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-proof/constraints
-
