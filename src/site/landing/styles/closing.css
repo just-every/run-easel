@@ -5,6 +5,7 @@
 .terminal { margin-top: 26px; max-width: 100%; }
 .terminal code { display: inline-block; max-width: 100%; padding: 13px 22px; border: 1px solid var(--hair-strong); border-radius: 10px; background: #f6f6f8; font-family: var(--mono); font-size: 17px; color: var(--ink); }
 .terminal .nowrap { white-space: nowrap; }
+.terminal-comment { color: var(--muted); }
 .scene { position: relative; margin-top: 76px; padding: 0 150px 0 0; container-type: inline-size; }
 .cover { position: absolute; left: 0; top: -26px; z-index: 2; width: 26%; padding: 22px 24px; transform: rotate(-4deg); }
 .cover .muted { font-size: 16px; }

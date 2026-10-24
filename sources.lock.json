@@ -183,7 +183,7 @@
       "executable": false
     },
     "docs/getting-started.md": {
-      "sha256": "1d2590e0e1e618afaf85aaf6f85863dcdcc916044c6a9d13dc166ab569af4507",
+      "sha256": "71436ea11a773423c341305dfa4862b67ac14e8d0276217e02ba6f74777d73e3",
       "executable": false
     },
     "docs/gusto-roster.md": {
@@ -3727,7 +3727,7 @@
       "executable": false
     },
     "src/site/landing/sections/Closing.tsx": {
-      "sha256": "b25b4708ba647327daa9ea5fc0376315a25f071299550fab420580a80c81ed39",
+      "sha256": "19f750564d51ee82ea78f98e8d95cb6433f87353d0084efd5e041c37b8cf7f51",
       "executable": false
     },
     "src/site/landing/sections/Excel.tsx": {
@@ -3779,7 +3779,7 @@
       "executable": false
     },
     "src/site/landing/styles/closing.css": {
-      "sha256": "c07b8cdc0e97417bb0c9d78acfa94ded787677df2a947a4ce1c9793361ae0963",
+      "sha256": "a95b4492ed84e124fd05fc0775b16b6ed3243c30b136ca6aa316081933d82f52",
       "executable": false
     },
     "src/site/landing/styles/excel.css": {

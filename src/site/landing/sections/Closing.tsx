@@ -5,6 +5,18 @@ import { Actions } from './Hero'
 import '../styles/closing.css'
 
 const board: Scale = { count: 12, min: 1_940_000, max: 2_520_000 }
+// The one start line every Run Edit Run page shows, and the alternative for people who already have Node.
+const START = 'curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel'
+const ALTERNATIVE = 'Already have Node 22 or later? npx -y @runeditrun/rer dev just-every/run-easel'
+
+/** A command that wraps only between words, keeping the installer's `install.sh | sh` together. */
+function command(line: string) {
+ return line.split(/(\S*install\.sh \| sh|\S+)/).map((part, index) => {
+  const pipe = /^(.*\/)(install\.sh \| sh)$/.exec(part)
+  if (pipe) return <span key={index}><span className="nowrap">{pipe[1]}</span><wbr /><span className="nowrap">{pipe[2]}</span></span>
+  return part.trim() ? <span key={index} className="nowrap">{part}</span> : part
+ })
+}
 const MAR = 2
 
 /** 13: board day. The plan holds; run Easel yourself with one line. */
@@ -15,7 +27,7 @@ export function Closing() {
     <Heading id="closing-title" className="center" lines={['Thursday, November 19.', 'The plan holds.']} />
     <p className="closing-free">100% free and open source. MIT licensed.</p>
     <Actions demo={false} />
-    <p className="terminal"><code>npx -y @runeditrun/rer dev <span className="nowrap">just-every/run-easel</span></code></p>
+    <p className="terminal"><code>{command(START)}<br /><span className="terminal-comment"># {command(ALTERNATIVE)}</span></code></p>
    </div>
    <div className="scene">
     <article className="card cover" aria-label="FY2027 plan">

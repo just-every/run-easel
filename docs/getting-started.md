@@ -5,10 +5,10 @@ Easel runs on macOS, Linux or Windows with WSL2. `rer` selects the exact Node ve
 ## Get Easel and start it
 
 ```sh
-npx -y @runeditrun/rer dev just-every/run-easel
+curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel
 ```
 
-That one line installs `rer`, clones Easel and starts it. Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel` does the same. To start it again later, run `cd run-easel && rer dev`. `rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
+That one line installs `rer`, clones Easel into `run-easel` and starts it. Git is required; rer brings Node and pnpm. Already have Node 22 or later? `npx -y @runeditrun/rer dev just-every/run-easel` does the same. If the installer prints a line that puts `rer` on your PATH, run that line too. To start Easel again later, run the same line from the same folder, or `cd run-easel && rer dev`. `rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
 
 - `RER_READY` with the local address, and
 - `RER_OPEN`, a link that opens Easel signed in as the owner.
