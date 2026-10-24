@@ -1,3 +1,7 @@
+import { pantryCash } from './pantry-cash'
+import { pantryImport } from './pantry-import'
+import { pantryStatus, pantryConnection, pantryKey } from './pantry-connection'
+import { readPantryLedger } from './pantry-provider'
 import { missionList, missionCommand } from './agents/missions'
 import { analystPreview, beginAnalyst, authorizeAnalyst, finishAnalyst, analystWhatIf } from './agents/analyst'
 import { governanceStatus, governanceSettings, requireAgent } from './agents/governance'
@@ -175,6 +179,25 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(publicLedger(await erasedView(ctx.db, result)) as any)
 }
+
+api.get('/api/easel/connections/pantry', c => read(c, ctx => pantryStatus(ctx,c.env)))
+api.post('/api/easel/connections/pantry/:op', async c => {
+ const ctx=await open(c)
+ ctx.extra=await pantryConnection(ctx,c.env,c.req.param('op'),await body(c))
+ await commit(ctx)
+ return read(c,current=>pantryStatus(current,c.env))
+})
+api.post('/api/easel/pantry/cash',async c=>{
+ const ctx=await open(c),value=await pantryCash(ctx,c.env,await body(c))
+ await readFence(ctx.db,ctx.x.actor,ctx.revision)
+ return c.json(value)
+})
+api.post('/api/easel/pantry/ledger', async c => {
+ const ctx=await open(c),input=await body(c),key=await pantryKey(ctx,c.env)
+ const value=await readPantryLedger(key,input.from,input.to)
+ await readFence(ctx.db,ctx.x.actor,ctx.revision)
+ return c.json(value)
+})
 
 api.get('/api/easel/connections/gusto', c => read(c, ctx => gustoStatus(ctx)))
 api.post('/api/easel/connections/gusto/:op', async c => {
@@ -617,11 +640,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry', 'Unknown move-in kit', 404)
  const ctx = await open(c)
  if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
  const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value

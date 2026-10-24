@@ -476,3 +476,48 @@ test('Repeated source observations detect metadata, shape and dimension changes;
  assert.ok(stale.issues.some(i=>i.kind==='freshness'))
  assert.match((await h.command('cash-alert-check',{})).blocked[0].reason,/stopped updating/)
 })
+
+test('Pantry read-only source backfills reviewed actuals, re-pulls without duplicates and accepts reconciled corrections with sealed native custody',async t=>{
+ const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()
+ const h=await harness({outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}});t.after(()=>h.close())
+ const {revenue}=await setup(h)
+ await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+ const department=await h.command('department',{name:'Operations'})
+ await h.command('department-map',{source:'Operations',department:department.id})
+ await h.command('account-map',{account:'1000',target:'cash'})
+ await h.command('account-rule',{match:'range',from:'4000',to:'4999',target:revenue.id})
+ const path='/api/easel/connections/pantry',input={from:'2026-01-01',to:'2026-01-31'}
+ assert.equal((await h.send(path+'/connect',{...pantryGrant,consent:false},h.owner)).status,400)
+ assert.equal((await h.send(path+'/connect',pantryGrant,h.owner)).status,200)
+ const secret=await h.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='pantry'").first()
+ assert.ok(secret.sealed);assert.doesNotMatch(secret.sealed,/synthetic-easel-1/)
+ assert.doesNotMatch(JSON.stringify(await h.get(path)),/synthetic-easel-1/)
+ const zip=await (await import('jszip')).default.loadAsync(await (await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}})).arrayBuffer())
+ for(const entry of Object.values(zip.files).filter(e=>!e.dir))assert.doesNotMatch(await entry.async('string'),/synthetic-easel-1/)
+ assert.equal((await h.mf.dispatchFetch(h.origin+path+'/disconnect',{method:'POST',headers:{cookie:h.owner,origin:'https://unrelated.example','content-type':'application/json'},body:'{}'})).status,403)
+ const count=async()=>Number((await h.db.prepare('SELECT COUNT(*) n FROM e_actuals').first()).n)
+ provider.pageSize=1
+ const preview=await h.kit('pantry','preview',input)
+ assert.equal(preview.changedRows,2);assert.equal(preview.source.trialBalance.balanced,true);assert.equal(preview.accounts.find(a=>a.account==='4000').mappingStatus,'mapped');assert.equal(await count(),0)
+ let accepted=await h.kit('pantry','commit',{...input,fingerprint:preview.fingerprint,sourceFingerprint:preview.sourceFingerprint})
+ while(accepted.batch.status==='importing')accepted=await h.kit('actuals','resume',{id:accepted.batch.id})
+ assert.equal(await count(),2)
+ assert.equal((await h.kit('pantry','preview',input)).changedRows,0)
+ provider.amount=15000;provider.revision=2
+ const correction=await h.kit('pantry','preview',input)
+ assert.equal(correction.changedRows,2);assert.equal(correction.accounts.find(a=>a.account==='1000').net,5000)
+ await h.kit('pantry','commit',{...input,fingerprint:preview.fingerprint,sourceFingerprint:preview.sourceFingerprint},h.owner,409)
+ const fixed=await h.kit('pantry','commit',{...input,fingerprint:correction.fingerprint,sourceFingerprint:correction.sourceFingerprint})
+ assert.equal(fixed.batch.status,'accepted');assert.equal((await h.get('/api/easel/actuals')).months.find(m=>m.period==='2026-01').revenue,15000)
+ assert.equal((await h.kit('pantry','preview',input)).changedRows,0)
+ provider.changed=true;await h.kit('pantry','preview',input,h.owner,409);provider.changed=false
+ provider.badCursor=true;await h.kit('pantry','preview',input,h.owner,502);provider.badCursor=false
+ for(const status of [401,429,302]){provider.status=status;const r=await h.send('/api/easel/pantry/ledger',input,h.owner);assert.equal(r.status,502);assert.doesNotMatch(r.text,/synthetic-easel-1/)}provider.status=200
+ const viewer=await h.person('pantry-viewer@example.test','viewer')
+ await h.get(path,viewer,403);await h.kit('pantry','preview',input,viewer,403)
+ assert.equal((await h.send(path+'/disconnect',{},h.owner)).status,200)
+ assert.equal(await h.db.prepare("SELECT id FROM e_connection_secrets WHERE id='pantry'").first(),null)
+ assert.equal((await h.get(path)).providerRevocation.status,'unsupported')
+ await h.kit('pantry','preview',input,h.owner,409)
+ assert.equal((await h.get('/api/easel/actuals')).months.find(m=>m.period==='2026-01').revenue,15000)
+})

@@ -13,6 +13,7 @@ const theme = { href: '/rer-theme.css', productName: branding.name, accentColor:
 export interface Bindings {
  ASSETS?: Fetcher
  GAUGE_ORIGIN?: string
+ PANTRY_ORIGIN?: string
  /** Owner-entered incoming webhooks for planning reminders (deployment secrets). */
  SLACK_WEBHOOK_URL?: string
  TEAMS_WEBHOOK_URL?: string

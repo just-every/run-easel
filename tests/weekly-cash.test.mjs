@@ -146,3 +146,22 @@ test('FIN-007 explicit one-off dates honor retail boundaries and accepted actual
  await h.get(`/api/easel/scenario/${approved.forecast.id}`, h.owner, 409)
  assert.deepEqual((await h.get(`/api/easel/scenario/${scenario}`)).calculation, planned.calculation, 'working actuals and date changes never rewrite approved cash')
 })
+
+test('Pantry open-item preview dates invoices from fully paid customer history and bills from due dates without changing planned cash',async t=>{
+ const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()
+ const h=await harness({outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'},now:()=> '2026-02-01T12:00:00Z'});t.after(()=>h.close())
+ await h.command('workspace',{name:'Open-item planning',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+ const before=await h.get('/api/easel/state')
+ assert.equal((await h.send('/api/easel/connections/pantry/connect',pantryGrant,h.owner)).status,200)
+ const read=()=>h.send('/api/easel/pantry/cash',{asOf:'2026-02-01'},h.owner)
+ const result=await read();assert.equal(result.status,200,result.text)
+ assert.equal(result.value.complete,true)
+ assert.deepEqual(result.value.events.map(e=>[e.kind,e.date,e.amount]),[['bill','2026-02-15',2000],['invoice','2026-02-22',5000]])
+ assert.equal(result.value.events.find(e=>e.kind==='invoice').lateDays,12)
+ provider.reversed=true;const reversed=await read();assert.equal(reversed.value.complete,false);assert.equal(reversed.value.events.some(e=>e.kind==='invoice'),false);assert.match(reversed.value.unresolved[0].reason,/paid invoice history/);provider.reversed=false
+ assert.equal((await h.send('/api/easel/pantry/cash',{asOf:'2026-01-31'},h.owner)).status,400)
+ assert.deepEqual((await h.get('/api/easel/state')).scenarios,before.scenarios)
+ const board=await h.person('cash-viewer@example.test','viewer')
+ assert.equal((await h.send('/api/easel/pantry/cash',{asOf:'2026-02-01'},board)).status,403)
+ provider.status=429;const failed=await read();assert.equal(failed.status,502);assert.doesNotMatch(failed.text,/synthetic-easel-1/)
+})

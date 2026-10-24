@@ -45,7 +45,7 @@ const money = (v: string, label: string) => {
 }
 
 /** Reads the file with the person's column choices. Never writes. */
-export async function readActuals(b: Data, calendar?: CalendarWorkspace) {
+export async function readActuals(b: Data, calendar?: CalendarWorkspace, provenance?: Record<number, Data>) {
  requireThat(typeof b.csv === 'string' && b.csv.length > 0, 'Choose a CSV file')
  const bytes = new TextEncoder().encode(b.csv)
  requireThat(bytes.length <= MAX_BYTES, `The file is larger than ${MAX_BYTES / 1_000_000} MB; split it by month`)
@@ -79,8 +79,9 @@ export async function readActuals(b: Data, calendar?: CalendarWorkspace) {
     amount = debit - credit
    } else amount = money(at(cells, cols.amount), 'Amount') * (amountMode === 'credit-positive' ? -1 : 1)
    const sourceDimensions = { ...(cols.department ? { department: at(cells, cols.department) } : {}), ...(cols.class ? { class: at(cells, cols.class) } : {}), ...(cols.trackingOption ? { 'tracking-option': at(cells, cols.trackingOption) } : {}) }
-   const row = { sourceDimensions, date: when.date, period: calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
-   const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference, ...(Object.keys(sourceDimensions).some(k => k !== 'department') ? [sourceDimensions] : [])]))
+   const extra = provenance?.[line] ?? {}
+   const row = { ...extra, sourceDimensions: extra.sourceDimensions ?? sourceDimensions, date: when.date, period: calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
+   const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference, ...(Object.keys(sourceDimensions).some(k => k !== 'department') ? [sourceDimensions] : []), ...(provenance ? [extra] : [])]))
    const earlier = seen.get(fingerprint) ?? []
    if (earlier.length && !allowRepeats) { rejected.push({ line, reason: `repeats line ${earlier[0]} exactly` }); continue }
    seen.set(fingerprint, [...earlier, line])
@@ -93,10 +94,10 @@ export async function readActuals(b: Data, calendar?: CalendarWorkspace) {
 }
 
 /** The person's mapping decisions decide whether this file can be accepted. */
-export async function previewActuals(c: Context, b: Data) {
+export async function previewActuals(c: Context, b: Data, provenance?: Record<number, Data>) {
  requireFinance(c.x)
  workspace(c.s)
- const read = await readActuals({ ...b, dateFormat: b.dateFormat ?? workspace(c.s).dateFormat ?? 'MM/DD/YYYY' }, workspace(c.s))
+ const read = await readActuals({ ...b, dateFormat: b.dateFormat ?? workspace(c.s).dateFormat ?? 'MM/DD/YYYY' }, workspace(c.s), provenance)
  const { s } = c
  // Rows already accepted in another import are refused rather than counted twice.
  const prior = new Map<string, string>()
@@ -177,10 +178,10 @@ export async function previewActuals(c: Context, b: Data) {
 
 const publicPreview = ({ ctx: _ctx, plan: _plan, ...rest }: Data) => rest
 
-export async function actualsCommand(c: Context, op: string, b: Data): Promise<KitStep | undefined> {
- if (op === 'preview') return { result: publicPreview(await previewActuals(c, b)) }
+export async function actualsCommand(c: Context, op: string, b: Data, provenance?: Record<number, Data>): Promise<KitStep | undefined> {
+ if (op === 'preview') return { result: publicPreview(await previewActuals(c, b, provenance)) }
  if (op === 'commit') {
-  const p = await previewActuals(c, b)
+  const p = await previewActuals(c, b, provenance)
   assertSourceGuardAcceptance(c, p.sha256, p.periods.map((r:Data)=>r.period))
   requireThat(p.accepted > 0, 'Nothing in this file can be accepted', 409)
   requireThat(!p.unmappedAccounts.length, `Map these accounts first: ${p.unmappedAccounts.join(', ')}`, 409)

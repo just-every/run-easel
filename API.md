@@ -630,3 +630,24 @@ Enterprise identity is off unless the owner configures it. See [identity configu
 `GET /api/easel/connections/gusto` and `POST /api/easel/connections/gusto/connect|disconnect` require a native finance session with company-wide Pay detail and connections authority. Connection accepts an explicitly consented read-only company token; this manual observation door does not claim the future PEOPLE-001 OAuth flow.
 
 `POST /api/easel/import/gusto/preview|commit|status|resume|undo` uses the existing payroll journal. Preview pulls complete employee and processed-payroll source pages, shows explicit employee mappings and changes no plan. Commit refetches and requires the reviewed fingerprint. Exact pay dates and dated complete roster observations feed `/api/easel/headcount/:scenario`. Accepted prior payroll IDs do not duplicate when windows overlap; source changes refuse rather than overwrite history. See [source fields and costs](docs/gusto-roster.md).
+
+
+## Pantry read-only source (partial connector)
+
+Configure `PANTRY_ORIGIN` to the trusted installation’s HTTPS origin. Local development also permits an HTTP loopback origin. It cannot be supplied by an API caller. Create a separate Pantry credential with `business:read`, `accounts:read`, `periods:read`, `journals:read` and `reports:read`. Open-item previews additionally need `invoices:read`, `bills:read` and `payments:read`. No write grant is needed.
+
+All these routes require a native finance session with company-wide connection authority; personal API tokens, agents and schedulers are refused. POST requests retain the ordinary same-origin and live-session fences.
+
+| Route | Body and result |
+| --- | --- |
+| `GET /api/easel/connections/pantry` | Masked status, required ledger scopes and the exact owner revocation step; no credential |
+| `POST /api/easel/connections/pantry/connect` | `{key, consent:true}`; checks read access, then seals the key outside archives and audits consent |
+| `POST /api/easel/connections/pantry/disconnect` | `{}`; deletes the local key and audits unsupported provider self-revocation. Revoke it in Pantry People & settings → Integration credentials |
+| `POST /api/easel/pantry/ledger` | `{from,to}` inclusive ISO dates; complete posted source with entry revisions, chart types, dimensions and both boundary trial balances |
+| `POST /api/easel/import/pantry/preview` | `{from,to}`; no-write actuals mapping preview, `fingerprint`, `sourceFingerprint`, trial-balance agreement and changed-row count |
+| `POST /api/easel/import/pantry/commit` | `{from,to,fingerprint,sourceFingerprint}`; re-fetches the source and accepts only the reviewed differences through the ordinary actuals journal |
+| `POST /api/easel/pantry/cash` | `{asOf}` where the date is today in UTC; current remaining invoice and bill cents, paid-history collection dates and explicit unresolved items. This source preview does not change weekly or monthly cash |
+
+Use the existing actuals journal routes to resume or undo an import. Corrected source amounts become reviewed deltas, preserving earlier rows and frozen captures. A changed accepted account, date or dimension requires a correcting-file review. An unchanged pull returns `unchanged:true` with zero changed rows; there is nothing to commit. Full-source reads exceeding 5,000 records or the bounded response size refuse rather than accepting truncated data. Redirects, missing pagination, inconsistent ledgers and provider failures refuse without exposing response bodies or silently retaining a previous successful conclusion.
+
+Native Pantry connection and import controls, provider transaction links and integrated weekly open-item scheduling remain unfinished. Current planned and Plaid weekly views continue to work independently.
