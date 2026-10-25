@@ -132,8 +132,8 @@ export async function runActionChases(env: Bindings) {
  const open = async () => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } as Context & { revision: number; before: State } }
  const commit = async (ctx: Context & { revision: number; before: State }) => {
   const changed = [...ctx.s].filter(([k, r]) => ctx.before.get(k)?.revision !== r.revision).map(([, r]) => r.kind)
-  requireThat(changed.every(k => ['action-followup', 'notification'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records action chases', 500)
-  if (changed.length || ctx.activity.length) await save(db, actor, ctx.before, ctx.s, ctx.revision, ctx.activity)
+  requireThat(changed.every(k => ['action-followup', 'notification', 'mobile-push-delivery', 'mobile-device'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records action chases', 500)
+  if (changed.length || ctx.activity.length) await save(db, actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], false, ctx.extra)
  }
  const c = await open(), ids = await planChases(c)
  await commit(c)

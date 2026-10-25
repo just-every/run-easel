@@ -7,14 +7,15 @@ import { canReceiveChainNotice } from './approval-chains'
 // 08:00 company-zone daily digest, or chat only, where a shared channel gets
 // only a generic notice and a sign-in link.
 import type { Bindings } from '../auth.server'
-import { requireMember } from './access'
+import { access, requireMember } from './access'
+import { canSeeScenario } from './scenario-access'
 import { CHAT_CHANNELS, chatReady } from './calendar-channels'
 import { financeEmails } from './calendar'
 import type { Context } from './context'
 import { all, choice, find, put, requireThat, uid, type Data } from './types'
 
 export const MODES = ['email', 'digest', 'chat'] as const
-export const EVENT_LABEL: Record<string, string> = { 'refresh-failed': 'Source refresh failed', 'approval-step-pending': 'Department review pending', mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'action-chase': 'Update due on your action', 'cash-alert': 'Cash alert', 'decision-item': 'Decision needed', 'owner-question': 'Owner assumption question', 'owner-question-escalation': 'Unanswered owner assumption' }
+export const EVENT_LABEL: Record<string, string> = { 'refresh-failed': 'Source refresh failed', 'approval-step-pending': 'Department review pending', mention: 'You were mentioned', returned: 'Submission returned', 'approval-pending': 'Budget ready for approval', 'metric-task': 'New task assigned to you', 'calendar-task': 'New task assigned to you', 'action-chase': 'Update due on your action', 'cash-alert': 'Cash alert', 'decision-item': 'Decision needed', 'owner-question': 'Owner assumption question', 'owner-question-escalation': 'Unanswered owner assumption' }
 export const preference = (c: Context, email: string): Data => find(c.s, 'notification-preference', email) ?? { mode: 'email', channel: null }
 
 /** Whether `email` may currently read a department's detail (finance always). */
@@ -26,13 +27,13 @@ export async function canRead(c: Context, email: string, department: string) {
  return !!m?.active && (!department ? m.role !== null : m.role === 'contributor' && m.departments?.includes(department))
 }
 
-export function notify(c: Context, event: keyof typeof EVENT_LABEL, recipients: string[], detail: { title: string; tab: string; record: string; department: string; body?: string }, options: { includeActor?: boolean } = {}) {
+export function notify(c: Context, event: keyof typeof EVENT_LABEL, recipients: string[], detail: { title: string; tab: string; record: string; department: string; body?: string }, options: { includeActor?: boolean; nativeOnly?: boolean } = {}) {
  const ids: string[] = []
  // A person is not told about their own action, except for alerts about the plan itself.
  for (const recipient of [...new Set(recipients)].filter(r => options.includeActor || r !== c.x.actor.email)) {
   const id = uid()
   ids.push(id)
-  put(c.s, 'notification', id, { event, recipient, ...detail, createdAt: c.now, status: 'new', attempts: 0, key: crypto.randomUUID(), history: [] })
+  put(c.s, 'notification', id, { event, recipient, ...detail, ...(options.nativeOnly ? { nativeOnly: true } : {}), createdAt: c.now, status: 'new', attempts: 0, key: crypto.randomUUID(), history: [] })
   c.activity.push({ action: 'notification-recorded', record: id, detail: { event, recipient, tab: detail.tab, target: detail.record } })
  }
  return ids
@@ -52,7 +53,7 @@ export async function notificationView(c: Context, env: Bindings) {
  const channels = []
  for (const ch of CHAT_CHANNELS) if (await chatReady(c, env, ch)) channels.push(ch)
  const permitted: Data[] = []
- for (const n of all(c.s, 'notification').filter(n => n.recipient === c.x.actor.email)) if (!['owner-question', 'owner-question-escalation', 'cash-alert', 'refresh-failed'].includes(n.event) || await canReadNotification(c, n)) permitted.push(n)
+ for (const n of all(c.s, 'notification').filter(n => n.recipient === c.x.actor.email)) if (!['owner-question', 'owner-question-escalation', 'cash-alert', 'refresh-failed', 'calendar-task'].includes(n.event) && !(n.event === 'approval-pending' && n.tab === 'scenarios') || await canReadNotification(c, n)) permitted.push(n)
  return { preference: preference(c, c.x.actor.email), channels, notifications: permitted.map((n): Data => ({ ...n, message: undefined })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50) }
 }
 
@@ -69,6 +70,15 @@ export async function savePreference(c: Context, env: Bindings, b: Data) {
 const get = (c: Context) => preference(c, c.x.actor.email)
 
 export async function canReadNotification(c: Context, n: Data) {
+ if (n.event === 'calendar-task') {
+  const task = find(c.s, 'calendar-task', n.record)
+  return !!task && task.status === 'open' && task.owner === n.recipient && task.revision === n.taskRevision && await canRead(c, n.recipient, task.department)
+ }
+ if (n.event === 'approval-pending' && n.tab === 'scenarios') {
+  const proposal = find(c.s, 'scenario', n.record)
+  const native = await c.db.prepare("SELECT id,email,display_name AS name,role,version FROM oa_operators WHERE email=? AND status='active' AND role IN ('owner','admin')").bind(n.recipient).first<{ id: string; email: string; name: string; role: 'owner' | 'admin'; version: number }>()
+  return !!proposal && proposal.kind === 'proposal' && proposal.status === 'working' && proposal.proposalStatus === 'submitted' && !!native && canSeeScenario(access(c.s, { ...native, baseRole: native.role, session: '' }), proposal)
+ }
  if (n.event === 'action-chase' && !agentEnabled(c.s, 'chases') || ['owner-question', 'owner-question-escalation'].includes(n.event) && !agentEnabled(c.s, 'questions')) return false
  if (['cash-alert', 'refresh-failed'].includes(n.event)) {
   const current = await c.db.prepare("SELECT role FROM oa_operators WHERE email=? AND status='active'").bind(n.recipient).first<{role:string}>()

@@ -227,3 +227,148 @@ test('Private Slack notifications require the mapped native person’s consent a
  assert.ok(provider.calls.some(c => c.method === 'auth.revoke'))
  assert.ok(!JSON.stringify(await h.get('/api/easel/activity')).includes(provider.key))
 })
+
+test('Native push consent binds the exact session, delivers generic Apple and Firebase events once and suppresses stale authority, revoked sessions and devices', async t => {
+ const { createHash } = await import('node:crypto')
+ const { mobilePushProvider } = await import('./mobile-push-provider.mjs')
+ const provider = mobilePushProvider()
+ let now = '2026-11-01T12:00:00.000Z'
+ const h = await harness({ now: () => now, outbound: request => provider.fetch(request), bindings: provider.bindings }); t.after(() => h.close())
+ const devices = cookie => h.get('/api/easel/mobile/devices', cookie)
+ const register = async (cookie, platform, token, consent = true, expected = 200) => {
+  const r = await h.send('/api/easel/mobile/devices/register', { platform, token, consent }, cookie)
+  assert.equal(r.status, expected, JSON.stringify(r.value)); return r.value
+ }
+ const iosToken = createHash('sha256').update('synthetic-easel-3').digest('hex')
+ const androidToken = 'synthetic-easel-4'
+ await h.command('workspace', { name: 'synthetic-easel-5', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const department = await h.command('department', { name: 'synthetic-easel-6' })
+ const contributor = await h.person('synthetic-easel-7@example.test', 'contributor', [department.id])
+ const other = await h.person('synthetic-easel-8@example.test', 'contributor', [department.id])
+ const budget = (await h.get('/api/easel/state')).scenarios[0]
+ await register('', 'ios', iosToken, true, 401)
+ await register(h.owner, 'ios', iosToken, false, 400)
+ const apple = await register(h.owner, 'ios', iosToken)
+ const android = await register(contributor, 'android', androidToken)
+ assert.equal((await register(h.owner, 'ios', iosToken)).id, apple.id, 'Repeated platform registration retains one device')
+ assert.deepEqual((await devices(h.owner)).devices.map(d => d.id), [apple.id])
+ assert.deepEqual((await devices(contributor)).devices.map(d => d.id), [android.id])
+ assert.equal((await h.send('/api/easel/mobile/devices/revoke', { id: apple.id }, contributor)).status, 403)
+ await h.stepUp(h.owner)
+ const credential = await h.send('/api/easel/tokens/issue', { label: 'synthetic-easel-9', kind: 'personal', scope: 'write' }, h.owner)
+ assert.equal(credential.status, 200)
+ const bearerAttempt = await h.mf.dispatchFetch(h.origin + '/api/easel/mobile/devices/register', { method: 'POST', headers: { authorization: `Bearer ${credential.value.token}`, 'content-type': 'application/json' }, body: JSON.stringify({ platform: 'android', token: 'synthetic-easel-10', consent: true }) })
+ assert.equal(bearerAttempt.status, 403, 'A scoped bearer cannot give person consent')
+ await h.command('scenario-cash', { scenario: budget.id, basis: 'estimate', opening: '100000', collectionLag: 0, paymentLag: 0 })
+ const cost = await h.command('line', { name: 'synthetic-easel-17', type: 'operating-expense' })
+ await h.command('expense', { scenario: budget.id, name: 'synthetic-easel-18', kind: 'recurring', line: cost.id, department: department.id, start: '2026-01', amount: '100' })
+ await h.command('approval-chain-save', { department: department.id, steps: [{ name: 'synthetic-easel-19', members: ['synthetic-easel-7@example.test'] }] })
+ await h.command('request-submissions', { scenario: budget.id, departments: [department.id] })
+ await h.command('submit', { scenario: budget.id, department: department.id }, other)
+ assert.equal(provider.requests.length, 1, `The pending review reaches its opted-in current reviewer: ${JSON.stringify(await devices(contributor))}`)
+ assert.equal(provider.requests[0].platform, 'android')
+ const review = (await h.get(`/api/easel/approval-chains/${budget.id}`, contributor)).departments.find(d => d.department === department.id)
+ await h.command('approval-step', { scenario: budget.id, department: department.id, step: review.steps[0].id, pass: review.submission.review.pass, digest: review.submission.review.content.digest }, contributor)
+ assert.equal(provider.requests.length, 2, 'Completed department review notifies finance of pending global approval')
+ assert.equal(provider.requests[1].platform, 'ios')
+ const forecast = (await h.command('approve-budget', { scenario: budget.id, revision: (await h.get(`/api/easel/scenario/${budget.id}`)).scenario.revision })).forecast
+ const proposal = await h.command('proposal-create', { from: forecast.id, name: 'synthetic-easel-22', request: 'synthetic-easel-23' }, other)
+ const beforeProposal = provider.requests.length, mailBeforeProposal = h.messages.length
+ await h.command('proposal-submit', { id: proposal.id }, other)
+ assert.equal(provider.requests.length, beforeProposal + 1, 'A submitted proposal notifies opted-in finance')
+ assert.equal(h.messages.length, mailBeforeProposal, 'The native proposal event introduces no automatic email route')
+ assert.equal(provider.requests.at(-1).platform, 'ios')
+ await h.command('proposal-submit', { id: proposal.id }, other, 409)
+ assert.equal(provider.requests.length, beforeProposal + 1, 'A repeated submission cannot duplicate a push')
+ await h.command('metric-rule-save', { kind: 'overspend', name: 'synthetic-easel-20', department: department.id, owner: 'synthetic-easel-7@example.test', percent: '10', amount: '0', dueDays: 3 })
+ await h.command('account-map', { account: '500', target: cost.id })
+ await h.command('department-map', { source: 'synthetic-easel-6', department: department.id })
+ const actuals = { filename: 'synthetic-easel-21.csv', csv: 'Date,Account,Department,Amount\n2026-01-31,500,synthetic-easel-6,200\n', columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount' }, dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive' }
+ await h.kit('actuals', 'commit', { ...actuals, fingerprint: (await h.kit('actuals', 'preview', actuals)).fingerprint })
+ const beforeMetric = provider.requests.length
+ await h.command('close-month', { scenario: forecast.id, month: '2026-01' })
+ assert.equal(provider.requests.length, beforeMetric + 1, 'A triggered metric task reaches its opted-in owner')
+ assert.equal(provider.requests.at(-1).platform, 'android')
+ await h.command('cash-constraints', { floor: '200000', runwayMinimum: '0' })
+ const cashStart = provider.requests.length
+ const emailBefore = h.messages.length
+ await h.command('cash-alert-rule-save', { name: 'synthetic-easel-11', kind: 'floor', enabled: true })
+ assert.equal(provider.requests.length, cashStart + 1)
+ assert.equal(provider.requests.at(-1).platform, 'ios')
+ assert.deepEqual(provider.requests.at(-1).body, { aps: { alert: { title: 'Easel notification', body: 'Easel notification' }, sound: 'default' } })
+ assert.equal(h.messages.slice(emailBefore).filter(m => m.subject.startsWith('Cash alert:')).length, 1, 'Push preserves the existing email route')
+ await h.command('cash-alert-check', {})
+ assert.equal(provider.requests.length, cashStart + 1, 'Repeated evaluation does not duplicate push')
+ const comment = () => h.command('comment', { scenario: budget.id, department: department.id, text: '@synthetic-easel-7@example.test confidential synthetic-easel-12' })
+ await comment()
+ assert.equal(provider.requests.length, cashStart + 2)
+ assert.equal(provider.requests.at(-1).platform, 'android')
+ assert.equal(provider.requests.at(-1).body.message.notification, undefined)
+ assert.equal(provider.requests.at(-1).body.message.data.notice, 'Easel notification')
+ assert.ok(provider.requests.at(-1).body.message.data.id)
+ assert.equal(provider.requests.at(-1).body.message.token, androidToken)
+ assert.ok((await devices(contributor)).deliveries.some(d => d.status === 'accepted'))
+ assert.ok(provider.authorizations.some(a => a.platform === 'android') && provider.authorizations.some(a => a.platform === 'ios'))
+ // The same flow retains unknown outcomes and never resends them on reads or ticks.
+ provider.mode = 'unknown'; await comment(); provider.mode = 'accepted'
+ const unknownCount = provider.requests.length
+ assert.ok((await devices(contributor)).deliveries.some(d => d.status === 'uncertain'))
+ await devices(contributor)
+ await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' })
+ assert.equal(provider.requests.length, unknownCount)
+ // A second device loses authority while the first request is at the provider edge.
+ await register(contributor, 'ios', createHash('sha256').update('synthetic-easel-13').digest('hex'))
+ provider.afterSend = () => h.command('member', { email: 'synthetic-easel-7@example.test', name: 'synthetic-easel-7', role: 'contributor', departments: [department.id], active: false })
+ await comment()
+ assert.equal(provider.requests.length, unknownCount + 1, 'Live membership removal suppresses the next device')
+ await h.command('member', { email: 'synthetic-easel-7@example.test', name: 'synthetic-easel-7', role: 'contributor', departments: [department.id], active: true })
+ assert.ok((await devices(contributor)).deliveries.some(d => d.status === 'blocked'))
+ const contributorApple = (await devices(contributor)).devices.find(d => d.platform === 'ios')
+ assert.equal((await h.send('/api/easel/mobile/devices/revoke', { id: contributorApple.id }, contributor)).status, 200)
+ const beforeAuthorizationRace = provider.requests.length
+ provider.afterAuthorize = () => h.command('member', { email: 'synthetic-easel-7@example.test', name: 'synthetic-easel-7', role: 'contributor', departments: [department.id], active: false })
+ await comment()
+ assert.equal(provider.requests.length, beforeAuthorizationRace, 'Authority removed during Google authorization is checked again before any push')
+ await h.command('member', { email: 'synthetic-easel-7@example.test', name: 'synthetic-easel-7', role: 'contributor', departments: [department.id], active: true })
+ // Revoking only the native session leaves metadata but prevents every further send.
+ const session = await h.get('/auth/session', contributor)
+ assert.equal((await h.send('/auth/session/revoke', { sessionId: session.id }, h.owner)).status, 204)
+ const beforeSessionBlock = provider.requests.length
+ await comment()
+ assert.equal(provider.requests.length, beforeSessionBlock)
+ assert.equal((await h.send('/api/easel/mobile/devices/register', { platform: 'android', token: androidToken, consent: true }, contributor)).status, 401)
+ // Calendar tasks use the same opted-in route and live task owner check.
+ await register(other, 'android', 'synthetic-easel-14')
+ await h.command('calendar-schedule-save', { enabled: true, channels: [], revision: 0 })
+ const beforeAssignment = provider.requests.length, mailBeforeAssignment = h.messages.length
+ const calendarTask = await h.command('calendar-task-save', { name: 'synthetic-easel-15', kind: 'other', department: department.id, owner: 'synthetic-easel-8@example.test', due: '2026-11-03' })
+ assert.equal(provider.requests.length, beforeAssignment + 1, 'Task assignment pushes immediately before its reminder is due')
+ assert.equal(h.messages.length, mailBeforeAssignment, 'The native assignment event introduces no automatic email route')
+ await h.command('calendar-task-save', { ...calendarTask, revision: 0 }, h.owner, 409)
+ assert.equal(provider.requests.length, beforeAssignment + 1)
+ now = '2026-11-02T15:00:00.000Z'
+ await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' })
+ assert.equal(provider.requests.length, beforeAssignment + 2, 'The calendar reminder is a separate opted-in occurrence')
+ assert.ok((await devices(other)).deliveries.some(d => d.status === 'accepted'))
+ const otherDevice = (await devices(other)).devices[0]
+ assert.equal((await h.send('/api/easel/mobile/devices/revoke', { id: otherDevice.id }, other)).status, 200)
+ assert.equal(await h.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind(`mobile-push:${otherDevice.id}`).first(), null)
+ const beforeRevoke = provider.requests.length
+ await h.command('comment', { scenario: budget.id, department: department.id, text: '@synthetic-easel-8@example.test synthetic-easel-16' })
+ assert.equal(provider.requests.length, beforeRevoke)
+ // The public portability door retains metadata while excluding native custody.
+ const { default: JSZip } = await import('jszip')
+ const download = await h.mf.dispatchFetch(h.origin + '/api/easel/export', { headers: { cookie: h.owner } })
+ assert.equal(download.status, 200)
+ const archive = await JSZip.loadAsync(await download.arrayBuffer())
+ assert.equal(archive.file('tables/e_connection_secrets.csv'), null)
+ const exported = await archive.file('model.json').async('string')
+ for (const secret of [iosToken, androidToken, credential.value.token, session.id, 'PRIVATE KEY', 'synthetic-easel-1@example.test', 'synthetic-easel-802']) assert.ok(!exported.includes(secret), 'Portable model never carries push custody')
+ // Native sign-out also removes custody without exposing it in any read or audit.
+ assert.equal((await h.send('/auth/signout', {}, h.owner)).status, 204)
+ assert.equal(await h.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind(`mobile-push:${apple.id}`).first(), null)
+ const history = await h.db.prepare("SELECT detail FROM e_activity WHERE action LIKE 'mobile-push-%'").all()
+ assert.ok(history.results.some(r => JSON.parse(r.detail).exactNativeSession === true))
+ const visible = JSON.stringify(history.results)
+ for (const secret of [iosToken, androidToken, credential.value.token, 'synthetic-easel-801', 'synthetic-easel-802']) assert.ok(!visible.includes(secret), 'Activity never carries delivery credentials')
+})

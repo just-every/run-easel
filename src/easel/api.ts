@@ -81,6 +81,7 @@ import { deliverCalendar } from './calendar-dispatch'
 import { deliverNotifications } from './notify-dispatch'
 import { decisionFollowups, followup } from './decision-followup'
 import { notificationView, savePreference } from './notify'
+import { mobileDevices, mobileDeviceCommand } from './mobile-push-devices'
 import { departmentStatements, departmentStatementList, departmentStatementView, queueDepartmentStatements } from './department-statements'
 import { dispatchDepartmentStatement } from './department-statement-mail'
 import { departmentStatementWorkbook } from './department-statement-documents'
@@ -155,7 +156,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const current = access(state, a)
  if (a.token) requireMember(current)
  if (a.agent) requireAgent({ s: state }, 'mcp')
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -380,6 +381,12 @@ api.post('/api/easel/sheet-links/:op', async c => {
 })
 const newNotifications = (ctx: Awaited<ReturnType<typeof open>>) => [...ctx.s.values()].filter(r => r.kind === 'notification' && !ctx.before.has(`notification:${r.id}`)).map(r => r.id)
 api.get('/api/easel/approval-chains/:scenario', c => read(c, ctx => approvalChainView(ctx, c.req.param('scenario'))))
+api.get('/api/easel/mobile/devices', c => read(c, ctx => mobileDevices(ctx, c.env)))
+api.post('/api/easel/mobile/devices/:op', async c => {
+ const ctx = await open(c), result = await mobileDeviceCommand(ctx, c.env, c.req.param('op'), await body(c, 10_000))
+ await commit(ctx)
+ return c.json(result)
+})
 api.get('/api/easel/notifications', c => read(c, ctx => notificationView(ctx, c.env)))
 api.post('/api/easel/notifications/preference', async c => {
  const ctx = await open(c), result = await savePreference(ctx, c.env, await body(c))

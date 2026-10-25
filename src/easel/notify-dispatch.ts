@@ -8,6 +8,7 @@ import { ACCEPTED_LABEL, chatReady, sendChat, type ChatChannel } from './calenda
 import { zonedInstant } from './calendar-time'
 import type { Context } from './context'
 import { workspace } from './model'
+import { deliverMobilePush } from './mobile-push'
 import { EVENT_LABEL, canReadNotification, preference } from './notify'
 import { PRIVATE_SLACK_ACCEPTED, privateSlackCapture, privateSlackReady, privateSlackRoute, sendPrivateSlack } from './agents/private-slack'
 import { readFence } from './store'
@@ -34,11 +35,13 @@ const labelFor = (status: string, channel: string, code = '') => status === 'acc
 /** Immediate delivery of new or retried notifications; digest-preference ones wait for the digest. */
 export async function deliverNotifications(ids: string[], original: Bindings, open: Open, commit: Commit) {
  const env = runtimeBindings(original)
+ await deliverMobilePush(ids, 'notification', env, open, commit)
  for (const id of ids) {
   let c = await open()
   let n = get(c.s, 'notification', id)
   const record = (status: string, extra: Data = {}) => { n = { ...n, ...extra, status, history: [...n.history, { status, at: c.now, reason: extra.reason ?? '' }] }; put(c.s, 'notification', id, n); c.activity.push({ action: 'notification-result', record: id, detail: { status, channel: n.channel, reason: extra.reason ?? '' } }) }
   if (!['new', 'pending'].includes(n.status)) continue
+  if (n.nativeOnly) { record('native-only', { channel: 'push', label: 'Native push outcomes are recorded per opted-in device', completedAt: c.now }); await commit(c); continue }
   const pref = n.status === 'new' ? privateSlackRoute(c, n) ? { mode: 'chat', channel: 'slack-private' } : preference(c, n.recipient) : { mode: n.channel === 'email' ? 'email' : 'chat', channel: n.channel }
   if (pref.mode === 'digest') { record('digest-queued', { channel: 'digest' }); await commit(c); continue }
   const channel = pref.mode === 'email' ? 'email' : pref.channel

@@ -17,6 +17,7 @@ import { cents } from './units'
 import { cashBalance } from './actuals'
 import { frozenModel } from './reforecasts'
 import { workingCalculation } from './calculation'
+import { canReadNotification, financeRecipients, notify } from './notify'
 import { citesProposal, promotionEffect } from './decision-followup'
 import { all, choice, Fault, find, get, integer, optionalText, put, remove, requireThat, text, uid, type Data, type State } from './types'
 
@@ -196,6 +197,9 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   requireThat(p.proposalStatus === 'draft', 'This proposal was already submitted', 409)
   put(s, 'scenario', p.id, { ...p, proposalStatus: 'submitted', submittedRevision: p.revision, submittedAt: c.now, summary: optionalText(b.summary, 'Summary', 4000) })
   c.activity.push({ action: op, record: p.id, scenario: p.id, before: p.revision, after: p.revision, detail: {} })
+  const recipients: string[] = []
+  for (const recipient of await financeRecipients(c)) if (await canReadNotification(c, { event: 'approval-pending', tab: 'scenarios', record: p.id, recipient })) recipients.push(recipient)
+  notify(c, 'approval-pending', recipients, { title: `${p.name}: proposal ready for review`, tab: 'scenarios', record: p.id, department: '' }, { nativeOnly: true })
   return get(s, 'scenario', p.id)
  }
  if (op === 'proposal-promote') {

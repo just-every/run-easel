@@ -8,6 +8,7 @@ import { CHAT_CHANNELS, channelStatus } from './calendar-channels'
 import { escalationAt, reminderAt, zonedLabel } from './calendar-time'
 import type { Context } from './context'
 import { departments, workspace } from './model'
+import { notify } from './notify'
 import { all, choice, find, get, put, requireThat, text, uid, type Data } from './types'
 
 export const TASK_KINDS = { 'review-headcount': 'Review headcount', 'confirm-variances': 'Confirm variance explanations', other: 'Other planning task' } as const
@@ -77,6 +78,10 @@ export async function calendar(c: Context, op: string, b: Data): Promise<Data | 
   const id = prior?.id ?? uid()
   put(c.s, 'calendar-task', id, { name: text(b.name ?? TASK_KINDS[kind], 'Task name'), kind, department, owner, due: b.due, status: 'open', revision: (prior?.revision ?? 0) + 1, createdBy: prior?.createdBy ?? c.x.actor.email, createdAt: prior?.createdAt ?? c.now, updatedBy: c.x.actor.email, updatedAt: c.now })
   c.activity.push({ action: op, record: id, detail: { kind, department, owner, due: b.due } })
+  if (!prior || prior.owner !== owner) {
+   const ids = notify(c, 'calendar-task', [owner], { title: get(c.s, 'calendar-task', id).name, tab: 'cycle', record: id, department }, { includeActor: true, nativeOnly: true })
+   for (const notice of ids) { const n = get(c.s, 'notification', notice); put(c.s, 'notification', notice, { ...n, taskRevision: get(c.s, 'calendar-task', id).revision }) }
+  }
   return get(c.s, 'calendar-task', id)
  }
  if (op === 'calendar-task-complete') {

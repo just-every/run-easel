@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "32d4d5f25bcf97b4f821fd8b10e09f7520ce290b301bb5a39a46e1ad37c92408",
+      "sha256": "579f386d204591fe48a357a2c077a3efcc001e141db5f8ac32b792dc387f8d53",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b9586c55fa1729b8d2d152138d0c34223ae582ba57dacc7b6683b3ea2deb7755",
+      "sha256": "129b791a8e65b111ec1d97692e63261540183273246631d210e5cff5ff573f1e",
       "executable": false
     },
     "DEMO.md": {
@@ -546,6 +546,106 @@
       "sha256": "6e129e59143963e00a072956e2e131be1c23549bbe20d51bb05996816387255b",
       "executable": false
     },
+    "native/android/.gitignore": {
+      "sha256": "4f4380c13b798e0219d519a3d9f2e7082a755f1f8e3ee54d331968d501590af0",
+      "executable": false
+    },
+    "native/android/app/build.gradle": {
+      "sha256": "e82525c93486d583d421244fe3442692c9ced54f30d16f7c0f6c922f466430b7",
+      "executable": false
+    },
+    "native/android/app/src/androidTest/AndroidManifest.xml": {
+      "sha256": "879694d9b2c2707e990b7d730bd346ce9696ba7ce2365357c7dc84cfeca11f05",
+      "executable": false
+    },
+    "native/android/app/src/androidTest/java/com/runeditrun/easel/NativeJourney.java": {
+      "sha256": "b7f231041b4a268a10e41861ca1669180649238593be3c564925e28292a0eeeb",
+      "executable": false
+    },
+    "native/android/app/src/main/AndroidManifest.xml": {
+      "sha256": "95e62e64f5678360b4fd4d3ad08692cac2fa5ff882a8d75c3ce751852be2b2b1",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/Api.java": {
+      "sha256": "2ec2c1998b359e6516526a2063e9926b04499ad564d85e7073ae4ea7f161ab49",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/EaselApplication.java": {
+      "sha256": "ae654019dbe08ffc5eec8db215d69d18d28b485d3d987d326f663408c0fca67f",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/EaselMessagingService.java": {
+      "sha256": "aee5bcc86fd666730b5bc418c74ac69397b4238e624ec524af1605b4565e4077",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/MainActivity.java": {
+      "sha256": "6bd5367999ae12df57c6bf1f775902cd079a0c6e9111a6de5541f486b8315789",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/NativeStyle.java": {
+      "sha256": "4cd1d2ee5468d32eae698d1141a9a6a24c2ac8b5073c718a36cb06fba64c1352",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/ProposalReview.java": {
+      "sha256": "d96ec52ebdb219f1cbde031612b87ad7ce2ce24aeeb1b65e858959e47b6b1c08",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/PushHandler.java": {
+      "sha256": "203ec7e0cf21a1e5c8aec636df7401ea485d870d4fbcf0410872e70a7d630075",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/PushRegistration.java": {
+      "sha256": "c00258a52761fb633528b47c119c652b5ed52b37a83b63b52be8d7b2293e253f",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/SavedDashboards.java": {
+      "sha256": "5dc9c48387ff2431701993e16e3526422582ed562802acc9da5274858fd4e4b6",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/Screens.java": {
+      "sha256": "688194ad1b50829402605b1239e257e957100ce3fee771bd8b620d7ba85b9433",
+      "executable": false
+    },
+    "native/android/app/src/main/java/com/runeditrun/easel/Session.java": {
+      "sha256": "69249e5826378cb55a52d37437488a75d0963c14e8d206e67f1ab7220d53d488",
+      "executable": false
+    },
+    "native/android/app/src/main/res/values/styles.xml": {
+      "sha256": "bebcb331371337c440a9c5fa32b855a8b59b66103959f2303d9663b379e14bf2",
+      "executable": false
+    },
+    "native/android/app/src/main/res/xml/network_security.xml": {
+      "sha256": "0fef9895d52063f52c75e1023f6a5e65a804e45db4197723d3a2f17b75dc2b39",
+      "executable": false
+    },
+    "native/android/build.gradle": {
+      "sha256": "9de6b514b57274d512554110fdec0d334ffd819cb7d5fe3229d039b4c7de655c",
+      "executable": false
+    },
+    "native/android/build.sh": {
+      "sha256": "cca5f1d92afe5a62b70e27ac4d4b37e3c4a27c45d132420b8fc8618c77ffa896",
+      "executable": true
+    },
+    "native/android/gradle.properties": {
+      "sha256": "7fcda39ade19ebc084c7cf438c5af744209fec3c76783f75acf56586f20dd470",
+      "executable": false
+    },
+    "native/android/instrument.sh": {
+      "sha256": "632c82b2c9e5059fda28929f98da1c4f7b72e659e564fec8fa25ad78a3c4d52f",
+      "executable": true
+    },
+    "native/android/README.md": {
+      "sha256": "60db745be19ef85d2323c5c460bffee64e1e985cb74360df378ff1fd6b51c352",
+      "executable": false
+    },
+    "native/android/settings.gradle": {
+      "sha256": "bfaa033e2e0f6a49e95669a6378ee07e7026d4e212db846503b4e46e191a0737",
+      "executable": false
+    },
+    "native/README.md": {
+      "sha256": "94571d8a95f6943a2f06d7e6fd02fd6679150f9088a3bbd5297d8ed85eea594f",
+      "executable": false
+    },
     "ONBOARDING.md": {
       "sha256": "6e77acf708bb4de0abef1baf211fd2df5e0e5f90b64b37428ec859871e2b1724",
       "executable": false
@@ -775,7 +875,7 @@
       "executable": false
     },
     "src/auth.server.ts": {
-      "sha256": "a7e4a89f22c3ae97d93ca609d9ea3a83f3ec7a82992cf8f43e39c0ca4ee44595",
+      "sha256": "029ddafe8630956a15baa291e4e30ad2249786e95661ab41a08e60c4262e89ec",
       "executable": false
     },
     "src/base/contract-filter.ts": {
@@ -1015,7 +1115,7 @@
       "executable": false
     },
     "src/easel/agents/owner-question-schedule.ts": {
-      "sha256": "922d48bc9456132ea3822a808fd381cc7648a2a2b337d6c601cc0a3fdd0c4c37",
+      "sha256": "d3c2592a2730bf002105c416c979b0fa1662787d8f6565f9fe7f9c6cc2b41d33",
       "executable": false
     },
     "src/easel/agents/owner-questions.ts": {
@@ -1047,7 +1147,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "9a55476323755ab2534e7a80d20f04e800ea24b22e8b98b865f4a533186d8ffa",
+      "sha256": "0caa9e87122d302168dc708e9e85b2f31f85cb319f67b0ca1e583f72f74d7d0f",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1111,7 +1211,7 @@
       "executable": false
     },
     "src/easel/calendar-dispatch.ts": {
-      "sha256": "7cb50099446b06aa6b51faae2c3ec6fc357348188c716ffc3f9d99d4c6ac1f50",
+      "sha256": "eb00b42dfbee8418a8180f4f82a41478afb79383755d78d6507e0f63731f3c95",
       "executable": false
     },
     "src/easel/calendar-time.ts": {
@@ -1119,7 +1219,7 @@
       "executable": false
     },
     "src/easel/calendar.ts": {
-      "sha256": "b0be985efac8db4fdba0178a927cb3c355ad23db64ae5fa99c9d1c80ae8915fe",
+      "sha256": "f00f4135b36a660d052714da5cb39445e1040cff23cb4eca19e29449242dae2a",
       "executable": false
     },
     "src/easel/cash-alert-check.ts": {
@@ -1131,7 +1231,7 @@
       "executable": false
     },
     "src/easel/cash-alert-schedule.ts": {
-      "sha256": "0d3b5084c0a70a1da6db03a702661aade63eab58162d59553bfe02b3a2faa62a",
+      "sha256": "4f9f1ed523521c55ea2591246b277351ddd08c9b69367f81c6095186fd3aa64e",
       "executable": false
     },
     "src/easel/cash-drivers.ts": {
@@ -1219,7 +1319,7 @@
       "executable": false
     },
     "src/easel/decision-followup.ts": {
-      "sha256": "806269a8cb0e2446f65c4ab8509fa68465a216d5f5a490768d37ad09681b9fe9",
+      "sha256": "e0070bc63af1526e299ea6ea5eb22fb400a9690436b60452b6fa0f509495aafb",
       "executable": false
     },
     "src/easel/department-statement-documents.ts": {
@@ -1435,7 +1535,7 @@
       "executable": false
     },
     "src/easel/gauge-schedule.ts": {
-      "sha256": "409ccf47c8fcb43f3341765da29506edff29771a74482c52424ae2c387a660c8",
+      "sha256": "ae0ea0b255b73de887577daa3f46b165e591332eae08af4737f62682db51a1f0",
       "executable": false
     },
     "src/easel/gauge-source.ts": {
@@ -1546,6 +1646,22 @@
       "sha256": "d400d38f798e7f69fe710a35092d8223cc460668d1aaeecb3c7861fb65f2cfb7",
       "executable": false
     },
+    "src/easel/mobile-push-credentials.ts": {
+      "sha256": "643a0f2c3037e0020c385deecd96cfc31301891e4166c15335b39e4ae95f5151",
+      "executable": false
+    },
+    "src/easel/mobile-push-devices.ts": {
+      "sha256": "314bc8068b680cad03a24e321571dd68ee0c3114be9570198ddc22405a54e336",
+      "executable": false
+    },
+    "src/easel/mobile-push-provider.ts": {
+      "sha256": "a4565de175ca08ac8b0e97deec45523e000cf8b73871c07c3151325c8a20eabf",
+      "executable": false
+    },
+    "src/easel/mobile-push.ts": {
+      "sha256": "e699a5bb0a651389cd43952496a75ef91392c85e192ffcc9fbb79c0db21b400e",
+      "executable": false
+    },
     "src/easel/model.ts": {
       "sha256": "67d09ae937fba20cde80975710fd1925f955d4a347b977a5b8bacc32cb805b3e",
       "executable": false
@@ -1623,11 +1739,11 @@
       "executable": false
     },
     "src/easel/notify-dispatch.ts": {
-      "sha256": "2bbef66e43860de6fa79fded2f38b5c634c5e3a82a86904e045df80bbeb8d692",
+      "sha256": "483727cace4a6c3056ed168f2e8c227e8ea9e33224c189dc6a6439f3b554811f",
       "executable": false
     },
     "src/easel/notify.ts": {
-      "sha256": "6a98346c02438702d858899bb6ce5ec57c3888c844bbb6eba0b6f115f5bb0872",
+      "sha256": "c37b44c0b6eba2cbbed1a0a309fb83ec6fb09898e24e6cf884de7f8c132a3951",
       "executable": false
     },
     "src/easel/office-manifest.ts": {
@@ -1755,7 +1871,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "9944b966ca4329b806ced334597330869fa6b4d63791279ef06054a19129634a",
+      "sha256": "527ebe013282e019ac3379a86db0fdd1701629db9561b9fabf26a16ebfeb983d",
       "executable": false
     },
     "src/easel/ramp.ts": {
@@ -4630,6 +4746,10 @@
       "sha256": "410181a282baf3871e86119574d1b9e36ae4484ac8a54c998962ee686d442304",
       "executable": false
     },
+    "tests/mobile-push-provider.mjs": {
+      "sha256": "3608cb708f8d4ce376c5a3aded9f5d8e3c8cbea19074be15e38c759c55c8133c",
+      "executable": false
+    },
     "tests/mobile.mjs": {
       "sha256": "2d087866befdb00d911c3d914a39e84b84308b343e892118409b0a4ffe898fe7",
       "executable": false
@@ -4666,8 +4786,16 @@
       "sha256": "ac6e3bc3dd0dc8ff0f72293983fbefd3c8793af8592decea40ead928868c75cd",
       "executable": false
     },
+    "tests/native-mobile-fixture.mjs": {
+      "sha256": "7c3892a49916225df40a8e177a29c533fd33689bf793500bb194f71f3418b861",
+      "executable": false
+    },
+    "tests/native-mobile-journey.mjs": {
+      "sha256": "5c1784c71ce567c8fe7f9f52e084f0a0fa050305d267fa0454ab85810d67b291",
+      "executable": false
+    },
     "tests/notifications.test.mjs": {
-      "sha256": "71be50cb4611e2b7522571ec5853ce65857d342becb283326d86037d88569717",
+      "sha256": "c85ad9d0245bcb877d9ff10e2f85844e556a64ae9b41341a063025dd498f1aa4",
       "executable": false
     },
     "tests/office-browser-host.mjs": {

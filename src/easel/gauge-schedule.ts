@@ -57,7 +57,7 @@ export async function runGaugeSchedule(original: Bindings) {
  const open = async () => { const { state, revision } = await load(env.DB); return { s: state, before: new Map(state), revision, x: access(state, actor), db: env.DB, activity: [], snapshots: [], now: await currentTime(env) } as Context & { before: State; revision: number } }
  const commit = async (c: Awaited<ReturnType<typeof open>>) => {
   const guard = env.DB.prepare("INSERT INTO e_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM oa_operators WHERE id=? AND email=? AND version=? AND role=? AND status='active') THEN 1 ELSE 0 END").bind(actor.id, actor.email, actor.version, actor.baseRole)
-  await save(env.DB, actor, c.before, c.s, c.revision, c.activity, [], true, [guard], c.now)
+  await save(env.DB, actor, c.before, c.s, c.revision, c.activity, [], true, [guard, ...(c.extra ?? [])], c.now)
  }
  let c = await open()
  try { gaugeObservationAuthority(c) } catch { return }

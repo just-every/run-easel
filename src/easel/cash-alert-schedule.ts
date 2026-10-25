@@ -30,8 +30,8 @@ export async function runCashAlertSchedule(env: Bindings) {
  const open = async (): Promise<Saved> => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } }
  const commit = async (ctx: Saved) => {
   const changed = [...ctx.s].filter(([k, r]) => ctx.before.get(k)?.revision !== r.revision).map(([, r]) => r.kind)
-  requireThat(changed.every(k => ['cash-alert-rule', 'cash-alert', 'cash-alert-check', 'notification'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records cash alert checks and their notifications', 500)
-  if (changed.length || ctx.activity.length) await save(db, actor, ctx.before, ctx.s, ctx.revision, ctx.activity)
+  requireThat(changed.every(k => ['cash-alert-rule', 'cash-alert', 'cash-alert-check', 'notification', 'mobile-push-delivery', 'mobile-device'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records cash alert checks and their notifications', 500)
+  if (changed.length || ctx.activity.length) await save(db, actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], false, ctx.extra)
  }
  const c = await open(), zone = workspace(c.s).timeZone ?? 'America/New_York'
  const today = zoneDate(c.now, zone), scheduledAt = zonedInstant(today, CHECK_HOUR, zone)

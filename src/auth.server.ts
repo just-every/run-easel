@@ -6,6 +6,7 @@ import { fontDocumentResponse } from './base/font-response'
 import { createOperatorAuth, createAuthHandler, createSignInHandler, type AuthConfig } from './modules/operator-auth/index.mjs'
 import { operatorMail } from './mail.server.mjs'
 import branding from './branding.json'
+import { revokeMobileSession } from './easel/mobile-push-devices'
 
 // The edition's declared theme (public/rer-theme.css), as Base frames link it.
 const theme = { href: '/rer-theme.css', productName: branding.name, accentColor: branding.primaryColor }
@@ -23,6 +24,13 @@ export interface Bindings {
  OIDC_TRANSACTION_SECRET?: string
  EASEL_SCIM_CONFIG?: string
  EASEL_SCIM_TOKEN?: string
+ /** Provider signing keys are deployment secrets; the server mints short-lived assertions. */
+ EASEL_APNS_PRIVATE_KEY?: string
+ EASEL_APNS_TEAM_ID?: string
+ EASEL_APNS_KEY_ID?: string
+ EASEL_APNS_TOPIC?: string
+ EASEL_APNS_SANDBOX?: string
+ EASEL_FCM_SERVICE_ACCOUNT?: string
  DB: D1Database
  AUTH_ORIGIN: string
  AUTH_LOCAL?: string
@@ -83,7 +91,10 @@ export async function authResponse(request: Request, original: Bindings): Promis
   // Base's own-email change does not prove the new mailbox. Easel composes the
   // handler without it, so the route answers like any path it does not own.
   const { changeEmail: _unprovenEmailChange, ...auth } = operatorAuth(env)
-  return fontDocumentResponse(await createAuthHandler(auth)(request))
+  return fontDocumentResponse(await createAuthHandler({ ...auth, signOut: async request => {
+   if (await auth.getSession(request)) await revokeMobileSession(request, env)
+   return auth.signOut(request)
+  } })(request))
  }
  if (url.pathname === '/setup' || url.pathname === '/app' || url.pathname.startsWith('/app/')) {
   const setup = await firstRunResponse(request, env, operatorAuth(env), { theme })

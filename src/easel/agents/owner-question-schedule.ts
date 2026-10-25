@@ -18,8 +18,8 @@ export async function runOwnerQuestionSchedule(env: Bindings) {
  const open = async () => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } as Context & { revision: number; before: State } }
  const commit = async (c: Awaited<ReturnType<typeof open>>) => {
   const changed = [...c.s].filter(([key, row]) => c.before.get(key)?.revision !== row.revision).map(([, row]) => row.kind)
-  requireThat(changed.every(k => ['owner-question', 'notification'].includes(k)) && [...c.before.keys()].every(k => c.s.has(k)), 'The owner-question scheduler only records escalations and delivery outcomes', 500)
-  if (changed.length || c.activity.length) await save(db, actor, c.before, c.s, c.revision, c.activity)
+  requireThat(changed.every(k => ['owner-question', 'notification', 'mobile-push-delivery', 'mobile-device'].includes(k)) && [...c.before.keys()].every(k => c.s.has(k)), 'The owner-question scheduler only records escalations and delivery outcomes', 500)
+  if (changed.length || c.activity.length) await save(db, actor, c.before, c.s, c.revision, c.activity, [], false, c.extra)
  }
  const c = await open(), ids = await escalateQuestions(c)
  await commit(c)
