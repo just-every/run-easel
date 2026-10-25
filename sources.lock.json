@@ -703,7 +703,7 @@
       "executable": false
     },
     "public/fonts/fonts.css": {
-      "sha256": "25811512b41230e9d87746eda908818c63c1d29d733ca1e7ac57c71ce3b08896",
+      "sha256": "b6b9e8bd160fca34df857258c8af36244a86abe36d2a1ac89c9b5e92ee23632b",
       "executable": false
     },
     "public/fonts/ibm-plex-mono/ibm-plex-mono-latin-400.woff2": {
@@ -743,7 +743,7 @@
       "executable": false
     },
     "public/fonts/README.md": {
-      "sha256": "e03ce29bdfbb3ef2b793f229bb9cdeedf03f99a5bdc42c10b26346425536d83c",
+      "sha256": "db5d0854c1ce2276a7c7de9c21a769b3681f921678db9bc94d0702932e7c8523",
       "executable": false
     },
     "public/office/adapter.mjs": {
@@ -755,7 +755,7 @@
       "executable": false
     },
     "public/rer-theme.css": {
-      "sha256": "b33117c7b53fdf040bac50500c934a09caaeeb6b8baac246877ecd186641e7d2",
+      "sha256": "6b81a5d2673118d28f941bbe20f113c9a00dcb9e1b98b8b837c3028fd5bfce6c",
       "executable": false
     },
     "README.md": {
@@ -3763,7 +3763,7 @@
       "executable": false
     },
     "src/server.dev.ts": {
-      "sha256": "bb37b0e3bac143cd651d2a7ed415a84bffb41a44933401a017e55b8f580d965f",
+      "sha256": "cc81019773e51732fbcff7598ce1a3d301db7d5424b132d072108028c1c22d39",
       "executable": false
     },
     "src/server.ts": {

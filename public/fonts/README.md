@@ -16,6 +16,11 @@ Latin file. Do not import this CSS from a component. Every body-font stack uses
 `--font-body`; controls inherit it. No metric-matched fallback face is declared
 yet: the owner's style pass may add one with the final brand font.
 
+Every face is declared twice: here, and again in `/rer-theme.css` for the
+graphical installer, which reads only the theme. The theme's Inter copies say
+`format('woff2')`, because rer's theme reader refuses `woff2-variations`; the
+files are the same. Change both.
+
 Inter (variable weight 100–900 and optical size) and Caveat (variable weight) are
 self-hosted for the homepage under the SIL Open Font License 1.1, each with its
 license beside it (`inter/LICENSE.txt`, `caveat/LICENSE.txt`). The WOFF2 files
