@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "project": {
+    "schema": 1,
+    "projectId": "just-every/run-easel",
+    "name": "Easel",
+    "sourceRepository": "https://github.com/just-every/run-easel",
+    "license": "MIT",
+    "deployment": {
+      "target": "cloudflare-workers",
+      "artifactFile": "rer-worker-artifact.json"
+    },
+    "operations": {
+      "setup": "pnpm install --frozen-lockfile && pnpm exec rer install",
+      "build": "pnpm run build",
+      "verify": "pnpm run typecheck && pnpm run test:easel && pnpm exec rer check --profile first-party && pnpm check:deployment-spec && node scripts/edition-authoring/cli.mjs check && node scripts/edition-authoring/cli.mjs verify-base --offline",
+      "artifact": "node scripts/delivery/base/cli.mjs artifact --config packaging.json",
+      "recovery": "Follow docs/backup-and-restore.md: export the complete installation with rer export, retain exact source and private configuration, restore with rer import into a fresh empty installation of the same release, then check the model, approvals and review packs and re-export before routing traffic. Preserve all applied migration names and bytes."
+    },
+    "verification": {
+      "migrationDirectories": [
+        "migrations/core"
+      ]
+    }
+  },
+  "managed": {
+    "workflowRef": "runeditrun/delivery/.github/workflows/trusted-build.yml@86c8b37399c901bffd9a240dbd1148a65ec83b34",
+    "artifactFile": "rer-worker-artifact.json",
+    "buildProfile": "project",
+    "verificationProfiles": [
+      "full"
+    ]
+  },
+  "artifact": {
+    "specInputs": {
+      "publicVariableNames": [
+        "AUTH_LOCAL",
+        "AUTH_ORIGIN",
+        "MAIL_PROVIDER",
+        "MAIL_FROM",
+        "MAIL_RELAY_URL",
+        "MAIL_ACCOUNT_ID",
+        "OWNER_EMAIL",
+        "APP_NAME",
+        "PRIMARY_COLOR"
+      ],
+      "secretNames": [
+        "SESSION_SECRET",
+        "SETUP_TOKEN"
+      ],
+      "optionalSecretNames": [
+        "MAIL_API_KEY",
+        "SLACK_WEBHOOK_URL",
+        "TEAMS_WEBHOOK_URL",
+        "OIDC_TRANSACTION_SECRET",
+        "EASEL_SAML_CONFIG",
+        "EASEL_OIDC_PROVIDERS",
+        "EASEL_SCIM_CONFIG",
+        "EASEL_SCIM_TOKEN",
+        "EASEL_APNS_PRIVATE_KEY",
+        "EASEL_FCM_SERVICE_ACCOUNT"
+      ],
+      "providerEffects": [
+        "outbound-mail",
+        "outbound-webhooks",
+        "ai"
+      ],
+      "surfaces": {
+        "app": {
+          "path": "/app",
+          "originVariable": "AUTH_ORIGIN",
+          "signIn": {
+            "path": "/signin",
+            "loginHint": false,
+            "ownerSignIn": "/auth/owner-signin"
+          }
+        }
+      },
+      "mail": {
+        "providers": [
+          "resend",
+          "sendgrid",
+          "cloudflare",
+          "rer"
+        ]
+      },
+      "recovery": "Follow docs/backup-and-restore.md: export the complete installation with rer export, retain exact source and private configuration, restore with rer import into a fresh empty installation of the same release, then check the model, approvals and review packs and re-export before routing traffic. Preserve all applied migration names and bytes."
+    }
+  },
+  "setup": {
+    "manifestFile": "rer-setup.json"
+  }
+}

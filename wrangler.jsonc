@@ -18,5 +18,12 @@
       "database_id": "local-easel-only",
       "migrations_dir": "migrations/core"
     }
-  ]
+  ],
+  "vars": {
+    "AUTH_LOCAL": "false",
+    "MAIL_PROVIDER": "resend",
+    "MAIL_FROM": "auth@example.invalid",
+    "MAIL_RELAY_URL": "",
+    "MAIL_ACCOUNT_ID": ""
+  }
 }

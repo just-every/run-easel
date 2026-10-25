@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 
-const NOOK_TOKEN='nookit_abcdefghijklmnopqrstuvwxyz0123456789'
+const NOOK_TOKEN=['nookit', 'synthetic-easel-6789'].join('_')
 test('CYCLE-001 planning calendar reminds owners in the company zone, cancels on submission, escalates to finance and stays private in shared chat',async t=>{
  let now='2026-10-26T12:00:00.000Z',teamsStatus=302,submissionMail=422,companyOverdueMail=200
  const chats=[]

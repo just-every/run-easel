@@ -3,7 +3,7 @@ import type { Bindings } from '../auth.server'
 const encode = (value: string | Uint8Array) => btoa(typeof value === 'string' ? value : String.fromCharCode(...value)).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
 const part = (value: unknown) => encode(new TextEncoder().encode(JSON.stringify(value)))
 function privateBytes(pem: string) {
- const content = pem.replace('-----BEGIN PRIVATE KEY-----', '').replace('-----END PRIVATE KEY-----', '').replace(/\s/g, '')
+ const content = pem.replace(/^-----(?:BEGIN|END) PRIVATE KEY-----$/gm, '').replace(/\s/g, '')
  return Uint8Array.from(atob(content), c => c.charCodeAt(0))
 }
 async function jwt(header: unknown, claims: unknown, pem: string, algorithm: 'ES256' | 'RS256') {

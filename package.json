@@ -1,6 +1,6 @@
 {
   "name": "@planning/easel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -27,7 +27,9 @@
     "deps": "rer install",
     "rer": "rer",
     "test:easel": "node --test --test-concurrency=1 tests/*.test.mjs",
-    "test:browser": "node tests/browser.mjs"
+    "test:browser": "node tests/browser.mjs",
+    "delivery:spec": "node scripts/build-deployment-spec.mjs",
+    "check:deployment-spec": "node scripts/build-deployment-spec.mjs --check"
   },
   "dependencies": {
     "@node-saml/node-saml": "5.1.0",
@@ -42,7 +44,7 @@
     "@cloudflare/vite-plugin": "1.54.5",
     "@cloudflare/workers-types": "5.20260908.1",
     "@playwright/test": "1.55.1",
-    "@runeditrun/rer": "0.2.79",
+    "@runeditrun/rer": "0.2.80",
     "@types/node": "22.18.6",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",

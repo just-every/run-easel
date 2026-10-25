@@ -3,5 +3,25 @@
   "projectId": "just-every/run-easel",
   "name": "Easel",
   "sourceRepository": "https://github.com/just-every/run-easel",
-  "license": "MIT"
+  "license": "MIT",
+  "deployment": {
+    "target": "cloudflare-workers",
+    "artifactFile": "rer-worker-artifact.json"
+  },
+  "operations": {
+    "setup": "pnpm install --frozen-lockfile && pnpm exec rer install",
+    "build": "pnpm run build",
+    "verify": "pnpm run typecheck && pnpm run test:easel && pnpm exec rer check --profile first-party && pnpm check:deployment-spec && node scripts/edition-authoring/cli.mjs check && node scripts/edition-authoring/cli.mjs verify-base --offline",
+    "artifact": "node scripts/delivery/base/cli.mjs artifact --config packaging.json",
+    "recovery": "Follow docs/backup-and-restore.md: export the complete installation with rer export, retain exact source and private configuration, restore with rer import into a fresh empty installation of the same release, then check the model, approvals and review packs and re-export before routing traffic. Preserve all applied migration names and bytes."
+  },
+  "verification": {
+    "migrationDirectories": [
+      "migrations/core"
+    ]
+  },
+  "setup": {
+    "path": "rer-setup.json",
+    "sha256": "fe1e8f5bae16b42808dfe9a87c15425c416b8adb235532edd1403419f20d6550"
+  }
 }
