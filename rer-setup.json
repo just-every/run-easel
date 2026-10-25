@@ -66,12 +66,8 @@
       "label": "Mail provider",
       "kind": "select",
       "required": true,
-      "default": "development",
+      "default": "resend",
       "options": [
-        {
-          "value": "development",
-          "label": "Local outbox only"
-        },
         {
           "value": "resend",
           "label": "Resend"
@@ -90,7 +86,7 @@
         }
       ],
       "group": "mail",
-      "help": "Local outbox sends no email and is only for your computer. Choose a hosted provider before deploying."
+      "help": "Choose the provider that sends hosted sign-in links and planning notices. Local development keeps all mail in its outbox."
     },
     {
       "name": "MAIL_FROM",
@@ -127,7 +123,8 @@
           "required": true
         }
       ],
-      "group": "mail"
+      "group": "mail",
+      "localDefault": "auth@example.invalid"
     },
     {
       "name": "MAIL_RELAY_URL",
@@ -177,7 +174,10 @@
           "required": true
         }
       ],
-      "group": "mail"
+      "group": "mail",
+      "localDefault": {
+        "generate": "hex"
+      }
     },
     {
       "name": "MAIL_ACCOUNT_ID",
