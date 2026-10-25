@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "parent": null,
   "edition": "just-every/run-easel",
-  "manifest": "eefc78170d3c5c18ec7d903266c7932f4723d0a36b12d356f10fd574c70db2ee",
+  "manifest": "b318dd26c4352be22684c7200dd32676ba66d47a98a87bceb7ebde81aac6a41b",
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
@@ -154,10 +154,7 @@
           "scripts/edition-authoring/README.md",
           "src/base/contract-style.ts",
           "src/modules/import-kit/README.md",
-          "src/modules/mail/README.md",
-          "src/modules/operator-auth/conformance/README.md",
-          "src/modules/operator-auth/docs/vite-spa.md",
-          "src/modules/operator-auth/representation.mjs"
+          "src/modules/mail/README.md"
         ],
         "origin": {
           "repository": "https://github.com/runeditrun/base.git",
@@ -170,10 +167,7 @@
             "edition-authoring/README.md",
             "foundation/runtime/contract-style.ts",
             "modules/import-kit/README.md",
-            "modules/mail/README.md",
-            "modules/operator-auth/conformance/README.md",
-            "modules/operator-auth/docs/vite-spa.md",
-            "modules/operator-auth/representation.mjs"
+            "modules/mail/README.md"
           ]
         },
         "mappings": [
@@ -208,25 +202,13 @@
           {
             "path": "src/modules/mail/README.md",
             "originPath": "modules/mail/README.md"
-          },
-          {
-            "path": "src/modules/operator-auth/conformance/README.md",
-            "originPath": "modules/operator-auth/conformance/README.md"
-          },
-          {
-            "path": "src/modules/operator-auth/docs/vite-spa.md",
-            "originPath": "modules/operator-auth/docs/vite-spa.md"
-          },
-          {
-            "path": "src/modules/operator-auth/representation.mjs",
-            "originPath": "modules/operator-auth/representation.mjs"
           }
         ]
       },
       "baseline": {
-        "key": "706d16eccc3c440af155a4cf453e88c4c3a2489cfa3f3b4ccc55b67b0a4b0fea",
-        "digest": "89b87bcb8a6a360a403f9064bc376e94cc4c1fcbc6289f6c2a71f0f82d035943",
-        "sha256": "8417e1c05b34c922046ccacf3bb04b14b24fe7bbca90d932ef8dae78f218bce8"
+        "key": "83f77540dd2e68e409c7778e0cb039b1a48ec34e6f94ed65f470f65c854b3128",
+        "digest": "8ddaed89c85a64b5c3149e18c4587636143534c14b403decb0f313401df4f6fd",
+        "sha256": "30407fea23b3d14dad86936edf617dffdcee44953560d522ed2ced1da9492f8e"
       }
     }
   ],
@@ -284,7 +266,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "fcf78e0b09d6752e64c70cb1badf7386164665efcb00e5703e4310c3b6e9f9ba",
+      "sha256": "dbf24f726f8e79e55f3cac7c092a20a8e08c28ce5f5a215f9a1d7dd2632b65e1",
       "executable": false
     },
     "CLAUDE.md": {
@@ -384,7 +366,7 @@
       "executable": false
     },
     "edition.json": {
-      "sha256": "eefc78170d3c5c18ec7d903266c7932f4723d0a36b12d356f10fd574c70db2ee",
+      "sha256": "b318dd26c4352be22684c7200dd32676ba66d47a98a87bceb7ebde81aac6a41b",
       "executable": false
     },
     "fixtures/adaptive-planning/exportAccounts.xml": {
@@ -3752,7 +3734,7 @@
       "executable": false
     },
     "src/modules/operator-auth/conformance/README.md": {
-      "sha256": "142c2ef58f58a2f7a6c9dafcf0530cf74502aceac060a9dd0a44367bde8f3653",
+      "sha256": "e8701354df0890f30629c6f4d965ba2503f6a4ef9cc696f37f93038608d7cd26",
       "executable": false
     },
     "src/modules/operator-auth/crypto.mjs": {
@@ -3816,7 +3798,7 @@
       "executable": false
     },
     "src/modules/operator-auth/docs/vite-spa.md": {
-      "sha256": "0c9cb19046087f55390368e9983be52a24ce8804cda0a621c7f74d12b90288b6",
+      "sha256": "37e2d7aab9fd1987c7c381c7c0a91724109e2e1a6c0af7f4fbbb528e2b603f3b",
       "executable": false
     },
     "src/modules/operator-auth/errors.mjs": {
@@ -3972,7 +3954,7 @@
       "executable": false
     },
     "src/modules/operator-auth/representation.mjs": {
-      "sha256": "4dc602fe73ce6fa83ade350ca4bd8a1b86dfa96e743598eb7379d2382de8445f",
+      "sha256": "206c3ae542e00687c2ee6c09a2e3466827c7eb58a97d10779cbeca1af945dcb3",
       "executable": false
     },
     "src/modules/operator-auth/routes.mjs": {
