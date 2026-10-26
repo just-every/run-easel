@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d9f0be71971c212c006e89fb24c099e608bdaa94819705f92f8057b129db599d",
+      "sha256": "0ce73193b532c9dcb6ebad86ddc1ba218f6d5c66073811eb9a54b2099d523a83",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "9290a5a7669089af6b05407966f6b952fefb6e29430d8ca78318054fc7120b24",
+      "sha256": "c9e8125fe434cb79bde87f210b8119b50a140ddc64eff9c1408680afab6b1c59",
       "executable": false
     },
     "DEMO.md": {
@@ -548,6 +548,10 @@
     },
     "migrations/core/0022_qbo_refresh.sql": {
       "sha256": "5519919d64b2dcf3e3793b0b7a4f8752761b7dbc2037f26df80b95e765e9ff77",
+      "executable": false
+    },
+    "migrations/core/0023_xero_refresh.sql": {
+      "sha256": "265d8f26bdc021215af9624bda3fb1582f3b1265bd6783fdf5486664dadeb832",
       "executable": false
     },
     "native/android/.gitignore": {
@@ -1031,11 +1035,11 @@
       "executable": false
     },
     "src/easel/actuals-read.ts": {
-      "sha256": "0d97f3262cec99fb13b5036f023b7f3d56a9062b0432c19b86f1705a35ffb0ce",
+      "sha256": "d65de18ae83255cacec83686d50a78d43edd175009106ac49e16e43fdc80a2bf",
       "executable": false
     },
     "src/easel/actuals.ts": {
-      "sha256": "e7246ea1e0af08e430e866117cc0b85e1fb455ac2ea1ed2a3d6fbe79159404c7",
+      "sha256": "400163fbefc2216d7ac8adeaf3ad217bad498fb49a89b51cb25d63faa2f9ea59",
       "executable": false
     },
     "src/easel/agents/agent-evaluate.ts": {
@@ -1163,7 +1167,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "b61e0e33161a5450dc7db1f3cbb52276a63bbbae57a3ae0a6c1cbb49e5058ca9",
+      "sha256": "43cd7eba042131a1734d24617e4e4c0186abf323266eee82b86d1c5d4857b237",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1651,7 +1655,7 @@
       "executable": false
     },
     "src/easel/ledger-context.ts": {
-      "sha256": "167947707705b2d3c45042438e8a187b1b8a9eb1adcbabe1630824a2ef96ae29",
+      "sha256": "f0b3fe3e08e68429773f51a98d6fe5b7e3162d1a7f7c64996d97182d97089a88",
       "executable": false
     },
     "src/easel/ledger-public.ts": {
@@ -2164,6 +2168,30 @@
     },
     "src/easel/working-capital.ts": {
       "sha256": "de5e6be413c3f786526141c1db77ea0611f47d968749991e578f328e97f59251",
+      "executable": false
+    },
+    "src/easel/xero-connection.ts": {
+      "sha256": "70df8132d8e3317e7bb143f09c62fae3f43fb2811f819d06d794ac851d0137a6",
+      "executable": false
+    },
+    "src/easel/xero-import.ts": {
+      "sha256": "c0f17bd32de9d0c822fb94b74a142ec2d3541deb30de4e097cc174159492af8f",
+      "executable": false
+    },
+    "src/easel/xero-links.ts": {
+      "sha256": "b98d8c7f7b423c2d8e4179688abc6eb275239413269163a3f56c2a5801cbcd8d",
+      "executable": false
+    },
+    "src/easel/xero-month.ts": {
+      "sha256": "c5d12ddec10f71dffcb1e7d5c5e3655655ac1ee84f84e044a80b8ffac9f1b657",
+      "executable": false
+    },
+    "src/easel/xero-oauth.ts": {
+      "sha256": "319cbcb7cdbd7db7b7fc3273cdc8917e7a42653a2ff8f14c0288ec0b5f76764e",
+      "executable": false
+    },
+    "src/easel/xero-provider.ts": {
+      "sha256": "80f05cfae8d3fbee69d384a4ab07d86e1e5984eaaf9657d74d9405c36a732a60",
       "executable": false
     },
     "src/easel/xlsx-formulas.ts": {
@@ -4075,7 +4103,7 @@
       "executable": false
     },
     "src/ui/actuals.tsx": {
-      "sha256": "a9ce13a96ece6769fd8f4fb38c795a93074ab663502361f81bc25d835df394f1",
+      "sha256": "f6a096664fd486c83eecef0133dedddb8c8d30a232e131b07dbf8726b95f32a6",
       "executable": false
     },
     "src/ui/agent-governance.tsx": {
@@ -4359,7 +4387,7 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "3726be211cf8365c1f31baafdd9e6d1e5b7cb6f45fd0628b5068b681ee2bc051",
+      "sha256": "6d5392de567a5e1586d043062431225255f2c30d52a8ef5fed0cf94579dbf308",
       "executable": false
     },
     "src/ui/shared.tsx": {
@@ -4452,6 +4480,10 @@
     },
     "src/ui/working-capital.tsx": {
       "sha256": "5babdb2366b200f2253c43bf7492bedb2673f8e9c8476ee23a5e5ea05f96f3b4",
+      "executable": false
+    },
+    "src/ui/xero.tsx": {
+      "sha256": "2c2e15a7de42332cedef9bc39c476e2d30185450c5c830e0181081f024f688a7",
       "executable": false
     },
     "tests/agent-governance-browser.mjs": {
@@ -4599,7 +4631,7 @@
       "executable": false
     },
     "tests/connectors-browser.mjs": {
-      "sha256": "e978025ab86f1a449586fb712971c47537f642818e1de7c8719711d210698046",
+      "sha256": "3b8352f71ff09adb5ec84cef4a6af0bd05758f167d101d9adafb81484aeb3689",
       "executable": false
     },
     "tests/constraint-responses-browser.mjs": {
@@ -4871,7 +4903,7 @@
       "executable": false
     },
     "tests/mapping-rules.test.mjs": {
-      "sha256": "01d97d1783fd0e63c320899bbc7895371f97c4f80301a42caf80cd44aded9a5e",
+      "sha256": "c788f8f9e72e4dd30dfc40133f4262b472126ca94e40ea77e575ea13b8341da6",
       "executable": false
     },
     "tests/mcp.test.mjs": {
@@ -5200,6 +5232,14 @@
     },
     "tests/working-capital.test.mjs": {
       "sha256": "a1aa9749d2de76cc105efb9f8dd0a043ed734439a41d4d08d318bb0813394def",
+      "executable": false
+    },
+    "tests/xero-fixture.mjs": {
+      "sha256": "07d8f9e3cdc2eb0a657b03be1222f5acbf738dae431fa4faf785d6535c0a6f1e",
+      "executable": false
+    },
+    "tests/xero.test.mjs": {
+      "sha256": "a9c491d7eb328d68b85818a28d770e894962530d07cd16010178c9e3b40086ff",
       "executable": false
     },
     "tsconfig.json": {

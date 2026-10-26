@@ -252,10 +252,11 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
 
 test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
  const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
- for(const sourceKind of ['file','pantry','qbo']) {
+ for(const sourceKind of ['file','pantry','qbo','xero']) {
  const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()
  const {qboProvider,qboGrant,acceptQbo}=await import('./qbo-fixture.mjs'),qboEdge=qboProvider()
- const h = await harness({outbound:sourceKind==='qbo'?qboEdge.outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
+ const {xeroProvider,xeroGrant,acceptXero}=await import('./xero-fixture.mjs'),xeroEdge=xeroProvider()
+ const h = await harness({outbound:sourceKind==='xero'?xeroEdge.outbound:sourceKind==='qbo'?qboEdge.outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
  const { revenue, expense } = await seedBalanceActuals(h.command)
  const dept = await h.command('department', { name: 'Delivery' })
  await h.command('department-map', { source: '', department: dept.id })
@@ -283,7 +284,14 @@ test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attri
  ]
  const ledger = { filename: 'opening-ledger.csv', dateFormat: 'YYYY-MM-DD', columns: { date: 'Date', account: 'Account', amount: 'Amount' }, csv: 'Date,Account,Amount\n' + rows.map(r => r.join(',')).join('\n') + '\n' }
  let preview
- if(sourceKind==='qbo') {
+ if(sourceKind==='xero') {
+  await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+  xeroEdge.entries=rows
+  assert.equal((await h.send('/api/easel/connections/xero/connect',xeroGrant,h.owner)).status,200)
+  await acceptXero(h,{month:'2025-12',includeOpening:true})
+  preview=await acceptXero(h,{month:'2026-01',includeOpening:false})
+  assert.equal(preview.source.trialBalance.balanced,true)
+ } else if(sourceKind==='qbo') {
   await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
   qboEdge.entries=rows
   assert.equal((await h.send('/api/easel/connections/qbo/connect',qboGrant,h.owner)).status,200)

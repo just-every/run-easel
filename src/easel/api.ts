@@ -1,3 +1,5 @@
+import { xeroConnection, xeroStatus } from './xero-connection'
+import { xeroImport } from './xero-import'
 import { billingConnection, billingStatus } from './billing-connection'
 import { billingImport, billingReviews } from './billing-import'
 import { qboConnection, qboStatus } from './qbo-connection'
@@ -198,6 +200,17 @@ api.post('/api/easel/connections/qbo/:op', async c => {
  const ctx=await open(c),result=await qboConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
  ctx.extra=result.extra;await commit(ctx)
  return c.json({...await qboStatus(ctx),...(result.authorizationUrl?{authorizationUrl:result.authorizationUrl}:{})})
+})
+api.get('/api/easel/connections/xero', c => read(c, xeroStatus))
+api.get('/api/easel/connections/xero/callback', async c => {
+ const ctx=await open(c),result=await xeroConnection(ctx,runtimeBindings(c.env),'complete',c.req.query())
+ ctx.extra=result.extra;await commit(ctx)
+ return c.redirect('/app',303)
+})
+api.post('/api/easel/connections/xero/:op', async c => {
+ const ctx=await open(c),result=await xeroConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
+ ctx.extra=result.extra;await commit(ctx)
+ return c.json({...await xeroStatus(ctx),...(result.authorizationUrl?{authorizationUrl:result.authorizationUrl}:{})})
 })
 api.post('/api/easel/connections/stripe/:op', async c => {
  const ctx = await open(c)
@@ -697,11 +710,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo' || kit === 'xero', 'Unknown move-in kit', 404)
  const ctx = await open(c)
  if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = kit === 'xero' ? await xeroImport(ctx,c.env,c.req.param('op'),b) : kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
  const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value

@@ -1,4 +1,5 @@
 import { PantryImport } from './pantry'
+import { XeroImport } from './xero'
 import { QboImport } from './qbo'
 import { SourceGuard } from './source-guard'
 import { IncumbentImport } from './move-import'
@@ -30,7 +31,7 @@ export function Actuals({ state, refresh }: Shared) {
  return <>
   <SourceGuard state={state} refresh={refresh} />
   <PantryImport state={state} refresh={refresh} />
-  <QboImport refresh={refresh} state={state}/>
+  <QboImport refresh={refresh} state={state}/><XeroImport refresh={refresh} state={state}/>
   <CsvImport state={state} refresh={refresh} />
   <section className="card">
    <h2>Imports</h2>

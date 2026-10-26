@@ -6,12 +6,13 @@ import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { command } from './browser-runtime.mjs'
 import { settle,noOverflow,track } from './browser-journey.mjs'
 import { billingProvider,billingGrant,billingFixture } from './billing-fixture.mjs'
+import { xeroProvider,xeroGrant,xeroFixture,acceptXero } from './xero-fixture.mjs'
 import { qboProvider,qboGrant,qboFixture,acceptQbo } from './qbo-fixture.mjs'
 const {chromium}=await import(process.env.EASEL_PLAYWRIGHT_MODULE??'@playwright/test')
 const evidence=resolve(process.env.EASEL_EVIDENCE??'.cache/easel-connectors')
 await mkdir(evidence,{recursive:true})
 if(!process.argv.includes('--existing-build'))await command(process.cwd(),['build'])
-const browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
+const browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIUM_PATH?{executablePath:process.env.EASEL_CHROMIUM_PATH}:{}),args:['--no-sandbox','--use-mock-keychain','--password-store=basic']})
 let runtime,context,messages=[]
 async function native(provider){
  messages=[]
@@ -49,6 +50,7 @@ async function capture(page,scope,name,prepare=async()=>{}){
 }
 const action=async(page,suffix,run)=>{const response=page.waitForResponse(r=>r.url().endsWith(suffix)&&r.request().method()==='POST');await run();const r=await response;assert.equal(r.status(),200,await r.text());await settle(page);return r.json()}
 try{
+ if(!process.argv.includes('--xero-only')){
  const provider=billingProvider(),{h,page,send}=await native(provider),f=await billingFixture(h)
  await page.goto(runtime.origin+'/app?tab=settings');await page.getByRole('navigation',{name:'Easel'}).waitFor()
  const connection=card(page,'Subscription billing connection')
@@ -122,5 +124,49 @@ try{
  try{const bp=await qboBoard.newPage();track(bp);await bp.goto(runtime.origin+'/app?tab=review');await bp.getByRole('heading',{name:'Variances, Jan 2026',exact:true}).waitFor();assert.equal(await bp.getByRole('table',{name:'Accepted rows',exact:true}).count(),0);await bp.getByRole('cell',{name:'$100.00',exact:true}).first().waitFor();await capture(bp,bp.locator('main.shell'),'qbo-viewer-variance')}finally{await qboBoard.close()}
  await qp.goto(runtime.origin+'/app?tab=settings');await qc.getByText('Accepted source months',{exact:true}).click();await capture(qp,qc,'qbo-accepted-months')
  await action(qp,'/connections/qbo/disconnect',()=>qc.getByRole('button',{name:'Disconnect QuickBooks',exact:true}).click());await capture(qp,qc,'qbo-disconnected')
- console.log('Native billing, imported ARR and QuickBooks source review, idempotent pull, source link and disconnect passed at 1440 and 390')
+ }
+ await context?.close();context=undefined;await runtime?.close();runtime=undefined
+ const xero=xeroProvider(),q=await native(xero),qp=q.page,fixture=await xeroFixture(q.h)
+ await qp.goto(runtime.origin+'/app?tab=settings');await qp.getByRole('navigation',{name:'Easel'}).waitFor()
+ const qc=card(qp,'Xero connection')
+ await qc.getByText('Connect an existing OAuth company grant',{exact:true}).click();await capture(qp,qc,'xero-connect')
+ const form=qc.locator('form').filter({has:qp.getByRole('button',{name:'Connect Xero grant',exact:true})})
+ for(const[label,value]of[['Xero client ID',xeroGrant.clientId],['Xero client secret',xeroGrant.clientSecret],['Xero tenant ID',xeroGrant.realmId],['Xero refresh token',xeroGrant.refreshToken]])await form.getByLabel(label,{exact:true}).fill(value)
+ await form.getByLabel('I approve read-only Xero accounting access',{exact:true}).check()
+ await action(qp,'/connections/xero/connect',()=>form.getByRole('button',{name:'Connect Xero grant',exact:true}).click())
+ await capture(qp,qc,'xero-connected')
+ for(let i=0;i<26;i++)await acceptXero(q.h,{month:`${2024+Math.floor(i/12)}-${String(i%12+1).padStart(2,'0')}`,includeOpening:i===0})
+ const sc=(await q.h.get('/api/easel/state')).scenarios[0]
+ const approval=await q.h.command('approve-budget',{scenario:sc.id,revision:sc.revision})
+ await qp.goto(runtime.origin+'/app?tab=actuals')
+ const qi=card(qp,'Xero actuals')
+ await qi.getByText('Pull a ledger month',{exact:true}).click();await qi.getByLabel('Xero month',{exact:true}).fill('2026-02')
+ await action(qp,'/import/xero/preview',()=>qi.getByRole('button',{name:'Preview Xero month',exact:true}).click())
+ await capture(qp,qi,'xero-reviewed-month')
+ await action(qp,'/import/xero/commit',()=>qi.getByRole('button',{name:'Accept reviewed Xero month',exact:true}).click())
+ await qi.getByLabel('Xero month',{exact:true}).fill('2026-03')
+ await action(qp,'/import/xero/preview',()=>qi.getByRole('button',{name:'Preview Xero month',exact:true}).click())
+ await capture(qp,qi,'xero-reviewed-month')
+ await action(qp,'/import/xero/commit',()=>qi.getByRole('button',{name:'Accept reviewed Xero month',exact:true}).click())
+ await action(qp,'/import/xero/preview',()=>qi.getByRole('button',{name:'Preview Xero month',exact:true}).click())
+ await capture(qp,qi,'xero-unchanged')
+ await q.h.command('close-month',{scenario:approval.forecast.id,month:'2026-01'})
+ await qp.goto(runtime.origin+'/app?tab=review')
+ await qp.locator('summary.variance-summary').filter({hasText:fixture.line.name}).first().click()
+ const rows=qp.getByRole('table',{name:'Accepted rows',exact:true}).first()
+ const sourceFrame=qp.locator('.scroll-frame').filter({has:rows})
+ await capture(qp,sourceFrame,'xero-variance-source')
+ await context.route('https://go.xero.com/Journal/View.aspx?*',route=>route.fulfill({contentType:'text/html',body:'<h1>Source journal</h1>'}))
+ const link=rows.getByRole('link').first()
+ await capture(qp,sourceFrame,'xero-variance-link',async()=>{
+  await link.scrollIntoViewIfNeeded();await link.focus()
+  assert.match(await link.getAttribute('href'),/JournalID=synthetic-easel-transaction-2026-01/)
+  const sourcePage=await Promise.all([context.waitForEvent('page'),link.click()]).then(([p])=>p)
+  await sourcePage.getByRole('heading',{name:'Source journal',exact:true}).waitFor();await sourcePage.close()
+ })
+ const xeroBoard=await board(q.send)
+ try{const bp=await xeroBoard.newPage();track(bp);await bp.goto(runtime.origin+'/app?tab=review');await bp.getByRole('heading',{name:'Variances, Jan 2026',exact:true}).waitFor();assert.equal(await bp.getByRole('table',{name:'Accepted rows',exact:true}).count(),0);await bp.getByRole('cell',{name:'$100.00',exact:true}).first().waitFor();await capture(bp,bp.locator('main.shell'),'xero-viewer-variance')}finally{await xeroBoard.close()}
+ await qp.goto(runtime.origin+'/app?tab=settings');await qc.getByText('Accepted source months',{exact:true}).click();await capture(qp,qc,'xero-accepted-months')
+ await action(qp,'/connections/xero/disconnect',()=>qc.getByRole('button',{name:'Disconnect Xero',exact:true}).click());await capture(qp,qc,'xero-disconnected')
+ console.log('Native connector review, idempotent pulls, source links, viewer filtering and disconnect passed at 1440 and 390')
 }finally{await context?.close();await browser.close();await runtime?.close()}
