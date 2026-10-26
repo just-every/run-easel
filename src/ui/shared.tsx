@@ -14,7 +14,7 @@ export async function api(path: string, body?: unknown): Promise<any> {
  const value: any = await response.json().catch(() => ({ error: `Request failed (${response.status})` }))
  if (!response.ok) {
   if (response.status === 425 && value.calculation) window.dispatchEvent(new CustomEvent('easel-calculation', { detail: { ...value.calculation, error: value.error } }))
-  if (response.status === 409) window.dispatchEvent(new Event('easel-conflict'))
+  if (response.status === 409 && body !== undefined) window.dispatchEvent(new Event('easel-conflict'))
   throw new ApiError(value.error ?? `Request failed (${response.status})`, response.status)
  }
  if (response.status === 202 && value.calculationJob) return waitForCalculation(path, body, value, api)
