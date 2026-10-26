@@ -62,7 +62,7 @@ export function App() {
  useEffect(() => { void refresh() }, [refresh, tab])
  useEffect(() => {
   const conflict = () => { void refresh() }
-  const back = () => { const params = new URL(window.location.href).searchParams; setTab(TABS.find(t => t.id === params.get('tab'))?.id ?? 'cash') }
+  const back = () => { const params = new URL(window.location.href).searchParams; setTab(params.has('departmentStatement') ? 'review' : params.has('calendar') ? 'cycle' : TABS.find(t => t.id === params.get('tab'))?.id ?? 'cash') }
   window.addEventListener('easel-conflict', conflict)
   window.addEventListener('popstate', back)
   return () => { window.removeEventListener('easel-conflict', conflict); window.removeEventListener('popstate', back) }
