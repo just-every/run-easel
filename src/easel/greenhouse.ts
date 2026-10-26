@@ -44,12 +44,12 @@ export async function greenhouseConnection(c:Context,env:Bindings,op:string,b:Da
   c.activity.push({action:'greenhouse-disconnected',record:'greenhouse',detail:{localCredentialDeleted:true,revocation:'unsupported',ownerStep:instruction}})
   return [c.db.prepare('DELETE FROM e_connection_secrets WHERE id=?').bind('greenhouse')]
  }
- requireThat(!find(c.s,'connection','greenhouse')?.connected,'Disconnect before replacing this Greenhouse key',409)
+ requireThat(!(await greenhouseStatus(c)).connected,'Disconnect before replacing this Greenhouse key',409)
  requireThat(b.consent===true,'Approve manual read-only ATS observations explicitly')
  const credential=greenhouseKey(b.apiKey)
  const check=await greenhouseRead(credential,'jobs?per_page=1&page=1');requireThat(Array.isArray(check.value),'Greenhouse did not return jobs',502)
  const sealed=await sealConnection(env.SESSION_SECRET,credential,GREENHOUSE_PURPOSE)
- put(c.s,'connection','greenhouse',{connected:true,owner:c.x.actor.email,connectedAt:c.now,scope:GREENHOUSE_SCOPE,schedule:'Manual',keySuffix:credential.slice(-4),lastRefresh:null,rowCount:0,error:null,rateLimited:false,httpStatus:200})
+ put(c.s,'connection','greenhouse',{connected:true,owner:c.x.actor.email,connectedAt:c.now,scope:GREENHOUSE_SCOPE,schedule:'Manual',keySuffix:credential.length>8?credential.slice(-4):null,lastRefresh:null,rowCount:0,error:null,rateLimited:false,httpStatus:200})
  c.activity.push({action:'greenhouse-connected',record:'greenhouse',detail:{consent:true,scope:GREENHOUSE_SCOPE}})
  return [c.db.prepare('INSERT INTO e_connection_secrets(id,sealed) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET sealed=excluded.sealed').bind('greenhouse',sealed)]
 }

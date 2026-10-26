@@ -1551,7 +1551,7 @@
       "executable": false
     },
     "src/easel/greenhouse.ts": {
-      "sha256": "e487175d5b8ed71fb38a680f59f8638e1d0bf45d281e906c1a76b08c9d62eecf",
+      "sha256": "4b43be2951387424cc5eac126788fcc326d46576ce82d41e64a363e2e35282a3",
       "executable": false
     },
     "src/easel/grid-math.ts": {
@@ -4131,7 +4131,7 @@
       "executable": false
     },
     "src/ui/greenhouse.tsx": {
-      "sha256": "bf23c26a197b8f34ffc3c1271d7eaf1fbb56fae67bb01f1de3c12296b123a77d",
+      "sha256": "d5c90401d44c436eb50614f1bffd092e3a34e024feafbe945d61f16491f265a0",
       "executable": false
     },
     "src/ui/groups.tsx": {

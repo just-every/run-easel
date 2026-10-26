@@ -22,7 +22,7 @@ export function GreenhouseConnection() {
     <tr><td>Read scope</td><td>{connection.scope}</td></tr>
     <tr><td>Schedule</td><td>{connection.schedule}</td></tr>
     <tr><td>Connected by</td><td>{connection.owner??'—'}</td></tr>
-    <tr><td>Last proposal observation</td><td>{connection.lastRefresh??'None'}</td></tr>
+    <tr><td>Last successful read</td><td>{connection.lastRefresh??'None'}</td></tr>
    </Table>
    {connection.error&&<p role="alert">{connection.error}</p>}
    <p>{connection.revocationInstruction}</p>
