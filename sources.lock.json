@@ -4739,7 +4739,7 @@
       "executable": false
     },
     "tests/formula-import.test.mjs": {
-      "sha256": "07059b8724de122d4640952b4f41517dd17a1fa94daf30a71dd2e5b0f486f7bc",
+      "sha256": "83fa44723044a8c820cbeecd5c1c42da2eb9c49ef082425a20af35684b7b18d0",
       "executable": false
     },
     "tests/gauge-browser.mjs": {

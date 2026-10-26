@@ -80,6 +80,6 @@ test('SHEET-003 translated cross-sheet/month arithmetic, SUM, IF, growth and exa
  await formulaSetup((path,body)=>body===undefined?clean.get(`/api/easel/${path}`):clean.send(`/api/easel/${path}`,body,clean.owner).then(r=>{assert.equal(r.status,200);return r.value}))
  const cp=await clean.kit('workbook','preview',second),ci=await clean.kit('workbook','commit',{...second,fingerprint:cp.fingerprint})
  await clean.kit('workbook','undo',{id:ci.import.id})
- const gone=await clean.get(`/api/easel/scenario/${ci.import.scenario}`)
- assert.deepEqual(gone.inputs.schedule,[]);assert.deepEqual(gone.inputs['workbook-model'],[])
+ await clean.get(`/api/easel/scenario/${ci.import.scenario}`,clean.owner,404)
+ assert.equal((await clean.get('/api/easel/state')).scenarios.some(s=>s.id===ci.import.scenario),false,'An untouched workbook scenario is removed from the plan list')
 })
