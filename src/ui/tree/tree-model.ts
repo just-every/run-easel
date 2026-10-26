@@ -185,9 +185,11 @@ export function dateText(iso: string, now = new Date()) {
  return `${WEEKDAYS[d.getUTCDay()]} ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}${d.getUTCFullYear() !== now.getUTCFullYear() ? `, ${d.getUTCFullYear()}` : ''}`
 }
 /** An instant in the company's time zone as "Tue Oct 13, 2:06 am". */
-export function momentText(at: string, timeZone: string) {
+export function momentText(at: string, timeZone: string, dateFormat?: string) {
  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(new Date(at)).map(p => [p.type, p.value]))
- return { day: `${parts.weekday} ${parts.month} ${parts.day}`, time: `${parts.hour}:${parts.minute} ${String(parts.dayPeriod).toLowerCase()}` }
+ const date = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(at)).map(p => [p.type, p.value]))
+ const day = dateFormat === 'DD/MM/YYYY' ? `${date.day}/${date.month}/${date.year}` : dateFormat === 'YYYY-MM-DD' ? `${date.year}-${date.month}-${date.day}` : dateFormat ? `${date.month}/${date.day}/${date.year}` : `${parts.weekday} ${parts.month} ${parts.day}`
+ return { day, time: `${parts.hour}:${parts.minute} ${String(parts.dayPeriod).toLowerCase()}` }
 }
 /** The company's time zone abbreviation for an instant, e.g. "CT" for America/Chicago. */
 export function zoneText(timeZone: string) {

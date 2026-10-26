@@ -3,6 +3,7 @@
 // Blocks are built only from the immutable snapshot body.
 import { monthLabel } from './months'
 import { formatMoney } from './units'
+import { packDate } from './pack-presentation'
 import type { Data } from './types'
 
 export type Chart = { title: string; months: string[]; series: { name: string; values: number[] }[] }
@@ -18,8 +19,8 @@ export function packBlocks(sn: Data): { title: string; subtitle: string; blocks:
  const b = sn.body, cur = b.currency, money = (n: number | null | undefined) => n === null || n === undefined ? '—' : formatMoney(n, cur)
  const blocks: Block[] = []
  const table = (heads: string[], rows: unknown[][], caption?: string) => blocks.push({ type: 'table', heads, rows: rows.map(r => r.map(v => String(v ?? ''))), ...(caption ? { caption } : {}) })
- blocks.push({ type: 'text', text: `Published by ${b.publishedBy.name} (${b.publishedBy.email}) at ${b.publishedAt}. Snapshot ${sn.id}, SHA-256 ${sn.sha256}.` })
- blocks.push({ type: 'text', text: `Approved budget revision ${b.budget.revision}, approved by ${b.budget.approvedBy?.name ?? ''} at ${b.budget.approvedAt ?? ''}. Forecast ${b.forecast.name} revision ${b.forecast.revision}, actuals through ${monthLabel(b.forecast.actualsThrough)}.` })
+ blocks.push({ type: 'text', text: `Published by ${b.publishedBy.name} (${b.publishedBy.email}) on ${packDate(b, b.publishedAt)}.` })
+ blocks.push({ type: 'text', text: `Approved budget revision ${b.budget.revision}, approved by ${b.budget.approvedBy?.name ?? ''} on ${packDate(b, b.budget.approvedAt)}. Forecast ${b.forecast.name} revision ${b.forecast.revision}, actuals through ${monthLabel(b.forecast.actualsThrough)}.` })
  if (has(b, 'kpis') && b.kpis) {
   blocks.push({ type: 'heading', text: 'Key figures' })
   table(['KPI', 'Actual', 'Budget', 'Difference'], b.kpis.map((k: Data) => { const f = (n: number | null) => k.unit === 'count' ? (n === null ? '—' : String(n)) : money(n); return [k.label, f(k.actual), f(k.budget), k.actual === null || k.budget === null ? '—' : f(k.actual - k.budget)] }))
@@ -44,11 +45,11 @@ export function packBlocks(sn: Data): { title: string; subtitle: string; blocks:
  }
  if (has(b, 'decisions')) {
   blocks.push({ type: 'heading', text: 'Decisions and actions' })
-  if (b.decisions.length) table(['Decision or action', 'Owner', 'Due'], b.decisions.map((d: Data) => [d.text, d.owner, d.due])); else blocks.push({ type: 'text', text: 'No decisions recorded.' })
+  if (b.decisions.length) table(['Decision or action', 'Owner', 'Due'], b.decisions.map((d: Data) => [d.text, d.owner, packDate(b, d.due)])); else blocks.push({ type: 'text', text: 'No decisions recorded.' })
  }
  if (has(b, 'appendix')) {
   if (b.contracts) { blocks.push({ type: 'heading', text: 'Bookings, billings, revenue and collections' }); table(['Month', 'Bookings', 'Billings', 'Revenue', 'Collections', 'Receivables', 'Deferred revenue'], b.contracts.months.map((m: Data) => [monthLabel(m.month), ...['bookings', 'billings', 'revenue', 'collections', 'receivables', 'deferredRevenue'].map(k => money(m[k]))])) }
-  if (b.sources) { blocks.push({ type: 'heading', text: 'Sources' }); table(['Accepted import', 'SHA-256', 'Rows', 'Accepted by'], b.sources.map((x: Data) => [x.file, x.sha256, x.rows, `${x.acceptedBy} at ${x.acceptedAt}`])) }
+  if (b.sources) { blocks.push({ type: 'heading', text: 'Sources' }); table(['Accepted import', 'Rows', 'Accepted by', 'Accepted on'], b.sources.map((x: Data) => [x.file, x.rows, x.acceptedBy, packDate(b, x.acceptedAt)])) }
  }
  return { title: `${b.title} · ${b.company}`, subtitle: `${b.label ?? monthLabel(b.month)} · ${cur}`, blocks }
 }

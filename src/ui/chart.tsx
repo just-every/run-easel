@@ -111,7 +111,7 @@ export const chartStyle = `
 .cc-value::after{content:"";position:absolute;right:-1px;bottom:-18px;height:18px;border-left:1px solid var(--green);transform:rotate(34deg);transform-origin:top}
 .cc-value{position:absolute;transform:translate(-8px,calc(-100% - 15px));padding:3px 10px;border:1px solid var(--green-line);border-radius:8px;background:var(--green-soft);color:var(--green-ink);font-size:14px;font-weight:700;line-height:1.3;white-space:nowrap}
 .cc-ticks{position:absolute;left:0;top:0;bottom:28px;width:36px}
-.cc-ticks span{position:absolute;right:0;transform:translateY(-50%);font-size:12px;color:var(--muted)}
+.cc-ticks span{position:absolute;right:0;transform:translateY(-50%);font-size:13px;color:var(--muted);white-space:nowrap;overflow-wrap:normal}
 .cc-axis{position:absolute;left:0;right:0;bottom:0;height:22px}
 .cc-with-ticks .cc-axis{left:44px}
 .cc-axis>span{position:absolute;top:6px;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:var(--muted)}

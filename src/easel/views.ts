@@ -15,7 +15,7 @@ import { restrictDrivers } from './cash-drivers'
 // and traces behind other departments' numbers never leave for people who
 // may not see them.
 import { dimensionAllowed, requireFinance, requireMember, seesDepartmentDetail, seesPayDetail, visibleInput } from './access'
-import { reconciliation } from './actuals'
+import { closedImportPeriods, reconciliation } from './actuals'
 import { actorNames } from './actor-names'
 import type { Context } from './context'
 import { type Calculation, type Source } from './engine'
@@ -81,7 +81,7 @@ export async function stateView(c: Context) {
   accountMaps: finance ? all(s, 'account-map') : [],
   accountRules: finance ? all(s, 'account-rule') : [],
   departmentMaps: finance ? all(s, 'department-map') : [],
-  batches: finance ? all(s, 'batch').sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : [],
+  batches: finance ? all(s, 'batch').map((b): Data => ({ ...b, closedPeriods: closedImportPeriods(s, b) })).sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : [],
   moveImports: finance && x.payDetail ? all(s, 'move-import') : [],
   workbooks: finance ? all(s, 'workbook-import') : [],
   actionDepartments: finance ? all(s, 'pack-action-department') : [],

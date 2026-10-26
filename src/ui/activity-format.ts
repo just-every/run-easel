@@ -14,7 +14,7 @@ for (const [prefix, noun] of [['actuals', 'actuals'], ['workbook', 'a workbook']
  events[`${prefix}-undo-partial`] = `Partly undid ${noun}`
 }
 events['actuals-accepted'] = 'Accepted actuals'; events['workbook-imported'] = 'Imported a workbook'
-const isId = (value: string) => /[a-f\d]{8}-[a-f\d-]{27,}|[a-f\d]{64}/i.test(value)
+const isId = (value: string) => /[a-f\d]{8}-[a-f\d-]{27,}|[a-f\d]{64}|\bwb-[a-f\d]+(?::[\w-]+)?\b/i.test(value)
 const safeText = (value: unknown) => typeof value === 'string' && !isId(value) ? value : ''
 const named = (state: D, collection: string, id: unknown, missing: string) => state[collection]?.find((r: D) => r.id === id)?.name ?? missing
 function snapshotName(state: D, id: unknown) {
@@ -23,12 +23,33 @@ function snapshotName(state: D, id: unknown) {
  return safeText(sn.label) || `${sn.kind === 'approval' ? 'Approved budget' : sn.kind === 'forecast' ? 'Kept forecast' : 'Published pack'}: ${named(state, 'scenarios', sn.scenario, 'Removed scenario')}`
 }
 export const eventLabel = (action: string) => events[action] ?? 'Other activity'
+const kinds: Record<string, string> = { workspace: 'Plan settings', scenario: 'Scenario', actual: 'Actuals row', batch: 'Actuals import', 'workbook-import': 'Workbook import', 'formula-source': 'Workbook source model', 'account-map': 'Account mapping', 'department-map': 'Department mapping', 'pay-grant': 'Pay-detail permission' }
+export const activityKind = (kind: string) => kinds[kind] ?? kind.replaceAll('-', ' ').replace(/^./, c => c.toUpperCase())
+
+export function activityRevision(row: D): string {
+ const d = row.detail ?? {}
+ const numeric = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) ? value : null
+ const before = numeric(row.beforeRevision) ?? numeric(d.before?.revision)
+ const after = numeric(row.afterRevision) ?? numeric(d.after?.revision)
+ if (before !== null || after !== null) return `${before ?? '—'} → ${after ?? '—'}`
+ return `Change ${row.seq}`
+}
+
 export function activityRecord(state: D, row: D) {
  const d = row.detail ?? {}
  const action = row.action as string
  if (['token-issued', 'token-revoked', 'api-token-used'].includes(action)) return safeText(d.label ?? d.token?.label) || 'API credential'
  if (action === 'structure-version') return d.scenarios?.length === 1 ? d.scenarios[0].name : 'Company model'
- if (action === 'record-changed') return safeText(d.after?.name ?? d.after?.title ?? d.before?.name ?? d.before?.title) || `${d.kind} values`
+ if (action === 'record-changed') {
+  const value = d.after ?? d.before ?? {}
+  if (d.kind === 'workspace') return value.name || state.workspace.name
+  if (d.kind === 'formula-source') return `Workbook source model · ${named(state, 'scenarios', value.scenario ?? row.scenario, 'Imported scenario')}`
+  if (d.kind === 'actual') return [safeText(value.description) || safeText(value.accountName) || 'Actuals row', value.date ? monthLabel(value.date.slice(0, 7)) : ''].filter(Boolean).join(' · ')
+  if (d.kind === 'account-map') return `Account ${safeText(value.account ?? row.record) || 'mapping'}`
+  if (d.kind === 'department-map') return safeText(value.source ?? row.record) || 'Department mapping'
+  if (d.kind === 'member' || d.kind === 'pay-grant') return state.actorNames?.[row.record] || safeText(row.record) || 'Person access'
+  return safeText(value.name ?? value.title ?? value.file) || `${activityKind(d.kind)}${row.scenario ? ` · ${named(state, 'scenarios', row.scenario, 'Removed scenario')}` : ''}`
+ }
  if (action === 'workspace') return state.workspace.name
  if (action === 'department' || action === 'department-delete') return safeText(d.name) || named(state, 'departments', row.record, 'Removed department')
  if (action === 'line' || action === 'line-delete') return safeText(d.name) || named(state, 'lines', row.record, 'Removed planning line')
@@ -46,12 +67,13 @@ export function activityRecord(state: D, row: D) {
  return '—'
 }
 /** Typed event fields only: fingerprints and internal identities are never display text. */
-export function activityDetail(state: D, row: D) {
+export function activityDetail(state: D, row: D, displayDate: (value?: string | null) => string) {
  const d = row.detail ?? {}, parts: string[] = []
  if (row.action === 'api-token-used') return `${d.method} ${d.path} · HTTP ${d.status} · ${d.token?.scope} scope`
- if (row.action === 'token-issued' || row.action === 'token-revoked') return `${d.kind} · ${d.scope} scope · expires ${new Date(d.expiresAt).toISOString()}`
+ if (row.action === 'token-issued' || row.action === 'token-revoked') return `${d.kind} · ${d.scope} scope · expires ${displayDate(new Date(d.expiresAt).toISOString())}`
  const text = (key: string, label: string) => { const value = safeText(d[key]); if (value) parts.push(`${label}: ${value}`) }
- for (const [key, label] of [['name', 'Name'], ['file', 'File'], ['reason', 'Reason'], ['request', 'Request'], ['due', 'Due'], ['currency', 'Currency'], ['status', 'Status'], ['state', 'Import status']]) text(key, label)
+ for (const [key, label] of [['name', 'Name'], ['file', 'File'], ['reason', 'Reason'], ['request', 'Request'], ['currency', 'Currency'], ['status', 'Status'], ['state', 'Import status']]) text(key, label)
+ if (d.due) parts.push(`Due: ${displayDate(d.due)}`)
  if (d.kind) parts.push(`Kind: ${d.kind === 'operating-expense' ? 'Operating expenses' : d.kind === 'cost-of-sales' ? 'Cost of sales' : safeText(d.kind)}`)
  if (d.type) parts.push(`Line type: ${d.type === 'operating-expense' ? 'Operating expenses' : d.type === 'cost-of-sales' ? 'Cost of sales' : safeText(d.type)}`)
  if (d.role) parts.push(`Role: ${safeText(d.role)}`)

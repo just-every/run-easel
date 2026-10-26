@@ -16,6 +16,17 @@ export function zonedInstant(date: string, hour: number, timeZone: string) {
  return new Date(instant).toISOString()
 }
 
+/** Convert a company-zone date and time from a native picker into an instant. */
+export function zonedDateTime(value: string, timeZone: string) {
+ const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value)
+ if (!match) throw new Error('Choose a date and time')
+ const wall = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4]), Number(match[5]), Number(match[6] ?? 0))
+ let instant = wall - zoneOffsetMs(wall, timeZone)
+ instant = wall - zoneOffsetMs(instant, timeZone)
+ if (instant + zoneOffsetMs(instant, timeZone) !== wall) throw new Error('This local time does not exist because the clocks change. Choose another time.')
+ return new Date(instant).toISOString()
+}
+
 export const addDays = (date: string, days: number) => new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)) + days)).toISOString().slice(0, 10)
 const weekday = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay()
 

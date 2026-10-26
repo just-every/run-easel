@@ -57,6 +57,7 @@ type BoardProps = Pick<Shared, 'state' | 'refresh' | 'go'> & { tree: Tree; home:
 function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, options, option, optionView, views, choose }: BoardProps) {
  const board = useRef<HTMLDivElement>(null)
  const timeZone = state.workspace.timeZone ?? 'America/New_York'
+ const dateFormat = state.workspace.dateFormat ?? 'MM/DD/YYYY'
  const [open, setOpen] = useState<Record<string, boolean>>({})
  // On a phone the tree is an outline: drivers a plan moves start open, the rest start folded.
  const [phone] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches)
@@ -75,7 +76,7 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
   let live = true
   api(`activity?record=${encodeURIComponent(input.id)}`).then((rows: D[]) => {
    const row = rows.find(r => /-changed$/.test(r.action))
-   if (live && row) setChangedBy({ who: row.actorName ?? row.actor, ...momentText(row.at, timeZone) })
+   if (live && row) setChangedBy({ who: row.actorName ?? row.actor, ...momentText(row.at, timeZone, dateFormat) })
   }, () => {})
   return () => { live = false }
  }, [exceptionInputs[0]?.id])
@@ -93,7 +94,7 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
  const exceptionChange = exception && baseView ? changeText(baseView.inputs.filter((i: D) => exceptionInputs.some(e => e.origin === i.origin)), exceptionInputs).replace(/^[^:]+: /, '') : ''
  const moved = exception ? landing(exception, homeView, baseView, tree.month) : ''
  const submitted = options.filter(o => o.submittedAt).map(o => o.submittedAt as string).sort().at(-1)
- const proposedAt = submitted ? momentText(submitted, timeZone) : null
+ const proposedAt = submitted ? momentText(submitted, timeZone, dateFormat) : null
  const optionLeaf = tree.drivers.flatMap(d => d.leaves).find(l => l.option !== null && l.option !== l.value)
  const sticky = option && (option.summary || option.request) ? String(option.summary || option.request).split(/(?<=\.)\s/)[0] : ''
  const edges: Edge[] = tree.drivers.flatMap(d => {
@@ -115,7 +116,7 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
  }
  const compare = () => { const url = new URL(window.location.href); url.searchParams.set('compareFrom', home.id); url.searchParams.set('compareTo', option!.id); window.history.replaceState(window.history.state, '', url); go('scenarios') }
  const runway = homeView.health.runway.find((m: D) => m.month === tree.from)
- const now = momentText(new Date().toISOString(), timeZone)
+ const now = momentText(new Date().toISOString(), timeZone, dateFormat)
  const rowOf = (leaf: Leaf | null | undefined) => leaf ? tree.drivers.findIndex(d => d.leaves.some(l => l.key === leaf.key)) : -1
  const last = tree.drivers.length - 1, exceptionRow = rowOf(exception), optionRow = sticky ? rowOf(optionLeaf) : -1
  // The decision keeps the bottom right on a desktop: a note for the last driver's leaf sits one row up when that row is free.
@@ -164,7 +165,7 @@ function Board({ tree, state, refresh, go, home, homeView, baseline, baseView, o
   <Dots as="p" className="t-foot">
    {homeView.actualsThrough ? `Actuals through ${monthLabel(homeView.actualsThrough)}` : 'No months closed yet'}
    {runway && `runway ${runway.runwayHundredths === null ? (runway.basis === 'cash-exhausted' ? 'exhausted' : 'not burning') : `${(runway.runwayHundredths / 100).toFixed(1)} months`} in ${monthLabel(tree.from)}`}
-   {tree.floor !== null && `floor ${cash(tree.floor)}${homeView.health.agreement?.by ? ` agreed ${momentText(homeView.health.agreement.at, timeZone).day}` : ''}`}
+   {tree.floor !== null && `floor ${cash(tree.floor)}${homeView.health.agreement?.by ? ` agreed ${momentText(homeView.health.agreement.at, timeZone, dateFormat).day}` : ''}`}
   </Dots>
  </>
 }

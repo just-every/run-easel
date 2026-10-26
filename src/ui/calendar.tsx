@@ -70,7 +70,7 @@ function ReminderSettings({ view, saved }: { view: D; saved: () => Promise<void>
  return <>
   <p>{s?.enabled ? <>Reminders are on, sent as scheduler:calendar for <strong>{s.configuredBy.name}</strong>.</> : 'Reminders are off.'}</p>
   {s?.paused && <p role="alert" className="error">{s.paused}</p>}
-  <ul className="plain">{(['slack', 'teams', 'nook'] as const).map(c => <li key={c}>{CHANNEL[c]}: {ch[c].error ?? (ch[c].configured ? `configured${ch[c].host ? ` (${ch[c].host})` : ''}` : c === 'nook' ? 'not connected' : `not configured (set ${c.toUpperCase()}_WEBHOOK_URL)`)}</li>)}</ul>
+  <ul className="plain">{(['slack', 'teams', 'nook'] as const).map(c => <li key={c}>{CHANNEL[c]}: {ch[c].error ?? (ch[c].configured ? `configured${ch[c].host ? ` (${ch[c].host})` : ''}` : c === 'nook' ? 'not connected' : 'not connected — add an incoming webhook in your deployment configuration')}</li>)}</ul>
   <Form submit="Save reminders" onSubmit={async v => { await command('calendar-schedule-save', { enabled: !!v.enabled, channels: usable.filter(c => v[`channel-${c}`]), revision: s?.revision ?? 0 }); await saved() }}>
    <Field label="Send reminders, escalations and digests" name="enabled" type="checkbox" defaultValue={s?.enabled ?? false} />
    {usable.map(c => <Field key={c} label={`Also post a generic reminder to ${CHANNEL[c]}`} name={`channel-${c}`} type="checkbox" defaultValue={s?.channels?.includes(c) ?? false} />)}

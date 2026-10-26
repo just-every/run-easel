@@ -37,7 +37,7 @@ export function Actuals({ state, refresh }: Shared) {
    <Table caption="Actuals imports" heads={['File', 'Status', 'Rows accepted', 'Rows left out', 'Months', 'Accepted by', '']}>
     {state.batches.map((b: D) => <tr key={b.id}><td>{b.file}</td><td>{b.status}</td><td className="num">{b.accepted}</td><td className="num">{b.rejected}</td><td>{b.periods.map(monthLabel).join(', ')}</td><td><Person state={state} email={b.acceptedBy} /></td><td>
      {b.status === 'importing' && <Action label="Continue import" run={async () => { await api('import/actuals/resume', { id: b.id }); await refresh() }} />}
-     {(b.status === 'accepted' || b.status === 'undoing') && <Action label="Undo import" kind="danger" confirm={`Remove every row ${b.file} added?`} run={async () => { await api('import/actuals/undo', { id: b.id }); await refresh() }} />}
+     {(b.status === 'accepted' || b.status === 'undoing') && (b.closedPeriods?.length ? <span>Closed {b.closedPeriods.map(monthLabel).join(', ')}. Import a correcting file to change these actuals.</span> : <Action label="Undo import" kind="danger" confirm={`Remove every row ${b.file} added?`} run={async () => { await api('import/actuals/undo', { id: b.id }); await refresh() }} />)}
     </td></tr>)}
    </Table>
   </section>

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BillingConnection } from './billing'
 import { QboConnection } from './qbo'
 import { GreenhouseConnection } from './greenhouse'
@@ -13,7 +14,7 @@ import { BALANCE_TARGETS, balanceTarget } from '../easel/balance-targets'
 import { AccountRules } from './account-rules'
 import { GaugeConnection } from './gauge-connection'
 import type { Shared } from './app'
-import { Action, api, command, Field, Form, decimalText, kindLabel, fiscalMonths, US_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS, Table, type D } from './shared'
+import { Action, api, command, Field, Form, decimalText, kindLabel, fiscalMonths, COMPANY_TIME_ZONES, ENGLISH_LOCALES, DATE_FORMATS, Table, type D } from './shared'
 import { Dots } from './dots'
 
 /** The plan's calendar, departments, lines, people and account mappings. Finance only. */
@@ -37,7 +38,7 @@ export function Settings({ state, refresh }: Shared) {
     <Dots as="p" className="muted">{w.retailStartDate ? [`Accounting calendar: ${w.calendar ?? 'calendar-month'}`, `first period starts ${w.retailStartDate}. Fixed after setup.`] : `Accounting calendar: ${w.calendar ?? 'calendar-month'}. Fixed after setup.`}</Dots>
     <Field label="Language and region" name="locale" defaultValue={w.locale ?? 'en-US'} options={ENGLISH_LOCALES} />
     <Field label="Date display" name="dateFormat" defaultValue={w.dateFormat ?? 'MM/DD/YYYY'} options={DATE_FORMATS} />
-    <Field label="Company time zone" name="timeZone" defaultValue={w.timeZone ?? 'America/New_York'} options={[...US_TIME_ZONES, ...(!US_TIME_ZONES.some(z => z.value === w.timeZone) && w.timeZone ? [{value:w.timeZone,label:w.timeZone}] : [])]} />
+    <Field label="Company time zone" name="timeZone" defaultValue={w.timeZone ?? 'America/New_York'} options={[...COMPANY_TIME_ZONES, ...(!COMPANY_TIME_ZONES.some(z => z.value === w.timeZone) && w.timeZone ? [{value:w.timeZone,label:w.timeZone}] : [])]} />
     <Field label="First plan month" name="planStart" type="month" defaultValue={w.planStart} />
    </Form>
   </section>
@@ -75,7 +76,7 @@ export function Settings({ state, refresh }: Shared) {
     <td>{m.name}</td><td>{m.email}</td><td>{m.role}</td><td>{m.departments.map(deptName).join(', ') || '—'}</td><td>{m.active ? 'Yes' : 'No'}</td>
     <td>{m.role === 'viewer' ? 'Unavailable for viewers' : m.payDetail ? 'Granted' : 'Not granted'}</td>
     <td>
-     <Action kind="quiet" label="Send sign-in invitation" run={async () => { await api('invite', { email: m.email }) }} />
+     <SignInInvitation email={m.email} />
      {state.me.owner && m.role !== 'viewer' && <Action kind={m.payDetail ? 'danger' : 'quiet'} label={m.payDetail ? 'Revoke pay detail' : 'Grant pay detail'} run={async () => { await command('pay-detail', { email: m.email, granted: !m.payDetail }); await refresh() }} />}
     </td>
    </tr>)}</Table>
@@ -105,4 +106,13 @@ export function Settings({ state, refresh }: Shared) {
    </Form>
   </section>
  </>
+}
+
+function SignInInvitation({ email }: { email: string }) {
+ const [notice, setNotice] = useState('')
+ return <><Action kind="quiet" label="Send sign-in invitation" run={async () => {
+  setNotice('')
+  const result = await api('invite', { email })
+  setNotice(result.delivery === 'local' ? 'Local development does not deliver invitation email. Open the sign-in link printed by rer on this computer. To invite this person by email, use a hosted installation.' : `Sign-in invitation requested for ${email}. Ask them to check their inbox.`)
+ }} />{notice && <p role="status">{notice}</p>}</>
 }

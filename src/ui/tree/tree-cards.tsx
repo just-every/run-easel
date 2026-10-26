@@ -1,3 +1,4 @@
+import { TooltipButton } from '../tooltip'
 import type { ReactNode } from 'react'
 import { Dots, DotText } from '../dots'
 import { monthLabel, type D } from '../shared'
@@ -46,7 +47,7 @@ export function DriverCard({ node, tree, baseName, optionName, open, onToggle, c
   <Dots as="h3" itemClass={when}>{driverLabel[node.driver]}{windowText(tree)}</Dots>
   <p className={`t-amount${node.value < 0 ? ' t-out' : ''}`}>{signed(node.value)}</p>
   <Changes base={node.base} option={node.option} value={node.value} baseName={baseName} optionName={optionName} compact />
-  <button type="button" className="t-chevron" aria-expanded={open} aria-controls={controls} onClick={onToggle} aria-label={`${open ? 'Hide' : 'Show'} what makes up ${driverLabel[node.driver]}`}><span aria-hidden="true">›</span></button>
+  <TooltipButton tip={open ? 'Hide breakdown' : 'Show breakdown'} type="button" className="t-chevron" aria-expanded={open} aria-controls={controls} onClick={onToggle} aria-label={`${open ? 'Hide' : 'Show'} what makes up ${driverLabel[node.driver]}`}><span aria-hidden="true">›</span></TooltipButton>
  </article>
 }
 
@@ -70,7 +71,7 @@ export function LeafCard({ leaf, optionName, baseName, optionChange, exception, 
   <p className="t-leaf-amount"><span>{signed(leaf.value)}</span>{optionMoved
    ? <strong className="t-gain">{signed(leaf.option! - leaf.value)} with {optionName}</strong>
    : (change || leaf.alternatives.length > 0) && <span className="t-leaf-side">{change}{leaf.alternatives.map(a => <span key={a} className="t-alt-tag">{a.split(' · ')[0]}</span>)}</span>}</p>
-  {onOpen && <button type="button" className="t-chevron" onClick={onOpen} aria-label={`Open ${leaf.label} in Plan`}><span aria-hidden="true">›</span></button>}
+  {onOpen && <TooltipButton tip="Open in Plan" type="button" className="t-chevron" onClick={onOpen} aria-label={`Open ${leaf.label} in Plan`}><span aria-hidden="true">›</span></TooltipButton>}
  </article>
 }
 

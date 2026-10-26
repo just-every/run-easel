@@ -159,6 +159,12 @@ export async function workbookCommand(c: Context, op: string, b: Data): Promise<
   const job = await c.db.prepare('SELECT id, state, mapping_version, principal_id FROM ik_jobs WHERE destination=? AND namespace=? ORDER BY rowid DESC LIMIT 1').bind(imp.destination, WORKBOOK_NAMESPACE).first<any>()
   requireThat(job, 'This import has no journal entry yet; start it again from the preview', 409)
   const ctx = journalContext(c.db, c.x.actor, imp.destination, WORKBOOK_NAMESPACE, job)
+  const prepare = ctx.storage.targets.preparePreservedUndo!
+  ctx.storage.targets.preparePreservedUndo = async function(...args) {
+   const snapshot = await prepare.call(this, ...args)
+   // The import's own journal metadata is not an independent plan dependency.
+   return { ...snapshot, dependencies: snapshot.dependencies.filter(d => !(d.cause.table === 'e_records' && d.cause.field === 'workbook-import' && d.cause.recordId === imp.id)) }
+  }
   if (op === 'status') return { result: { import: imp, job: await readD1ImportJob(job.id, ctx), undo: ['undone', 'undoing'].includes(job.state) ? await readD1ImportUndoReport(job.id, ctx) : null } }
   if (op === 'resume') { requireThat(imp.status === 'importing', 'This import is not waiting to continue', 409); return { result: {}, kit: () => resumeD1Import(job.id, ctx), record: (c2, applied) => finish(c2, imp.id, applied) } }
   requireThat(imp.status === 'imported' || imp.status === 'undoing', 'Only a completed import can be undone', 409)

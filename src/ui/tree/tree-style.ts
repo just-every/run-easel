@@ -59,9 +59,9 @@ export const treeStyle = `
 .t-dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%}
 .t-dot-now{background:var(--ink)}.t-dot-old{background:#b3b6bf;width:6px;height:6px;margin:-3px 0 0 -3px}.t-dot-new{background:var(--green)}
 .t-spark-ticks{position:absolute;left:0;top:0;bottom:34px;width:28px}
-.t-spark-ticks span{position:absolute;right:0;transform:translateY(-50%);font-size:11.5px;color:var(--muted)}
+.t-spark-ticks span{position:absolute;right:0;transform:translateY(-50%);font-size:13px;color:var(--muted);white-space:nowrap;overflow-wrap:normal}
 .t-spark-axis{position:absolute;left:34px;right:0;bottom:0;height:30px}
-.t-spark-axis span{position:absolute;top:5px;transform:translateX(-50%);font-size:11.5px;line-height:1.2;text-align:center;color:var(--muted);white-space:nowrap}
+.t-spark-axis span{position:absolute;top:5px;transform:translateX(-50%);font-size:13px;line-height:1.2;text-align:center;color:var(--muted);white-space:nowrap}
 .t-driver{padding:16px 32px 16px 18px;min-height:104px;border-left:7px solid #c6cbd4}
 .t-driver.t-red{border-left-color:var(--magenta)}
 .t-driver.t-green{border-left-color:var(--green)}

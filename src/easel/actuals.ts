@@ -18,7 +18,12 @@ import { base64, journalContext, kitContext } from './kit'
 import { lines, workspace } from './model'
 import { monthLabel } from './months'
 import { cents } from './units'
-import { all, choice, find, get, put, requireThat, type Data } from './types'
+import { all, choice, find, get, put, requireThat, type Data, type State } from './types'
+
+export function closedImportPeriods(s: State, batch: Data): string[] {
+ const closedThrough = all(s, 'scenario').filter(sc => sc.kind === 'forecast' && sc.status === 'working' && sc.actualsThrough).map(sc => sc.actualsThrough as string)
+ return batch.periods.filter((period: string) => closedThrough.some(through => period <= through))
+}
 
 export const CSV_NAMESPACE = 'easel-csv-actuals'
 export const CSV_MAPPING = 'csv-actuals-v1'
@@ -222,8 +227,8 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
    return { result: {}, kit: () => resumeD1Import(job.id, bound), record: (c2, applied) => finishBatch(c2, batch.id, applied) }
   }
   requireThat(batch.status === 'accepted' || batch.status === 'undoing', 'Only an accepted import can be undone', 409)
-  const closedBy = all(c.s, 'scenario').filter(sc => sc.actualsThrough && batch.periods.some((p: string) => p <= sc.actualsThrough))
-  requireThat(!closedBy.length, `${closedBy.map(sc => sc.name).join(', ')} closed ${batch.periods.map(monthLabel).join(', ')} with these actuals; import a correcting file instead of undoing`, 409)
+  const closedPeriods = closedImportPeriods(c.s, batch)
+  requireThat(!closedPeriods.length, `${closedPeriods.map(monthLabel).join(', ')} ${closedPeriods.length === 1 ? 'is' : 'are'} closed with these actuals; import a correcting file instead of undoing`, 409)
   put(c.s, 'batch', batch.id, { ...batch, status: 'undoing' })
   c.activity.push({ action: 'actuals-undo-started', record: batch.id, detail: { file: batch.file } })
   return { result: {}, kit: async () => ({ undone: await undoD1Import(job.id, bound), report: await readD1ImportUndoReport(job.id, bound) }), record: (c2, { undone, report }) => {

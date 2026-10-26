@@ -5,12 +5,17 @@ import { DotText } from './dots'
 
 export type D = Record<string, any>
 
+export class ApiError extends Error {
+ constructor(message: string, public status: number) { super(message) }
+}
+
 export async function api(path: string, body?: unknown): Promise<any> {
  const response = await fetch(`/api/easel/${path}`, body === undefined ? undefined : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
  const value: any = await response.json().catch(() => ({ error: `Request failed (${response.status})` }))
  if (!response.ok) {
   if (response.status === 425 && value.calculation) window.dispatchEvent(new CustomEvent('easel-calculation', { detail: { ...value.calculation, error: value.error } }))
-  throw new Error(value.error ?? `Request failed (${response.status})`)
+  if (response.status === 409) window.dispatchEvent(new Event('easel-conflict'))
+  throw new ApiError(value.error ?? `Request failed (${response.status})`, response.status)
  }
  if (response.status === 202 && value.calculationJob) return waitForCalculation(path, body, value, api)
  return value
@@ -95,7 +100,7 @@ import { usDate } from '../easel/date-format'
 export const DateFormatContext = createContext('MM/DD/YYYY')
 export function useDate() { const format = useContext(DateFormatContext); return (value?: string | null) => usDate(value, format) }
 
-export const US_TIME_ZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Phoenix', 'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu'].map(value => ({value, label: value.replaceAll('_', ' ')}))
+export const COMPANY_TIME_ZONES = ['UTC', ...Intl.supportedValuesOf('timeZone')].map(value => ({ value, label: value.replaceAll('_', ' ') }))
 
 export const ENGLISH_LOCALES = [{value:'en-US',label:'English (United States)'},{value:'en-GB',label:'English (United Kingdom)'},{value:'en-AU',label:'English (Australia)'}]
 export const DATE_FORMATS = ['MM/DD/YYYY','DD/MM/YYYY','YYYY-MM-DD'].map(value => ({value,label:value}))

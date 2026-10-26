@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Action, api, command, Field, Form, monthLabel, type D } from './shared'
+import { Action, api, command, Field, Form, monthLabel, useDate, type D } from './shared'
 
 /** Finance chooses a template and starts a month or whole-quarter pack. */
 export function PackStart({ closedMonths, month, refresh }: { closedMonths: string[]; month: string; refresh: () => Promise<unknown> }) {
@@ -21,12 +21,13 @@ export function PackStart({ closedMonths, month, refresh }: { closedMonths: stri
 
 /** A draft pack's live numbers: whether a late adjustment moved them, and the refresh that keeps commentary. */
 export function PackDraftStatus({ pack, refresh, onFingerprint }: { pack: D; refresh: () => Promise<unknown>; onFingerprint: (fingerprint: string) => void }) {
+ const displayDate = useDate()
  const [preview, setPreview] = useState<D | null>(null), [kept, setKept] = useState<number | null>(null)
  const load = () => api(`pack/${pack.id}/preview`).then(r => { setPreview(r); onFingerprint(r.fingerprint) }, () => setPreview(null))
  useEffect(() => { load() }, [pack.id, pack.generated?.fingerprint])
  if (!preview) return null
  return <div role="status">
-  <p className="muted">{pack.period === 'quarter' ? `Quarter pack · ${pack.label}` : 'Monthly pack'} · template sections: {pack.sections?.join(', ')} · generated {pack.generated?.at ?? '—'}</p>
+  <p className="muted">{pack.period === 'quarter' ? `Quarter pack · ${pack.label}` : 'Monthly pack'} · generated {displayDate(pack.generated?.at)}</p>
   {preview.stale
    ? <p className="error" role="alert">The numbers moved since this pack was generated, for example after a late adjustment to a closed month. <Action label="Refresh pack" run={async () => { const r = await command('pack-refresh', { pack: pack.id }); setKept(r.commentaryKept); await load(); await refresh() }} /></p>
    : <p className="muted">The numbers are current.{kept !== null && ` Refreshed; ${kept} explanation${kept === 1 ? '' : 's'} kept.`}</p>}
@@ -65,6 +66,6 @@ export function PackSave({ pack, stores, refresh }: { pack: D; stores: D[]; refr
  const [receipts, setReceipts] = useState<D[]>([])
  return <>
   {stores.filter(s => s.connected).map(s => <Action key={s.store} kind="quiet" label={`Save PDF to ${s.label}`} run={async () => { const r = await api(`pack/${pack.id}/save`, { store: s.store }); setReceipts(x => [...x.filter(y => y.store !== r.store), r]); await refresh() }} />)}
-  {receipts.map(r => <span key={r.store} className="muted" role="status">Saved to {r.destination} · SHA-256 {r.digest.slice(0, 12)}…</span>)}
+  {receipts.map(r => <span key={r.store} className="muted" role="status">Saved to {r.destination}</span>)}
  </>
 }

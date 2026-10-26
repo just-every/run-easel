@@ -1,3 +1,4 @@
+import { packChartMonth } from './pack-presentation'
 // REPORT-003: a published pack as a PowerPoint (.pptx) package written
 // directly: one title slide, then a slide per heading with its tables split
 // across slides and charts drawn as native shapes. Content comes from the
@@ -35,7 +36,7 @@ function chartShapes(start: number, chart: Chart, currency: string, y: number) {
  out.push(box(id++, 'Scale high', MX, top - 100000, 1100000, 250000, [{ text: formatMoney(max, currency), size: 9 }]), box(id++, 'Scale low', MX, bottom - 150000, 1100000, 250000, [{ text: formatMoney(min, currency), size: 9 }]))
  chart.months.forEach((m, i) => {
   chart.series.forEach((s, k) => { const v = s.values[i], a = at(v), z = at(0); out.push(rect(id++, left + i * slot + Math.floor(slot * 0.15) + k * bar, Math.min(a, z), bar, Math.abs(a - z), k % 2 ? 'A6A6A6' : '26598C')) })
-  out.push(box(id++, `Month ${m}`, left + i * slot, bottom + 30000, slot, 250000, [{ text: m.slice(5), size: 9 }]))
+  out.push(box(id++, `Month ${m}`, left + i * slot, bottom + 30000, slot, 250000, [{ text: packChartMonth(m), size: 9 }]))
  })
  out.push(box(id++, 'Legend', left, bottom + 330000, right - left, 250000, [{ text: chart.series.map((s, k) => `${k % 2 ? 'Grey' : 'Blue'} = ${s.name}`).join('   '), size: 10 }]))
  return out.join('')

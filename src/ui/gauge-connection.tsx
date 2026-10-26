@@ -40,7 +40,7 @@ export function GaugeConnection() {
     {connection.rateLimit && <tr><td>Rate limit</td><td>{connection.rateLimit}</td></tr>}
    </Table>
    {connection.error && <p role="alert" className="error">{connection.error}</p>}
-   {!connection.configured && <p className="notice">Ask the installation owner to configure GAUGE_ORIGIN before connecting Gauge.</p>}
+   {!connection.configured && <p className="notice">Set the Gauge installation address in your deployment configuration before connecting. See the <a href="/docs/share-with-your-team">team setup guide</a>.</p>}
    {connection.configured && <Form submit={connection.connected ? 'Replace Gauge key' : 'Connect Gauge'} onSubmit={async (v, form) => {
     await api('connections/gauge/connect', { key: v.key }); form.reset(); await load()
    }}>

@@ -23,7 +23,10 @@ export function Scenarios({ state, refresh }: Shared) {
  const [error, setError] = useState('')
  const leftCurrency = cmp?.left.workspace.currency ?? state.workspace.currency
  const rightCurrency = cmp?.right.workspace.currency ?? state.workspace.currency
- useEffect(() => { let live = true; setCmp(null); if (a && b && a !== b) api(`compare?a=${a}&b=${b}`).then(v => { if (live) setCmp(v) }, e => setError(e.message)); return () => { live = false } }, [a, b, state])
+ const validA = state.scenarios.some((s: D) => s.id === a) ? a : (plans.find((s: D) => s.kind === 'forecast')?.id ?? plans[0]?.id ?? '')
+ const validB = state.scenarios.some((s: D) => s.id === b) ? b : (plans.find((s: D) => s.kind === 'scenario' && s.id !== validA)?.id ?? plans.find((s: D) => s.id !== validA)?.id ?? '')
+ useEffect(() => { if (a !== validA) setA(validA); if (b !== validB) setB(validB) }, [a, b, validA, validB])
+ useEffect(() => { let live = true; setCmp(null); setError(''); if (a && b && a !== b && a === validA && b === validB) api(`compare?a=${a}&b=${b}`).then(v => { if (live) setCmp(v) }, e => { if (live) setError(e.message) }); return () => { live = false } }, [a, b, validA, validB, state])
  const comparedName = (kind: 'lines' | 'departments', id: string, missing: string) => {
   const left = cmp?.left[kind].find((item: D) => item.id === id)?.name ?? missing
   const right = cmp?.right[kind].find((item: D) => item.id === id)?.name ?? missing

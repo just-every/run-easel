@@ -6,7 +6,7 @@ export const run: RunData = {
  repository: 'https://github.com/just-every/run-easel',
  clone: 'npx -y @runeditrun/rer dev just-every/run-easel',
  folder: 'run-easel',
- requirements: 'Needs Node 22 or later and pnpm 10.12.4, on macOS, Linux or Windows with WSL2.',
+ requirements: 'Runs on macOS, Linux or Windows with WSL2. The installer provides Node; rer manages pnpm.',
  licence: 'MIT',
  docs: true,
  hosted: [],

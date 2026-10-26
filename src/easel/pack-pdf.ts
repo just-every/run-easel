@@ -1,7 +1,7 @@
 // REPORT-003: a published pack as a PDF 1.4 document written directly, with
 // the built-in Helvetica fonts, no timestamps and no random identifiers, so
 // the same snapshot always produces the same bytes and the same digest.
-import { monthLabel } from './months'
+import { packChartMonth } from './pack-presentation'
 import { formatMoney } from './units'
 import type { Block, Chart } from './pack-blocks'
 
@@ -71,7 +71,7 @@ export function packPdf(title: string, subtitle: string, blocks: Block[]): Uint8
   const grey = ['0.15 0.35 0.55', '0.65 0.65 0.65']
   c.months.forEach((m, i) => {
    c.series.forEach((s, k) => { const x = left + i * slot + slot * 0.15 + k * bar; page.ops.push(`${grey[k % 2]} rg ${fmt(x)} ${fmt(Math.min(y(0), y(s.values[i])))} ${fmt(bar)} ${fmt(Math.max(0.5, Math.abs(y(s.values[i]) - y(0))))} re f`) })
-   text(left + i * slot + 2, bottom - 9, m.slice(5), 6)
+   text(left + i * slot + 2, bottom - 9, packChartMonth(m), 6)
   })
   page.ops.push('0 g'); c.series.forEach((s, k) => { page.ops.push(`${grey[k % 2]} rg ${fmt(left + k * 90)} ${fmt(top + 4)} 8 8 re f 0 g`); text(left + k * 90 + 11, top + 4, s.name, 7) })
   page.y = bottom - 22

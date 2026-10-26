@@ -56,7 +56,7 @@ test('MODEL-005 current finance can undo another operator workbook while other r
    const after = await h.get(`/api/easel/scenario/${done.import.scenario}`)
    assert.deepEqual(after.inputs.schedule, [edited])
   } else {
-   assert.deepEqual((await h.get(`/api/easel/scenario/${done.import.scenario}`)).inputs.schedule, [])
+   await h.get(`/api/easel/scenario/${done.import.scenario}`, h.owner, 404)
   }
  }
 })

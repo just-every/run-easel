@@ -1,3 +1,4 @@
+import { tooltipStyle } from './tooltip'
 import { scrollStyle } from './scroll-style'
 import { reviewStyle } from './review-style'
 import { activityStyle } from './activity-style'
@@ -218,4 +219,4 @@ const phone = `
 }
 `
 
-export const appStyle = tokens + base + shell + cards + controls + tables + overview + chartStyle + treeStyle + phone + scrollStyle + reviewStyle + activityStyle
+export const appStyle = tokens + tooltipStyle + base + shell + cards + controls + tables + overview + chartStyle + treeStyle + phone + scrollStyle + reviewStyle + activityStyle

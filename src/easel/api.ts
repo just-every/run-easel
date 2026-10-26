@@ -736,5 +736,7 @@ api.post('/api/easel/invite', async c => {
  const member = get(ctx.s, 'member', typeof b.email === 'string' ? b.email.toLowerCase() : '', 'person')
  requireThat(member.active, 'This person is inactive')
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
- return c.json(await operatorAuth(runtimeBindings(c.env)).invite(c.req.raw, { email: member.email, displayName: member.name, role: member.role === 'finance' ? 'admin' : 'member', returnTo: '/app' }))
+ const bindings = runtimeBindings(c.env)
+ const invitation = await operatorAuth(bindings).invite(c.req.raw, { email: member.email, displayName: member.name, role: member.role === 'finance' ? 'admin' : 'member', returnTo: '/app' })
+ return c.json({ ...invitation, delivery: bindings.AUTH_LOCAL === 'true' || bindings.RER_DEMO === '1' ? 'local' : 'requested' })
 })
