@@ -111,7 +111,7 @@
       "executable": false
     },
     ".gitignore": {
-      "sha256": "3b2195c493f07d9ad93c5c626e2b81acc144cd55850fa2702612be77b106103c",
+      "sha256": "74aabf690df562e7abf384f0d0833678e8bdca02b515e41812f3199312c86486",
       "executable": false
     },
     ".node-version": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "d3ef743441ede8cbe81d4febee29dd3ac60d2cc12b491f41aa5a203d20fd66c4",
+      "sha256": "6a7c2d0889ec19062e97112cb9f9e7a381336978c6170aee153b4015bb520f4a",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "1e92df1f8e97031eea22eabb7a90cd5744b17f9c4204a5d6f1a7e803dac26892",
+      "sha256": "12bab924ebbac8d310412e74a1fe8f1f3cb8b0d0edee1718d2d131abf6abdb5f",
       "executable": false
     },
     "DEMO.md": {
@@ -163,11 +163,11 @@
       "executable": false
     },
     "deploy.json": {
-      "sha256": "db0c4e039bf2f8211e6e978efa075f3f2d16fbf7221049d8d7f68d1c5d5eba39",
+      "sha256": "9cd7239744e01336deb204176e3d529875a4319d33cad77693f7ad8db70369b2",
       "executable": false
     },
     "docs/backup-and-restore.md": {
-      "sha256": "21b36d7f6b0d46f94c418fb85ce886353aba0a6d081b64f7eb0698121cfe4d33",
+      "sha256": "efa89a53eb1f36ffd5af526431a7e4952aa72abfb9c1cd021928a4fc92f6e441",
       "executable": false
     },
     "docs/budget-cycle.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/share-with-your-team.md": {
-      "sha256": "bd35e20446864905e09e9553ae6914a34830384fb68e307ddc3073c5b07113e2",
+      "sha256": "7dec53e4bd3e6f0889df9c453830aba199648379d8d24cd25119e8461c38cdee",
       "executable": false
     },
     "docs/site.json": {
@@ -826,6 +826,18 @@
       "sha256": "e6f03401fa145e9ff6344e92bbd698cba90a4d67125157e74740c21a1d361dbc",
       "executable": false
     },
+    "scripts/installer/hosted-d1.mjs": {
+      "sha256": "0ca47e7eab90625d479d614e31fe41fcdb22965df4f5eba006bba2a695fad949",
+      "executable": false
+    },
+    "scripts/installer/hosted-target.mjs": {
+      "sha256": "8d6894efb57da58b47493649f83db6cf792af32c3b7cfc3b96582b793c36b1e6",
+      "executable": false
+    },
+    "scripts/installer/hosted-transfer.mjs": {
+      "sha256": "c6515820479d7a2448b8c785a18fb99ca44e71075a4a325368cb7197a0e9a3a8",
+      "executable": false
+    },
     "scripts/installer/legacy-recovery.mjs": {
       "sha256": "41189129b9b4e0c289a6b4f9618c8d052c3f7e528eda82221c520ab2c30938b5",
       "executable": false
@@ -835,11 +847,11 @@
       "executable": false
     },
     "scripts/installer/portability.mjs": {
-      "sha256": "8171e303975a3e9cba9eec628fb99b0a80bfe4a1a5fdf9b6f4483be566269e4d",
+      "sha256": "97b5a28599f316b9dc1131e3802b40e40af4ccf6d35753a70e616b16f9c4a174",
       "executable": false
     },
     "scripts/installer/restore-context.mjs": {
-      "sha256": "ce197b0138ea8b785a52ac6c27d46d2712167f394a1b44b380537adf174a41d0",
+      "sha256": "b15ccaa2692d5e15ecffee3e3000cdf9d94cf93c14db9f317809a2a55fda60a8",
       "executable": false
     },
     "scripts/installer/restore-worker.mjs": {
@@ -4728,6 +4740,30 @@
     },
     "tests/history.test.mjs": {
       "sha256": "f41d80400c4df2772b4e82fcd4e4db33f331305743dc2f00c4ca56bedb02a7f8",
+      "executable": false
+    },
+    "tests/hosted-backup.mjs": {
+      "sha256": "c77e4014b059dab866c0fdaae5e156125e27851668d6418c8da1326c759fea2f",
+      "executable": false
+    },
+    "tests/hosted-deploy.mjs": {
+      "sha256": "d07b86e452c25bd9304167d5a7dad4c4a8d5c94ed637d0788bdc02a2fb83dcfb",
+      "executable": false
+    },
+    "tests/hosted-mail.mjs": {
+      "sha256": "e8179517b561c37634c21de2b8f3b1183c653b20eff8f36d063fbe694ae1dabe",
+      "executable": false
+    },
+    "tests/hosted-runtime.mjs": {
+      "sha256": "180c46527111f0ef5b604a80772c092474912186a08032b87870771c7b303185",
+      "executable": false
+    },
+    "tests/hosted-source.mjs": {
+      "sha256": "9129729ea875c3e8aa98c1aca48b4243dbe2955f2f42c2f1ef04f966dbad4193",
+      "executable": false
+    },
+    "tests/hosted.mjs": {
+      "sha256": "ac0211e3988abacbd497d47c05d8d424f6f7bf87d3ed0dfa78161cf0bca5acd6",
       "executable": false
     },
     "tests/long-range-browser-journey.mjs": {

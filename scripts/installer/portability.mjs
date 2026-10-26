@@ -5,14 +5,17 @@ import { RerError, refuse } from '@runeditrun/rer/errors';
 import { readArchive, PortabilityError } from '@runeditrun/rer/modules/portability';
 import { fileRecords } from '@runeditrun/rer/modules/portability/files';
 import { readLegacyArchive } from '@runeditrun/rer/modules/portability/format';
+import { hostedTransfer } from './hosted-transfer.mjs';
 
 const transient = ['local runtime caches and logs'];
 /** Import the policy inside our signal-owned worker: JSON transport cannot
  * carry its validator, and Base's file helpers do not accept an AbortSignal. */
 export const easelPortability = {
  legacyRecovery: true,
- async export({ root, path, store, signal, operationToken }) {
+ remote: true,
+ async export({ root, path, store, signal, operationToken, target, origin, sessionFile, platform }) {
   if (await lstat(path).catch(error => { if (error.code === 'ENOENT') return null; throw error; })) throw refuse('Export requires a new archive path.');
+  if (target === 'remote') return { target, output: relative(root, path), ...await hostedTransfer('export', { root, path, origin, sessionFile, platform, signal, transient }) };
   await store.run('Applying local data migrations', 'pnpm', ['exec', 'wrangler', 'd1', 'migrations', 'apply', 'easel', '--local', '--persist-to', '.wrangler/state', '--config', 'wrangler.jsonc'], {
    cwd: root, signal, env: { ...process.env, RER_LOCAL_OPERATION: operationToken, WRANGLER_SEND_METRICS: 'false' },
   });
@@ -20,8 +23,9 @@ export const easelPortability = {
   const receipt = await restoreWorker(store, 'export', { root, path, transient }, signal);
   return { target: 'local', output: relative(root, path), ...receipt };
  },
- async import({ root, path, journal, store, signal, operationToken, legacyRecovery }) {
+ async import({ root, path, journal, store, signal, operationToken, legacyRecovery, target, origin, sessionFile, platform }) {
   try {
+   if (target === 'remote') return { target, input: relative(root, path), ...await hostedTransfer('import', { root, path, origin, sessionFile, platform, signal, transient, journal, legacyRecovery }) };
    if (legacyRecovery && (legacyRecovery.acknowledged !== true || await lstat(legacyRecovery.output).catch(error => { if (error.code === 'ENOENT') return null; throw error; }))) {
     throw refuse('Legacy recovery requires acknowledgement and a new output archive path.');
    }
