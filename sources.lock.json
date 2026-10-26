@@ -4099,7 +4099,7 @@
       "executable": false
     },
     "src/ui/assumptions.ts": {
-      "sha256": "81682403fc098c292d28bfd6cf2be2e2de56259516ed0ef93209808d2b6d0d41",
+      "sha256": "fcc073c93b05c70b0e02ba3e0f5eb08e500b1c7cca34f0ef282c8a23b21791c0",
       "executable": false
     },
     "src/ui/balance-actuals.tsx": {
@@ -4295,7 +4295,7 @@
       "executable": false
     },
     "src/ui/plan.tsx": {
-      "sha256": "42304a9433c59ad37b7e288db75f386c4a489a58d723172f10075afb233a83fc",
+      "sha256": "eeeb4208dfe1bd7cd315f02075c2c62203079e7f7532bd8ea408a371c9928210",
       "executable": false
     },
     "src/ui/planning-grid.css": {
@@ -4304,6 +4304,10 @@
     },
     "src/ui/planning-grid.tsx": {
       "sha256": "ea8df0ea17a0e7e9092aa7539d6845ea2177d927901179b6245410f8bb71f9a9",
+      "executable": false
+    },
+    "src/ui/position-payroll-fields.tsx": {
+      "sha256": "c7e9d6e466b7dc04c3788faadc6bd8719f0253802752469c93edebac32d98e83",
       "executable": false
     },
     "src/ui/private-slack.tsx": {
@@ -4355,7 +4359,7 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "d1549edf2b68efe28967fc5f7fb4ccd3e8bf760ccfd7b9800fbf166456123c55",
+      "sha256": "3726be211cf8365c1f31baafdd9e6d1e5b7cb6f45fd0628b5068b681ee2bc051",
       "executable": false
     },
     "src/ui/shared.tsx": {
@@ -5107,7 +5111,7 @@
       "executable": false
     },
     "tests/source-guard-browser.mjs": {
-      "sha256": "c400c0097e311ef7758fffab8655b80d6b0821fc5b7f203407737f56615e3cad",
+      "sha256": "1a4782f3c7537fa14e890db40ff0b0ef2177ef215ab7055ad201c7d298a893e1",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {

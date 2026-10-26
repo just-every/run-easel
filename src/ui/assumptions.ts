@@ -28,8 +28,9 @@ function format(key: string, value: any, side: D): string {
 /** Only editable assumptions are shown: provenance and identity metadata stay out. */
 export function assumptionText(change: D, comparison: D) {
  const before = change.before ?? {}, after = change.after ?? {}
- const fields = Object.keys(labels).filter(key => (key in before || key in after) && !semanticEqual(before[key], after[key]))
- const details = fields.map(key => `${key === 'kind' && change.kind === 'expense' ? 'expense type' : key === 'hourlyRateCents' && change.kind === 'position' ? 'hourly pay rate' : labels[key]} ${format(key, before[key], comparison.left)} → ${format(key, after[key], comparison.right)}`)
+ const empty = (value: unknown) => value == null || value === '' || value === 0 || Array.isArray(value) && value.length === 0
+ const fields = Object.keys(labels).filter(key => (key in before || key in after) && !semanticEqual(before[key], after[key]) && !(change.change !== 'changed' && empty(before[key]) && empty(after[key])))
+ const details = fields.map(key => `${key === 'kind' && change.kind === 'expense' ? 'expense type' : key === 'hourlyRateCents' && change.kind === 'position' ? 'hourly pay rate' : key === 'retirementMatchBps' && (comparison.right.workspace.locale ?? comparison.left.workspace.locale ?? 'en-US') !== 'en-US' ? 'employer contribution estimate' : labels[key]} ${format(key, before[key], comparison.left)} → ${format(key, after[key], comparison.right)}`)
  const verb = change.change === 'added' ? 'Added' : change.change === 'removed' ? 'Removed' : 'Changed'
  return `${verb} ${change.kind}: ${change.name ?? 'Unnamed assumption'}${details.length ? `, ${details.join('; ')}` : ''}`
 }

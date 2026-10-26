@@ -1,3 +1,4 @@
+import { PositionPayrollFields } from './position-payroll-fields'
 import { DimensionPlan, DimensionFields, dimensionValues } from './dimensions'
 import { WorkbookDrivers } from './workbook-drivers'
 import { NativeFormulas } from './native-formulas'
@@ -42,6 +43,7 @@ export function Plan({ state, refresh }: Shared) {
  const costLines = options(state.lines.filter((l: D) => l.type !== 'revenue'))
  const depts = options(myDepartments)
  const inputs = view?.inputs ?? {}
+ const usPayroll = (localState.workspace.locale ?? 'en-US') === 'en-US' || !!inputs['tax-policy']?.length
  const edit = (kind: string, row: D) => setEditing({ kind, row })
  const form = (kind: string) => (editing?.kind === kind ? editing.row : null)
  const sc = view?.scenario
@@ -91,12 +93,10 @@ export function Plan({ state, refresh }: Shared) {
     <Field label="Hourly pay rate" name="hourlyRate" defaultValue={decimalText(p?.hourlyRateCents ?? 0)} hint="Use zero for salary positions" />
     <Field label="Expected hours per period" name="expectedHours" defaultValue={decimalText(p?.expectedHours ?? 0)} hint="Fixed expected hours in each active accounting period; use zero for salary positions" />
     <Field label="Benefits per person per period" name="benefits" defaultValue={decimalText(p?.benefitsCents ?? 0)} hint="Additional employer cost estimate, excluded from taxable wages and on-costs" />
-    <Field label="401(k) employer match estimate %" name="retirementMatchPercent" defaultValue={decimalText(p?.retirementMatchBps ?? 0)} hint="Salary or hourly wages only, excluding commission. No eligibility, employee deferral or statutory-limit calculation." />
     <Field label="Annual salary" name="annualSalary" defaultValue={decimalText(p?.annualSalaryCents)} hint="Use zero for hourly positions" />
-    <Field label="Employment type" name="employmentType" options={[{value:'W-2',label:'W-2 employee'},{value:'1099',label:'1099 contractor'}]} defaultValue={p?.employmentType ?? 'W-2'} />
-    <Field label="Prior year-to-date taxable wages" name="taxYtdWages" required={false} defaultValue={p?.taxYtdWagesCents === undefined ? '' : decimalText(p.taxYtdWagesCents)} hint="Before the first plan month; required for a continuing W-2 position when tax estimates start midyear" />
+    <PositionPayrollFields row={p} us={usPayroll} />
     <PayrollFields row={p} />
-    <Field label="Commission planning estimate %" name="commissionPercent" defaultValue={decimalText(p?.commissionRateBps ?? 0)} hint="Applies only to explicitly linked contract bookings at start; no on-costs. ASC 340-40 capitalisation is not modelled." />
+    <Field label="Commission planning estimate %" name="commissionPercent" defaultValue={decimalText(p?.commissionRateBps ?? 0)} hint={usPayroll ? "Applies only to explicitly linked contract bookings at start; no on-costs. ASC 340-40 capitalisation is not modelled." : "Applies only to explicitly linked contract bookings at start; no on-costs. Commission capitalisation is not modelled."} />
     <Field label="Commission quota per period" name="commissionQuota" defaultValue={decimalText(p?.commissionQuotaCents ?? 0)} hint="Linked contract bookings only; resets each accounting period. Zero disables attainment." />
     <Field label="Commission accelerators" name="commissionTiers" type="textarea" required={false} defaultValue={(p?.commissionTiers ?? []).map((t: D) => `${decimalText(t.attainmentBps)}:${decimalText(t.rateBps)}`).join('\n')} hint="One attainment %:rate % per line, e.g. 100:15 then 150:20. Higher rates apply only above each threshold." />
     <Field label="Merit increase %" name="meritPercent" defaultValue={decimalText(p?.meritBps ?? 0)} />

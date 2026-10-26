@@ -14,7 +14,7 @@ try {
  const post=async(path,body)=>{const response=await context.request.post(`${runtime.origin}${path}`,{headers:{origin:runtime.origin},data:body,maxRedirects:0});assert.equal(response.status(),200,await response.text());return response.json()}
  const cmd=(op,b)=>post(`/api/easel/command/${op}`,b)
  const claimed=await context.request.post(`${runtime.origin}/auth/bootstrap`,{headers:{origin:runtime.origin},data:{token:runtime.bootstrap,displayName:'Fran Finance'},maxRedirects:0});assert.equal(claimed.status(),303)
- await cmd('workspace',{name:'Source Guard Co',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+ await cmd('workspace',{name:'Source Guard Co',currency:'USD',fiscalYearStart:1,planStart:'2026-01',timeZone:'UTC'})
  const department=await cmd('department',{name:'Operations'}),software=await cmd('line',{name:'Software',type:'operating-expense'})
  await cmd('department-map',{source:'Operations',department:department.id})
  const state=await(await context.request.get(`${runtime.origin}/api/easel/state`)).json(),budget=state.scenarios[0]
@@ -40,8 +40,8 @@ try {
   await panel().getByLabel('Source label',{exact:true}).fill(label)
   await panel().getByLabel('Source forecast',{exact:true}).selectOption(forecast.id)
   await panel().getByLabel('Coverage month',{exact:true}).fill('2026-01')
-  await panel().getByLabel('Source observed at',{exact:true}).fill(new Date().toISOString())
-  await panel().getByLabel('Next source update expected at',{exact:true}).fill(new Date(Date.now()+86400000).toISOString())
+  await panel().getByLabel('Source observed at',{exact:true}).fill(new Date().toISOString().slice(0,16))
+  await panel().getByLabel('Next source update expected at',{exact:true}).fill(new Date(Date.now()+86400000).toISOString().slice(0,16))
   await panel().getByLabel('Expected payroll runs',{exact:true}).fill('Reviewed payroll,2026-01-31,1')
   const csv=`Date,Account,Name,Department,Amount\n2026-01-31,${account},Software subscriptions,Operations,100\n`
   await panel().getByLabel('Source ledger CSV',{exact:true}).fill(csv)

@@ -113,6 +113,6 @@ function SignInInvitation({ email }: { email: string }) {
  return <><Action kind="quiet" label="Send sign-in invitation" run={async () => {
   setNotice('')
   const result = await api('invite', { email })
-  setNotice(result.delivery === 'local' ? 'Local development does not deliver invitation email. Open the sign-in link printed by rer on this computer. To invite this person by email, use a hosted installation.' : `Sign-in invitation requested for ${email}. Ask them to check their inbox.`)
+  setNotice(result.delivery === 'local' ? 'Local development does not deliver invitation email or create a sign-in link for this person. Use a hosted installation for email invitations, or the local test people to try roles.' : `Sign-in invitation requested for ${email}. Ask them to check their inbox.`)
  }} />{notice && <p role="status">{notice}</p>}</>
 }
