@@ -34,7 +34,7 @@ for a given checkout.
 
 Base default-seed and exported foundation typechecks in `verify` use checkout-local, gitignored `.cache/typecheck.tsbuildinfo` in the package; deleting it forces a full check, while `build` still builds the real Worker and assets.
 
-`P` is a decimal integer 1–65535. An explicit occupied port fails; never silently choose another. Default port is the saved local port, otherwise 8787. `HOST` is exactly `127.0.0.1`, `localhost` or `::1`; default is saved host, otherwise `127.0.0.1`. Public/listen-all hosts fail. First setup saves the selected origin. Dev and preview overrides apply together to runtime bindings and never rewrite private settings. Setup refuses a conflicting saved owner or origin with an actionable reset/recovery instruction; it does not silently ignore flags. No automatic secret rotation; existing reviewed rotation APIs remain outside these public verbs.
+`P` is a decimal integer 1–65535. An explicit occupied port fails; never silently choose another. Default port is the saved local port, otherwise 8787. `HOST` is exactly `127.0.0.1`, `localhost` or `::1`; default is saved host, otherwise `127.0.0.1`. Public or listen-all hosts fail. First setup saves the selected origin. Dev and preview overrides apply together to runtime bindings and never rewrite private settings. Setup refuses a conflicting saved owner or origin with an actionable reset or recovery instruction; it does not silently ignore flags. No automatic secret rotation; existing reviewed rotation APIs remain outside these public verbs.
 
 First setup requires an owner email explicitly, through the manifest answers file, or through an interactive prompt showing any proposed git-email default. Non-interactive mode never silently claims the git identity. Email must be a valid plain mailbox, normalized consistently with mail/auth; never put it or secrets into a shell command. Owner name defaults to `Owner` unless supplied or declared by the manifest. `--answers` is a regular private JSON answer file using manifest names, not an environment file; conflicting flag/file values fail. Conditional required fields and seed-specific workspace answers come from `rer-setup.json`, never new seed-specific CLI flags. Secrets are read privately from declared files/environment or asked privately, never accepted as CLI values or printed. `--non-interactive` means no stdin prompt/browser launch; missing answers exit 3. JSON also suppresses automatic browser opening and prompts.
 
@@ -56,9 +56,9 @@ Human dev output also prints one line `RER_SCHEDULED TIME "CRON" ok MSms` (or `f
 
 Setup prints `RER_SETUP_READY URL` and exits with no server left running. Run `rer dev` next and open its `RER_OPEN` link to enter Easel. Build, install, verify, reset, deploy, export and import print their verb, outcome and relevant safe path or URL. Dry-run deployment explicitly says no deployment occurred.
 
-With `--json`, stdout is UTF-8 NDJSON only: `{version:1,verb,event,...}`. Bounded commands end in exactly one `event:"result"` with `ok` and `exitCode`; failures emit `event:"error"` with a stable `code`, safe `message` and `exitCode`. Dev/preview emits one `event:"ready"` with `url` and `signInUrl`; a `devIdentity` seed's event also carries `openUrl` and, for dev, `signedInAs` (an email, or null when signed out). Then comes its eventual result. Progress belongs in JSON events or redacted stderr. Never include values, cookies, generated settings, archives or token-bearing URLs; `openUrl` is the one deliberate exception, for the reason above. A declared-command result can include numeric `childExitCode` and signal.
+With `--json`, stdout is UTF-8 NDJSON only: `{version:1,verb,event,...}`. Bounded commands end in exactly one `event:"result"` with `ok` and `exitCode`; failures emit `event:"error"` with a stable `code`, safe `message` and `exitCode`. Dev and preview emits one `event:"ready"` with `url` and `signInUrl`; a `devIdentity` seed's event also carries `openUrl` and, for dev, `signedInAs` (an email, or null when signed out). Then comes its eventual result. Progress belongs in JSON events or redacted stderr. Never include values, cookies, generated settings, archives or token-bearing URLs; `openUrl` is the one deliberate exception, for the reason above. A declared-command result can include numeric `childExitCode` and signal.
 
-`describe --json` is one object (the inspection exception to event streaming): `contractVersion:1`, `profile:"first-party"|"independent"`, `pins:{node,pnpm}`, `verbs:{VERB:{flags:[FLAG],effects:TEXT}}`, `aliases:{ALIAS:VERB}`, and, for first-party, `local:{state:".wrangler/state",settings:[RELATIVE_FILE],installerState:".seed/installer"}`, plus `devIdentity:true,devKey:".rer/local/dev-key.env"` for a `devIdentity` seed. It must describe what the parser/adapter actually supports. `check --json` returns a result event with `clauses:[{id,ok,message?}]`; structural failures name the missing verb/flag/alias/pin and how to fix it. Use clause IDs SC-01 through SC-12 below, with more specific subclauses allowed.
+`describe --json` is one object (the inspection exception to event streaming): `contractVersion:1`, `profile:"first-party"|"independent"`, `pins:{node,pnpm}`, `verbs:{VERB:{flags:[FLAG],effects:TEXT}}`, `aliases:{ALIAS:VERB}`, and, for first-party, `local:{state:".wrangler/state",settings:[RELATIVE_FILE],installerState:".seed/installer"}`, plus `devIdentity:true,devKey:".rer/local/dev-key.env"` for a `devIdentity` seed. It must describe what the parser and adapter actually supports. `check --json` returns a result event with `clauses:[{id,ok,message?}]`; structural failures name the missing verb, flag, alias or pin and how to fix it. Use clause IDs SC-01 through SC-12 below, with more specific subclauses allowed.
 
 | Code | First-party/new CLI meaning |
 | --- | --- |
@@ -85,11 +85,11 @@ The seed loads the layer only through a local-only entry (a Vite-serve or local 
 
 Canonical local durable data is `.wrangler/state/`, outside dist/build output. CLI bookkeeping is `.rer/local/`; installer drafts/logs are `.seed/installer/`; private settings default to `.dev.vars` (0600). An existing seed may explicitly inventory a retained private file such as `data/local-secrets.json`; it has the same custody/reset rules. Directories containing secrets are 0700. No symlink/traversal/overlap with source, exports, dependencies or build outputs is accepted as state. Preserve and report ambiguous legacy state; never silently adopt/move/delete it. Setup reruns keep exact existing private bytes, permissions and owner/data; builds preserve interrupted-operation recovery and credential exclusion.
 
-Reset acquires the shared local lock and refuses while dev/installer/transfer owns the state. It lists exactly the removal inventory before confirmation. `--non-interactive` requires `--yes`; neither JSON nor non-interactive implies consent. Remove local D1/R2/KV/DO state, owners/sessions/outbox, `.rer/local/` (including the dev key, so earlier gate cookies stop working), `.seed/installer/`, and declared generated private settings/backups only. Keep Git/source/lockfiles, `rer-setup.json`, edition baselines, dependencies, owner export archives and `.rer/deploy/` receipts. Do not remove a broad `.wrangler`, `.rer`, `data` or checkout directory. A second confirmed reset succeeds with an empty inventory. A fresh setup then creates a fresh owner, with no previous domain rows or messages.
+Reset acquires the shared local lock and refuses while dev/installer/transfer owns the state. It lists exactly the removal inventory before confirmation. `--non-interactive` requires `--yes`; neither JSON nor non-interactive implies consent. Remove local D1, R2, KV and DO state, owners/sessions/outbox, `.rer/local/` (including the dev key, so earlier gate cookies stop working), `.seed/installer/`, and declared generated private settings/backups only. Keep Git/source/lockfiles, `rer-setup.json`, edition baselines, dependencies, owner export archives and `.rer/deploy/` receipts. Do not remove a broad `.wrangler`, `.rer`, `data` or checkout directory. A second confirmed reset succeeds with an empty inventory. A fresh setup then creates a fresh owner, with no previous domain rows or messages.
 
 ## First-run setup at /setup
 
-Every first-party seed serves its owner's first-run setup at `/setup`: while setup is unfinished the signed-in owner completes it there (and any app route sends the owner to it); once finished, `/setup` takes the owner into the app (or to settings for later changes). Signed-out visitors are sent to sign-in and back. `rer setup` and dev identity return the owner to `/setup` until first-run is complete, and the README/AGENTS name it (owner, 10 Oct 2026).
+Every first-party seed serves its owner's first-run setup at `/setup`: while setup is unfinished the signed-in owner completes it there (and any app route sends the owner to it); once finished, `/setup` takes the owner into the app (or to settings for later changes). Signed-out visitors are sent to sign-in and back. `rer setup` and dev identity return the owner to `/setup` until first-run is complete, and the README and AGENTS name it (owner, 10 Oct 2026).
 
 First-run completion is stored durably; a setup rerun does not clear it.
 
@@ -103,7 +103,7 @@ Required first-party pins: `.node-version` is `22.20.0`; `package.json.engines.n
 
 Easel pins the published `@runeditrun/rer` package exactly in devDependencies and the lockfile. It carries no vendored CLI or onboarding implementation. Package scripts and the operation descriptor run `rer VERB`; adapters import the published package exports. The command never reaches a neighboring Base checkout.
 
-Package scripts for `setup dev preview build verify reset deploy export import release doctor describe check` are exactly `rer VERB`. Owner-facing instructions invoke `rer VERB FLAGS` directly, including `rer deploy --dry-run`. Never define a package `install` lifecycle script to launch `rer install`; `pnpm install --frozen-lockfile` is the equivalent dependency action. Provide `"deps":"rer install"` and `"rer":"rer"`. Internal adapter targets use distinct names/files (for example, a verify suite entrypoint) to prevent alias recursion.
+Package scripts for `setup dev preview build verify reset deploy export import release doctor describe check` are exactly `rer VERB`. Owner-facing instructions invoke `rer VERB FLAGS` directly, including `rer deploy --dry-run`. Never define a package `install` lifecycle script to launch `rer install`; `pnpm install --frozen-lockfile` is the equivalent dependency action. Provide `"deps":"rer install"` and `"rer":"rer"`. Internal adapter targets use distinct names and files (for example, a verify suite entrypoint) to prevent alias recursion.
 
 Use OPERATIONS v2, preserving environmentSources and loops. Its `commands` declares every required verb with real argv, inputs and effects; inspector/CLI verbs still perform only their documented inspection. Opt in to the first-party profile with `seedContract:{version:1,profile:"first-party",adapter:"scripts/installer/local.mjs"}`. This is a small operations extension, not another configuration file or a second setup schema. An explicit `rer check --profile first-party` must enforce the profile even if its marker has been deleted; this flag is additional to check's common flags. References and generation tests must also require the marker. No package/edition presence alone makes an independent project first-party.
 
@@ -135,7 +135,7 @@ Independent projects without an adapter use `OPERATIONS.json` v2 `commands.NAME.
 - SC-01: required verbs, real flags, thin self-contained dispatcher and truthful describe output.
 - SC-02: exact pins and public aliases, no lifecycle/built-in collision or recursion.
 - SC-03: real manifest-driven setup, private custody, idempotent owner and failure recovery.
-- SC-04: managed development with HMR and fixed production preview, requested origin, health-gated ready output, intact public-input/output build reuse and descendant cleanup.
+- SC-04: managed development with HMR and fixed production preview, requested origin, health-gated ready output, intact public-input and output build reuse and descendant cleanup.
 - SC-05: local one-click sign-in with suppressed mail and hosted ordinary one-use sign-in with pre-hydration POST; no `/cdn-cgi/*` route or private checkout folder answering on the public listener; for a `devIdentity` seed, the per-checkout key gate on every local sign-in surface, real key-gated dev sessions and personas, a local-only entry whose layer `rer build` refuses in output, refused local-only deploy keys, dev data kept out of archives. `rer check --profile first-party` enforces the entry and the build exclusion (`SC-05.dev-identity.*`); it reads the deployed main from `devIdentity.deployConfig` when declared, else from `wrangler.jsonc`, `wrangler.json` or `wrangler.toml` (skipping any the adapter lists in `generatedOutputs`), else from a deploy template such as `deploy/wrangler.template.toml`. Copies of Base's operator-auth layers that the seed records (`base-copies.json`, `composition.lock.json` or `foundation.lock.json`) stay byte-exact to one pinned Base revision; `rer check` names each drifted, missing or unrecorded file (`SC-05.auth-copy.*`).
 - SC-06: confirmed, contained, local-only reset and clean subsequent setup.
 - SC-07: real build/verify and production preview, owner-account deploy/dry-run and unchanged release producer/receipt/exits; bounded expensive execution joins the shared queue.
@@ -160,7 +160,7 @@ start-only flags before effects.
 
 Idle timeout precedence: explicit `--idle-timeout`, `RER_SERVER_IDLE_SECONDS`,
 then 1800 seconds. Positive integers only. The clock starts at readiness.
-Application HTTP and asset activity reset it; active requests/streams
+Application HTTP and asset activity reset it; active requests or streams
 prevent expiry. Internal management/readiness probes and HMR control
 traffic alone do not count. Real application WebSocket data messages do count.
 
@@ -186,17 +186,17 @@ receipt. Never hash private settings. Missing/corrupt/interrupted output or an
 input change during build invalidates certification. Require ordinary prior
 setup/migrations; missing prerequisites name `rer setup` and exit 3. Preserve
 private bytes/modes, owner, origin overrides and canonical `.wrangler/state`
-D1/R2/KV/DO. Verify application health before ready.
+D1, R2, KV and DO. Verify application health before ready.
 
 Heavy install/build/verify targets, directly documented browser suites and
 indirect/generated scripts use the exported dependency-free Base job queue module.
 Setup uses the shared RER installer lifecycle for build, migrations and a
-bounded temporary runtime. Dev/preview queue finite preparation; managed serving uses the server
+bounded temporary runtime. Dev and preview queue finite preparation; managed serving uses the server
 cap and never outlives a released job as its descendant. Deploy queues local
 build/validation including zero-provider dry run; release queues expensive steps
 without changing its producer/parser/receipt/exits except adding `--no-queue`.
 Export/import queues local resource runtime work. Help/describe/check/doctor,
-stop and reset inventory/removal stay light.
+stop and reset inventory and removal stay light.
 
 Labels identify the declared project, initiating verb/phase and safe checkout
 identity without credential remotes or secrets. Status/waits are human progress,

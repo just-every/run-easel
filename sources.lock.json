@@ -879,7 +879,7 @@
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
-      "sha256": "7d3d86dac7036455ae16698ccf58056c602d740e67703ca8c2ae23466e03e2b4",
+      "sha256": "19a1b8c567040fae765cac9e5f9b1386c3a4d6152790bba8064be77764d4304c",
       "executable": false
     },
     "seed.json": {
@@ -4395,7 +4395,7 @@
       "executable": false
     },
     "src/ui/tooltip.tsx": {
-      "sha256": "f3ac53d724ef43111a3e1fc857a0f49aad0bb96df0a546491797e879638e253c",
+      "sha256": "f8d2bcb955a8b51e29e84c0978fcfbb3e95579422ec8e7a8d7c23f8f3b6a6735",
       "executable": false
     },
     "src/ui/top-bar.tsx": {
