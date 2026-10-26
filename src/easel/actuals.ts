@@ -1,4 +1,6 @@
 import { assertSourceGuardAcceptance, completeSourceGuards } from './agents/source-guard'
+import { finishQboMonth } from './qbo-month'
+import { qboAuthority } from './qbo-connection'
 import { resolveDimensions } from './dimension-mapping'
 import { datePeriod, type CalendarWorkspace } from './fiscal-calendar'
 import { balanceTarget } from './balance-targets'
@@ -210,6 +212,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
  if (op === 'resume' || op === 'undo' || op === 'status') {
   requireFinance(c.x)
   const batch = get(c.s, 'batch', b.id, 'import')
+  if(batch.qboSource)qboAuthority(c)
   const job = await jobFor(c.db, batch.destination)
   requireThat(job, 'This import has no journal entry yet; start it again from the preview', 409)
   const bound = journalContext(c.db, c.x.actor, batch.destination, CSV_NAMESPACE, job)
@@ -227,6 +230,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
    const done = undone.state === 'undone'
    const current = get(c2.s, 'batch', batch.id)
    put(c2.s, 'batch', batch.id, { ...current, status: done ? 'undone' : 'undoing', undoneBy: c2.x.actor.email, undoneAt: c2.now })
+   if (done) finishQboMonth(c2, current, true)
    c2.activity.push({ action: done ? 'actuals-undone' : 'actuals-undo-partial', record: batch.id, detail: { file: batch.file, state: undone.state } })
    return { batch: get(c2.s, 'batch', batch.id), job: undone, undo: report }
   } }
@@ -239,6 +243,7 @@ function finishBatch(c: Context, id: string, job: Data) {
  const done = job.state === 'completed'
  put(c.s, 'batch', id, { ...batch, status: done ? 'accepted' : 'importing', jobState: job.state, ...(done ? { acceptedBy: c.x.actor.email, acceptedAt: c.now } : {}) })
  if (done) completeSourceGuards(c, batch)
+ if (done) finishQboMonth(c, batch)
  if (done) c.activity.push({ action: 'actuals-accepted', record: id, detail: { file: batch.file, rows: batch.accepted } })
  return { batch: get(c.s, 'batch', id), job: { id: job.id, state: job.state, checkpoint: job.checkpoint, total: job.total } }
 }

@@ -31,7 +31,11 @@ export function dashboardMetrics(view: Data, subscriptions: Data[], department: 
   const headcount = sum(Object.entries(calc.headcount).filter(([id]) => !department || id === department).map(([, months]) => months[month] ?? 0))
   let arr: number | null = null
   let arrBasis = 'No subscription driver'
-  if (calc.actualsThrough && month <= calc.actualsThrough) {
+  const observed = recurring.filter(r => r.start <= month && r.billingActuals?.[month])
+  if (observed.length && observed.length === recurring.filter(r => r.start <= month).length) {
+   arr = sum(observed.map(r => r.billingActuals[month].arrCents))
+   arrBasis = 'Accepted billing end-month recurring run rate × 12'
+  } else if (calc.actualsThrough && month <= calc.actualsThrough) {
    arrBasis = missing.has(month) ? 'Missing accepted actuals' : 'Actuals have no subscription classification'
   } else if (recurring.length) {
    const active = recurring.filter(r => r.start <= month)

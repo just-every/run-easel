@@ -113,7 +113,7 @@ export function Dashboards({ state, refresh }: Shared) {
    </section>
    {definition.report && <section className="card"><h2>Saved report</h2><SavedReportPanel key={`${definition.id}:${definition.revision}`} id={definition.id} /></section>}
    {!view.blocked && widgets.map(widget => <section className="card" key={widget.metric}><h2>{metrics[widget.metric]}</h2>
-    {widget.metric === 'arr' && <p className="muted">Planned recurring revenue × 12. Closed months are unavailable because accepted actuals do not classify recurring revenue.</p>}
+    {widget.metric === 'arr' && <p className="muted">Accepted billing uses the end-month recurring run rate × 12. Other open months use planned recurring revenue; a closed month needs a classified billing observation.</p>}
     {widget.metric === 'grossMargin' && <p className="muted">Revenue less cost of sales, in {view.currency}.</p>}
     {widget.metric === 'runway' && <p className="muted">Closing cash divided by the current and up to two preceding months’ average net burn.</p>}
     {!view.rows.length ? <p>No months are available for this scenario.</p> : widget.display === 'tile' ? <><p className="lead">{valueText(view.rows[view.rows.length - 1], widget.metric, view.currency)}</p><Dots as="p">{monthLabel(view.rows[view.rows.length - 1].month)}{basis(view.rows[view.rows.length - 1], widget.metric)}</Dots></> : <>{widget.display === 'chart' && <MetricChart rows={view.rows} metric={widget.metric} currency={view.currency} />}<MetricTable rows={view.rows} metric={widget.metric} currency={view.currency} /></>}

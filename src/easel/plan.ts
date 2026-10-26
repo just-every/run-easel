@@ -95,6 +95,10 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    requireThat(value.department === prior.department, 'Undo Gauge utilization imports before changing the driver department', 409)
    Object.assign(value, { gaugeActuals: prior.gaugeActuals, gaugeUndo: null })
   }
+  if (kind === 'revenue' && prior?.billingActuals && Object.keys(prior.billingActuals).length) {
+   requireThat(value.kind === prior.kind && value.department === prior.department && value.line === prior.line && value.start === prior.start, 'Undo billing imports before changing the subscription driver kind, line, department or start', 409)
+   Object.assign(value, { billingActuals: prior.billingActuals, billingUndo: null })
+  }
   if (kind === 'schedule' && b.scenarioRevision !== undefined) requireThat(Number(b.scenarioRevision) === scenario.revision, 'The plan changed; reload before saving the grid', 409)
   if (kind === 'schedule' && prior?.workbookOrigin) {
    requireThat(!value.history && value.line===prior.line && value.department===prior.department,'Keep workbook rows on their reviewed line and department',409)

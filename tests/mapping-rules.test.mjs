@@ -252,9 +252,10 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
 
 test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
  const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
- for(const sourceKind of ['file','pantry']) {
+ for(const sourceKind of ['file','pantry','qbo']) {
  const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()
- const h = await harness({outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
+ const {qboProvider,qboGrant,acceptQbo}=await import('./qbo-fixture.mjs'),qboEdge=qboProvider()
+ const h = await harness({outbound:sourceKind==='qbo'?qboEdge.outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
  const { revenue, expense } = await seedBalanceActuals(h.command)
  const dept = await h.command('department', { name: 'Delivery' })
  await h.command('department-map', { source: '', department: dept.id })
@@ -282,7 +283,14 @@ test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attri
  ]
  const ledger = { filename: 'opening-ledger.csv', dateFormat: 'YYYY-MM-DD', columns: { date: 'Date', account: 'Account', amount: 'Amount' }, csv: 'Date,Account,Amount\n' + rows.map(r => r.join(',')).join('\n') + '\n' }
  let preview
- if(sourceKind==='pantry') {
+ if(sourceKind==='qbo') {
+  await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
+  qboEdge.entries=rows
+  assert.equal((await h.send('/api/easel/connections/qbo/connect',qboGrant,h.owner)).status,200)
+  await acceptQbo(h,{month:'2025-12',includeOpening:true})
+  preview=await acceptQbo(h,{month:'2026-01',includeOpening:false})
+  assert.equal(preview.source.trialBalance.balanced,true)
+ } else if(sourceKind==='pantry') {
   await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
   provider.extraAccounts=[...new Set(rows.map(r=>r[1]))].filter(code=>!['1000','4000'].includes(code)).map((code,i)=>({id:`synthetic-easel-account-${i}`,code,name:code,type:'asset'}))
   const chart=[{id:'synthetic-easel-2',code:'1000'},{id:'synthetic-easel-3',code:'4000'},...provider.extraAccounts]

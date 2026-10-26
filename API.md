@@ -675,3 +675,28 @@ preview starts after that date, keeps other planned events and noted overrides,
 and displays monthly differences without changing the monthly plan. Set
 `format` to `xlsx` for the same formula workbook. This HTTP preview does not yet
 have native source-review controls; FIN-007 remains partial.
+
+
+## Native financial connections
+
+Connection administration, source previews, acceptance, continuation and undo require a current company-wide native finance session. Bearer tokens and agents cannot use these provider doors. Writes keep the ordinary origin, model revision and session fences. Credentials are encrypted in the excluded connection-secret table; status returns a masked suffix. Accepted observations remain after disconnect.
+
+| Route | Operation |
+| --- | --- |
+| `GET /api/easel/connections/stripe` | Masked Stripe scope, owner, manual cadence, accepted row count, health and revocation instructions |
+| `POST /api/easel/connections/stripe/:op` | `connect` takes a restricted key and explicit `consent`; `check` reads access health; `disconnect` deletes local custody and states the separate Stripe key deletion step |
+| `POST /api/easel/billing/:op` | `preview` and `accept` take `scenario`, `driver`, `scenarioRevision`, complete calendar months `from` and `to`, and optional per-month `explanations`; acceptance also takes the reviewed `digest`. `undo` takes the reviewed scenario revision and driver |
+| `GET /api/easel/billing/:scenario` | Finance-only accepted aggregate bridges, cohorts and ledger reconciliations |
+| `GET /api/easel/connections/qbo` | Masked Intuit company, scope, owner, manual cadence, health and reviewed source months |
+| `POST /api/easel/connections/qbo/begin` | `environment`, Intuit app credentials and explicit `consent`; returns the provider authorization address with one-use session-bound state |
+| `GET /api/easel/connections/qbo/callback` | The registered installation callback; exchanges the reviewed native session's code and company realm for sealed OAuth credentials |
+| `POST /api/easel/connections/qbo/connect` | Connect an existing accounting OAuth grant with `environment`, `realmId`, app credentials, `refreshToken` and explicit `consent` |
+| `POST /api/easel/connections/qbo/check` | Explicit access health read, with sanitized errors and rate-limit state |
+| `POST /api/easel/connections/qbo/disconnect` | Attempt Intuit revocation, retain its actual outcome and delete local credentials |
+| `POST /api/easel/import/qbo/:op` | One reviewed month at a time. `preview` takes `month` and explicit `includeOpening`; `commit` also takes the reviewed journal `fingerprint` and `sourceFingerprint`. Confirm any nonposting observations with their reviewed `acknowledgeNonPosting` count |
+
+The native history form defaults to 24 closed months and allows 12 to 36. Each month is reviewed separately and keeps its own provider trial balance; a source-confirmed empty month has an accepted source-month record without fabricated ledger rows. The first month imports the preceding source trial balance once. Later months must follow accepted history. Corrections append the changed amounts for stable provider posting groups. Ordinary actuals journal continuation and undo keep the provider's native authority; a removed history month must be restored before consuming later balances.
+
+QuickBooks reports use accrual accounting and their declared currency. Source fiscal-year transfers into retained earnings appear separately in trial reconciliation; they do not become posted revenue. Zero-value observations without a posting account are visible exclusions requiring confirmation. Unknown transaction destinations block acceptance. Current-month reports stop at the observed date. The accounting OAuth grant includes provider write permissions; Easel issues only the allowlisted accounting reads, plus OAuth renewal and explicit revocation.
+
+Stripe run rates use recurring invoice periods and actual subscription end dates. Customer-level movements and cohorts aggregate subscriptions; retention measures the opening active customer base. Invoice service-period allocation, deferred balance, refunds and tax remain separate from ledger revenue. Finance explains any residual difference before acceptance. One driver receives the account's complete monthly totals in each scenario; later customer or seat projections start from those accepted observations. Dashboards and aggregate formula Excel use the same imported ARR and current audience checks. Frozen plans retain their captured observations.

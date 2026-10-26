@@ -106,9 +106,11 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 
 Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, last-closed actual statement openings, explicit source-attributed prepaid/accrued/deferred/asset schedule openings, visible reconciliation differences, current authority and frozen captures. Its provider journey asserts those balances and allocations before shipping.
 
+Current implementation semantics: native history review defaults to 24 separately accepted closed months, with the preceding source opening imported once. Explicitly empty months retain reviewed source-month records without invented journal rows. Intuit's fiscal-year report transfers are displayed separately from posted revenue. Same-transaction, same-account and same-dimension posting splits aggregate under a stable source identity; a changed transaction can therefore have paired debit and credit deltas. Zero-value observations without a posting account are visible exclusions requiring finance confirmation. OAuth state is one-use and native-session bound; an existing authorized company grant can also be connected. Accounting calls are allowlisted reads; token renewal and explicit provider revocation are the only OAuth writes.
+
 *Acceptance:* through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
 
-*Status:* missing.
+*Status:* done. Acceptance evidence is mapped in the Status table. Native administration inherits ct’s 19 October 18:28Z ruling and CONNECT-010 custody. CONNECT-005 retains scheduled refresh and downstream freshness obligations; this connector uses explicit reviewed pulls.
 
 #### CONNECT-002 — Xero actuals connector.
 Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`.
@@ -529,9 +531,11 @@ Before subscription imports ship, REV-002 inherits REPORT-002 imported ARR widge
 
 Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
 
+Current Stripe semantics: licensed monthly and annual invoice periods provide recurring run rates, bounded by actual subscription end dates. Bridges and cohorts aggregate by customer; retention uses the opening active customer base. Invoice service-period allocation, deferred balance, refunds and tax are displayed separately from ledger revenue, with an explicit finance explanation for any residual difference. One subscription driver receives the account-wide totals for each selected month and scenario. Source review and acceptance require the approved native finance session; imported ARR follows the existing dashboard audiences, personal layouts and aggregate formula Excel. Frozen plans retain captured observations.
+
 *Acceptance:* a Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months; the API journey reads an ARR bridge and a cohort table that agree with hand-computed values, and a reconciliation to ledger revenue; one recorded run against Stripe test mode.
 
-*Status:* missing.
+*Status:* partial. Recorded Stripe test-mode qualification requires a restricted read-only test key; all three held Stripe test secrets are unrestricted and are refused. Nectar remains an unimplemented alternative. Supported Stripe history is licensed monthly or annual recurring pricing; unsupported historical statuses and pricing shapes refuse explicitly.
 
 #### REV-003 — A revenue driver library.
 Beyond volume × rate and customers × revenue per customer, revenue can come from seats × price with expansion, usage × unit price, billable headcount × utilization × rate (with actuals from [Gauge](https://github.com/just-every/run-gauge) or Harvest), project milestones and backlog burn-down, and the formula lines of `MODEL-004`. Every driver traces.
@@ -1130,7 +1134,7 @@ Every capability the run site's homepage (run-easel.com, `src/site/landing/`) sh
 | 02 Actuals | QuickBooks Online, Gusto, HubSpot and Stripe refreshed nightly with visible freshness | `CONNECT-001`, `CONNECT-005`, `PEOPLE-001`, `REV-001`, `REV-002` | contract, not yet in code |
 | 02 Actuals | Ties to the trial balance | `CONNECT-007` (`src/easel/balance-actuals.ts`) | code |
 | 02 Actuals | New accounts mapped by a range rule | `CONNECT-006` (`src/easel/account-rules.ts`) | code |
-| 02 Actuals | Every cell opens to the rows behind it; open in QuickBooks | `CONNECT-008` (`src/easel/actuals-read.ts`; provider links come with `CONNECT-001`) | partly |
+| 02 Actuals | Every cell opens to the rows behind it; open in QuickBooks | `CONNECT-008` (`src/easel/actuals-read.ts`; provider links in `tests/connectors-browser.mjs`) | code |
 | 02 Actuals | Month closed, forecast kept, rolling 15 months moves forward | `EASEL-013`, `MODEL-002` | code |
 | 03 The slip | The agent finds the month a source change breaks the floor and traces the cause | `AGENT-001` | partly |
 | 03 The slip | The agent asks the deal owner in Slack and records the answer | `AGENT-003` | partly; native reviewed owner and consented private Slack, ct approved 22 Oct 21:32 UTC |
@@ -1139,7 +1143,7 @@ Every capability the run site's homepage (run-easel.com, `src/site/landing/`) sh
 | 04 Responses | Line-of-credit draws and hire-start moves in the forecast | `FIN-003` (`src/easel/financing.ts`), `PEOPLE-004` | code |
 | 05 Excel | `=EASEL.VALUE` cells refresh in Owen's workbook; plan access without pay | `SHEET-001`, `PEOPLE-005` | partly |
 | 06 Board pack | One pack published once as PDF, PowerPoint and Excel, saved to Google Drive | `REPORT-003`; immutable published packs ship (`EASEL-014`) | partly |
-| 06 Board pack | ARR from Stripe | `REV-002` | contract, not yet in code |
+| 06 Board pack | ARR from Stripe | `REV-002`; `tests/billing.test.mjs` | partly; provider-edge arithmetic proven, live test-mode qualification pending |
 | 07 Interlude | The picked plan's monthly closing cash over the floor | `FIN-005`, `FIN-001` | code |
 | 08 Budget | Department heads type and paste into the planning grid | `MODEL-008` (`src/easel/grid.ts`) | code |
 | 08 Budget | Requested and submitted department budgets; each sees only their own numbers | `EASEL-009`, `EASEL-007` | code |
@@ -1153,7 +1157,7 @@ Every capability the run site's homepage (run-easel.com, `src/site/landing/`) sh
 | 11 October close | The agent drafts each variance, citing sources, hypotheses marked | `AGENT-007` | code |
 | 11 October close | Forecast extended; department statements emailed | `MODEL-002`, `REPORT-005` (`src/easel/department-statements.ts`) | code |
 | 12 Before the switch | Brings in an Adaptive Planning model; also Planful, Anaplan, Runway and Pigment | `MOVE-001`, `MOVE-002`, `MOVE-003` | code |
-| 12 Before the switch | Two years of QuickBooks backfilled, each month tied | `CONNECT-001` | contract, not yet in code |
+| 12 Before the switch | Two years of QuickBooks backfilled, each month tied | `CONNECT-001`; `tests/qbo.test.mjs` | code |
 | 12 Before the switch | A parallel month line by line, differences classified | `MOVE-004` (`tests/parallel-month.test.mjs`) | code |
 
 ## Honest boundaries
@@ -1192,8 +1196,8 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 63 | 14 | 10 | 87 |
-| All | 80 | 14 | 10 | 104 |
+| Target and push further | 64 | 15 | 8 | 87 |
+| All | 81 | 15 | 8 | 104 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1214,7 +1218,7 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | `EASEL-015` | Excel workbook move-in with provenance | published | done | `tests/easel.test.mjs` `tests/workbook-undo.test.mjs` |  |
 | `EASEL-016` | Complete export and clean restore | published | done | `tests/browser.mjs` `tests/review-fixes.test.mjs` |  |
 | `EASEL-017` | Owned runtime on Base | published | done | `tests/browser.mjs` `tests/approval-chains-browser.mjs` (emitted Worker health, unclaimed setup and native sign-in/approval at 1440/390) `.github/workflows/verify.yml` |  |
-| `CONNECT-001` | QuickBooks Online actuals connector | target | missing |  | No QuickBooks Online OAuth, history backfill, pull, idempotent re-pull or trial-balance reconciliation; actuals arrive only as uploaded CSV files |
+| `CONNECT-001` | QuickBooks Online actuals connector | target | done | `tests/qbo.test.mjs` — “QuickBooks OAuth backfills separate reconciled months and imports idempotent corrections under native custody”: one-use OAuth, 24 separately reconciled closed months, two current months, one changed transaction without duplicates, source types and dimensions, automatic and unresolved accounts, native custody, audit, rate limits, revocation and source-history undo. `tests/mapping-rules.test.mjs` — “CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export”, QBO source: zero-sum close, source openings and allocations, visible differences, current authority, frozen captures and formula Excel. `tests/connectors-browser.mjs` — native QuickBooks review, provider transaction link, viewer amounts without rows, connection and disconnect at 1440 and 390. `tests/qbo-live.mjs` — “QuickBooks native existing OAuth grant and monthly source preview”: held Intuit sandbox run, 26 October 2026, September source, 222 ledger groups and reconciled trial balance, immediate refresh-token custody, zero accounting writes. | None for reviewed native pulls; CONNECT-005 retains schedules and propagated freshness. |
 | `CONNECT-002` | Xero actuals connector | target | missing |  | No Xero connector or tracking-category mapping |
 | `CONNECT-003` | NetSuite actuals connector | target | missing |  | No NetSuite SuiteQL connector or subsidiary mapping |
 | `CONNECT-004` | Pantry actuals connector | target | done | `tests/pantry-live.mjs` (CONNECT-004 real local Pantry and Easel); `tests/mapping-rules.test.mjs` (Pantry read-only source backfills reviewed actuals, re-pulls without duplicates and accepts reconciled corrections with sealed native custody; CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export); `tests/pantry-browser.mjs` | |
@@ -1249,7 +1253,7 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | `PEOPLE-006` | Headcount plan against actual | target | done | `tests/headcount.test.mjs` (Connected Gusto observations require reviewed employee mapping and retain dated hiring, departure, backfill, attrition and department cost through the payroll journal), `tests/gusto-roster-browser.mjs`, `tests/headcount.test.mjs`, `tests/headcount-browser.mjs` | None; connected reviewed Gusto employee/payroll observations, retained day slippage, department headcount/cost, explicit source history, erasure and native 1440/390 journeys passed |
 | `PEOPLE-007` | Roster and payroll-register file import | target | done | `src/easel/payroll-import.ts` `src/easel/payroll-file.ts` `src/easel/payroll-reconciliation.ts` `tests/payroll-files.test.mjs` `tests/payroll-erasure.test.mjs` `tests/payroll-files-browser.mjs` | — |
 | `REV-001` | Pipeline drivers from Orbit, HubSpot and Salesforce | target | missing |  | No Orbit, HubSpot or Salesforce connector, stage probabilities, line-item revenue rules or pipeline drivers |
-| `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | missing |  | No billing connectors, ARR bridge or cohorts |
+| `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | partial | `tests/billing.test.mjs` — “Subscription billing review reconciles exact movements and cohorts, drives ARR and retains native sealed custody”: three-month bridge, all movements, cohorts, counts and retention; service revenue, deferred balance, refunds, tax and explained ledger differences; imported customer and seat drivers, REPORT-002 personal layouts, audience filtering and aggregate formula Excel; encrypted excluded credentials, native administration, audit, masked health and truthful unsupported revocation. `tests/connectors-browser.mjs` — native billing review, accepted history, finance and board imported ARR, connection and disconnect at 1440 and 390. | Recorded Stripe test-mode qualification requires a restricted read-only test key; all three held Stripe test secrets are unrestricted and are refused. Nectar remains an unimplemented alternative. Supported Stripe history is licensed monthly or annual recurring pricing; unsupported historical statuses and pricing shapes refuse explicitly. |
 | `REV-003` | A revenue driver library | target | done | `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Fixed forms and reviewed Gauge operational actuals; MODEL-004 carries formula-line drivers |
 | `REV-004` | Bookings, billings, revenue and cash | target | done | `tests/revenue-drivers.test.mjs` `tests/contracts-browser.mjs` | Contract billing/recognition/DSO schedules, deferred and unbilled balances, linked statements and formula exports |
 | `SPEND-001` | Committed and card spend | target | missing |  | No purchasing, expense or card connectors and no committed-spend view |

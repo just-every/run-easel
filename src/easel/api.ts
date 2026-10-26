@@ -1,3 +1,7 @@
+import { billingConnection, billingStatus } from './billing-connection'
+import { billingImport, billingReviews } from './billing-import'
+import { qboConnection, qboStatus } from './qbo-connection'
+import { qboImport } from './qbo-import'
 import { greenhouseStatus, greenhouseConnection, greenhousePreview, greenhousePropose } from './greenhouse'
 import { pantryCash, pantryCashForecast } from './pantry-cash'
 import { pantryImport } from './pantry-import'
@@ -183,6 +187,30 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
 }
 
 api.get('/api/easel/connections/pantry', c => read(c, ctx => pantryStatus(ctx,c.env)))
+api.get('/api/easel/connections/stripe', c => read(c, billingStatus))
+api.get('/api/easel/connections/qbo', c => read(c, qboStatus))
+api.get('/api/easel/connections/qbo/callback', async c => {
+ const ctx=await open(c),result=await qboConnection(ctx,runtimeBindings(c.env),'complete',c.req.query())
+ ctx.extra=result.extra;await commit(ctx)
+ return c.redirect('/app',303)
+})
+api.post('/api/easel/connections/qbo/:op', async c => {
+ const ctx=await open(c),result=await qboConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
+ ctx.extra=result.extra;await commit(ctx)
+ return c.json({...await qboStatus(ctx),...(result.authorizationUrl?{authorizationUrl:result.authorizationUrl}:{})})
+})
+api.post('/api/easel/connections/stripe/:op', async c => {
+ const ctx = await open(c)
+ ctx.extra = await billingConnection(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return read(c, billingStatus)
+})
+api.get('/api/easel/billing/:scenario', c => read(c, async ctx => billingReviews(ctx, c.req.param('scenario'))))
+api.post('/api/easel/billing/:op', async c => {
+ const ctx = await open(c), result = await billingImport(ctx, c.env, c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(result)
+})
 api.post('/api/easel/connections/pantry/:op', async c => {
  const ctx=await open(c)
  ctx.extra=await pantryConnection(ctx,c.env,c.req.param('op'),await body(c))
@@ -669,11 +697,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo', 'Unknown move-in kit', 404)
  const ctx = await open(c)
  if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
  const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value

@@ -27,6 +27,13 @@ export function libraryRevenue(r: Data, positions: Data[], lastMonth: string, cu
  for (let index = 0, month = r.start; month <= lastMonth; index++, month = addMonths(month, 1)) {
   if (r.kind === 'seats' || r.kind === 'usage') {
    const seats = r.kind === 'seats', growth = seats ? r.expansionBps : r.growthBps, price = seats ? r.priceCents : r.unitPriceCents
+   const billing = seats ? r.billingActuals?.[month] : undefined
+   if (billing) {
+    requireThat(price > 0 || billing.amountCents === 0, 'A positive seat price is required to project an observed billing run rate')
+    quantity = price ? mulDiv(billing.amountCents, 100, price) : 0
+    source(month, billing.amountCents, `accepted ${billing.source} end-month recurring run rate across ${billing.customers} customers; operational subscription actuals, not ledger revenue; source digest ${billing.digest}; later seat growth uses the run rate divided by the planned seat price`)
+    continue
+   }
    const prior = quantity
    const measured = seats ? undefined : r.warehouseActuals?.[month]
    if (index > 0) quantity = safe(mulDiv(quantity, 10000 + growth, 10000), r.name)

@@ -37,11 +37,12 @@ jobs:
       - name: Built runtime
         if: matrix.shard == 'runtime'
         run: pnpm exec rer build
-      - name: CYCLE-007 native department approval chains
+      - name: Native approvals and connected actuals
         if: matrix.shard == 'runtime'
         run: |
           npm install --prefix "$RUNNER_TEMP/easel-browser" --no-save @playwright/test@1.64.1
           "$RUNNER_TEMP/easel-browser/node_modules/.bin/playwright" install --with-deps chromium
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/approval-chains-browser.mjs
+          EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/connectors-browser.mjs --existing-build
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-approval-chains

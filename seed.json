@@ -337,6 +337,18 @@
       "clauses": [
         "CONNECT-004"
       ]
+    },
+    {
+      "id": "subscription-actuals",
+      "clauses": [
+        "REV-002"
+      ]
+    },
+    {
+      "id": "quickbooks-actuals",
+      "clauses": [
+        "CONNECT-001"
+      ]
     }
   ],
   "nonGoals": [

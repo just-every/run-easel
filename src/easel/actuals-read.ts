@@ -1,4 +1,5 @@
 import { resolveDimensions } from './dimension-mapping'
+import { qboTransactionUrl } from './qbo-links'
 import { balanceActuals } from './balance-actuals'
 import { balanceTarget } from './balance-targets'
 // Accepted-row projections share the same reusable mapping resolver as preview.
@@ -87,6 +88,9 @@ export async function rowsFor(db: D1Database, s: State, month: string, line: str
   let providerUrl: string | undefined
   if (v.pantryOrigin && /^[A-Za-z0-9_-]{1,120}$/.test(v.pantryEntry)) {
    try { const origin = new URL(v.pantryOrigin); if (!origin.username && !origin.password && origin.pathname === '/' && !origin.search && !origin.hash && (origin.protocol === 'https:' || origin.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(origin.hostname))) providerUrl = new URL('/app/search?' + new URLSearchParams({type:'journal',record:v.pantryEntry}), origin).href } catch {}
+  }
+  if (v.qboRealm && /^[A-Za-z0-9_-]{1,120}$/.test(v.qboTransactionId)) {
+   providerUrl=qboTransactionUrl(v.qboEnvironment,v.qboTransactionType,v.qboTransactionId)??undefined
   }
   return [{ providerUrl, dimensions: resolveDimensions(s, v.sourceDimensions ?? { department: v.department }).dimensions, id: r.id, file: v.file, line: v.line, date: v.date, account: v.account, description: v.description, reference: v.reference, amount: type === 'revenue' ? -Number(r.amount) : Number(r.amount) }]
  })

@@ -186,7 +186,15 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
    }
   } else {
    let customers = r.startCustomers
+   let arpa = r.arpaCents
    for (let k = 0, m = r.start; m <= months[months.length - 1]; k++, m = addMonths(m, 1)) {
+    const observed = r.billingActuals?.[m]
+    if (observed) {
+     customers = observed.customers * 100
+     if (customers) arpa = mulDiv(observed.amountCents, 100, customers)
+     add(r.line, r.department, m, { kind: 'revenue', id: r.originId, label: r.name, amount: observed.amountCents, trace: `${monthLabel(m)}: accepted ${observed.source} end-month recurring run rate ${money(observed.amountCents)} across ${observed.customers} customers; operational subscription actuals, not ledger revenue; source digest ${observed.digest}` }, lag)
+     continue
+    }
     const prior = customers
     const churned = mulDiv(prior, r.churnBps, 10000)
     const reps = r.repDepartment ? (positionsByDepartment.get(r.repDepartment) ?? []).filter(p => active(p, m)) : []
@@ -194,9 +202,9 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
     const capacity = rampFactors.reduce((sum, factor) => sum + factor, 0)
     const fromReps = mulDiv(r.newPerRep, capacity, 10000)
     customers = prior - churned + r.newPerMonth + fromReps
-    const amount = mulDiv(customers, r.arpaCents, 100)
+    const amount = mulDiv(customers, arpa, 100)
     const repText = reps.length ? ` + ${formatHundredths(fromReps)} from ${reps.length} hire${reps.length > 1 ? 's' : ''} in ${deptName.get(r.repDepartment)} at ${rampFactors.map(formatBps).join(', ')} of ${formatHundredths(r.newPerRep)} each` : ''
-    add(r.line, r.department, m, { kind: 'revenue', id: r.originId, label: r.name, amount, trace: `${monthLabel(m)}: customers ${formatHundredths(prior)} − churn ${formatHundredths(churned)} (${formatBps(r.churnBps)}) + new ${formatHundredths(r.newPerMonth)}${repText} = ${formatHundredths(customers)} × ${money(r.arpaCents)} per customer = ${money(amount)}` }, lag)
+    add(r.line, r.department, m, { kind: 'revenue', id: r.originId, label: r.name, amount, trace: `${monthLabel(m)}: customers ${formatHundredths(prior)} − churn ${formatHundredths(churned)} (${formatBps(r.churnBps)}) + new ${formatHundredths(r.newPerMonth)}${repText} = ${formatHundredths(customers)} × ${money(arpa)} per customer = ${money(amount)}` }, lag)
    }
   }
  }

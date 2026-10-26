@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { AssetInputs } from './assets'
 import { RevenueForm, RevenueSummary } from './revenue'
+import { BillingImport } from './billing'
 import { defaultScenario } from './overview'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, options, ScenarioPicker, Table, type D } from './shared'
 
@@ -63,6 +64,7 @@ export function Plan({ state, refresh }: Shared) {
   </section>
 
   {me.role === 'finance' && sc && <GaugeUtilization key={`gauge-${sc.id}:${sc.revision}`} scenario={id} revision={sc.revision} drivers={(inputs.revenue ?? []).filter((r: D) => r.kind === 'services')} currency={currency} onChange={async () => { await load(); await refresh() }} />}
+  {me.role === 'finance' && sc && <BillingImport key={`billing-${sc.id}:${sc.revision}`} scenario={id} revision={sc.revision} drivers={(inputs.revenue ?? []).filter((r: D) => ['customers','seats'].includes(r.kind))} currency={currency} onChange={async () => { await load(); await refresh() }} />}
 
   {(inputs['workbook-model'] ?? []).map((book:D)=><WorkbookDrivers key={book.id} book={book} revision={sc.revision} onChange={async()=>{await load();await refresh()}} />)}
 
