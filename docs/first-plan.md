@@ -1,4 +1,4 @@
-The first time finance opens Easel, it asks for the shape of the plan. Everything here can be changed later under **Settings**.
+The first time finance opens Easel, it asks for the shape of the plan. Most settings can be changed later under **Settings**. The first plan month and accounting calendar stay fixed once scenarios exist.
 
 ## Set up your plan
 
@@ -7,7 +7,7 @@ The first time finance opens Easel, it asks for the shape of the plan. Everythin
 | Company name | The name shown at the top of every screen. |
 | Reporting currency | One currency for the whole plan, `USD` by default. Easel does no currency conversion. |
 | Fiscal year starts in month | The month your financial year begins, January by default. |
-| First plan month | The first month of the fiscal year you are budgeting. The plan runs twelve months from it. |
+| First plan month | The first month of the fiscal year you are budgeting. The plan starts here and runs for the selected horizon, twelve months by default. |
 | Language and region | English (United States), `en-US`, by default. |
 | Date display | `MM/DD/YYYY` by default. |
 | Time zone | `America/New_York` by default; used for planning dates and scheduled reminders. |
@@ -30,7 +30,7 @@ Under **Settings → People**, add everyone who plans with you, with a role:
 - **Contributor** revises and submits the budget for the departments you choose for them.
 - **Viewer** reads the reports and published review packs.
 
-**Send sign-in invitation** emails a person a sign-in link. More in [People and access](/docs/people-and-access).
+**Send sign-in invitation** requests an email sign-in link on a hosted installation. Local development does not deliver invitation email. More in [People and access](/docs/people-and-access).
 
 ## Account mappings
 
