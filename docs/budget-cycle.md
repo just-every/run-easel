@@ -8,6 +8,8 @@ On the **Budget cycle** tab, finance chooses the departments and an optional due
 
 A contributor opens **Plan**, chooses the budget and changes only their own department's revenue, positions and expenses. They can leave a note under **Comments** for finance, then press **Submit Sales**, named for their department.
 
+To see and edit positions, the contributor also needs the owner to press **Grant pay detail** beside their name under **Settings → People**. Without that grant, they can still plan permitted revenue and expenses and see aggregate payroll amounts. See [People and access](/docs/people-and-access).
+
 ## Planning calendar and reminders
 
 Under **Planning calendar** on the **Budget cycle** tab, finance adds dated tasks (review headcount, confirm variance explanations or another planning task) with an owner: an active contributor for a department task, or finance for a company-wide one. Requested submissions with a due date appear there too. Owners see only their own tasks and mark them complete.

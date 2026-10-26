@@ -1,13 +1,29 @@
 # Run it locally
 
-Start Easel from nothing with one line, `npx -y @runeditrun/rer dev just-every/run-easel`
-(set up only: `npx -y @runeditrun/rer setup just-every/run-easel`; without Node:
-`curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel`).
-Project commands select Node 22.20.0 and pnpm 10.12.4 themselves. To use your own
-owner mailbox, run `npx -y @runeditrun/rer install just-every/run-easel`, then from
-the checkout's root prepare its local owner and start development:
+Follow the same two steps as [Run Easel](https://run-easel.com/run).
+Git is required on macOS, Linux or Windows with WSL2; Node and pnpm are provided.
+
+1. Install `rer`:
 
 ```sh
+curl -fsSL https://runeditrun.com/install.sh | sh
+```
+
+Run the PATH line the installer prints in your terminal.
+
+2. Download Easel and start it:
+
+```sh
+rer dev just-every/run-easel
+```
+
+Project commands select Node 22.20.0 and pnpm 10.12.4 themselves. Restart from
+the checkout with `cd ./run-easel && rer dev`. To use your own owner mailbox
+before the first start, use the installed command:
+
+```sh
+rer install just-every/run-easel
+cd ./run-easel
 rer setup --owner-email you@example.com
 rer dev
 ```
@@ -24,13 +40,10 @@ Help, check, describe, doctor and stop do not select or acquire Node.
 
 After `RER_READY`, a seed with dev identity prints `RER_SIGNED_IN EMAIL` and
 `RER_OPEN URL`: open that URL on this computer and the app opens signed in as
-the owner, at `/setup` until first-run is finished. For local outbox sign-in,
-start `rer dev --login`, then run `rer outbox`
-and open its `RER_OPEN` link to `/__dev/key`. Follow the newest ordinary
-sign-in message and finish first-run setup at `/setup`. Until
-first-run completion is stored durably, app routes send the signed-in owner to
+the owner, at `/setup` until first-run is finished. Finish first-run setup
+there. Until first-run completion is stored durably, app routes send the signed-in owner to
 `/setup`; signed-out visitors sign in and return there. Once complete,
-`/setup` opens the app or settings. The local outbox sends no external email.
+`/setup` opens the app or settings. Local dev and demo silently suppress mail.
 
 The saved local port is used, otherwise 8787. Explicit ports are decimal
 integers from 1 through 65535 and must be free; a busy requested port fails
@@ -54,7 +67,7 @@ to report admission or completion.
 
 For the real owner mailbox, `setup` can prompt instead of receiving
 `--owner-email` on the command line. Setup builds the app, applies local
-migrations, prepares the first owner, requests an ordinary sign-in message and
+migrations, prepares the first owner and
 stops its temporary app before it exits. Existing owner data and private
 settings are preserved on a repeated setup.
 
@@ -64,14 +77,13 @@ after the application health check. With dev identity it then prints
 checkout's dev key in its fragment: opening it signs the browser in through a
 real dev session, and the key is removed from the address bar and kept only as a
 host-only cookie. Treat that line as a credential and open it only on this
-computer. A dev-only badge switches between the owner, signed out and the
-seed's personas (`admin@dev.localhost` and so on). `dev --as PERSONA` starts as
-another persona or `signed-out`. `rer dev --login` turns dev identity off and
-requests an ordinary sign-in message. With pinned rer 0.2.0, its printed entry link cannot unlock Easel's
-outbox. Run `rer outbox` and open that command's `RER_OPEN` link to
-`/__dev/key` instead, until a rer release fixes `--login`. The key entry unlocks
-the outbox; choose the newest ordinary sign-in message and follow its link.
-No external email is sent. A successful sign-in consumes the link once.
+computer. `rer dev --as PERSONA` prints a new link for `sales`, `engineering`,
+`board`, `finance` or `signed-out`. Open that link in a separate browser session
+to try the selected identity. Personas are real local operators at
+`<as>@dev.localhost`: `finance` plans as finance; add sales and engineering as
+department contributors and board as a viewer under **Settings → People**.
+Contributors also need the owner's **Grant pay detail** permission to see and
+edit positions. There is no in-app persona switcher.
 
 Dev detaches by default; use `rer dev --foreground` to keep it attached.
 Preview stays in the foreground while serving. Use `rer dev --stop` or
@@ -139,8 +151,8 @@ Local durable state is `.wrangler/state`; CLI bookkeeping is `.rer/local`,
 installer state is `.seed/installer`, and the default private settings file is
 `.dev.vars` with mode 0600. Setup writes this checkout's dev key to
 `.rer/local/dev-key.env` (mode 0600); a repeat setup keeps it and reset removes
-it, which also ends every browser's earlier dev cookie. Dev sign-in, personas
-and the development outbox answer only a request holding that key's cookie, so
+it, which also ends every browser's earlier dev cookie. Dev sign-in and personas
+answer only a request holding that key's cookie, so
 a tunnel or local proxy to the app cannot reach them; anything else returns 404.
 Any local user or process that can read the checkout can read the key and sign
 in as the owner. `rer deploy` refuses the key, and `rer build` refuses output

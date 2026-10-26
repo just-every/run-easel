@@ -1,14 +1,24 @@
-Easel runs on your own computer with the `rer` command. One line gets it open in your browser, signed in as you, the owner.
+Easel runs on your own computer with the `rer` command. Two steps get it open in your browser, signed in as you, the owner. The same instructions are at [Run Easel](https://run-easel.com/run).
 
 Easel runs on macOS, Linux or Windows with WSL2. `rer` selects the exact Node version Easel declares and fetches a checksum-verified copy when your computer does not have it.
 
 ## Get Easel and start it
 
+1. Install `rer`:
+
 ```sh
-curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel
+curl -fsSL https://runeditrun.com/install.sh | sh
 ```
 
-That one line installs `rer`, clones Easel into `run-easel` and starts it. Git is required; rer brings Node and pnpm. Already have Node 22 or later? `npx -y @runeditrun/rer dev just-every/run-easel` does the same. If the installer prints a line that puts `rer` on your PATH, run that line too. To start Easel again later, run the same line from the same folder, or `cd run-easel && rer dev`. `rer dev` installs everything, makes you the owner and prints two lines when Easel is ready:
+Run the PATH line the installer prints in your terminal.
+
+2. Download Easel and start it:
+
+```sh
+rer dev just-every/run-easel
+```
+
+Git is required; the installer brings Node and `rer` brings pnpm. The second command clones Easel into `./run-easel`, installs everything and makes you the owner. To start Easel again later, run `cd ./run-easel && rer dev`. When Easel is ready, it prints two lines:
 
 - `RER_READY` with the local address, and
 - `RER_OPEN`, a link that opens Easel signed in as the owner.
@@ -19,9 +29,11 @@ The first time, Easel asks you to **Finish setup**: check the owner's name and e
 
 ## Use your own email
 
-To make a specific mailbox the owner, run `npx -y @runeditrun/rer install just-every/run-easel`, then setup from the checkout before the first `rer dev`:
+After installing `rer`, use these commands to make a specific mailbox the owner before the first `rer dev`:
 
 ```sh
+rer install just-every/run-easel
+cd ./run-easel
 rer setup --owner-email you@example.com
 rer dev
 ```
@@ -36,7 +48,7 @@ Easel has local test people for each role. Start as one of them with `--as`:
 rer dev --as sales
 ```
 
-`finance` plans everything. `sales` and `engineering` are contributors and `board` is a viewer once finance adds them under **Settings → People** (see [People and access](/docs/people-and-access)).
+Open the new `RER_OPEN` link in a separate browser session for that person. `finance` plans everything. `sales` and `engineering` are contributors and `board` is a viewer once finance adds them under **Settings → People**. Contributors also need the owner's **Grant pay detail** permission to see and edit their department's positions (see [People and access](/docs/people-and-access)).
 
 ## Stop it
 

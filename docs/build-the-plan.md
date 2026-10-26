@@ -17,7 +17,7 @@ A position is a role, named or still to be hired, in a department, from a start 
 
 Salary rounding is calculated across the plan horizon. Easel counts the position's active months inside the horizon, including its start and end months, then rounds the prorated total half away from zero to cents: annual salary cents × (10,000 + on-cost basis points) × active months ÷ 120,000. Each month except the last uses the monthly amount from the original annual salary and on-cost rate rounded down to cents; the last active month receives the remainder so the active-month total equals the prorated target. This keeps every monthly salary non-negative, including very small salaries. Months before the horizon and after an end month do not count. Closed months continue to show actuals in the working forecast; if a rounded remainder falls in a closed month, it is not moved into another month.
 
-Salaries are visible only to finance and the department's own contributors.
+Individual positions and salaries require the owner's **Grant pay detail** permission under **Settings → People**, as well as access to the department. Contributors need this grant to see and edit their department's positions; their contributor role alone is not enough. See [People and access](/docs/people-and-access).
 
 ## Expenses
 

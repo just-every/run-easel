@@ -10,7 +10,9 @@ The owner who finished setup is finance. Someone who signs in before finance add
 
 ## Private pay
 
-Individual positions, salaries and the detail behind another department's numbers are visible only to finance and that department's contributors. Everyone else sees the amounts with the detail removed. Published packs carry no individual pay detail.
+Individual positions and salaries require **Pay detail** permission as well as access to the department. The owner has this permission; other finance members and contributors need an explicit grant. The owner opens **Settings → People** and presses **Grant pay detail** beside the person. A contributor with the grant can see and edit positions only in departments they are allowed to plan. Making someone a contributor alone does not grant pay detail.
+
+People without the grant see permitted aggregate amounts with individual pay removed. Viewers never see individual pay, and published packs carry none. The owner can revoke the grant under **Settings → People**.
 
 ## Activity
 

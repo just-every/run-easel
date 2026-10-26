@@ -5,15 +5,27 @@ Source: [just-every/run-easel](https://github.com/just-every/run-easel). The sit
 
 ## Run it locally
 
-One line installs the Run Edit Run command, clones Easel and starts it:
+Follow the same two steps as [Run Easel](https://run-easel.com/run). Git is required on macOS, Linux or Windows with WSL2; the installer brings Node and `rer` brings pnpm.
+
+1. Install the Run Edit Run command:
 
 ```sh
-npx -y @runeditrun/rer dev just-every/run-easel
+curl -fsSL https://runeditrun.com/install.sh | sh
 ```
 
-Without Node, `curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel` does the same. To start it again later, run `cd run-easel && rer dev`. To choose the owner mailbox yourself, run `npx -y @runeditrun/rer install just-every/run-easel`, then from the checkout:
+Run the PATH line the installer prints in your terminal.
+
+2. Download Easel and start it:
 
 ```sh
+rer dev just-every/run-easel
+```
+
+To start it again later, run `cd ./run-easel && rer dev`. To choose the owner mailbox yourself before the first start, use the installed command:
+
+```sh
+rer install just-every/run-easel
+cd ./run-easel
 rer setup --owner-email you@example.com
 rer dev
 ```
@@ -39,9 +51,9 @@ Easel is owned financial planning for one company: an agreed next twelve months 
 
 What a person can do in phase 1:
 
-- **Set up** the company, reporting currency (AUD by default), fiscal year, departments (including a shared one), planning lines and people as finance, contributor (per department) or viewer.
+- **Set up** the company, reporting currency (USD by default), fiscal year, departments (including a shared one), planning lines and people as finance, contributor (per department) or viewer.
 - **Move in actuals** from a general-ledger CSV: preview months, signs, repeats and malformed rows, map accounts and departments, accept through a journal, reconcile every month, undo an import.
-- **Move in an Excel planning workbook** (.xlsx) as its own scenario, with every cell's address and formula kept, then compare it, adopt it into the budget or undo it.
+- **Move in an Excel planning workbook** (.xlsx) as its own scenario. Supported formulas become live calculations; unsupported formulas retain their cached values and are listed in the preview. Every cell keeps its source address and formula. Compare the scenario, adopt it into the budget or undo it.
 - **Plan** revenue (volume × rate, or customers with churn and ramped sales hires), positions with your own on-cost assumption, recurring and one-off expenses, shared-cost allocation and opening cash with collection and payment timing. Every number shows its arithmetic.
 - **Run the budget cycle**: request department submissions, let contributors revise, comment and submit only their own department, return or approve; approval freezes exactly what was approved and by whom.
 - **Branch and compare** scenarios, and work through **proposals** bound to a plan's exact revision that finance promotes or declines.
@@ -50,7 +62,7 @@ What a person can do in phase 1:
 
 The owner guides live in `docs/` and are published with the run site at run-easel.com/docs (`rer build --site` writes the site to `dist/site`). `CONTRACT.md` lists the guarantees (EASEL-001 to EASEL-017), `ACCEPTANCE.md` the proof, `IMPORTING.md` the move-in kits, `API.md` the HTTP surface agents use, and `AGENTS.md` how to change Easel.
 
-Easel does not post journals, calculate payroll, tax or statutory statements, consolidate entities, convert currencies or evaluate spreadsheet formulas. Forecast tax and on-cost assumptions are your inputs, labelled as such.
+Easel does not post journals, calculate payroll, tax or statutory statements, consolidate entities or convert currencies. Workbook formula translation supports arithmetic, SUM, IF, cell references and exact lookups; see `IMPORTING.md` for its limits. Forecast tax and on-cost assumptions are your inputs, labelled as such.
 
 ## Licence
 

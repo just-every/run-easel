@@ -13,11 +13,11 @@ The archive holds every planning record, approved snapshot, published pack, acti
 
 ## Restore on another computer
 
-Restore into a fresh installation that has no plan yet:
+Install `rer` using [Run Easel](https://run-easel.com/run), including the printed PATH line, if it is not already installed. Restore into a fresh installation that has no plan yet:
 
 ```sh
-npx -y @runeditrun/rer install just-every/run-easel --dir easel
-cd easel
+rer install just-every/run-easel --dir ./easel
+cd ./easel
 rer setup --owner-email you@example.com
 rer import --input exports/installation.rer --yes
 rer dev

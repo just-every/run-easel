@@ -4,7 +4,7 @@ Your posted accounting stays in your accounting system. Easel keeps the assumpti
 
 ## What you can do
 
-- **Set up** the company, its reporting currency (AUD by default), the fiscal year, departments (one of them can be a shared cost centre), planning lines and people.
+- **Set up** the company, its reporting currency (USD by default), the fiscal year, departments (one of them can be a shared cost centre), planning lines and people.
 - **Build the plan** from revenue drivers (volume × rate, or customers × revenue per customer with churn and ramped sales hires), positions with your own on-cost assumption, recurring and one-off expenses, shared-cost allocation, and opening cash with collection and payment timing.
 - **See how every number was calculated.** Choose any amount in the profit and loss and Easel shows the driver, the rate and the month behind it.
 - **Run the budget cycle.** Departments revise, comment on and submit their own numbers; finance returns or approves, and approval freezes exactly what was approved and by whom.

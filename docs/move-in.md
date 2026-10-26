@@ -23,7 +23,7 @@ A file can hold up to 5,000 rows and 2 MB; split larger exports by month.
 
 Under **Move in a planning workbook (.xlsx)**, choose a workbook with one sheet laid out as one row per line and department and one column per month, with headings `Line` and `Department`. Months can be headed `Jul-26`, `Jul 2026`, `2026-07` or an Excel date.
 
-- Easel translates arithmetic, SUM, IF, cross-sheet/month references and exact lookups into a live model. Unsupported cells are listed with sheet, address and reason and retain their cached values. Supported formula totals and plan-cell caches must reconcile before import; recalculate the source workbook if they differ. In Plan, Workbook drivers changes numeric assumptions; the planning grid changes constant plan cells. Formula cells stay calculated from their sources.
+- Easel translates arithmetic, SUM, IF, references across sheets and months, and exact VLOOKUP and XLOOKUP formulas into a live model. Unsupported cells are listed with sheet, address and reason and retain their cached values. Supported formula totals and plan-cell caches must reconcile before import; recalculate the source workbook if they differ. In Plan, **Workbook drivers** changes numeric assumptions; the planning grid changes constant plan cells. Formula cells stay calculated from their sources.
 - Rows that start with "Total" are skipped, because Easel calculates totals.
 - Names that do not match an Easel line or department are matched in the preview.
 

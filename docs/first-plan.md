@@ -5,9 +5,12 @@ The first time finance opens Easel, it asks for the shape of the plan. Everythin
 | Field | What it means |
 |---|---|
 | Company name | The name shown at the top of every screen. |
-| Reporting currency | One currency for the whole plan, `AUD` by default. Easel does no currency conversion. |
-| Fiscal year starts in month | The month your financial year begins, July by default. |
+| Reporting currency | One currency for the whole plan, `USD` by default. Easel does no currency conversion. |
+| Fiscal year starts in month | The month your financial year begins, January by default. |
 | First plan month | The first month of the fiscal year you are budgeting. The plan runs twelve months from it. |
+| Language and region | English (United States), `en-US`, by default. |
+| Date display | `MM/DD/YYYY` by default. |
+| Time zone | `America/New_York` by default; used for planning dates and scheduled reminders. |
 
 Press **Create the plan**.
 
@@ -17,7 +20,7 @@ Under **Settings → Departments**, add each department that owns numbers, for e
 
 ## Planning lines
 
-Planning lines are the rows of your profit and loss. Each one is **Revenue**, **Cost of sales** or **Operating expenses**. Mark the line salaries land on as a **Payroll line**: payroll is paid in its own month, and its detail stays private to finance and the department it belongs to.
+Planning lines are the rows of your profit and loss. Each one is **Revenue**, **Cost of sales** or **Operating expenses**. Mark the line salaries land on as a **Payroll line**: payroll is paid in its own month. Individual positions and salaries also require an owner-granted **Pay detail** permission; see [People and access](/docs/people-and-access).
 
 ## People
 

@@ -1,20 +1,24 @@
 # Easel operations
 
 Run all first-party operations from the composed, runnable edition checkout
-with the shared RER command path. To get a runnable checkout, run
-`npx -y @runeditrun/rer install just-every/run-easel` (or start it directly with
-`npx -y @runeditrun/rer dev just-every/run-easel`). The detailed flags and effects are in
+with the shared RER command path. Install `rer` with the two-step procedure at
+[Run Easel](https://run-easel.com/run), including the printed PATH line. Then
+`rer dev just-every/run-easel` downloads and starts Easel. To choose an owner
+mailbox before the first start, use the installed command below. The detailed flags and effects are in
 `RUN-LOCALLY.md` and `SEED-COMMAND-CONTRACT.md`.
 
 ```sh
+rer install just-every/run-easel
+cd ./run-easel
 rer setup --owner-email you@example.com
 rer dev
 ```
 
 Use the setup prompt instead of the owner-email flag when entering the real
-mailbox. For local outbox sign-in, start `rer dev --login`, then run
-`rer outbox` and open its `RER_OPEN` link to `/__dev/key`. Follow the newest
-ordinary sign-in message there; no external email is sent. Stop `dev` with
+mailbox. Open the `RER_OPEN` link printed by `rer dev` on this computer to sign
+in as the owner. Local mail is silently suppressed. Use `rer dev --as sales`,
+`--as engineering`, `--as board` or `--as finance` and open the newly printed
+link to use a local persona. Stop `dev` with
 `rer dev --stop` or Ctrl-C, and stop `preview` with
 `rer preview --stop` before build or verification.
 
@@ -35,9 +39,9 @@ provider.
 ## Local data and recovery
 
 Setup and development use explicit owner identity and real local migrations.
-Dev and preview use the same owner and canonical `.wrangler/state`; the local
-development outbox is available only on loopback. Any process with access to
-the machine can read that outbox and sign in as the owner. Private settings are
+Dev and preview use the same owner and canonical `.wrangler/state`. The local
+`RER_OPEN` link carries the checkout's dev key: anyone who can read that key
+can sign in as the owner. Keep the link private. Private settings are
 kept in `.dev.vars` with mode 0600 and are not copied into build output.
 
 Local export creates a private archive with an integrity receipt and explicit

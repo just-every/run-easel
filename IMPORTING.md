@@ -44,8 +44,15 @@ One sheet with a heading row (within the first 20 rows) containing `Line`,
 `2026-07` or an Excel date. Values are natural signs: revenue and costs both
 positive.
 
-- Easel reads each cell's cached value (what Excel last calculated). Formulas
-  are kept as text in the cell's provenance and are not translated or run.
+- Easel translates arithmetic, SUM, IF, references across sheets and months,
+  and exact VLOOKUP and XLOOKUP formulas into a live source model. The preview
+  lists unsupported formulas by sheet, cell address and reason; these retain
+  their cached values (what Excel last calculated). Every formula and source
+  address stays in the cell's provenance.
+- Supported formula totals and plan-cell caches must reconcile before import.
+  Recalculate the source workbook if they differ. In Plan, **Workbook drivers**
+  changes numeric source assumptions and the planning grid changes constant
+  plan cells; translated formula cells recalculate from their sources.
 - Values are rounded to cents; the preview counts any that needed rounding.
 - Rows whose line or department starts with "Total" are skipped (Easel
   calculates totals); empty cells stay missing, not zero; text or error cells
