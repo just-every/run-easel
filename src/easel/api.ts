@@ -1,3 +1,4 @@
+import { greenhouseStatus, greenhouseConnection, greenhousePreview, greenhousePropose } from './greenhouse'
 import { pantryCash, pantryCashForecast } from './pantry-cash'
 import { pantryImport } from './pantry-import'
 import { pantryStatus, pantryConnection, pantryKey } from './pantry-connection'
@@ -202,6 +203,22 @@ api.post('/api/easel/pantry/ledger', async c => {
  const ctx=await open(c),input=await body(c),key=await pantryKey(ctx,c.env)
  const value=await readPantryLedger(key,input.from,input.to)
  await readFence(ctx.db,ctx.x.actor,ctx.revision)
+ return c.json(value)
+})
+
+api.get('/api/easel/connections/greenhouse', c => read(c, ctx => greenhouseStatus(ctx)))
+api.post('/api/easel/connections/greenhouse/:op', async c => {
+ const ctx=await open(c)
+ ctx.extra=await greenhouseConnection(ctx,c.env,c.req.param('op'),await body(c))
+ await commit(ctx)
+ return read(c,current=>greenhouseStatus(current))
+})
+api.post('/api/easel/greenhouse/:op', async c => {
+ const ctx=await open(c),b=await body(c),op=c.req.param('op')
+ requireThat(op==='preview'||op==='propose','Unknown Greenhouse action',404)
+ const value=op==='preview'?await greenhousePreview(ctx,c.env,b):await greenhousePropose(ctx,c.env,b)
+ if(op==='preview')await readFence(ctx.db,ctx.x.actor,ctx.revision)
+ else await commit(ctx)
  return c.json(value)
 })
 

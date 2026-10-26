@@ -66,3 +66,70 @@ test('Gusto credentials stay sealed and archive-excluded while native live pay a
  const { gustoCustodyFlow } = await import('./gusto-roster-journeys.mjs')
  await gustoCustodyFlow(t)
 })
+
+test('Greenhouse requisitions, accepted offers and closed roles become reviewed revision-bound finance proposals with sealed native custody',async t=>{
+ const {greenhouseProvider,greenhouseGrant,greenhouseFixture,promoteATS}=await import('./greenhouse-flow.mjs')
+ const provider=greenhouseProvider(),h=await harness({outbound:provider.outbound,now:()=> '2026-10-26T12:00:00.000Z'});t.after(()=>h.close())
+ const call=async(path,body)=>{path=path.replace(/^\//,'');if(body===undefined)return h.get(`/api/easel/${path}`);const r=await h.send(`/api/easel/${path}`,body,h.owner);assert.equal(r.status,200,r.text);return r.value}
+ const f=await greenhouseFixture(call),view=()=>call(`scenario/${f.scenario}`),status=()=>call('/connections/greenhouse')
+ const original=await view()
+ await call('/connections/greenhouse/connect',greenhouseGrant)
+ assert.equal((await status()).connected,true);assert.equal((await status()).keySuffix,'-820');
+ provider.failure=429;await call('/connections/greenhouse/check',{});assert.equal((await status()).rateLimited,true);assert.match((await status()).error,/HTTP 429/);provider.failure=200;await call('/connections/greenhouse/check',{});assert.equal((await status()).error,null);assert.equal((await status()).rowCount,1);assert.equal((await status()).lastRefresh,'2026-10-26T12:00:00.000Z');assert.doesNotMatch(JSON.stringify(await status()),new RegExp(greenhouseGrant.apiKey))
+ const stored=await h.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='greenhouse'").first();assert.ok(stored.sealed);assert.doesNotMatch(stored.sealed,new RegExp(greenhouseGrant.apiKey))
+ const exported=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}});assert.equal(exported.status,200)
+ const {default:JSZip}=await import('jszip'),zip=await JSZip.loadAsync(await exported.arrayBuffer());for(const file of Object.values(zip.files))if(!file.dir)assert.doesNotMatch(await file.async('string'),new RegExp(greenhouseGrant.apiKey))
+ provider.multiple=true;assert.equal((await h.send('/api/easel/greenhouse/preview',f.input,h.owner)).status,409)
+ assert.equal((await call('/greenhouse/preview',{...f.input,openingId:'821'})).source.opening,'ENG-820-1');provider.multiple=false
+ let preview=await call('/greenhouse/preview',f.input)
+ assert.equal(preview.source.level,'Senior');assert.equal(preview.source.sourceDepartment.name,'Product Engineering');assert.equal(preview.action,'add');assert.deepEqual(await view(),original)
+ let p=(await call('/greenhouse/propose',{...f.input,fingerprint:preview.fingerprint})).proposal
+ assert.deepEqual(await view(),original)
+ let positions=(await call(`scenario/${p.id}`)).inputs.position
+ assert.equal(positions[0].holder,'');assert.equal(positions[0].annualSalaryCents,9600000);assert.equal(positions[0].start,'2026-02');assert.equal(positions[0].ats.level,'Senior')
+ await promoteATS(call,p)
+ const position=(await view()).inputs.position[0];await h.command('position',{...position,scenario:f.scenario,annualSalary:'96000',onCostPercent:'0'});assert.equal((await view()).inputs.position[0].ats.jobId,'820')
+ const opened=await view();provider.status='accepted';provider.paginate=true
+ preview=await call('/greenhouse/preview',f.input)
+ assert.equal(preview.source.start,'2026-04-15');assert.equal(preview.source.annualSalary,'120000.00');assert.equal(preview.prior.start,'2026-02')
+ provider.salary='132000.00'
+ assert.equal((await h.send('/api/easel/greenhouse/propose',{...f.input,fingerprint:preview.fingerprint},h.owner)).status,409)
+ provider.salary='120000.00'
+ p=(await call('/greenhouse/propose',{...f.input,fingerprint:preview.fingerprint})).proposal
+ positions=(await call(`scenario/${p.id}`)).inputs.position
+ assert.equal(positions[0].holder,'Private Morgan Green');assert.equal(positions[0].start,'2026-04');assert.equal(positions[0].annualSalaryCents,12000000);assert.equal(positions[0].plannedStartDate,'2026-04-15')
+ assert.deepEqual(await view(),opened)
+ // Exact monthly cost changes: February and March are removed; April uses new salary.
+ const targetCalc=opened.calculation,proposalView=await call(`scenario/${p.id}`)
+ const costs=v=>v.calculation.cells.filter(c=>c.line===f.line.id&&c.department===f.department.id).map(c=>[c.month,c.amount])
+ assert.ok(targetCalc);assert.notDeepEqual(costs(opened),costs(proposalView))
+ const cost=(v,m)=>costs(v).find(r=>r[0]===m)?.[1]??0
+ assert.equal(cost(opened,'2026-02'),800000);assert.equal(cost(proposalView,'2026-02'),0);assert.equal(cost(proposalView,'2026-04'),1000000)
+ await call('/command/proposal-submit',{id:p.id})
+ await h.command('proposal-promote',{id:p.id,revision:p.revision-1},h.owner,409)
+ const contributor=await h.person('ats-head@example.test','contributor',[f.department.id]),viewer=await h.person('ats-board@example.test','viewer'),noPay=await h.person('ats-finance@example.test','finance',[],false)
+ for(const cookie of[contributor,viewer,noPay]){
+  await h.get('/api/easel/connections/greenhouse',cookie,403)
+  for(const path of['/connections/greenhouse/connect','/connections/greenhouse/disconnect','/connections/greenhouse/check','/greenhouse/preview','/greenhouse/propose'])assert.equal((await h.send(`/api/easel${path}`,{...f.input,...greenhouseGrant,fingerprint:preview.fingerprint},cookie)).status,403)
+  if(cookie!==noPay)await h.command('proposal-promote',{id:p.id,revision:p.revision},cookie,403)
+ }
+ await call('/command/proposal-promote',{id:p.id,revision:p.revision})
+ assert.equal((await view()).inputs.position[0].holder,'Private Morgan Green')
+ assert.doesNotMatch(JSON.stringify(await h.get(`/api/easel/scenario/${f.scenario}`,viewer)),/Private Morgan/)
+ // Target revision conflicts refuse promotion without overwriting intervening edits.
+ provider.paginate=false;preview=await call('/greenhouse/preview',f.input);provider.status='closed'
+ preview=await call('/greenhouse/preview',f.input);assert.equal(preview.action,'remove')
+ p=(await call('/greenhouse/propose',{...f.input,fingerprint:preview.fingerprint})).proposal
+ assert.deepEqual((await call(`scenario/${p.id}`)).inputs.position,[])
+ await call('/command/proposal-submit',{id:p.id});await h.command('position',{scenario:f.scenario,title:'Unrelated hire',department:f.department.id,line:f.line.id,start:'2026-01',annualSalary:'12000'})
+ await h.command('proposal-promote',{id:p.id,revision:p.revision},h.owner,409)
+ preview=await call('/greenhouse/preview',f.input);p=(await call('/greenhouse/propose',{...f.input,fingerprint:preview.fingerprint})).proposal;await promoteATS(call,p)
+ assert.deepEqual((await view()).inputs.position.map(p=>p.title),['Unrelated hire'])
+ await h.stepUp();const issued=await h.send('/api/easel/tokens/issue',{label:'ATS token refusal',kind:'personal',scope:'read'},h.owner)
+ const r=await h.mf.dispatchFetch(h.origin+'/api/easel/connections/greenhouse',{headers:{authorization:`Bearer ${issued.value.token}`}});assert.equal(r.status,403)
+ for(const failure of[302,429,500]){provider.failure=failure;const before=await view();assert.equal((await h.send('/api/easel/greenhouse/preview',f.input,h.owner)).status,502);assert.deepEqual(await view(),before)}
+ await call('/connections/greenhouse/disconnect',{})
+ assert.equal((await status()).connected,false);assert.equal((await status()).revocation,'unsupported');assert.match((await status()).revocationInstruction,/Delete the Harvest API key/)
+ assert.equal(await h.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='greenhouse'").first(),null)
+ const activity=await call('activity');assert.match(JSON.stringify(activity),/greenhouse-connected/);assert.match(JSON.stringify(activity),/greenhouse-disconnected/);assert.doesNotMatch(JSON.stringify(activity),/synthetic-easel-820|never-retain/)
+})

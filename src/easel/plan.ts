@@ -111,6 +111,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    await assertHistorySources(c, months.flatMap(m => referenceMonths(value.history, m)))
    historySchedule(value, await actualCells(c.db, s), months, workspace(s).currency)
   }
+  if(kind==='position' && prior?.ats) value.ats=prior.ats
   const id = prior?.id ?? uid()
   put(s, kind, id, value)
   if(kind==='formula') { requireNativeSources(s,x,value,scenario.id); await workingCalculation(c,scenario.id) }
