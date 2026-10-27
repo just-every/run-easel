@@ -97,11 +97,24 @@ jobs:
       - name: Built runtime
         if: matrix.shard == 'runtime'
         run: pnpm exec rer build
+      - name: Install browser test dependencies
+        if: matrix.shard == 'runtime'
+        run: npm install --prefix "$RUNNER_TEMP/easel-browser" --no-save @playwright/test@1.64.1
+      - name: Install Chromium
+        if: matrix.shard == 'runtime'
+        env:
+          EASEL_PLAYWRIGHT_MODULE: ${{ runner.temp }}/easel-browser/node_modules/@playwright/test/index.mjs
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/easel-browser/node_modules/.bin/playwright" install chromium
+          # Hosted ubuntu-24.04 already carries Chromium's libraries. Use apt only when a real launch fails.
+          node scripts/ci/chromium-probe.mjs || {
+            timeout 420 "$RUNNER_TEMP/easel-browser/node_modules/.bin/playwright" install-deps chromium
+            node scripts/ci/chromium-probe.mjs
+          }
       - name: Native approvals and connected actuals
         if: matrix.shard == 'runtime'
         run: |
-          npm install --prefix "$RUNNER_TEMP/easel-browser" --no-save @playwright/test@1.64.1
-          "$RUNNER_TEMP/easel-browser/node_modules/.bin/playwright" install --with-deps chromium
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/approval-chains-browser.mjs
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/connectors-browser.mjs --existing-build
         env:
