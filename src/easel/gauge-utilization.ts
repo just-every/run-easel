@@ -38,9 +38,9 @@ export async function gaugeUtilization(c: Context, env: Bindings, op: string, b:
  if (op === 'preview') return result
  requireThat(b.digest === digest, 'Gauge source or plan changed since preview; review again', 409)
  const before = driver.gaugeActuals ?? {}, prior = before[period]
+ recordGaugeObservation(c, period, source, null)
  if (prior && JSON.stringify({ ...prior.source, asOf: null }) === JSON.stringify({ ...source, asOf: null }) && prior.hourlyRateCents === driver.hourlyRateCents) return { ...result, unchanged: true }
  put(c.s, 'revenue', driver.id, { ...driver, gaugeActuals: { ...before, [period]: { source, digest, amountCents, hourlyRateCents: driver.hourlyRateCents, acceptedBy: c.x.actor.email, acceptedAt: c.now } }, gaugeUndo: { before, resultingRevision: scenario.revision + 1, digest, month: period } })
- recordGaugeObservation(c, period, source, null)
  bump(c, scenario, 'gauge-utilization-accepted', driver.id, { digest, month: period, source: stable, amountCents })
  return result
 }

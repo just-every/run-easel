@@ -1607,7 +1607,7 @@
       "executable": false
     },
     "src/easel/gauge-utilization.ts": {
-      "sha256": "afc2c41b14a72f614204aeb853167821d193569b5477a699196bea2eeb53dfdb",
+      "sha256": "89f59966fa51d597387537679b7205850e9d5848fe4837fbd53cdc18f0f990c9",
       "executable": false
     },
     "src/easel/greenhouse-provider.ts": {
@@ -4843,7 +4843,7 @@
       "executable": false
     },
     "tests/gauge-utilization.test.mjs": {
-      "sha256": "0bf03c614aef2cae2bd2da9961a729d97931cc9c4606cc67f326690a4fe3345b",
+      "sha256": "7603fecf9a4870506b7af2b1633be679fb77d0ef76d8c6f676ad5ea1bee17e54",
       "executable": false
     },
     "tests/greenhouse-browser.mjs": {

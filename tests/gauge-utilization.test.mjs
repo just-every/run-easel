@@ -43,7 +43,7 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  const b = { scenario: budget.id, kind: 'services', name: 'Agency services', line: line.id, department: dept.id, start: '2026-01', collectionLag: 1, monthlyHours: '160', utilizationPercent: '75', hourlyRate: '150' }
  const driver = await h.command('revenue', b)
  const viewer = await h.person('board@example.test', 'viewer'), outsider = await h.person('engineering@example.test', 'contributor', [other.id])
- const post = async (path, body, code = 200, cookie = h.owner) => { const r = await h.send(`/api/easel/${path}`, body, cookie); assert.equal(r.status, code, r.text); return r.value }
+ const post = async (path, body, code = 200, cookie = h.owner) => { const r = await h.send(path.startsWith('/') ? path : `/api/easel/${path}`, body, cookie); assert.equal(r.status, code, r.text); return r.value }
  const view = () => h.get(`/api/easel/scenario/${budget.id}`)
  const args = async () => ({ scenario: budget.id, driver: driver.id, month: '2026-01', scenarioRevision: (await view()).scenario.revision })
  const amount = (v, month) => v.calculation.cells.find(c => c.line === line.id && c.month === month).amount
@@ -137,8 +137,16 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  const trace = accepted.calculation.cells.find(c => c.line === line.id && c.month === '2026-01').sources[0].trace
  assert.match(trace, /operational utilization actuals at planned rate \(not ledger revenue\)/); assert.ok(trace.includes(preview.digest)); assert.match(trace, /360001 approved billable seconds/)
  assert.equal(accepted.calculation.cash[1].collections, preview.amountCents, 'operational amount follows entered one-month collection timing')
+ now = '2026-03-17T12:01:00.000Z'
  const same = await post('gauge/preview', await args()); await post('gauge/accept', { ...await args(), digest: same.digest })
- assert.deepEqual(await view(), accepted, 'identical pull is idempotent even though Gauge asOf changes')
+ const unchanged = await view()
+ assert.deepEqual(unchanged.inputs, accepted.inputs); assert.deepEqual(unchanged.scenario, accepted.scenario)
+ assert.deepEqual(unchanged.calculation, accepted.calculation, 'An identical pull keeps model values and accepted provenance')
+ assert.equal(unchanged.gaugeFreshness[0].lastSuccess, now)
+ assert.equal(unchanged.gaugeFreshness[0].acceptedAt, accepted.gaugeFreshness[0].acceptedAt)
+ assert.equal(unchanged.gaugeFreshness[0].acceptedObservedAt, accepted.gaugeFreshness[0].acceptedObservedAt)
+ assert.equal(unchanged.gaugeFreshness[0].observedAt, now)
+ assert.equal(unchanged.gaugeFreshness[0].observationStatus, 'matches-accepted')
  await post('gauge/accept', { ...a, digest: preview.digest }, 409)
  await post('gauge/preview', await args(), 403, outsider)
  const board = await h.get(`/api/easel/scenario/${budget.id}`, viewer)
@@ -152,7 +160,7 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  const freshness = (await view()).gaugeFreshness
  assert.equal(freshness.length, 1); assert.equal(freshness[0].acceptedDigest, preview.digest)
  assert.equal(freshness[0].acceptedAt, acceptedAt); assert.equal(freshness[0].observationStatus, 'matches-accepted')
- await post('connections/gauge/schedule', { cadence: 'hourly', month: '2026-01', consent: true })
+ await post('/api/easel/connections/gauge/schedule', { cadence: 'hourly', month: '2026-01', consent: true })
  billable = 540000
  await run('2026-03-17T13:05:00.000Z')
  const lastSuccess = now
@@ -171,7 +179,7 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
   assert.equal(rows[0].lastSuccess, lastSuccess); assert.equal(rows[0].acceptedDigest, preview.digest)
  }
  status = 200
- await post('connections/gauge/check', { month: '2026-02' })
+ await post('/api/easel/connections/gauge/check', { month: '2026-02' })
  const january = (await view()).gaugeFreshness[0]
  assert.equal(january.lastSuccess, lastSuccess); assert.match(january.error, /HTTP 503/, 'Another month cannot clear this month failure')
  assert.equal(amount(await view(), '2026-01'), 1500004)
@@ -196,7 +204,7 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  }
  const csv = await h.get(`/api/easel/scenario/${budget.id}/document.csv`)
  assert.ok(csv.includes(lastSuccess)); assert.ok(csv.includes(preview.digest)); assert.ok(csv.includes('HTTP 503'))
- await post('connections/gauge/check', { month: '2026-01' })
+ await post('/api/easel/connections/gauge/check', { month: '2026-01' })
  now = '2026-03-17T15:06:00.000Z'
  assert.equal((await view()).gaugeFreshness[0].stale, true, 'Hourly source becomes stale without changing its accepted value')
  billable = 360001
