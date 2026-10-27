@@ -1,19 +1,23 @@
 import assert from 'node:assert/strict'
-export const spendKeys = { ramp: 'synthetic-easel-1001', purse: 'synthetic-easel-1002' }
+export const spendKeys = { ramp: 'synthetic-easel-1001', purse: 'synthetic-easel-1002', coaster: 'synthetic-easel-1003' }
 export function spendProvider() {
- const state = { card: 12025, po: 50000, currency: 'USD', status: 200, next: null, calls: [] }
+ const state = { card: 12025, po: 50000, currency: 'USD', status: 200, next: null, calls: [], refunds: [], poStatus: 'issued', bills: [], reportAmount: 7011, reportStatus: 'approved', reportApproved: true }
  return { state, async outbound(request) {
-  const url = new URL(request.url), provider = url.hostname === 'api.ramp.com' ? 'ramp' : 'purse'
-  assert.ok(['api.ramp.com','purse.example.test'].includes(url.hostname), 'Only configured provider origins are used')
+  const url = new URL(request.url), provider = url.hostname === 'api.ramp.com' ? 'ramp' : url.hostname === 'purse.example.test' ? 'purse' : 'coaster'
+  assert.ok(['api.ramp.com','purse.example.test','coaster.example.test'].includes(url.hostname), 'Only configured provider origins are used')
   assert.equal(request.method, 'GET'); assert.equal(request.headers.get('authorization'), `Bearer ${spendKeys[provider]}`)
   state.calls.push(url.href)
   if (state.status !== 200) return new Response('private provider error', { status: state.status, headers: { location: 'https://untrusted.example.test/' } })
   if (provider === 'ramp') {
    assert.equal(url.pathname, '/developer/v1/transactions')
-   return Response.json({ data: [{ id: 'synthetic-easel-101', state: 'CLEARED', amount: 999999, entity_amount: { value: state.card, currency: state.currency }, currency_code: 'USD', user_transaction_time: '2026-01-15T12:00:00Z' }], page: { next: state.next } })
+   return Response.json({ data: [{ id: 'synthetic-easel-101', state: 'CLEARED', amount: 999999, entity_amount: { value: state.card, currency: state.currency }, currency_code: 'USD', user_transaction_time: '2026-01-15T12:00:00Z' }, ...state.refunds.map((amount, i) => ({ id: `synthetic-easel-${110+i}`, state: 'CLEARED', entity_amount: { value: amount, currency: state.currency }, user_transaction_time: '2026-01-20T12:00:00Z' }))], page: { next: state.next } })
+  }
+  if (provider === 'coaster') {
+   assert.equal(url.pathname, '/api/coaster/public-api/v1/claims/synthetic-easel-301/final-report')
+   return Response.json({ claim: { id: 'synthetic-easel-301', number: 'EXP-301', status: state.reportStatus }, revision: 2, submitted_at: '2026-01-12T12:00:00Z', snapshot_sha256: 'synthetic-easel-302', snapshot: { currency: state.currency, total_minor: state.reportAmount, items: [{ id: 'synthetic-easel-303', amount_minor: state.reportAmount }] }, decisions: state.reportApproved ? [{ revision: 2, final_approval: 1 }] : [], payment: state.reportStatus === 'reimbursed' ? { source: 'external-recording', reference: 'synthetic-easel-304', paid_on: '2026-01-25' } : null })
   }
   assert.equal(url.pathname, '/api/purse/integration/orders/synthetic-easel-102')
-  return Response.json({ order: { id: 'synthetic-easel-102', number: 'PO-102', revision: 1, supplier: 'synthetic-easel-103', currency: state.currency, status: 'issued', needDate: '2026-01-31', issuedAt: '2026-01-01T12:00:00Z', totalMinor: state.po, freightMinor: 0, taxMinor: 0, otherMinor: 0, lines: [{ id: 'synthetic-easel-104', amountMinor: state.po }], bills: [] } })
+  return Response.json({ order: { id: 'synthetic-easel-102', number: 'PO-102', revision: 1, supplier: 'synthetic-easel-103', currency: state.currency, status: state.poStatus, needDate: '2026-01-31', issuedAt: '2026-01-01T12:00:00Z', totalMinor: state.po, freightMinor: 0, taxMinor: 0, otherMinor: 0, lines: [{ id: 'synthetic-easel-104', amountMinor: state.po }], bills: state.bills } })
  } }
 }
 export async function spendFixture(h) {

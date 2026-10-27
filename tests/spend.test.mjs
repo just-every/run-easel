@@ -6,15 +6,15 @@ import { createPortability } from '@runeditrun/rer/modules/portability'
 import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
 
 test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exact nonduplicated department spend under native custody', async t => {
- const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
+ const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test', COASTER_ORIGIN: 'https://coaster.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
  const route = (...parts) => parts.join('/')
  const f = await spendFixture(h), post = async (path, body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/' + path, body, cookie); assert.equal(r.status, status, r.text); return r.value }
- for (const p of ['ramp','purse']) {
+ for (const p of ['ramp','purse','coaster']) {
   await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: false }, 400)
   await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
  }
  const secrets = await h.db.prepare('SELECT sealed FROM e_connection_secrets').all()
- assert.equal(secrets.results.length, 2)
+ assert.equal(secrets.results.length, 3)
  for (const key of Object.values(spendKeys)) assert.ok(!JSON.stringify(secrets).includes(key), 'Stored credentials are sealed')
  const status = await h.get('/api/easel/connections/spend/ramp')
  assert.equal(status.suffix, '1001'); assert.equal(status.scope, 'transactions:read'); assert.equal(status.schedule, 'Manual'); assert.ok(!JSON.stringify(status).includes(spendKeys.ramp))
@@ -58,7 +58,7 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  const reader = await h.person('synthetic-easel-200@example.test', 'viewer')
  await post(route('spend','preview'), again, 403, reader)
  await h.get('/api/easel/connections/spend/ramp', reader, 403)
- for (const cookie of [planner, reader]) for (const p of ['ramp','purse']) {
+ for (const cookie of [planner, reader]) for (const p of ['ramp','purse','coaster']) {
   await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true }, 403, cookie)
   await post(route('connections','spend',p,'disconnect'), {}, 403, cookie)
  }
@@ -83,14 +83,109 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  } finally { await portable.exports.abort(archiveId) }
  // An archive restores connection metadata without the deliberately excluded credentials.
  await h.db.prepare('DELETE FROM e_connection_secrets').run()
- for (const p of ['ramp','purse']) {
+ for (const p of ['ramp','purse','coaster']) {
   const restored = await h.get('/api/easel/' + route('connections','spend',p))
   assert.equal(restored.connected, false); assert.equal(restored.canDisconnect, true); assert.match(restored.error, /Reconnect after restore/)
   const reconnected = await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
   assert.equal(reconnected.connected, true, 'Restored metadata cannot strand native reconnect when the excluded credential is absent')
  }
- for (const p of ['ramp','purse']) { const disconnected = await post(route('connections','spend',p,'disconnect'), {}); assert.equal(disconnected.connected, false); assert.equal(disconnected.providerRevocation.status, 'unsupported'); assert.match(disconnected.ownerStep, /cannot confirm provider revocation/) }
+ for (const p of ['ramp','purse','coaster']) { const disconnected = await post(route('connections','spend',p,'disconnect'), {}); assert.equal(disconnected.connected, false); assert.equal(disconnected.providerRevocation.status, 'unsupported'); assert.match(disconnected.ownerStep, /cannot confirm provider revocation/) }
  assert.equal((await h.db.prepare('SELECT COUNT(*) n FROM e_connection_secrets').first()).n, 0)
  assert.equal((await h.get('/api/easel/spend')).length, 1, 'Disconnect retains accepted evidence')
  const activity = await h.get('/api/easel/activity'); assert.match(JSON.stringify(activity), /spend-connected/); assert.match(JSON.stringify(activity), /spend-disconnected/)
+})
+
+test('Reviewed refunds, authenticated Purse bill settlements and PO releases conserve exact spend without duplicate payments', async t => {
+ const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
+ const f = await spendFixture(h), post = async (op, b, status = 200) => { const r = await h.send('/api/easel/spend/' + op, b, h.owner); assert.equal(r.status, status, r.text); return r.value }
+ for (const p of ['ramp','purse']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`, { key: spendKeys[p], consent: true }, h.owner)).status,200)
+ provider.state.refunds = [-2025]
+ const refundMap = { ...f.input.mapping[0], source: 'ramp:synthetic-easel-110' }, input = { ...f.input, mapping: [...f.input.mapping, refundMap] }
+ let preview = await post('preview', input)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.released,preview.forecast],[10000,40000,50000,0,50000], 'A signed refund reopens its linked PO balance and reduces actual once')
+ provider.state.bills = [{ id: 'synthetic-easel-401', reference: 'BILL-401', currency: 'USD', totalMinor: 12025, paymentStatus: 'unknown' }]
+ assert.deepEqual((await post('preview',input)).rows.map(r => r.id), ['synthetic-easel-101','synthetic-easel-110','synthetic-easel-102'], 'A bill without authenticated payment is not actual spend')
+ provider.state.bills[0].paymentStatus = 'paid'; provider.state.bills[0].paymentStatusAt = '2026-01-16T12:00:00Z'
+ const billMap = { ...f.input.mapping[1], source: 'purse:synthetic-easel-102--synthetic-easel-401', duplicateOf: 'ramp:synthetic-easel-101' }
+ const paid = { ...input, mapping: [...input.mapping,billMap] }
+ preview = await post('preview', paid)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[10000,40000,50000,50000], 'The same paid bill and card expense count once after explicit equal-value reconciliation')
+ await post('preview', { ...paid, mapping: paid.mapping.map(m => m.source === billMap.source ? { ...m, order: 'synthetic-easel-999' } : m) },400)
+ provider.state.poStatus = 'closed'
+ await post('accept',{ ...paid,fingerprint:preview.fingerprint },409)
+ preview = await post('preview', paid)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.released,preview.forecast],[10000,0,90000,40000,10000], 'Closing a PO releases exactly the unpaid balance while retaining net paid actual')
+ await post('accept',{ ...paid,fingerprint:preview.fingerprint })
+ const view = await h.get('/api/easel/scenario/' + f.forecast.id)
+ assert.equal(view.calculation.cells.find(r => r.line === f.line.id && r.department === f.department.id && r.month === '2026-01').amount,10000)
+ assert.equal((await h.get('/api/easel/spend'))[0].released,40000)
+ const fresh = { ...paid,revision:view.scenario.revision }
+ provider.state.bills[0].totalMinor = 12026
+ await post('preview',fresh,409)
+ provider.state.bills[0].totalMinor = 12025; provider.state.bills[0].paymentStatusAt = null
+ await post('preview',fresh,502)
+ provider.state.bills = []; provider.state.refunds = [-12026]
+ await post('preview',{...input,revision:view.scenario.revision},409)
+ provider.state.card = Number.MAX_SAFE_INTEGER; provider.state.po = Number.MAX_SAFE_INTEGER; provider.state.poStatus = 'issued'; provider.state.refunds = [1,-1]
+ await post('preview',{...input,revision:view.scenario.revision,mapping:[...f.input.mapping,refundMap,{...refundMap,source:'ramp:synthetic-easel-111'}]},409)
+ assert.equal((await h.get('/api/easel/scenario/' + f.forecast.id)).scenario.revision,view.scenario.revision,'Refused corrections do not change the forecast')
+})
+
+test('Scoped final Coaster reports move from approved obligation to reimbursed actual with fresh reviewed provenance', async t => {
+ const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test', COASTER_ORIGIN: 'https://coaster.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
+ const f = await spendFixture(h), post = async (op,b,status=200) => { const r = await h.send('/api/easel/spend/'+op,b,h.owner); assert.equal(r.status,status,r.text); return r.value }
+ for (const p of ['ramp','purse','coaster']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`,{key:spendKeys[p],consent:true},h.owner)).status,200)
+ const input = { ...f.input,reports:['synthetic-easel-301'],mapping:[...f.input.mapping,{...f.input.mapping[1],source:'coaster:synthetic-easel-301'}] }
+ let preview = await post('preview',input)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[12025,44986,42989,57011])
+ assert.equal(preview.rows.find(r=>r.provider==='coaster').revision,2)
+ await post('accept',{...input,fingerprint:preview.fingerprint})
+ const accepted = await h.get('/api/easel/scenario/'+f.forecast.id), fresh = {...input,revision:accepted.scenario.revision}
+ provider.state.reportStatus='reimbursed'
+ await post('accept',{...fresh,fingerprint:preview.fingerprint},409)
+ preview=await post('preview',fresh)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[19036,37975,42989,57011],'Reimbursement converts the same report from obligation to actual without changing total expense')
+ assert.equal(preview.rows.find(r=>r.provider==='coaster').payment.source,'external-recording','External reimbursement recording is not claimed as bank settlement')
+ await post('accept',{...fresh,fingerprint:preview.fingerprint})
+ const current=await h.get('/api/easel/scenario/'+f.forecast.id), next={...input,revision:current.scenario.revision}
+ const onlyReport = { ...next, providers:['coaster'], orders:[], mapping: next.mapping.filter(m => m.source.startsWith('coaster:')) }
+ const callCount = provider.state.calls.length
+ const isolated = await post('preview',onlyReport)
+ assert.deepEqual([isolated.actual,isolated.committed,isolated.remaining,isolated.forecast],[7011,0,92989,7011])
+ assert.equal(provider.state.calls.length,callCount+1,'A selected Coaster report never requires unrelated card or PO reads')
+ provider.state.reportApproved=false; await post('preview',next,502)
+ provider.state.reportApproved=true; provider.state.reportStatus='draft'; await post('preview',next,502)
+ assert.equal((await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision,current.scenario.revision)
+})
+
+test('Reviewed ledger matches remove only explicit equal source overlaps and preserve additional actuals without posting entries', async t => {
+ const provider=spendProvider(),h=await harness({bindings:{PURSE_ORIGIN:'https://purse.example.test'},outbound:provider.outbound,now:()=> '2026-02-15T12:00:00Z'}); t.after(()=>h.close())
+ const f=await spendFixture(h),post=async(op,b,status=200)=>{const r=await h.send('/api/easel/spend/'+op,b,h.owner);assert.equal(r.status,status,r.text);return r.value}
+ for(const p of ['ramp','purse']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`,{key:spendKeys[p],consent:true},h.owner)).status,200)
+ await h.command('account-map',{account:'500',target:f.line.id});await h.command('department-map',{source:'Operations',department:f.department.id})
+ const actuals={filename:'synthetic-easel-501.csv',csv:'Date,Account,Department,Amount,Reference\n2026-01-15,500,Operations,120.25,synthetic-easel-502\n2026-01-16,500,Operations,20.00,synthetic-easel-503\n',columns:{date:'Date',account:'Account',department:'Department',amount:'Amount',reference:'Reference'},dateFormat:'YYYY-MM-DD',amountMode:'debit-positive'}
+ const planned=await h.kit('actuals','preview',actuals);await h.kit('actuals','commit',{...actuals,fingerprint:planned.fingerprint})
+ const before=await h.get('/api/easel/scenario/'+f.forecast.id),input={...f.input,revision:before.scenario.revision}
+ const ledger=await post('ledger',input)
+ assert.equal(ledger.total,14025);assert.deepEqual(ledger.rows.map(r=>r.amount),[12025,2000])
+ await post('preview',input,409)
+ const reconciled={...input,ledgerConfirmed:true,ledgerMapping:ledger.rows.map((r,i)=>({row:r.id,source:i===0?'ramp:synthetic-easel-101':null}))}
+ let preview=await post('preview',reconciled)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[14025,37975,48000,52000],'Matched card is not counted again and an independent ledger expense remains')
+ await post('preview',{...reconciled,ledgerConfirmed:false},409)
+ await post('preview',{...reconciled,ledgerMapping:reconciled.ledgerMapping.map(r=>({...r,source:'ramp:synthetic-easel-101'}))},409)
+ const linked={...reconciled,ledgerMapping:reconciled.ledgerMapping.map((r,i)=>i===1?{...r,order:'synthetic-easel-102'}:r)}
+ await post('accept',{...linked,fingerprint:preview.fingerprint},409)
+ preview=await post('preview',linked)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[14025,35975,50000,50000],'An explicit independent ledger payment reduces its PO once')
+ const count=await h.db.prepare('SELECT COUNT(*) n FROM e_actuals').first()
+ await post('accept',{...linked,fingerprint:preview.fingerprint})
+ assert.deepEqual(await h.db.prepare('SELECT COUNT(*) n FROM e_actuals').first(),count,'Spend review never posts accounting entries')
+ const accepted=await h.get('/api/easel/scenario/'+f.forecast.id)
+ assert.equal(accepted.calculation.cells.find(r=>r.line===f.line.id&&r.department===f.department.id&&r.month==='2026-01').amount,50000)
+ assert.equal((await h.get('/api/easel/spend'))[0].ledgerRows.length,2)
+ const reader=await h.person('synthetic-easel-504@example.test','viewer')
+ const refused=await h.send('/api/easel/spend/ledger',{...linked,revision:accepted.scenario.revision},reader);assert.equal(refused.status,403)
+ await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
+ await post('ledger',{...linked,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision},409)
 })
