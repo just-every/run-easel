@@ -11,7 +11,7 @@ export function WeeklyCash({ state, refresh, scenario, editable }: Pick<Shared, 
  return <section className="card" aria-label="13-week planned cash">
   <h2>13-week planned cash</h2>
   {state.me.role === 'finance' && editable && <label>Cash basis<select aria-label="Weekly cash basis" value={basis} onChange={e => { setBasis(e.target.value); setStart('') }}><option value="plan">Planned opening cash</option><option value="bank">Observed Plaid bank balance</option></select></label>}
-  <label>First day<input aria-label="Weekly cash first day" type="date" value={start || view?.start || ''} onChange={e => setStart(e.target.value)} /></label>
+  <label>First day<input aria-label="Weekly cash first day" type="date" value={start || (source === 'plan' ? view?.start : '') || ''} onChange={e => setStart(e.target.value)} /></label>
   {state.me.role === 'finance' && editable && <label>Cash sources<select aria-label="Weekly cash sources" value={source} onChange={e => setSource(e.target.value)}><option value="plan">Planning schedules</option><option value="pantry">Review Pantry open items with planning schedules</option></select></label>}
   {source === 'pantry' && <PantryCashReview key={`${scenario}-${basis}-${start}-${state.scenarios.find((s: D) => s.id === scenario)?.revision}`} scenario={scenario} basis={basis} start={start} render={combined => <CashSchedule view={combined} />} />}
   {source === 'plan' && error && <p role="alert" className="error">{error}</p>}

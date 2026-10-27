@@ -4,6 +4,7 @@ export function CashSchedule({ view }: { view: D }) {
  const date = useDate()
  return <>
   <p className="muted">{view.basis}</p>
+  {view.bank && <p>Plaid observation {date(view.bank.asOf.slice(0, 10))} · {view.bank.accountCount} depository accounts · opening balance {money(view.bank.balanceCents, view.currency)}</p>}
   <Table caption="Weekly planned cash" heads={['Week', 'Opening', 'Collections', 'Payments', 'Adjustment', 'Closing', 'Note']}>
    {view.weeks.map((w: D) => <tr key={w.start}><td>{date(w.start)}–{date(w.end)}{w.assumedDates && <small> · includes assumed dates</small>}</td>{w.available ? <>{['opening', 'collections', 'payments', 'adjustment', 'closing'].map(k => <td className="num" key={k}>{money(w[k], view.currency)}</td>)}<td>{w.note || '—'}</td></> : <td colSpan={6}>Outside the plan horizon; unavailable</td>}</tr>)}
   </Table>

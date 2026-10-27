@@ -23,7 +23,7 @@ export function PantryCashReview({ scenario, basis, start, render }: { scenario:
    if (current !== generation.current) return
    setReview({ source, revision: plan.scenario.revision, days: (plan.calculation.dailyCash ?? []).filter((r: D) => r.date > source.asOf && (r.collections > 0 || r.payments > 0)) })
   }}>
-   <Field label="Open-item observation date (UTC)" name="asOf" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+   <div onChange={() => { invalidate(); setReview(null) }}><Field label="Open-item observation date (UTC)" name="asOf" type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></div>
   </Form>
   {review && <>
    <h3>Review open items</h3>

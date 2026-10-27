@@ -4167,7 +4167,7 @@
       "executable": false
     },
     "src/ui/cash-schedule.tsx": {
-      "sha256": "9d88dc8c487bab033527014e7ce2fcc28a9ec26664de25d07a32b8d7b8242314",
+      "sha256": "e21de94a72eb46296e7b51d06cb5ca9e6c46c21484ede3c44975a820121050a6",
       "executable": false
     },
     "src/ui/chart.tsx": {
@@ -4319,7 +4319,7 @@
       "executable": false
     },
     "src/ui/pantry-cash.tsx": {
-      "sha256": "53db61fa8abdbf7a1407db9e0055ffc42a883dd83d32d1ab3cb6e7a20cd64d47",
+      "sha256": "7e315a3befadeb6d23e677608d16da303dc7b0571278c3b56814eafb6a81bd08",
       "executable": false
     },
     "src/ui/pantry.tsx": {
@@ -4479,7 +4479,7 @@
       "executable": false
     },
     "src/ui/weekly-cash.tsx": {
-      "sha256": "2d37c9498159afbdd4ccb3af27cb42d44b372503490313ad30a6e17f8a0f6086",
+      "sha256": "c9a33ddac902184ef2361a65ab07817d6756b887f6172be6f1ef078b80bf0c24",
       "executable": false
     },
     "src/ui/workbook-drivers.tsx": {
