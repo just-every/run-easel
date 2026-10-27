@@ -108,3 +108,98 @@ test('MODEL-008: exact grid operations, preview, split custody, revisions, trace
 
  } finally { await h.close() }
 })
+
+test('Excel refresh reads live filtered cells and write-back follows submission and exact-revision authority', async () => {
+ const h = await harness({ now: () => '2026-01-15T12:00:00.000Z' })
+ try {
+  await h.command('workspace', { name: 'synthetic-easel-1', currency: 'USD', planStart: '2026-01' })
+  const sales = await h.command('department', { name: 'Sales' }), other = await h.command('department', { name: 'Operations' })
+  const line = await h.command('line', { name: 'Revenue', type: 'revenue' })
+  const pay = await h.command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+  const scenario = (await h.get('/api/easel/state')).scenarios[0].id
+  const row = await h.command('schedule', { scenario, name: 'Revenue input', line: line.id, department: sales.id, values: { '2026-01': '100', '2026-02': '200' } })
+  const foreign = await h.command('schedule', { scenario, name: 'Other input', line: line.id, department: other.id, values: { '2026-01': '400' } })
+  await h.command('position', { scenario, title: 'Restricted role', holder: 'Restricted person', department: sales.id, line: pay.id, start: '2026-01', annualSalary: '120000' })
+  const contributor = await h.person('excel-sales@example.test', 'contributor', [sales.id], false)
+  const viewer = await h.person('excel-board@example.test', 'viewer')
+  const view = (id = scenario, cookie = h.owner) => h.get(`/api/easel/scenario/${id}`, cookie)
+  const read = (month = '2026-01', cookie = viewer, whichLine = 'Revenue') => h.get(`/api/easel/excel/${scenario}/value?${new URLSearchParams({ line: whichLine, department: 'Sales', month })}`, cookie)
+  const payload = async (extra = {}) => ({ scenario, revision: (await view()).scenario.revision, schedule: row.id, month: '2026-01', value: '150', ...extra })
+  const before = await view()
+  assert.deepEqual(await read(), { scenario, revision: before.scenario.revision, currency: 'USD', line: line.id, department: sales.id, month: '2026-01', amount: 10000 })
+  const safe = await read('2026-01', viewer, 'Payroll')
+  assert.equal(safe.amount, 1000000)
+  assert.doesNotMatch(JSON.stringify(safe), /Restricted|120000|sources|trace|inputs/)
+  await h.get(`/api/easel/excel/${scenario}/value?line=Revenue&department=Sales&month=2028-01`, viewer, 409)
+  await h.command('excel-write', await payload(), viewer, 403)
+  await h.command('excel-write', await payload(), contributor, 409)
+  await h.stepUp()
+  const issued = await h.send('/api/easel/tokens/issue', { label: 'Excel refusal proof', kind: 'personal', scope: 'write', expiresInSeconds: 86400 }, h.owner)
+  assert.equal(issued.status, 200)
+  const tokenResponse = await h.mf.dispatchFetch(`${h.origin}/api/easel/command/excel-write`, { method: 'POST', headers: { authorization: `Bearer ${issued.value.token}`, 'content-type': 'application/json' }, body: JSON.stringify(await payload()) })
+  assert.equal(tokenResponse.status, 403)
+  assert.match((await tokenResponse.json()).error, /signed-in session/)
+  await h.command('request-submissions', { scenario, departments: [sales.id] })
+  const requested = await payload(), direct = await h.command('excel-write', requested, contributor)
+  assert.equal(direct.mode, 'entry'); assert.equal(direct.scenario.revision, requested.revision + 1)
+  assert.equal((await view(scenario, contributor)).inputs.schedule.find(r => r.id === row.id).values['2026-01'], 15000)
+  assert.equal((await read()).amount, 15000)
+  assert.equal((await view()).inputs.schedule.find(r => r.id === row.id).gridRevisions['2026-01'].by, 'excel-sales@example.test')
+  await h.command('excel-write', requested, contributor, 409)
+  await h.command('excel-write', await payload({ schedule: foreign.id }), contributor, 403)
+  await h.command('excel-write', await payload({ value: 'invalid' }), contributor, 409)
+  await h.command('excel-write', await payload({ month: '2030-01' }), contributor, 409)
+  await h.command('submit', { scenario, department: sales.id }, contributor)
+  const submitted = (await h.get('/api/easel/state')).submissions.find(s => s.department === sales.id)
+  assert.equal(submitted.submittedRevision, direct.scenario.revision)
+  const proposed = await h.command('excel-write', await payload({ value: '175' }), contributor)
+  assert.equal(proposed.mode, 'proposal'); assert.equal(proposed.proposal.proposalStatus, 'submitted')
+  assert.equal(proposed.proposal.branchedFrom.revision, direct.scenario.revision)
+  assert.equal(proposed.proposal.submittedRevision, proposed.proposal.revision)
+  const proposedView = await view(proposed.proposal.id, contributor)
+  assert.equal(proposedView.inputs.schedule.find(r => r.originId === row.originId).values['2026-01'], 17500)
+  assert.equal((await read()).amount, 15000, 'a proposed write never changes its target')
+  await h.command('proposal-promote', { id: proposed.proposal.id, revision: proposed.proposal.revision - 1 }, h.owner, 409)
+  await h.command('return-submission', { scenario, department: sales.id, reason: 'Revise input' })
+  const returned = await h.command('excel-write', await payload({ value: '180' }), contributor)
+  assert.equal(returned.mode, 'entry'); assert.equal((await read()).amount, 18000)
+  await h.command('proposal-promote', { id: proposed.proposal.id, revision: proposed.proposal.revision }, h.owner, 409)
+
+  // Production streaming adapter against real HTTP; the host replaces only the
+  // external Office boundary. Its SUM is deliberately independent of the API.
+  const { excelFunctions } = await import('../public/excel/functions.mjs')
+  let formula, results = new Map(), calculations = 0
+  class CellError { constructor(code, message) { this.code = code; this.message = message } }
+  const host = () => {
+   results = new Map()
+   const runtime = excelFunctions({
+    CustomFunctions: { associate: (name, fn) => { formula = fn }, Error: CellError, ErrorCode: { notAvailable: 'unavailable' } },
+    Excel: { run: async fn => fn({ workbook: { application: { calculate: () => calculations++ } }, sync: async () => {} }) },
+    read: selector => read(selector.month),
+   })
+   const invocations = ['2026-01', '2026-02'].map(month => ({ setResult: n => results.set(month, n) }))
+   invocations.forEach((invocation, i) => formula('Revenue', 'Sales', `2026-0${i + 1}`, scenario, invocation))
+   return { runtime, invocations }
+  }
+  let workbook = host()
+  await workbook.runtime.refresh()
+  assert.deepEqual([...results.values()], [180, 200]); assert.equal(results.get('2026-01') + results.get('2026-02'), 380)
+  await h.command('excel-write', await payload({ value: '220' }))
+  await workbook.runtime.refresh()
+  assert.deepEqual([...results.values()], [220, 200]); assert.equal(results.get('2026-01') + results.get('2026-02'), 420)
+  workbook.invocations.forEach(invocation => invocation.onCanceled())
+  await h.command('excel-write', await payload({ value: '260' }))
+  workbook = host(); await workbook.runtime.open()
+  assert.deepEqual([...results.values()], [260, 200]); assert.equal(results.get('2026-01') + results.get('2026-02'), 460)
+  assert.equal(calculations, 3)
+  await h.command('member', { email: 'excel-board@example.test', name: 'Board', role: 'viewer', active: false })
+  await assert.rejects(workbook.runtime.refresh(), /403/)
+  assert.ok([...results.values()].every(value => value instanceof CellError), 'revoked reads clear stale successful amounts')
+  await h.command('submit', { scenario, department: sales.id }, contributor)
+  const approved = await h.command('approve-budget', { scenario, revision: (await view()).scenario.revision })
+  await h.command('excel-write', await payload(), contributor, 409)
+  const forecastView = await view(approved.forecast.id)
+  const kept = await h.command('reforecast-save', { from: approved.forecast.id, revision: forecastView.scenario.revision, name: 'Kept forecast' })
+  await h.command('excel-write', { ...(await payload()), scenario: kept.id, revision: kept.revision }, contributor, 409)
+ } finally { await h.close() }
+})

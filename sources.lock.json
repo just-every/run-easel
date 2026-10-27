@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "ce416d53d67a9833dacc18cee0743236aeae2d2d7b0380b99ce79335786de165",
+      "sha256": "86bbb143d8339802656741ddec6d33f565b77f09641629ef8b44d7264f23c459",
       "executable": false
     },
     ".gitignore": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "ec77ea05c2968a0ea5bea79d8a90f4c906fde3da6d972336d2f1398f10f88dfd",
+      "sha256": "e51687d1dd6d73c36eac5821982f8e1885a15cb11a29d3d625164cd5ee78d4d9",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "7efa5cf14b828d235433371141816663cd2e783bb097a7be8ebe7d05d7aa69d7",
+      "sha256": "ebf9f3a0dbdea65b01b601e626f9d39b80c8c1ee2cbd39e2f9a341ffbc4907c6",
       "executable": false
     },
     "DEMO.md": {
@@ -180,6 +180,10 @@
     },
     "docs/enterprise-identity.md": {
       "sha256": "c9b4f9b72fd9196e1c3c31788e765d4f914bd1355812758cf3e653caecb221c6",
+      "executable": false
+    },
+    "docs/excel-bridge.md": {
+      "sha256": "db6d00de80d2d71f66b2a579f2b996f29061015b5f7783a9b750bd242e7f8922",
       "executable": false
     },
     "docs/first-plan.md": {
@@ -694,6 +698,10 @@
       "sha256": "ede76b7fca8dc0191550a40056e8d8fd36efc4f61b862d1e4054e0d10b1b41dc",
       "executable": false
     },
+    "public/excel/functions.mjs": {
+      "sha256": "1e98111f3953cc01b04af415eac0226b819b0d29ed9575d614cfc74128edb5bc",
+      "executable": false
+    },
     "public/favicon.ico": {
       "sha256": "a472c00c4faa239fea69dbd09ed610d6d85625d011a24fa7b602bb6aa766432d",
       "executable": false
@@ -1171,7 +1179,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "43cd7eba042131a1734d24617e4e4c0186abf323266eee82b86d1c5d4857b237",
+      "sha256": "01ebbc744322b89ba2ab926491cccbdb110d253ce3437650b5ad481ed95164da",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1528,6 +1536,10 @@
     },
     "src/easel/erasure.ts": {
       "sha256": "95a92a2fb1fca5ad0b81c1673e686b3a5a21dc127a8706854fb5d0f417059141",
+      "executable": false
+    },
+    "src/easel/excel.ts": {
+      "sha256": "d3469516dfb303e8a63b9e6d751ba18ec09ce46157c5241c06f51f92a96465e1",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -4742,6 +4754,10 @@
       "sha256": "3c726ab2ac07083c5804d280762465b832389ef619c55ab6fbfa08669679d45d",
       "executable": false
     },
+    "tests/excel-browser.mjs": {
+      "sha256": "566b192333f6439ebf6df2a7c5ecd56a41f474025bd7853f155b34e834f74e18",
+      "executable": false
+    },
     "tests/export-browser-journey.mjs": {
       "sha256": "a754a0e4059cd0b323403b6f5eb0ab00690437be1710872c11e2fd530d0ab146",
       "executable": false
@@ -4819,7 +4835,7 @@
       "executable": false
     },
     "tests/grid.test.mjs": {
-      "sha256": "f772f47b1e22896faa05376c61e9463a3342234ccc8c9cb1683abec64f7b84d3",
+      "sha256": "7abf15131d3bc72a77ac67d6f5c9476e898667ebd60ade0444083165d6c68c0a",
       "executable": false
     },
     "tests/groups-browser.mjs": {

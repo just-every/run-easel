@@ -66,6 +66,7 @@ import { gaugeStatus, gaugeConnection } from './gauge-connection'
 import { gaugeUtilization } from './gauge-utilization'
 import { starterModels } from './starter-models'
 import { grid } from './grid'
+import { excelValues, excelWrite } from './excel'
 import { historyBudget } from './history-budget'
 import { dashboards, dashboardList, dashboardView } from './dashboards'
 import { dashboardWorkbook } from './dashboard-workbook'
@@ -508,6 +509,7 @@ api.get('/api/office/manifest/:host', c => {
  const host = choice(c.req.param('host'), ['PowerPoint', 'Word'] as const, 'Office host')
  return c.body(officeManifest(runtimeBindings(c.env).AUTH_ORIGIN, host), 200, { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'no-store', 'content-disposition': `attachment; filename=easel-${host.toLowerCase()}.xml` })
 })
+api.get('/api/easel/excel/:id/value', c => read(c, ctx => excelValues(ctx, c.req.param('id'), c.req.query())))
 api.get('/api/easel/dashboards/:id/office', c => read(c, ctx => officeReport(ctx, c.req.param('id'), c.req.query())))
 api.get('/api/easel/dashboards/:id/office.xlsx', async c => {
  const ctx = await open(c), bytes = await officeWorkbook(ctx, c.req.param('id'), c.req.query())
@@ -674,7 +676,7 @@ api.post('/api/easel/connections/pack-stores/:store/:op', async c => {
  return c.json(await packStoreStatus(ctx))
 })
 
-const commands = [sourceGuardCommands, ownerQuestions, leverCommands, constraintCommands, biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
+const commands = [sourceGuardCommands, ownerQuestions, leverCommands, constraintCommands, biDropCommands, packTemplateCommands, learningCommands, approvalChains, entityCommands, savedReportCommands, savedReportScheduleCommands, groups, dimensionCommands, dimensionMapping, weeklyCashCommand, currencyRates, ledgerAllocation, workbookDrivers, erasure, starterModels, excelWrite, grid, setup, historyBudget, dashboards, sandboxes, plan, cycle, calendar, review, followup, reforecasts, longRange, parallelMonth, metricRules, cashAlerts, departmentStatements]
 
 api.post('/api/easel/command/:op', async c => {
  const ctx = await open(c)
