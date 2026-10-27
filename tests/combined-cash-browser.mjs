@@ -71,6 +71,8 @@ try {
  const review = () => action('/pantry/cash', () => panel().getByRole('button', { name: 'Review Pantry open items', exact: true }).click())
  const preview = (status = 200) => action('/pantry/cash-forecast', () => panel().getByRole('button', { name: 'Preview combined cash', exact: true }).click(), status)
  const allocations = async () => {
+  const details = panel().locator('details').filter({ has: page.getByText('Review planned cash replacements', { exact: true }) })
+  if (await details.getAttribute('open') === null) await details.locator('summary').click()
   await panel().getByLabel('Replace collections on 2026-02-22', { exact: true }).fill('50.00')
   await panel().getByLabel('Replace payments on 2026-02-15', { exact: true }).fill('20.00')
  }
@@ -88,6 +90,8 @@ try {
   const items = panel().getByRole('table', { name: 'Pantry open cash items', exact: true })
   assert.match(await items.innerText(), /12 days late/); assert.match(await items.innerText(), /50.00/); assert.match(await items.innerText(), /20.00/)
   await noOverflow(page, `Combined source review ${width}`); await panel().screenshot({ path: join(evidence, `source-review-${width}.png`) })
+  const allocationTable = panel().getByRole('table', { name: 'Dated planned cash replacements', exact: true })
+  if (width === 1440) assert.ok((await allocationTable.boundingBox()).width > 900, 'Dated cash allocation uses the available review width')
   await allocations(); const combined = await preview()
   assert.deepEqual(combined.weeks.slice(0, 4).map(w => [w.collections, w.payments, w.adjustment, w.closing]), [[0, 0, 123, 990123], [0, 7000, 0, 983123], [5000, 1000, 0, 987123], [0, 15000, 0, 972123]])
   assert.equal(combined.weeks.length, 13); assert.equal(combined.reconciliation[0].difference, 123)
@@ -102,6 +106,7 @@ try {
   assert.equal(book.getWorksheet('Weekly cash').getCell('H4').value, 'Reviewed timing')
   assert.equal(book.getWorksheet('Weekly cash').getCell('G7').value.result, 972123)
   assert.equal(book.getWorksheet('Reconciliation').getCell('F3').value.result, 123)
+  await panel().getByText('Review planned cash replacements', { exact: true }).click()
   await panel().getByLabel('Additional source collections', { exact: true }).fill('0.01')
   assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)
   await preview(400); assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)
@@ -131,6 +136,7 @@ try {
   assert.equal(bankBook.getWorksheet('Reconciliation').getCell('F3').value.result, 10123)
   assert.deepEqual(await get(`scenario/${scenario}`), unchanged, 'Combined review and exports preserve the monthly plan and its revision')
   await cmd('weekly-cash-override', { scenario, start: '2026-02-02', adjustment: '2.34', note: 'New revision from finance' })
+  await panel().getByText('Review planned cash replacements', { exact: true }).click()
   await preview(409)
   assert.match(await panel().innerText(), /scenario changed after review/)
   assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)

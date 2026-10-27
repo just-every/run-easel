@@ -41,7 +41,7 @@ export function PantryCashReview({ scenario, basis, start, render }: { scenario:
     {review.source.events.map((e: D) => <tr key={`${e.kind}-${e.id}`}><td className="wrap">{e.kind === 'invoice' ? 'Invoice' : 'Bill'} {e.id}</td><td>{date(e.date)}</td><td className="num">{money(e.amount, review.source.currency)}</td><td>{e.kind === 'invoice' ? `${e.lateDays} days late · ${e.paidInvoiceCount} paid invoices` : 'Due date'}</td></tr>)}
    </Table>
    {!review.source.complete ? <div role="alert"><p>Resolve every open-item date in Pantry before combining cash.</p><ul>{review.source.unresolved.map((e: D) => <li key={`${e.kind}-${e.id}`}>{e.id}: {e.reason}</li>)}</ul></div> :
-    <Form key={review.source.digest + review.revision} submit="Preview combined cash" onSubmit={async values => {
+    <details open={!result}><summary>Review planned cash replacements</summary><Form key={review.source.digest + review.revision} submit="Preview combined cash" onSubmit={async values => {
      invalidate()
      const replacements = review.days.map((r: D, i: number) => ({ date: r.date, collections: minor(values[`collections-${i}`]), payments: minor(values[`payments-${i}`]) })).filter((r: D) => r.collections || r.payments)
      const body = { scenario, revision: review.revision, asOf: review.source.asOf, sourceFingerprint: review.source.digest, basis, ...(start ? { start } : {}), replacements, additionalCollections: minor(values.additionalCollections), additionalPayments: minor(values.additionalPayments) }
@@ -49,17 +49,17 @@ export function PantryCashReview({ scenario, basis, start, render }: { scenario:
      const next = await cashJson('cash-forecast', body)
      if (current === generation.current) { setRequest(body); setResult(next) }
     }}>
-     <div onChange={invalidate}>
+     <div className="wide" onChange={invalidate}>
       <h3>Allocate source cash</h3>
       <p>Enter how much of each dated plan amount the source replaces. Mark the rest explicitly as additional cash. Every source cent must be accounted for; no automatic matching is applied.</p>
       <p>Source collections: {money(review.source.events.filter((e: D) => e.kind === 'invoice').reduce((n: number, e: D) => n + e.amount, 0), review.source.currency)} · source payments: {money(review.source.events.filter((e: D) => e.kind === 'bill').reduce((n: number, e: D) => n + e.amount, 0), review.source.currency)}</p>
       <Table caption="Dated planned cash replacements" heads={['Planned cash date', 'Planned collections', 'Replace collections', 'Planned payments', 'Replace payments']}>
-       {review.days.map((r: D, i: number) => <tr key={r.date}><td>{date(r.date)}</td><td className="num">{money(r.collections, review.source.currency)}</td><td><Field label={`Replace collections on ${r.date}`} name={`collections-${i}`} defaultValue="0.00" /></td><td className="num">{money(r.payments, review.source.currency)}</td><td><Field label={`Replace payments on ${r.date}`} name={`payments-${i}`} defaultValue="0.00" /></td></tr>)}
+       {review.days.map((r: D, i: number) => <tr key={r.date}><td>{date(r.date)}</td><td className="num">{money(r.collections, review.source.currency)}</td><td><input aria-label={`Replace collections on ${r.date}`} name={`collections-${i}`} defaultValue="0.00" inputMode="decimal" /></td><td className="num">{money(r.payments, review.source.currency)}</td><td><input aria-label={`Replace payments on ${r.date}`} name={`payments-${i}`} defaultValue="0.00" inputMode="decimal" /></td></tr>)}
       </Table>
       <Field label="Additional source collections" name="additionalCollections" defaultValue="0.00" />
       <Field label="Additional source payments" name="additionalPayments" defaultValue="0.00" />
      </div>
-    </Form>}
+    </Form></details>}
   </>}
   {exportError && <p role="alert" className="error">{exportError}</p>}
   {result && request && <div aria-label="Combined cash forecast">

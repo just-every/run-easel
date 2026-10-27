@@ -4319,7 +4319,7 @@
       "executable": false
     },
     "src/ui/pantry-cash.tsx": {
-      "sha256": "7ab512da64b965ca2cedcc14f66bc0157931230dcd6a678d9a19c8472f4f73e3",
+      "sha256": "884bfecca8e6c14e0fc575c218d54b45c225ddaec8505acc1e36d97357335420",
       "executable": false
     },
     "src/ui/pantry.tsx": {
@@ -4627,7 +4627,7 @@
       "executable": false
     },
     "tests/combined-cash-browser.mjs": {
-      "sha256": "9d6884eac3636433b099dbd72e4b59fbfdc818718fd26e307b7a3079b738e2d7",
+      "sha256": "b67fa5cb881bd3427e1ed5d3aa138dcfefa52b9d09463c4da3b019cd93311f57",
       "executable": false
     },
     "tests/commentary-model-browser.mjs": {
