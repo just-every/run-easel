@@ -10,6 +10,10 @@ const track = page => { const pending = new Set(); const mine = r => r.url().inc
 const settle = async page => { const deadline = Date.now() + 15000; for (let quiet = 0; quiet < 3;) { assert.ok(Date.now() < deadline, `Spend page did not settle; ${page.inflight()} requests remain`); await page.waitForTimeout(100); quiet = page.inflight() === 0 ? quiet + 1 : 0 } }
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-spend')
 await mkdir(evidence, { recursive: true })
+const readableText = async page => {
+ const small = await page.locator('body').evaluate(body => [...body.querySelectorAll('*')].filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden' && [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim() && (() => { const range = document.createRange(); range.selectNodeContents(n); const box = range.getBoundingClientRect(); return box.width > 0 && box.height > 0 })()) && parseFloat(getComputedStyle(el).fontSize) < 13).map(el => ({ text: el.textContent.trim().slice(0,80), size: getComputedStyle(el).fontSize })))
+ assert.deepEqual(small, [], 'Visible spend screen text is readable at the minimum size')
+}
 const provider = spendProvider(), runtime = await builtBrowserRuntime({ https: true, bindings: { PURSE_ORIGIN: 'https://purse.example.test', COASTER_ORIGIN: 'https://coaster.example.test' }, outbound: provider.outbound })
 let browser
 try {
@@ -21,7 +25,7 @@ try {
  const f = await spendFixture({ command: (op, b) => send('/api/easel/command/' + op, b), get: p => send(p) })
  const card = name => page.locator('section.card').filter({ has: page.getByRole('heading', { name, exact: true }) })
  const action = async (suffix, run) => { console.log('Native spend action:', suffix); const pending = page.waitForResponse(r => r.url().endsWith(suffix) && r.request().method() === 'POST'); await run(); const r = await pending.catch(async error => { console.error('Spend screen alerts:', await page.getByRole('alert').allTextContents()); throw error }); assert.equal(r.status(), 200, await r.text()); await settle(page); return r.json() }
- const capture = async (scope, name, focus) => { for (const width of [1440,390]) { await page.setViewportSize({ width, height: 1000 }); await settle(page); if (focus) { await focus.evaluate(el => el.blur()); await focus.focus(); await settle(page) } await noOverflow(page, `${name} ${width}`); await scope.screenshot({ path: join(evidence, `${name}-${width}.png`) }) } await page.setViewportSize({ width: 1440, height: 1000 }) }
+ const capture = async (scope, name, focus) => { for (const width of [1440,390]) { await page.setViewportSize({ width, height: 1000 }); await settle(page); if (focus) { await focus.evaluate(el => el.blur()); await focus.focus(); await settle(page) } await noOverflow(page, `${name} ${width}`); if (width === 1440) await readableText(page); await scope.screenshot({ path: join(evidence, `${name}-${width}.png`) }) } await page.setViewportSize({ width: 1440, height: 1000 }) }
  await page.goto(runtime.origin + '/app?tab=settings')
  for (const [p, label] of [['ramp','Ramp'],['purse','Purse'],['coaster','Coaster'],['brex','Brex']]) {
   const scope = card(label + ' spend connection')

@@ -146,7 +146,7 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
     const entered = batch ? match.amounts?.[period] : match.amount
     if (entered == null) requireThat(other.amount === row.amount, 'Unequal source actuals require an explicit matched amount', 409)
     const amount = entered == null ? row.amount : cents(entered, 'Duplicate matched amount', { negative: true })
-    requireThat(amount === 0 ? row.amount === 0 || other.amount === 0 : amount > 0 ? row.amount > 0 && other.amount > 0 : row.amount < 0 && other.amount < 0, 'Duplicate parts must retain both source directions', 409)
+    requireThat(amount === 0 || (amount > 0 ? row.amount > 0 && other.amount > 0 : row.amount < 0 && other.amount < 0), 'Duplicate parts must retain both source directions', 409)
     const total = addMoney(duplicateTotals.get(match.source) ?? 0, amount)
     requireThat(Math.abs(total) <= Math.abs(other.amount), 'Duplicate parts exceed the independent source actual; no payment may be removed twice', 409)
     duplicateTotals.set(match.source, total)

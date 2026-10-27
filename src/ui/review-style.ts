@@ -15,7 +15,7 @@ export const reviewStyle = `
 @media(max-width:900px){
  .variance-head{display:none}
  .variance-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px}
- .variance-line{grid-column:1/-1}.variance-number small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+ .variance-line{grid-column:1/-1}.variance-number small{display:block;font-size:13px;color:var(--muted);font-weight:400}
  .variance-number{font-size:13px}.variance-status{grid-column:1/-1}
 }
 `

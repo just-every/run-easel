@@ -21,6 +21,7 @@ h1,h2,h3{font-family:var(--display);color:var(--ink);margin:0;text-wrap:balance}
 h2{font-size:21px;line-height:1.2;font-weight:800;letter-spacing:-.025em;margin:0 0 6px}
 h3{font-size:16px;line-height:1.3;font-weight:700;letter-spacing:-.01em;margin:24px 0 8px}
 p{margin:8px 0}
+small{font-size:13px}
 .muted{color:var(--muted)}
 .error{color:var(--red-ink)}
 .date-token{white-space:nowrap}
@@ -153,7 +154,7 @@ const tables = `
 table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.3;font-variant-numeric:tabular-nums;background:var(--surface)}
 caption{text-align:left;font-size:13px;font-weight:600;padding:4px 0 8px;color:var(--muted)}
 th,td{border-bottom:1px solid var(--rule);padding:9px 12px;text-align:left;vertical-align:middle;white-space:nowrap}
-thead th{font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+thead th{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.01em}
 th[scope=rowgroup]{font-weight:700;padding-top:14px;color:var(--ink)}
 td.indent{padding-left:28px}
 td.num,th.num{text-align:right}

@@ -226,6 +226,18 @@ test('Reviewed Brex settlements and exact recurring allocations replace all sele
  const splitBill = {...input,mapping:[...input.mapping,{...input.mapping[1],source:'purse:synthetic-easel-102--synthetic-easel-623',allocations:{'2026-01':'100.00','2026-02':'0.00'},duplicateOf:'ramp:synthetic-easel-101',duplicateAmounts:{'2026-01':'100.00','2026-02':'0.00'}}]}
  const scheduledMatch = await post('preview',splitBill)
  assert.deepEqual(scheduledMatch.cells.map(r=>[r.month,r.actual,r.committed,r.remaining]),[['2026-01',12025,17975,70000],['2026-02',7000,13000,80000]],'Duplicate parts reconcile only the explicitly matching monthly allocations')
+ const deferredOverlap = structuredClone(splitBill)
+ deferredOverlap.mapping[0].allocations = {'2026-01':'60.25','2026-02':'60.00'}
+ deferredOverlap.mapping[4].allocations = {'2026-01':'50.00','2026-02':'50.00'}
+ deferredOverlap.mapping[4].duplicateAmounts = {'2026-01':'0.00','2026-02':'50.00'}
+ const deferredMatch = await post('preview',deferredOverlap)
+ assert.deepEqual(deferredMatch.cells.map(r=>[r.month,r.actual,r.committed,r.remaining,r.forecast]),[['2026-01',11025,18975,70000,30000],['2026-02',13000,7000,80000,20000]],'A zero matched part leaves both positive January actuals intact and removes only the reviewed February overlap')
+ assert.deepEqual(deferredMatch.cells.map(r=>r.rows.find(r=>r.id.endsWith('--synthetic-easel-623')).duplicateMatches),[[{source:'ramp:synthetic-easel-101',amount:0}],[{source:'ramp:synthetic-easel-101',amount:5000}]])
+ assert.deepEqual(await h.get('/api/easel/scenario/'+f.forecast.id),before,'Deferred-overlap preview leaves the forecast unchanged')
+ const changedOverlap = structuredClone(deferredOverlap); changedOverlap.mapping[4].duplicateAmounts['2026-02']='49.99'
+ await post('accept',{...changedOverlap,fingerprint:deferredMatch.fingerprint},409)
+ const overCapacity = structuredClone(deferredOverlap); overCapacity.mapping[4].duplicateAmounts['2026-02']='60.01'; await post('preview',overCapacity,409)
+ const reversedOverlap = structuredClone(deferredOverlap); reversedOverlap.mapping[4].duplicateAmounts['2026-02']='-50.00'; await post('preview',reversedOverlap,409)
  const shifted = structuredClone(splitBill); shifted.mapping[4].duplicateAmounts={'2026-01':'99.00','2026-02':'1.00'}; await post('preview',shifted,409)
  const incompleteMatch = structuredClone(splitBill); delete incompleteMatch.mapping[4].duplicateAmounts['2026-02']; await post('preview',incompleteMatch,409)
  provider.state.bills = []
@@ -248,6 +260,15 @@ test('Reviewed Brex settlements and exact recurring allocations replace all sele
  preview = await post('preview',fresh); await post('accept',{...fresh,fingerprint:preview.fingerprint})
  accepted = await h.get('/api/easel/scenario/' + f.forecast.id)
  assert.deepEqual(accepted.inputs.expense[0].spendMonths,{'2026-01':30000,'2026-02':20000},'Repeated source reads replace rather than append')
+ provider.state.bills = [{id:'synthetic-easel-623',reference:'BILL-623',currency:'USD',totalMinor:10000,paymentStatus:'paid',paymentStatusAt:'2026-01-16T12:00:00Z'}]
+ const deferredFresh = {...deferredOverlap,revision:accepted.scenario.revision}
+ const deferredPreview = await post('preview',deferredFresh)
+ await post('accept',{...deferredFresh,fingerprint:deferredPreview.fingerprint})
+ const deferredAccepted = (await h.get('/api/easel/spend'))[0]
+ assert.deepEqual(deferredAccepted.cells.map(r=>[r.month,r.actual,r.committed,r.remaining,r.forecast]),[['2026-01',11025,18975,70000,30000],['2026-02',13000,7000,80000,20000]],'Accepting a later-month overlap persists each independently reconciled cell')
+ assert.deepEqual(deferredAccepted.cells.map(r=>r.rows.find(r=>r.id.endsWith('--synthetic-easel-623')).countedAmount),[5000,0])
+ assert.deepEqual((await h.get('/api/easel/scenario/'+f.forecast.id)).inputs.expense[0].spendMonths,{'2026-01':30000,'2026-02':20000})
+ provider.state.bills = []
  const otherLine = await h.command('line',{name:'Other supplier cost',type:'operating-expense'})
  await h.command('expense',{scenario:f.forecast.id,name:'Other assumption',kind:'recurring',line:otherLine.id,department:f.department.id,start:'2026-01',amount:'1000'})
  const updated = await h.get('/api/easel/scenario/' + f.forecast.id), other = updated.inputs.expense.find(r => r.line === otherLine.id)
