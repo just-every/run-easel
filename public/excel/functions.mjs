@@ -5,7 +5,7 @@ export function excelFunctions({ CustomFunctions, Excel, read, readReport }) {
  async function update(items) {
   const versions = items.map(item => item.version = (item.version ?? 0) + 1)
   const current = (item, i) => active.has(item) && item.version === versions[i]
-  await Promise.all(items.map(async (item, i) => {
+  const results = await Promise.allSettled(items.map(async (item, i) => {
    try {
     const value = await (item.report ? readReport(item.selector) : read(item.selector))
     if (current(item, i)) item.invocation.setResult(item.report ? value.table : value.amount / 100)
@@ -18,6 +18,8 @@ export function excelFunctions({ CustomFunctions, Excel, read, readReport }) {
     throw error
    }
   }))
+  const refused = results.find(result => result.status === 'rejected')
+  if (refused) throw refused.reason
  }
  function register(selector, invocation, report = false) {
   const item = { selector, invocation, report }
