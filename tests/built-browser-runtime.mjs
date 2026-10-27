@@ -12,10 +12,16 @@ export async function builtBrowserRuntime(options = {}) {
  await enumerate(workerDir)
  const bootstrap = 'synthetic-easel-bootstrap-token-01234567890123456789'
  const mf = new Miniflare({ ...convertV4MiniflareOptions({
-  host: '127.0.0.1', port, inspectorPort: 0, ...(options.https ? { https: true } : {}), modules: [entry, ...scripts.filter(p => p !== entry)].map(path => ({ type: 'ESModule', path })), modulesRoot: workerDir,
+  host: '127.0.0.1', port, inspectorPort: 0, ...(options.https ? { https: true } : {}), modules: await Promise.all([entry, ...scripts.filter(p => p !== entry)].map(async path => {
+   if (!options.now || path !== entry) return { type: 'ESModule', path }
+   const contents = await readFile(path, 'utf8'), boundary = /async function currentTime\([^)]*\) \{[^}]*\}/g
+   if ([...contents.matchAll(boundary)].length !== 1) throw new Error('Expected one business-clock boundary')
+   return { type: 'ESModule', path, contents: contents.replace(boundary, "async function currentTime(env) { return (await env.TEST_CLOCK.fetch('https://clock/')).text() }") }
+  })), modulesRoot: workerDir,
   compatibilityDate: config.compatibility_date, compatibilityFlags: config.compatibility_flags, d1Databases: { DB: 'easel-built-browser' },
   bindings: { AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'synthetic-easel-session-secret-01234567890123456789', SETUP_TOKEN: bootstrap, MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>', ...(typeof options.bindings === 'function' ? options.bindings(origin) : options.bindings) },
   assets: { directory: resolve(workerDir, config.assets.directory), binding: 'ASSETS', run_worker_first: true, routerConfig: { has_user_worker: true }, assetConfig: { html_handling: config.assets.html_handling, not_found_handling: config.assets.not_found_handling } },
+  ...(options.now ? { serviceBindings: { TEST_CLOCK: async () => new Response(options.now()) } } : {}),
   ...(options.outbound ? { outboundService: options.outbound } : {}),
  }), resourcePersistencePath: directory })
  try {

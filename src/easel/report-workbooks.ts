@@ -1,3 +1,4 @@
+import { gaugeFreshnessSheet } from './gauge-freshness-workbook'
 import { fiscalSheets } from './fiscal-workbook'
 import { workingCapitalSheet } from './working-capital-workbook'
 import { contractSheets } from './contract-workbook'
@@ -54,6 +55,7 @@ export function scenarioSheets(view: Data, prefix = '', department = ''): Sheet[
  sheets.push(...fiscalSheets(view, rows, prefix, department))
  const historical = historySheet(view, prefix, department)
  if (historical) sheets.push(historical)
+ sheets.push(gaugeFreshnessSheet((view.gaugeFreshness ?? []).filter((r: Data) => !department || r.department === department), prefix))
  return sheets
 }
 export const scenarioWorkbook = (view: Data, department = '') => workbook(scenarioSheets(view, '', department))
@@ -74,9 +76,9 @@ export function varianceWorkbook(view: Data): Uint8Array {
  for (const v of view.rows) { const r = rows.length + 1; rows.push([v.lineName, v.departmentName, v.actual, v.budget, formula(`C${r}-D${r}`, v.variance), v.priorForecast, v.priorForecast === null ? null : formula(`C${r}-F${r}`, v.forecastVariance), v.explanation?.text ?? '', v.citations.map((c: Data) => `${c.file} line ${c.line}`).join('; ')]) }
  const r = rows.length + 1
  rows.push(['Total', '', ...['C', 'D', 'E', 'F', 'G'].map((col, i) => total(Array.from({ length: r - 3 }, (_, n) => n + 3), col, sum(view.rows.map((v: Data) => [v.actual, v.budget, v.variance, v.priorForecast ?? 0, v.forecastVariance ?? 0][i]))))])
- return workbook([{ name: 'Variances', rows }, ...(view.versions?.length ? [versionComparisonSheet(view)] : [])])
+ return workbook([gaugeFreshnessSheet(view.gaugeFreshness), { name: 'Variances', rows }, ...(view.versions?.length ? [versionComparisonSheet(view)] : [])])
 }
 export function scenarioCsv(view: Data): string {
  const quote = (v: unknown) => { const s = String(v ?? ''); return `"${(/^[=+\-@]/.test(s) ? "'" : '') + s.replace(/"/g, '""')}"` }
- return [['month', 'line', 'department', 'amount_minor', 'basis'], ...view.calculation.cells.map((c: Data) => [c.month, view.lines.find((l: Data) => l.id === c.line)?.name ?? c.line, view.departments.find((d: Data) => d.id === c.department)?.name ?? '', c.amount, c.basis])].map(row => row.map(quote).join(',')).join('\r\n') + '\r\n'
+ return [['month', 'line', 'department', 'amount_minor', 'basis', 'gauge_freshness'], ...view.calculation.cells.map((c: Data) => [c.month, view.lines.find((l: Data) => l.id === c.line)?.name ?? c.line, view.departments.find((d: Data) => d.id === c.department)?.name ?? '', c.amount, c.basis, JSON.stringify((view.gaugeFreshness ?? []).filter((r: Data) => r.month === c.month && r.line === c.line && r.department === c.department))])].map(row => row.map(quote).join(',')).join('\r\n') + '\r\n'
 }

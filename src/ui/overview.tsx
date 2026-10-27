@@ -1,3 +1,4 @@
+import { GaugeFreshness } from './gauge-freshness'
 import { WeeklyCash } from './weekly-cash'
 import { FiscalSummary } from './fiscal-summary'
 import { Headcount } from './headcount'
@@ -64,6 +65,7 @@ export function Overview({ state, refresh }: Shared) {
    </Dots>}
   </div>
   {error && <p role="alert" className="error">{error}</p>}
+  <GaugeFreshness rows={view?.gaugeFreshness} department={department} />
   <div className={trace ? 'overview has-trace' : 'overview'}>
    <div className="overview-main">
     {!department && view?.cashHealth && <CashHealth health={view.cashHealth} currency={currency} />}

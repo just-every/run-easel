@@ -122,6 +122,7 @@ jobs:
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/weekly-cash-browser.mjs --existing-build
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/excel-browser.mjs
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/spend-browser.mjs
+          EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/gauge-schedule-browser.mjs
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-approval-chains
 

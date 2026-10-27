@@ -1,3 +1,4 @@
+import { GaugeFreshness } from './gauge-freshness'
 import { SpendReview } from './spend'
 import { AgentGovernance } from './agent-governance'
 import { Analyst } from './analyst'
@@ -61,6 +62,7 @@ export function Review({ state, refresh }: Shared) {
   </section>
   {v && <section className="card">
    <h2>Variances, {v.label}</h2>
+   <GaugeFreshness rows={v.gaugeFreshness} />
    <p className="muted">Against the approved budget (revision {v.budget.revision}, approved by <span title={v.budget.approvedBy?.email}>{v.budget.approvedBy?.name ?? <Person state={state} email={v.budget.approvedBy?.email} />}</span>) and the forecast kept before the month closed. Drafts cite accepted rows; anything else is marked as a hypothesis.</p>
    <div className="variance-head" aria-hidden="true"><span>Line</span><span>Actual</span><span>Budget</span><span>Variance</span><span className="variance-prior">Prior forecast</span><span>Explanation</span></div>
    {v.rows.map((r: D) => <details key={r.key} className="card-row">

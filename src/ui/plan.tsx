@@ -1,3 +1,4 @@
+import { GaugeFreshness } from './gauge-freshness'
 import { PositionPayrollFields } from './position-payroll-fields'
 import { DimensionPlan, DimensionFields, dimensionValues } from './dimensions'
 import { WorkbookDrivers } from './workbook-drivers'
@@ -48,6 +49,7 @@ export function Plan({ state, refresh }: Shared) {
  const form = (kind: string) => (editing?.kind === kind ? editing.row : null)
  const sc = view?.scenario
  return <>
+  <GaugeFreshness rows={view?.gaugeFreshness} />
   <div className="row spread controls"><ScenarioPicker scenarios={editable} value={id} onChange={v => { setId(v); setEditing(null); setNewDimensions({}) }} />{sc && <span>Revision {sc.revision}</span>}</div>
   {sc?.kind === 'proposal' && <p className="notice">Proposal: {sc.request} — changes here stay in this proposal until finance promotes it.</p>}
 
