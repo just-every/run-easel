@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "9a99b9e1b4eaf5a7f1cd14116e535a127eb2d4bfd90bd4d83482d9183415428e",
+      "sha256": "c27643da9aa0f63aafcde058049f0587deb23aaf2d3b058e432f4289dd28df43",
       "executable": false
     },
     ".gitignore": {
@@ -4166,6 +4166,10 @@
       "sha256": "656feda020f4e14b3a3202669d17d2c882d8e6d16713bd65375ceea1b94b7a99",
       "executable": false
     },
+    "src/ui/cash-schedule.tsx": {
+      "sha256": "9d88dc8c487bab033527014e7ce2fcc28a9ec26664de25d07a32b8d7b8242314",
+      "executable": false
+    },
     "src/ui/chart.tsx": {
       "sha256": "18a683f8085d67c1a80a0f4b25bfb6260ce053756c6beb662e53b9e4e2e85555",
       "executable": false
@@ -4312,6 +4316,10 @@
     },
     "src/ui/pack-tools.tsx": {
       "sha256": "c187c21e3aa1784d18d1ef76b4f24d76c7174691fb8fa8ade4c361e88d74aac1",
+      "executable": false
+    },
+    "src/ui/pantry-cash.tsx": {
+      "sha256": "53db61fa8abdbf7a1407db9e0055ffc42a883dd83d32d1ab3cb6e7a20cd64d47",
       "executable": false
     },
     "src/ui/pantry.tsx": {
@@ -4471,7 +4479,7 @@
       "executable": false
     },
     "src/ui/weekly-cash.tsx": {
-      "sha256": "7132a17d58c48e2cb73d7ee455cb104f1284710ad6df0c562fbeb848933c11f0",
+      "sha256": "2d37c9498159afbdd4ccb3af27cb42d44b372503490313ad30a6e17f8a0f6086",
       "executable": false
     },
     "src/ui/workbook-drivers.tsx": {
@@ -4616,6 +4624,10 @@
     },
     "tests/cash-health.test.mjs": {
       "sha256": "71c085340ee2875344717f88c4ba3a08c25253a9789f93d778e3d4543c28b057",
+      "executable": false
+    },
+    "tests/combined-cash-browser.mjs": {
+      "sha256": "f5ab8093b5efb87aba36bf3a1172f8f2e831e73de6798e5c7407fd49e6701968",
       "executable": false
     },
     "tests/commentary-model-browser.mjs": {
