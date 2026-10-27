@@ -1,6 +1,7 @@
 // Excel uses native session authority and the same filtered model and grid save.
 import { requireDepartment, requireMember } from './access'
 import type { Context } from './context'
+import { officeReport } from './office-report'
 import { grid } from './grid'
 import { plan } from './plan'
 import { scenarioAccess } from './scenario-access'
@@ -8,6 +9,8 @@ import { scenarioView } from './views'
 import { all, find, get, integer, requireThat, type Data } from './types'
 
 export async function excelValues(c: Context, id: string, input: Data) {
+ requireMember(c.x)
+ requireThat(!c.x.actor.token, 'Use your signed-in session for Excel reads', 403)
  const view = await scenarioView(c, id)
  const select = (items: Data[], selector: unknown, label: string) => {
   const matches = items.filter(item => item.id === selector || item.name === selector)
@@ -21,6 +24,13 @@ export async function excelValues(c: Context, id: string, input: Data) {
  requireThat(cells.length === 1, 'This cell is unavailable in your current view', 409)
  // No input, source, trace, name or compensation detail crosses this door.
  return { scenario: id, revision: view.scenario.revision, currency: view.calculation.currency, line, department, month: input.month, amount: cells[0].amount }
+}
+
+export async function excelReport(c: Context, id: string, input: Data) {
+ requireMember(c.x)
+ requireThat(!c.x.actor.token, 'Use your signed-in session for Excel reads', 403)
+ const report = await officeReport(c, id, { ...input, kind: 'table' })
+ return { table: report.table, currency: report.currency, revision: report.revision }
 }
 
 export async function excelWrite(c: Context, op: string, b: Data): Promise<Data | undefined> {

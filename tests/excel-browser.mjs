@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { installExcelHost } from './excel-host.mjs'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { api, noOverflow } from './browser-journey.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
@@ -22,7 +23,49 @@ try {
  await cmd('workspace', { name: 'synthetic-easel-1', currency: 'USD', planStart: '2026-01' })
  const dept = await cmd('department', { name: 'Sales' }), line = await cmd('line', { name: 'Revenue', type: 'revenue' })
  const scenario = (await api(owner, server.origin, 'state')).scenarios[0].id
- const row = await cmd('schedule', { scenario, name: 'Excel revenue', department: dept.id, line: line.id, values: { '2026-01': '100' } })
+ const row = await cmd('schedule', { scenario, name: 'Excel revenue', department: dept.id, line: line.id, values: { '2026-01': '100', '2026-02': '200' } })
+ const report = await cmd('report-save', { name: 'Excel report', scenario, department: '', audience: 'finance', report: { row: 'department', period: 'month', through: '2026-02', lines: [line.id], comparisons: [], highlightBps: 1000 } })
+ const manifest = await owner.request.get(`${server.origin}/api/office/manifest/Excel`)
+ assert.equal(manifest.status(), 200)
+ const { parseStringPromise } = await import('xml2js')
+ const xml = await parseStringPromise(await manifest.text())
+ assert.equal(xml.OfficeApp.Hosts[0].Host[0].$.Name, 'Workbook')
+ const taskpane = xml.OfficeApp.DefaultSettings[0].SourceLocation[0].$.DefaultValue
+ const excel = await owner.newPage()
+ await excel.addInitScript(installExcelHost)
+ await excel.route('https://appsforoffice.microsoft.com/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }))
+ const openWorkbook = async () => {
+  await excel.goto(taskpane)
+  await excel.evaluate(() => window.easelExcelReady)
+  const metadata = await excel.evaluate(async () => (await fetch('/excel/functions.json')).json())
+  assert.deepEqual(metadata.functions.map(f => f.id), ['VALUE', 'REPORT'])
+  await excel.evaluate(({ scenario, report }) => {
+   window.excelHost.cell('A1', 'VALUE', ['Revenue', 'Sales', '2026-01', scenario])
+   window.excelHost.cell('B1', 'VALUE', ['Revenue', 'Sales', '2026-02', scenario])
+   window.excelHost.cell('A3', 'REPORT', [report, '2026-01', 'budget'])
+   return window.excelHost.command('refreshWorkbook')
+  }, { scenario, report: report.id })
+ }
+ const snapshot = () => excel.evaluate(() => window.excelHost.snapshot())
+ await openWorkbook()
+ let book = await snapshot()
+ assert.deepEqual([book.values.A1, book.values.B1, book.sum, book.startup], [100, 200, 300, 'load'])
+ assert.deepEqual(book.values.A3, [['Row', 'FY2026 budget (USD)'], ['Sales', '$100.00'], ['No department', '$0.00']])
+ const write = async (month, value) => {
+  const current = await api(owner, server.origin, `scenario/${scenario}`)
+  return cmd('excel-write', { scenario, revision: current.scenario.revision, schedule: row.id, month, value })
+ }
+ await write('2026-01', '125'); await write('2026-02', '250')
+ await excel.evaluate(() => { window.excelHost.select("'Plan'!$A$1:$A$1"); return window.excelHost.command('refreshSelection') })
+ book = await snapshot(); assert.deepEqual([book.values.A1, book.values.B1, book.sum], [125, 200, 325])
+ await excel.getByRole('button', { name: 'Refresh workbook', exact: true }).click()
+ await excel.waitForFunction(() => window.excelHost.snapshot().sum === 375)
+ book = await snapshot(); assert.deepEqual([book.values.A1, book.values.B1, book.sum], [125, 250, 375])
+ assert.equal(book.values.A3[1][1], '$125.00')
+ await write('2026-01', '175')
+ await openWorkbook()
+ book = await snapshot(); assert.deepEqual([book.values.A1, book.values.B1, book.sum], [175, 250, 425])
+ await excel.close()
  await cmd('member', { email: 'excel@example.test', name: 'Excel contributor', role: 'contributor', departments: [dept.id] })
  await api(owner, server.origin, 'invite', { email: 'excel@example.test' })
  const message = messages.find(m => m.to.includes('excel@example.test'))
@@ -45,5 +88,20 @@ try {
   await noOverflow(page, `Excel direct entry ${width}`)
   await grid.screenshot({ path: join(evidence, `excel-entry-${width}.png`) })
  }
+ const expired = await contributor.newPage()
+ await expired.addInitScript(installExcelHost)
+ await expired.route('https://appsforoffice.microsoft.com/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }))
+ await expired.goto(taskpane); await expired.evaluate(() => window.easelExcelReady)
+ await expired.evaluate(scenario => {
+  window.excelHost.cell('A1', 'VALUE', ['Revenue', 'Sales', '2026-01', scenario])
+  return window.excelHost.command('refreshWorkbook')
+ }, scenario)
+ assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).values.A1, 150)
+ await contributor.clearCookies()
+ await expired.evaluate(() => window.excelHost.command('refreshWorkbook'))
+ assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).values.A1.code, 'unavailable')
+ assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).sum, 'unavailable')
+ await expired.close()
+ console.log('Production Excel host assets: workbook, selection, report ranges, simulated dependency and reopen, expired authority; native write-back at 1440 and 390')
  console.log('Excel write-back: contributor next-revision entry reads as 150.00 in native Plan; 1440 and 390 proof captured')
 } finally { await browser?.close(); await server?.close() }

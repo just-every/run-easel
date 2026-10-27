@@ -125,6 +125,13 @@ test('Excel refresh reads live filtered cells and write-back follows submission 
   const view = (id = scenario, cookie = h.owner) => h.get(`/api/easel/scenario/${id}`, cookie)
   const read = (month = '2026-01', cookie = viewer, whichLine = 'Revenue') => h.get(`/api/easel/excel/${scenario}/value?${new URLSearchParams({ line: whichLine, department: 'Sales', month })}`, cookie)
   const payload = async (extra = {}) => ({ scenario, revision: (await view()).scenario.revision, schedule: row.id, month: '2026-01', value: '150', ...extra })
+  const report = await h.command('report-save', { name: 'Excel board range', scenario, department: '', audience: 'board', report: { row: 'department', period: 'month', through: '2026-02', lines: [line.id, pay.id], comparisons: [], highlightBps: 1000 } })
+  const reportPath = `/api/easel/excel/report/${report.id}?period=2026-01&metric=budget`
+  const reportRead = await h.get(reportPath, viewer)
+  assert.deepEqual(reportRead.table, [['Row', 'FY2026 budget (USD)'], ['Operations', '$400.00'], ['Sales', '$10,100.00'], ['No department', '$0.00']])
+  assert.doesNotMatch(JSON.stringify(reportRead), /Restricted|120000|sources|trace|inputs/)
+  await h.get(reportPath, contributor, 404)
+  await h.get(`/api/easel/excel/report/${report.id}?period=2030-01`, viewer, 409)
   const before = await view()
   assert.deepEqual(await read(), { scenario, revision: before.scenario.revision, currency: 'USD', line: line.id, department: sales.id, month: '2026-01', amount: 10000 })
   const safe = await read('2026-01', viewer, 'Payroll')
@@ -139,6 +146,11 @@ test('Excel refresh reads live filtered cells and write-back follows submission 
   const tokenResponse = await h.mf.dispatchFetch(`${h.origin}/api/easel/command/excel-write`, { method: 'POST', headers: { authorization: `Bearer ${issued.value.token}`, 'content-type': 'application/json' }, body: JSON.stringify(await payload()) })
   assert.equal(tokenResponse.status, 403)
   assert.match((await tokenResponse.json()).error, /signed-in session/)
+  for (const path of [reportPath, `/api/easel/excel/${scenario}/value?line=Revenue&department=Sales&month=2026-01`]) {
+   const response = await h.mf.dispatchFetch(`${h.origin}${path}`, { headers: { authorization: `Bearer ${issued.value.token}` } })
+   assert.equal(response.status, 403)
+   assert.match((await response.json()).error, /signed-in session/)
+  }
   await h.command('request-submissions', { scenario, departments: [sales.id] })
   const requested = await payload(), direct = await h.command('excel-write', requested, contributor)
   assert.equal(direct.mode, 'entry'); assert.equal(direct.scenario.revision, requested.revision + 1)
@@ -193,6 +205,7 @@ test('Excel refresh reads live filtered cells and write-back follows submission 
   assert.deepEqual([...results.values()], [260, 200]); assert.equal(results.get('2026-01') + results.get('2026-02'), 460)
   assert.equal(calculations, 3)
   await h.command('member', { email: 'excel-board@example.test', name: 'Board', role: 'viewer', active: false })
+  await h.get(reportPath, viewer, 403)
   await assert.rejects(workbook.runtime.refresh(), /403/)
   assert.ok([...results.values()].every(value => value instanceof CellError), 'revoked reads clear stale successful amounts')
   await h.command('submit', { scenario, department: sales.id }, contributor)
