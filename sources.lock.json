@@ -715,7 +715,7 @@
       "executable": false
     },
     "public/excel/index.html": {
-      "sha256": "9d62a82767ad8ed79b894f55e4c5a25d8a5fe7231c057a14aa438900acf39587",
+      "sha256": "6abf87f755368be54eb3a0d3399e17d5b71fdfc8dfb6bffaa49660f7f329b3dd",
       "executable": false
     },
     "public/favicon.ico": {
@@ -4795,7 +4795,7 @@
       "executable": false
     },
     "tests/excel-browser.mjs": {
-      "sha256": "0f98980736baf32a84b8b7b84d8d9d33fd4d27384b2434f19d125623c4aaaa0e",
+      "sha256": "3fc174f32262b14c496a5ba966d182af0f4a71360a3f307838245d6ebfe9c40d",
       "executable": false
     },
     "tests/excel-host.mjs": {
