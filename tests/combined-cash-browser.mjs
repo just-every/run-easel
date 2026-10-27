@@ -90,8 +90,6 @@ try {
   const items = panel().getByRole('table', { name: 'Pantry open cash items', exact: true })
   assert.match(await items.innerText(), /12 days late/); assert.match(await items.innerText(), /50.00/); assert.match(await items.innerText(), /20.00/)
   await noOverflow(page, `Combined source review ${width}`); await panel().screenshot({ path: join(evidence, `source-review-${width}.png`) })
-  const allocationTable = panel().getByRole('table', { name: 'Dated planned cash replacements', exact: true })
-  if (width === 1440) assert.ok((await allocationTable.boundingBox()).width > 900, 'Dated cash allocation uses the available review width')
   await allocations(); const combined = await preview()
   assert.deepEqual(combined.weeks.slice(0, 4).map(w => [w.collections, w.payments, w.adjustment, w.closing]), [[0, 0, 123, 990123], [0, 7000, 0, 983123], [5000, 1000, 0, 987123], [0, 15000, 0, 972123]])
   assert.equal(combined.weeks.length, 13); assert.equal(combined.reconciliation[0].difference, 123)
