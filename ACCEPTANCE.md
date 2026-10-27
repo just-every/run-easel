@@ -41,7 +41,7 @@ That is evidence, not a permanent test.
 [CONTRACT.md](CONTRACT.md) defines the product Easel is being built towards:
 87 target and push-further clauses beyond the published loop, each with the
 acceptance evidence below. Status follows the clause evidence below and CONTRACT.md's Status table:
-64 done, 16 partial and 7 missing target and push-further clauses.
+64 done, 17 partial and 6 missing target and push-further clauses.
 A build round that starts a clause registers it in `seed.json → capabilities`,
 adds the flow test or journey named here through a public door (the HTTP API,
 the browser at 1440 and 390, a `rer` command, an add-in host, a native build
@@ -117,7 +117,7 @@ one recorded run against the provider's sandbox before acceptance.
 
 | Clause | Status | Acceptance evidence |
 |---|---|---|
-| `SPEND-001` — Committed and card spend | missing | A Ramp fake and a Purse fake add a card transaction and a purchase order; the API journey reads budget, committed, actual and remaining for the affected department.  Also assert inherited CONNECT-010: encrypted and archive-excluded credentials, masked status, finance-only connect/disconnect, audited administration and the actual provider-revocation outcome (or the explicit unsupported owner step). |
+| `SPEND-001` — Committed and card spend | partial | A Ramp fake and a Purse fake add a card transaction and a purchase order; the API journey reads budget, committed, actual and remaining for the affected department.  Also assert inherited CONNECT-010: encrypted and archive-excluded credentials, masked status, finance-only connect/disconnect, audited administration and the actual provider-revocation outcome (or the explicit unsupported owner step).  Proof: `tests/spend.test.mjs` — “Reviewed Ramp cards and Purse POs replace one forecast assumption with exact nonduplicated department spend under native custody”; `tests/spend-browser.mjs`. The HTTP flow asserts exact independent totals, unchanged preview, changed-source and stale-revision refusals, repeated-import safety, unsafe-origin refusal, source currency refusal, native finance authority, masked sealed custody, both archive exclusions, audit and truthful local disconnect. The built native journey asserts at 1440 and captures the changed screens at 1440 and 390. Remaining: Ramp and selected issued Purse PO network-edge reads, explicit line, department and accounting-month mapping, linked-card deduplication, exact budget, committed, card actual and remaining, reviewed one-off forecast replacement and native sealed custody ship. Remaining: committed contracts, Coaster, Brex, Bill.com, refunds, PO closure releases, bill-payment settlement and ledger overlap reconciliation; recorded live Ramp and Purse provider qualification and restricted source-scope verification are not held. Purse reads require explicit scoped PO IDs; no listing door is assumed. |
 
 ### Spreadsheets
 

@@ -572,7 +572,7 @@ Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody,
 
 *Acceptance:* a Ramp fake and a Purse fake add a card transaction and a purchase order; the API journey reads budget, committed, actual and remaining for the affected department.
 
-*Status:* missing.
+*Status:* partial. The native Ramp card and selected Purse PO slice has reviewed one-off forecast replacement and exact nonduplicated spend reads. Other named sources and live provider qualification remain unfinished.
 
 ### Spreadsheets
 
@@ -1202,8 +1202,8 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | Clauses | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
 | Published | 17 | 0 | 0 | 17 |
-| Target and push further | 64 | 16 | 7 | 87 |
-| All | 81 | 16 | 7 | 104 |
+| Target and push further | 64 | 17 | 6 | 87 |
+| All | 81 | 17 | 6 | 104 |
 
 | Clause | Title | Kind | Status | Evidence | Gap |
 | --- | --- | --- | --- | --- | --- |
@@ -1262,7 +1262,7 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 | `REV-002` | Subscription metrics from Stripe Billing and Nectar | target | partial | `tests/billing.test.mjs` — “Subscription billing review reconciles exact movements and cohorts, drives ARR and retains native sealed custody”: three-month bridge, all movements, cohorts, counts and retention; service revenue, deferred balance, refunds, tax and explained ledger differences; imported customer and seat drivers, REPORT-002 personal layouts, audience filtering and aggregate formula Excel; encrypted excluded credentials, native administration, audit, masked health and truthful unsupported revocation. `tests/connectors-browser.mjs` — native billing review, accepted history, finance and board imported ARR, connection and disconnect at 1440 and 390. | Recorded Stripe test-mode qualification requires a restricted read-only test key; all three held Stripe test secrets are unrestricted and are refused. Nectar remains an unimplemented alternative. Supported Stripe history is licensed monthly or annual recurring pricing; unsupported historical statuses and pricing shapes refuse explicitly. |
 | `REV-003` | A revenue driver library | target | done | `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs` | Fixed forms and reviewed Gauge operational actuals; MODEL-004 carries formula-line drivers |
 | `REV-004` | Bookings, billings, revenue and cash | target | done | `tests/revenue-drivers.test.mjs` `tests/contracts-browser.mjs` | Contract billing/recognition/DSO schedules, deferred and unbilled balances, linked statements and formula exports |
-| `SPEND-001` | Committed and card spend | target | missing |  | No purchasing, expense or card connectors and no committed-spend view |
+| `SPEND-001` | Committed and card spend | target | partial | `tests/spend.test.mjs` — “Reviewed Ramp cards and Purse POs replace one forecast assumption with exact nonduplicated department spend under native custody”; `tests/spend-browser.mjs` | Ramp and selected issued Purse PO network-edge reads, explicit line, department and accounting-month mapping, linked-card deduplication, exact budget, committed, card actual and remaining, reviewed one-off forecast replacement and native sealed custody ship. Remaining: committed contracts, Coaster, Brex, Bill.com, refunds, PO closure releases, bill-payment settlement and ledger overlap reconciliation; recorded live Ramp and Purse provider qualification and restricted source-scope verification are not held. Purse reads require explicit scoped PO IDs; no listing door is assumed |
 | `SHEET-001` | Excel add-in with live formulas | target | partial | `tests/grid.test.mjs` — “Excel refresh reads live filtered cells and write-back follows submission and exact-revision authority”; `tests/excel-browser.mjs`; `docs/excel-bridge.md` | Native filtered cell reads, streaming refresh module and exact-revision direct entry and proposal write-back ship. Remaining: installable Office host binding and sign-in lifecycle, workbook and selection refresh commands, report ranges, real Excel dependency and reopen qualification, inherited CONNECT-010 qualification and recorded Excel on the web run; Microsoft 365 host access is not held |
 | `SHEET-002` | Google Sheets add-on with live formulas | target | missing |  | No Google Sheets add-on, refresh on open or installable-trigger refresh |
 | `SHEET-003` | Model import that keeps formulas | target | done | `src/easel/workbook-formula.ts` `tests/formula-import.test.mjs` `tests/formula-import-browser.mjs` | — |

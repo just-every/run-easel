@@ -1,3 +1,4 @@
+import { spendConnection, spendStatus, spendReview, spendReviews, spendSources, spendReadFailed } from './spend'
 import { xeroConnection, xeroStatus } from './xero-connection'
 import { xeroImport } from './xero-import'
 import { billingConnection, billingStatus } from './billing-connection'
@@ -189,6 +190,25 @@ async function read<T>(c: HonoContext<Env>, view: (ctx: Context) => Promise<T>) 
  return c.json(publicLedger(await erasedView(ctx.db, result)) as any)
 }
 
+api.get('/api/easel/connections/spend/:provider', c => read(c, ctx => spendStatus(ctx, c.env, c.req.param('provider'))))
+api.post('/api/easel/connections/spend/:provider/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ ctx.extra = await spendConnection(ctx, c.env, c.req.param('provider'), c.req.param('op'), await body(c))
+ await commit(ctx)
+ return read(c, current => spendStatus(current, c.env, c.req.param('provider')))
+})
+api.get('/api/easel/spend', c => read(c, spendReviews))
+api.post('/api/easel/spend/:op', async c => {
+ const ctx = await open(c), op = c.req.param('op'), input = await body(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ let result
+ try { result = op === 'sources' ? await spendSources(ctx, c.env, input) : await spendReview(ctx, c.env, op, input) }
+ catch (error) { if (spendReadFailed(ctx, error)) await commit(ctx); throw error }
+ if (op === 'accept') await commit(ctx)
+ else await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ return c.json(result)
+})
 api.get('/api/easel/connections/pantry', c => read(c, ctx => pantryStatus(ctx,c.env)))
 api.get('/api/easel/connections/stripe', c => read(c, billingStatus))
 api.get('/api/easel/connections/qbo', c => read(c, qboStatus))

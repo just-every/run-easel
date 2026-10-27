@@ -1,3 +1,4 @@
+import { SpendReview } from './spend'
 import { AgentGovernance } from './agent-governance'
 import { Analyst } from './analyst'
 import { CommentaryModel } from './commentary-model'
@@ -41,7 +42,7 @@ export function Review({ state, refresh }: Shared) {
  const [fingerprints, setFingerprints] = useState<Record<string, string>>({}), [stores, setStores] = useState<D[]>([])
  useEffect(() => { if (me.role === 'finance') api('connections/pack-stores').then(setStores, () => setStores([])) }, [me.role, state])
  return <>
-  {me.role === 'finance' && <AgentGovernance />}
+  {me.role === 'finance' && <><AgentGovernance /><SpendReview state={state} refresh={refresh} /></>}
   <Analyst state={state} refresh={refresh} />
   <section className="card">
    <h2>Monthly review</h2>

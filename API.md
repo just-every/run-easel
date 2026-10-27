@@ -1,5 +1,13 @@
 # Easel HTTP API
 
+## Committed spend
+
+Spend routes require a native company-wide finance session with the connections capability. API tokens and agents are refused. `GET /api/easel/connections/spend/:provider` reads masked status for `ramp` or `purse`; POST its `connect` action with `{key,consent:true}` or `disconnect` with `{}`. Remote revocation is unsupported and the response supplies the explicit provider owner step.
+
+`POST /api/easel/spend/sources` takes `{month,orders:["Purse PO ID"]}` and reads cleared Ramp cards in that accounting month plus the selected issued POs. `POST /api/easel/spend/preview` takes `{scenario,revision,driver,month,orders,mapping}`. Each mapping is `{source:"ramp:ID"|"purse:ID",line,department,month,order?:"linked Purse PO ID"}`. Choose a dedicated one-off expense in an open working company forecast. Every source maps explicitly to its line, department and month. Preview returns exact minor-unit `budget`, `committed`, `actual`, `remaining`, `forecast`, the reviewed rows and `fingerprint`, without changing the forecast.
+
+`POST /api/easel/spend/accept` repeats the exact reviewed body plus `fingerprint`. It re-reads providers, fences source and model changes, replaces that one expense assumption and records the review. `GET /api/easel/spend` lists accepted reviews with `forecastChanged` when the forecast has moved since acceptance. See [committed spend](./docs/committed-spend.md) for boundaries and source qualification still owed.
+
 The same routes serve the app and integrations acting under a person's authority.
 Use a native session cookie (and a same-origin `Origin` header for writes), or
 a scoped personal/service bearer token as documented below. Responses are JSON; refusals are
