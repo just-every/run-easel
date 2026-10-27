@@ -24,7 +24,7 @@ try {
  const dept = await cmd('department', { name: 'Sales' }), line = await cmd('line', { name: 'Revenue', type: 'revenue' })
  const scenario = (await api(owner, server.origin, 'state')).scenarios[0].id
  const row = await cmd('schedule', { scenario, name: 'Excel revenue', department: dept.id, line: line.id, values: { '2026-01': '100', '2026-02': '200' } })
- const report = await cmd('report-save', { name: 'Excel report', scenario, department: '', audience: 'finance', report: { row: 'department', period: 'month', through: '2026-02', lines: [line.id], comparisons: [], highlightBps: 1000 } })
+ const report = await cmd('report-save', { name: 'Excel report', scenario, department: '', audience: 'board', report: { row: 'department', period: 'month', through: '2026-02', lines: [line.id], comparisons: [], highlightBps: 1000 } })
  const manifest = await owner.request.get(`${server.origin}/api/office/manifest/Excel`)
  assert.equal(manifest.status(), 200)
  const { parseStringPromise } = await import('xml2js')
@@ -65,6 +65,11 @@ try {
  await write('2026-01', '175')
  await openWorkbook()
  book = await snapshot(); assert.deepEqual([book.values.A1, book.values.B1, book.sum], [175, 250, 425])
+ for (const width of [1440, 390]) {
+  await excel.setViewportSize({ width, height: 1000 })
+  await noOverflow(excel, `Excel task pane ${width}`)
+  await excel.screenshot({ path: join(evidence, `excel-taskpane-${width}.png`), fullPage: true })
+ }
  await excel.close()
  await cmd('member', { email: 'excel@example.test', name: 'Excel contributor', role: 'contributor', departments: [dept.id] })
  await api(owner, server.origin, 'invite', { email: 'excel@example.test' })
@@ -88,6 +93,9 @@ try {
   await noOverflow(page, `Excel direct entry ${width}`)
   await grid.screenshot({ path: join(evidence, `excel-entry-${width}.png`) })
  }
+ const payroll = await cmd('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ await cmd('position', { scenario, title: 'Restricted role', holder: 'Restricted person', department: dept.id, line: payroll.id, start: '2026-01', annualSalary: '120000' })
+ await cmd('member', { email: 'excel@example.test', name: 'Excel viewer', role: 'viewer' })
  const expired = await contributor.newPage()
  await expired.addInitScript(installExcelHost)
  await expired.route('https://appsforoffice.microsoft.com/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }))
@@ -97,6 +105,15 @@ try {
   return window.excelHost.command('refreshWorkbook')
  }, scenario)
  assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).values.A1, 150)
+ await expired.evaluate(({ scenario, report }) => {
+  window.excelHost.cell('A3', 'REPORT', [report, '2026-01', 'budget'])
+  window.excelHost.cell('A5', 'VALUE', ['Payroll', 'Sales', '2026-01', scenario])
+  return window.excelHost.command('refreshWorkbook')
+ }, { scenario, report: report.id })
+ const viewerBook = await expired.evaluate(() => window.excelHost.snapshot())
+ assert.equal(viewerBook.values.A5, 10000)
+ assert.deepEqual(viewerBook.values.A3, [['Row', 'FY2026 budget (USD)'], ['Sales', '$150.00'], ['No department', '$0.00']])
+ assert.doesNotMatch(JSON.stringify(viewerBook), /Restricted|120000|sources|trace|inputs/)
  await contributor.clearCookies()
  await expired.evaluate(() => window.excelHost.command('refreshWorkbook'))
  assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).values.A1.code, 'unavailable')
