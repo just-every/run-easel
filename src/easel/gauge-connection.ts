@@ -25,7 +25,12 @@ export async function gaugeStatus(c: Context, env: Bindings) {
  const row = find(c.s, 'connection', 'gauge'), origin = env.GAUGE_ORIGIN ? gaugeOrigin(env) : null
  const secret = await c.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind('gauge').first()
  const scheduledMonth = row?.connected && row.refreshSchedule?.cadence !== 'manual' ? row?.refreshSchedule?.month : null
- const health = scheduledMonth ? { ...row?.observations?.[scheduledMonth], checkedMonth: scheduledMonth } : row ?? {}
+ const selected = scheduledMonth ? row?.observations?.[scheduledMonth] ?? (row?.checkedMonth === scheduledMonth ? row : {}) : row ?? {}
+ // An unobserved scheduled month must not inherit another month's success.
+ const health = scheduledMonth ? { checkedMonth: scheduledMonth, lastRefresh: selected.lastRefresh ?? null,
+  observedAt: selected.observedAt ?? null, observation: selected.observation ?? null,
+  lastChecked: selected.lastChecked ?? null, rowCount: selected.observation ? 1 : 0,
+  error: selected.error ?? null, rateLimit: selected.rateLimit ?? null } : selected
  return { ...(row ?? {}), ...health, configured: Boolean(env.GAUGE_ORIGIN), connected: Boolean(secret && row?.connected && row.origin === origin), origin, scope: 'utilization:read', schedule: row?.refreshSchedule?.cadence === 'manual' ? 'Manual' : row?.refreshSchedule?.cadence ?? 'Manual', timeZone: workspace(c.s).timeZone ?? ['America', 'New_York'].join('/'), stale: !secret || !row?.connected || gaugeStale({ ...health, refreshSchedule: row?.refreshSchedule }, c.now), error: health.error ?? null, rateLimit: health.rateLimit ?? null, ...(row?.connected && !secret ? { error: 'Reconnect Gauge after restore; provider keys are excluded from archives' } : {}) }
 }
 export async function gaugeConnection(c: Context, env: Bindings, op: string, b: Data): Promise<D1PreparedStatement[]> {

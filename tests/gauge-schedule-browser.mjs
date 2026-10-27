@@ -1,7 +1,8 @@
 // Built native Settings proof; only Gauge's aggregate network edge is replaced.
 import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
-import { mkdir } from 'node:fs/promises'
+import { readWorkbook } from './spreadsheet-proof.mjs'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { noOverflow, settle, track } from './browser-journey.mjs'
@@ -44,6 +45,17 @@ try {
  await page.reload(); await panel.getByLabel('Observation cadence', { exact: true }).waitFor()
  assert.equal(await panel.getByLabel('Observation cadence', { exact: true }).inputValue(), 'nightly')
  assert.equal(await panel.getByLabel('Scheduled observation month', { exact: true }).inputValue(), '2026-01')
+ await panel.getByLabel('Connection check month', { exact: true }).fill('2026-01')
+ const healthy = await action('/connections/gauge/check', () => panel.getByRole('button', { name: 'Check Gauge connection', exact: true }).click())
+ assert.equal(healthy.checkedMonth, '2026-01'); assert.equal(healthy.error, null); assert.equal(healthy.lastRefresh, now)
+ assert.match(await panel.innerText(), /Current observation/)
+ assert.equal(await panel.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Last successful refresh', exact: true }) }).getByRole('cell').nth(1).innerText(), now)
+ status = 503
+ const failed = await action('/connections/gauge/check', () => panel.getByRole('button', { name: 'Check Gauge connection', exact: true }).click())
+ assert.match(failed.error, /HTTP 503/); assert.equal(failed.lastRefresh, healthy.lastRefresh)
+ await panel.getByRole('alert').filter({ hasText: 'HTTP 503' }).waitFor()
+ assert.match(await panel.innerText(), /Stale/)
+ status = 200
  const command = (op, body) => post('/api/easel/command/' + op, body)
  const state = await (await context.request.get(runtime.origin + '/api/easel/state')).json()
  const budget = state.scenarios[0]
@@ -77,6 +89,11 @@ try {
  status = 200
  await post('/api/easel/connections/gauge/check', { month: '2026-02' })
  assert.match((await read('scenario/' + budget.id)).gaugeFreshness[0].error, /HTTP 503/)
+ await post('/api/easel/connections/gauge/schedule', { cadence: 'hourly', month: '2026-03', consent: true })
+ await page.goto(runtime.origin + '/app?tab=settings')
+ await panel.getByText('No successful refresh yet', { exact: true }).waitFor()
+ assert.equal((await read('connections/gauge')).observation, null)
+ await post('/api/easel/connections/gauge/schedule', { cadence: 'nightly', month: '2026-01', consent: true })
  const workingPlan = await command('branch', { from: budget.id, name: 'Gauge working plan' })
  const forecast = (await command('approve-budget', { scenario: budget.id, revision: current.scenario.revision })).forecast
  await command('account-map', { account: '400', target: line.id })
@@ -101,11 +118,30 @@ try {
    await page.goto(runtime.origin + '/app?tab=' + tab)
    if (tab === 'overview' || tab === 'plan') await page.getByLabel('Scenario', { exact: true }).selectOption(tab === 'overview' ? budget.id : workingPlan.id)
    await region.waitFor(); await settle(page)
+   if (width === 1440 && tab === 'settings') {
+    assert.match(await region.innerText(), /Stale/); assert.match(await region.innerText(), /HTTP 503/)
+    assert.equal(await panel.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Last successful refresh', exact: true }) }).getByRole('cell').nth(1).innerText(), '2026-03-08T07:05:00.000Z')
+   }
    if (width === 1440 && tab !== 'settings') {
     const text = await region.innerText()
     assert.match(text, /Stale observation/); assert.match(text, /HTTP 503/)
     assert.match(text, /differs from the accepted source/)
     assert.ok(text.includes('2026-03-08T07:05:00.000Z'))
+   }
+   if (width === 1440 && tab === 'dashboards') {
+    const downloadEvent = page.waitForEvent('download')
+    await page.getByRole('link', { name: 'Download dashboard (Excel)', exact: true }).click()
+    const download = await downloadEvent
+    assert.equal(await download.failure(), null)
+    const book = await readWorkbook(await readFile(await download.path()))
+    assert.deepEqual(book.worksheets.map(sheet => sheet.name), ['Dashboard', 'Gauge freshness'])
+    const sheet = book.getWorksheet('Gauge freshness')
+    assert.equal(sheet.rowCount, 3)
+    const row = sheet.getRow(3).values
+    assert.equal(row[1], 'Gauge'); assert.equal(row[2], '2026-01'); assert.equal(row[4], '2026-03-08T07:05:00.000Z')
+    assert.equal(row[5], 'nightly'); assert.equal(row[6], 'Stale'); assert.match(row[7], /HTTP 503/)
+    assert.equal(row[8], accepted.gaugeFreshness[0].acceptedAt); assert.equal(row[9], accepted.gaugeFreshness[0].acceptedObservedAt)
+    assert.equal(row[10], preview.digest); assert.equal(row[11], 'changed-since-acceptance')
    }
    await region.scrollIntoViewIfNeeded(); await noOverflow(page, `Gauge freshness ${tab} ${width}`)
    await page.screenshot({ path: join(evidence, `${tab}-${width}.png`), fullPage: true })

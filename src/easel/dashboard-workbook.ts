@@ -1,3 +1,4 @@
+import { gaugeFreshnessSheet } from './gauge-freshness-workbook'
 import type { Data } from './types'
 import { workbook, type Cell } from './xlsx-write'
 
@@ -15,7 +16,7 @@ export function dashboardWorkbook(view: Data) {
  // A period total for flows and a last-month value for stocks. The distinction
  // avoids pretending that twelve monthly headcounts or ARR values are additive.
  const last = rows.length
- rows.push(['Period total / ending balance', ...['B', 'C', 'D'].map(col => view.rows.some((m: Data) => m.revenue === null) ? null : ({ formula: `SUM(${col}3:${col}${last})`, value: view.rows.reduce((sum: number, m: Data) => sum + (col === 'B' ? m.revenue : col === 'C' ? m.revenue - m.grossMargin : m.grossMargin), 0) })),
-  { formula: `E${last}`, value: view.rows.at(-1).headcount }])
- return workbook([{ name: 'Dashboard', rows }])
+ rows.push(['Period total / ending balance', ...['B', 'C', 'D'].map(col => !view.rows.length || view.rows.some((m: Data) => m.revenue === null) ? null : ({ formula: `SUM(${col}3:${col}${last})`, value: view.rows.reduce((sum: number, m: Data) => sum + (col === 'B' ? m.revenue : col === 'C' ? m.revenue - m.grossMargin : m.grossMargin), 0) })),
+  view.rows.at(-1)?.headcount == null ? null : { formula: `E${last}`, value: view.rows.at(-1).headcount }])
+ return workbook([{ name: 'Dashboard', rows }, gaugeFreshnessSheet(view.gaugeFreshness)])
 }

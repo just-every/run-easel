@@ -1355,7 +1355,7 @@
       "executable": false
     },
     "src/easel/dashboard-workbook.ts": {
-      "sha256": "439ddc92c5d08ea18f066152bafeeacdf5fc961072f5e8217bb0cb092874106e",
+      "sha256": "4fc7fe3872eadcf972449ccea635a0f119fd29629fc72521115fa058d73fd6fb",
       "executable": false
     },
     "src/easel/dashboards.ts": {
@@ -1579,7 +1579,7 @@
       "executable": false
     },
     "src/easel/gauge-connection.ts": {
-      "sha256": "c01abac86f9924d3b09487e2d6afde6b67ead67569ed2e84030fd8fce03cd168",
+      "sha256": "fdaf7ef169b29bc24feca76baa7eb6a6b27c42b92514700af2f1246df94e66d2",
       "executable": false
     },
     "src/easel/gauge-freshness-workbook.ts": {
@@ -4839,11 +4839,11 @@
       "executable": false
     },
     "tests/gauge-schedule-browser.mjs": {
-      "sha256": "7c4eab491d8d8c173b21f8ad51ddeda4f228e97f9684673d56e6a5483658cf5d",
+      "sha256": "6a1d3f71aafe4bf536124189b1e421eba8fa21205833eb3b9c6783f10727f2bd",
       "executable": false
     },
     "tests/gauge-utilization.test.mjs": {
-      "sha256": "7603fecf9a4870506b7af2b1633be679fb77d0ef76d8c6f676ad5ea1bee17e54",
+      "sha256": "bc3476f193f16ccb62f16a65eb40cd46f1fc044cd815dde40a36e25b31a7358b",
       "executable": false
     },
     "tests/greenhouse-browser.mjs": {
