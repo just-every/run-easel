@@ -20,8 +20,8 @@ try {
  await page.goto(runtime.origin + '/setup'); await page.getByLabel('I confirm this owner account is ready to use.', { exact: true }).check(); await page.getByRole('button', { name: 'Finish setup', exact: true }).click(); await page.waitForURL('**/app')
  const f = await spendFixture({ command: (op, b) => send('/api/easel/command/' + op, b), get: p => send(p) })
  const card = name => page.locator('section.card').filter({ has: page.getByRole('heading', { name, exact: true }) })
- const action = async (suffix, run) => { console.log('Native spend action:', suffix); const pending = page.waitForResponse(r => r.url().endsWith(suffix) && r.request().method() === 'POST'); await run(); const r = await pending; assert.equal(r.status(), 200, await r.text()); await settle(page); return r.json() }
- const capture = async (scope, name) => { for (const width of [1440,390]) { await page.setViewportSize({ width, height: 1000 }); await settle(page); await noOverflow(page, `${name} ${width}`); await scope.screenshot({ path: join(evidence, `${name}-${width}.png`) }) } await page.setViewportSize({ width: 1440, height: 1000 }) }
+ const action = async (suffix, run) => { console.log('Native spend action:', suffix); const pending = page.waitForResponse(r => r.url().endsWith(suffix) && r.request().method() === 'POST'); await run(); const r = await pending.catch(async error => { console.error('Spend screen alerts:', await page.getByRole('alert').allTextContents()); throw error }); assert.equal(r.status(), 200, await r.text()); await settle(page); return r.json() }
+ const capture = async (scope, name, focus) => { for (const width of [1440,390]) { await page.setViewportSize({ width, height: 1000 }); await settle(page); if (focus) { await focus.evaluate(el => el.blur()); await focus.focus(); await settle(page) } await noOverflow(page, `${name} ${width}`); await scope.screenshot({ path: join(evidence, `${name}-${width}.png`) }) } await page.setViewportSize({ width: 1440, height: 1000 }) }
  await page.goto(runtime.origin + '/app?tab=settings')
  for (const [p, label] of [['ramp','Ramp'],['purse','Purse'],['coaster','Coaster'],['brex','Brex']]) {
   const scope = card(label + ' spend connection')
@@ -57,6 +57,39 @@ try {
  await action('/spend/accept', () => review.getByRole('button', { name: 'Accept reviewed spend', exact: true }).click())
  await page.reload(); await review.getByRole('heading', { name: 'Accepted spend reviews', exact: true }).waitFor()
  assert.deepEqual(await review.getByRole('table', { name: 'Budget and committed spend', exact: true }).locator('tbody tr').first().locator('td').allTextContents(), ['Software','Operations','2026-01','$1,000.00','$379.75','$120.25','$500.00','$0.00'])
+
+ // Review an unequal payment overlap through the native matched-part control.
+ provider.state.bills = [{ id: 'synthetic-easel-401', reference: 'BILL-401', currency: 'USD', totalMinor: 14025, paymentStatus: 'paid', paymentStatusAt: '2026-01-16T12:00:00Z' }]
+ await review.getByLabel('Purse PO IDs, separated by commas', { exact: true }).fill('synthetic-easel-102')
+ await action('/spend/sources', () => review.getByRole('button', { name: 'Read spend sources', exact: true }).click())
+ await review.getByLabel('Replace forecast expense', { exact: true }).selectOption(f.driver.id)
+ await review.getByLabel('PO link for synthetic-easel-101', { exact: true }).selectOption('synthetic-easel-102')
+ await review.getByLabel('Duplicate actual for synthetic-easel-102--synthetic-easel-401', { exact: true }).selectOption('ramp:synthetic-easel-101')
+ const matchedPart = review.getByLabel('Duplicate matched amount for synthetic-easel-102--synthetic-easel-401 in 2026-01', { exact: true })
+ await matchedPart.fill('120.25')
+ const partial = await action('/spend/preview', () => review.getByRole('button', { name: 'Preview committed spend', exact: true }).click())
+ assert.deepEqual([partial.actual,partial.committed,partial.remaining,partial.forecast], [14025,35975,50000,50000])
+ assert.equal(partial.rows.find(r => r.id.endsWith('--synthetic-easel-401')).countedAmount, 2000)
+ assert.deepEqual(await review.getByRole('table', { name: 'Budget and committed spend', exact: true }).first().locator('tbody tr').first().locator('td').allTextContents(), ['Software','Operations','2026-01','$1,000.00','$359.75','$140.25','$500.00','$0.00'])
+ await capture(review, 'spend-partial-provider-match', matchedPart)
+ await matchedPart.fill('120.26')
+ const overmatch = page.waitForResponse(r => r.url().endsWith('/spend/preview') && r.request().method() === 'POST')
+ await review.getByRole('button', { name: 'Preview committed spend', exact: true }).click()
+ assert.equal((await overmatch).status(), 409)
+ await review.getByRole('alert').filter({hasText:'Duplicate parts exceed the independent source actual'}).waitFor()
+ await settle(page)
+ assert.equal(await review.getByRole('table',{name:'Spend source mapping',exact:true}).count(),0,'A conflict clears the old reviewed source mapping')
+ await review.getByLabel('Purse PO IDs, separated by commas', { exact: true }).fill('synthetic-easel-102')
+ await action('/spend/sources', () => review.getByRole('button', { name: 'Read spend sources', exact: true }).click())
+ await review.getByLabel('Replace forecast expense', { exact: true }).selectOption(f.driver.id)
+ await review.getByLabel('PO link for synthetic-easel-101', { exact: true }).selectOption('synthetic-easel-102')
+ await review.getByLabel('Duplicate actual for synthetic-easel-102--synthetic-easel-401', { exact: true }).selectOption('ramp:synthetic-easel-101')
+ await matchedPart.fill('120.25')
+ const reviewedPart = await action('/spend/preview', () => review.getByRole('button', { name: 'Preview committed spend', exact: true }).click())
+ assert.equal(reviewedPart.actual,14025)
+ await action('/spend/accept', () => review.getByRole('button', { name: 'Accept reviewed spend', exact: true }).click())
+ await page.reload(); await review.getByRole('heading', { name: 'Accepted spend reviews', exact: true }).waitFor()
+ assert.deepEqual(await review.getByRole('table', { name: 'Budget and committed spend', exact: true }).locator('tbody tr').first().locator('td').allTextContents(), ['Software','Operations','2026-01','$1,000.00','$359.75','$140.25','$500.00','$0.00'])
 
  // Reconcile provider settlement, refund and accepted ledger through native controls.
  provider.state.refunds = [-2025]

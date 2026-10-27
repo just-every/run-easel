@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "2e0255aeb41ed81e1aa20786465f8de0c7f5f099892f72fb40f4dea39ccaf5fd",
+      "sha256": "4c55634704a3ee9537dd194224656deb12dfdcd00e304e73d6c99d7c64698e00",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "ce73bed2f3229ff209421c2c9e7eb1b6b59ef257369bd10350889c1a6dbaf423",
+      "sha256": "38208b64302b08837b531e96bcf66156a055f39f61784e1e8893e749eab3ebdf",
       "executable": false
     },
     "base-copies.json": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "4a3dea590b4a7bf2fb206bdf0472242f6a01da242660918292aafc4463e73632",
+      "sha256": "d1eeac04d1b94f5013bdbbc602db1f60a2b8ebec854ce02ba9edf3a41da24817",
       "executable": false
     },
     "DEMO.md": {
@@ -179,7 +179,7 @@
       "executable": false
     },
     "docs/committed-spend.md": {
-      "sha256": "af3201f0481f0a03e3cf94d7576c52fc8e385a423273e415a33c403a610baaa5",
+      "sha256": "55e4377dd0852e733494e0047cf0cb06acb817c7cded9f9d4f408ebdd40ac88d",
       "executable": false
     },
     "docs/enterprise-identity.md": {
@@ -2059,7 +2059,7 @@
       "executable": false
     },
     "src/easel/spend.ts": {
-      "sha256": "5c656306363ed4d12c321eef6cae9fad880b6fa6febe60cd3959c3519ba965df",
+      "sha256": "c07ebab222a5f8f4dd456efc986b5878f661cdb10686db025712783b79dfe401",
       "executable": false
     },
     "src/easel/starter-catalog.ts": {
@@ -4443,7 +4443,7 @@
       "executable": false
     },
     "src/ui/spend.tsx": {
-      "sha256": "b45c1427765d667a9028659dcf7e0891a35d6eb37133b049df29004638170b7f",
+      "sha256": "aa9bc0f2dac28d2389c5a060c5bf095ab0fefdbf035173bb36cc35195bd1c700",
       "executable": false
     },
     "src/ui/starter-models.tsx": {
@@ -5191,7 +5191,7 @@
       "executable": false
     },
     "tests/spend-browser.mjs": {
-      "sha256": "7b28f5062c87cfd040adfbdba3b3b3b408c13693810e5d6fa00c1a7ba8d33341",
+      "sha256": "9d13f3b0679ec96cba015075e509aaad25d8c7bae1c289e482c1cc1cf0a33472",
       "executable": false
     },
     "tests/spend-fixture.mjs": {
@@ -5199,7 +5199,7 @@
       "executable": false
     },
     "tests/spend.test.mjs": {
-      "sha256": "b48f65ee7dfed1243928d2f43fab1b55ad54a3d38106567b129c50c64df84dc7",
+      "sha256": "8cb1d7dd23f506d90e60693b6db31de7b665fb3422924fc4f2f64f27692c5d03",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {

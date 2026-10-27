@@ -222,6 +222,13 @@ test('Reviewed Brex settlements and exact recurring allocations replace all sele
  let preview = await post('preview', input)
  assert.deepEqual(preview.cells.map(r => [r.month,r.budget,r.actual,r.committed,r.remaining,r.forecast]), [['2026-01',100000,12025,17975,70000,30000],['2026-02',100000,7000,13000,80000,20000]], 'Every source is allocated exactly once across the independently expected monthly cells')
  assert.deepEqual(await h.get('/api/easel/scenario/' + f.forecast.id),before,'The complete schedule preview writes nothing')
+ provider.state.bills = [{id:'synthetic-easel-623',reference:'BILL-623',currency:'USD',totalMinor:10000,paymentStatus:'paid',paymentStatusAt:'2026-01-16T12:00:00Z'}]
+ const splitBill = {...input,mapping:[...input.mapping,{...input.mapping[1],source:'purse:synthetic-easel-102--synthetic-easel-623',allocations:{'2026-01':'100.00','2026-02':'0.00'},duplicateOf:'ramp:synthetic-easel-101',duplicateAmounts:{'2026-01':'100.00','2026-02':'0.00'}}]}
+ const scheduledMatch = await post('preview',splitBill)
+ assert.deepEqual(scheduledMatch.cells.map(r=>[r.month,r.actual,r.committed,r.remaining]),[['2026-01',12025,17975,70000],['2026-02',7000,13000,80000]],'Duplicate parts reconcile only the explicitly matching monthly allocations')
+ const shifted = structuredClone(splitBill); shifted.mapping[4].duplicateAmounts={'2026-01':'99.00','2026-02':'1.00'}; await post('preview',shifted,409)
+ const incompleteMatch = structuredClone(splitBill); delete incompleteMatch.mapping[4].duplicateAmounts['2026-02']; await post('preview',incompleteMatch,409)
+ provider.state.bills = []
  const changed = structuredClone(input); changed.mapping[1].allocations['2026-02'] = '199.99'; await post('preview',changed,409)
  const unsafe = structuredClone(input); unsafe.mapping[0].allocations = {'2026-01':'121.25','2026-02':'-1.00'}; await post('preview',unsafe,409)
  const missing = structuredClone(input); delete missing.mapping[1].allocations['2026-02']; await post('preview',missing,400)
@@ -257,4 +264,73 @@ test('Reviewed Brex settlements and exact recurring allocations replace all sele
  await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
  await post('accept',{...input,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision,fingerprint:preview.fingerprint},409)
  assert.deepEqual((await h.get('/api/easel/scenario/'+f.budget.id)).calculation.cells.filter(r=>r.line===f.line.id&&['2026-01','2026-02'].includes(r.month)).map(r=>r.amount),[100000,100000],'The approved recurring budget remains immutable')
+})
+
+
+test('Explicit cross-provider payment parts conserve residual actuals and refuse duplicate capacity reuse through reviewed acceptance', async t => {
+ const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
+ const f = await spendFixture(h), post = async (op, b, status = 200) => { const r = await h.send('/api/easel/spend/' + op, b, h.owner); assert.equal(r.status, status, r.text); return r.value }
+ for (const p of ['ramp','purse']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`, { key: spendKeys[p], consent: true }, h.owner)).status, 200)
+ provider.state.refunds = [7975]
+ provider.state.bills = [
+  { id: 'synthetic-easel-701', reference: 'BILL-701', currency: 'USD', totalMinor: 17000, paymentStatus: 'paid', paymentStatusAt: '2026-01-16T12:00:00Z' },
+  { id: 'synthetic-easel-702', reference: 'BILL-702', currency: 'USD', totalMinor: 5000, paymentStatus: 'paid', paymentStatusAt: '2026-01-17T12:00:00Z' },
+ ]
+ const billA = 'purse:synthetic-easel-102--synthetic-easel-701', billB = 'purse:synthetic-easel-102--synthetic-easel-702', cardA = 'ramp:synthetic-easel-101', cardB = 'ramp:synthetic-easel-110'
+ const input = { ...f.input, mapping: [...f.input.mapping, { ...f.input.mapping[0], source: cardB },
+  { ...f.input.mapping[1], source: billA, duplicateMatches: [{ source: cardA, amount: '120.25' }, { source: cardB, amount: '29.75' }] },
+  { ...f.input.mapping[1], source: billB, duplicateOf: cardB, duplicateAmount: '50.00' },
+ ] }
+ const before = await h.get('/api/easel/scenario/' + f.forecast.id)
+ let preview = await post('preview', input)
+ assert.deepEqual([preview.budget,preview.actual,preview.committed,preview.remaining,preview.forecast], [100000,22000,28000,50000,50000], 'Two card payments and two bill representations retain exactly 2000 unmatched bill cents')
+ assert.deepEqual(preview.rows.map(r => [r.id,r.duplicateAmount,r.countedAmount]), [['synthetic-easel-101',0,12025],['synthetic-easel-110',0,7975],['synthetic-easel-102',0,50000],['synthetic-easel-102--synthetic-easel-701',15000,2000],['synthetic-easel-102--synthetic-easel-702',5000,0]])
+ assert.deepEqual(preview.rows.find(r => r.id.endsWith('--synthetic-easel-701')).duplicateMatches, [{source:cardA,amount:12025},{source:cardB,amount:2975}])
+ assert.deepEqual(await h.get('/api/easel/scenario/' + f.forecast.id), before)
+ for (const change of [
+  b => { b.mapping[3].duplicateMatches[0].amount = '120.26' },
+  b => { b.mapping[3].duplicateMatches[1].amount = '29.76' },
+  b => { b.mapping[4].duplicateAmount = '50.01' },
+  b => { b.mapping[3].duplicateMatches.push({ source: cardA, amount: '1.00' }) },
+  b => { b.mapping[3].duplicateMatches[0].amount = '-120.25' },
+  b => { b.mapping[0].duplicateOf = billA },
+  b => { b.mapping[0].order = null },
+  b => { b.mapping[0].duplicateOf = cardB; b.mapping[0].duplicateAmount = '1.00' },
+  b => { delete b.mapping[4].duplicateAmount },
+  b => { b.mapping[3].duplicateMatches = [null] },
+ ]) { const invalid = structuredClone(input); change(invalid); await post('preview', invalid, 409) }
+ provider.state.bills[0].totalMinor = 10000; await post('preview',input,409); provider.state.bills[0].totalMinor = 17000
+ const changed = structuredClone(input); changed.mapping[3].duplicateMatches[1].amount = '19.75'
+ await post('accept',{...changed,fingerprint:preview.fingerprint},409)
+ provider.state.bills[0].totalMinor = 17001; await post('accept',{...input,fingerprint:preview.fingerprint},409); provider.state.bills[0].totalMinor = 17000
+ await h.command('account-map',{account:'500',target:f.line.id}); await h.command('department-map',{source:'Operations',department:f.department.id})
+ const actuals = { filename:'synthetic-easel-703.csv',csv:'Date,Account,Department,Amount,Reference\n2026-01-16,500,Operations,20.00,synthetic-easel-704\n',columns:{date:'Date',account:'Account',department:'Department',amount:'Amount',reference:'Reference'},dateFormat:'YYYY-MM-DD',amountMode:'debit-positive' }
+ const actualPreview = await h.kit('actuals','preview',actuals); await h.kit('actuals','commit',{...actuals,fingerprint:actualPreview.fingerprint})
+ const fresh = {...input,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision}, ledger = await post('ledger',fresh)
+ assert.deepEqual(ledger.rows.map(r=>r.amount),[2000])
+ const reconciled = {...fresh,ledgerConfirmed:true,ledgerMapping:[{row:ledger.rows[0].id,source:billA}]}
+ preview = await post('preview',reconciled)
+ assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[22000,28000,50000,50000], 'The ledger matches only the residual bill amount after provider overlap is removed')
+ assert.deepEqual(preview.ledgerRows.map(r=>r.additionalAmount),[0])
+ await post('preview',{...reconciled,ledgerMapping:[{row:ledger.rows[0].id,source:billB}]},409)
+ const entries = await h.db.prepare('SELECT COUNT(*) n FROM e_actuals').first()
+ await post('accept',{...reconciled,fingerprint:preview.fingerprint})
+ const accepted = await h.get('/api/easel/scenario/'+f.forecast.id)
+ assert.equal(accepted.calculation.cells.find(r=>r.line===f.line.id&&r.month==='2026-01').amount,50000)
+ assert.deepEqual(await h.db.prepare('SELECT COUNT(*) n FROM e_actuals').first(),entries)
+ assert.deepEqual((await h.get('/api/easel/spend'))[0].rows.find(r=>r.id.endsWith('--synthetic-easel-701')).duplicateMatches,[{source:cardA,amount:12025},{source:cardB,amount:2975}])
+ // Refund overlaps keep their negative direction and retain the unmatched credit.
+ assert.equal((await h.send('/api/easel/connections/spend/brex/connect',{key:spendKeys.brex,consent:true},h.owner)).status,200)
+ provider.state.bills = []; provider.state.refunds = [-2025]; provider.state.brexDate = '2026-01-20'
+ const refundInput = {...f.input,revision:accepted.scenario.revision,providers:['ramp','purse','brex'],ledgerConfirmed:true,ledgerMapping:[{row:ledger.rows[0].id,source:cardA}],mapping:[...f.input.mapping,
+  {...f.input.mapping[0],source:'ramp:synthetic-easel-110'},
+  {...f.input.mapping[0],source:'brex:synthetic-easel-601'},
+  {...f.input.mapping[0],source:'brex:synthetic-easel-602',duplicateOf:'ramp:synthetic-easel-110',duplicateAmount:'-5.00'},
+ ]}
+ const refundPreview = await post('preview',refundInput)
+ assert.deepEqual([refundPreview.actual,refundPreview.committed,refundPreview.remaining],[17500,32500,50000],'A partial refund overlap removes only the duplicated credit and retains the unmatched negative actual')
+ assert.deepEqual(refundPreview.rows.find(r=>r.provider==='brex'&&r.id==='synthetic-easel-602').duplicateMatches,[{source:'ramp:synthetic-easel-110',amount:-500}])
+ assert.equal(refundPreview.rows.find(r=>r.provider==='brex'&&r.id==='synthetic-easel-602').countedAmount,-500)
+ const wrongRefund = structuredClone(refundInput); wrongRefund.mapping[4].duplicateAmount='5.00'; await post('preview',wrongRefund,409)
+ assert.equal((await h.get('/api/easel/scenario/'+f.budget.id)).calculation.cells.find(r=>r.line===f.line.id&&r.month==='2026-01').amount,100000)
 })

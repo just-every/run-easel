@@ -120,23 +120,45 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
   const currentCell = current.calculation.cells.find(r => r.line === driver.line && r.department === driver.department && r.month === period)
   requireThat(currentCell && currentCell.sources.every(r => r.kind === 'expense' && r.id === driver.originId), 'The forecast cell mixes other sources; use a dedicated spend assumption', 409)
   const rows: Data[] = sourceRows.map(row => ({ ...row, sourceAmount: row.amount, amount: allocations.get(`${row.provider}:${row.id}`)![period] })), purse = rows.filter(r => r.provider === 'purse' && r.kind === 'commitment'), actualRows = rows.filter(r => r.kind === 'actual')
-  const mapped = new Set<string>(), linked = new Map<string, number>()
+  const mapped = new Set<string>(), linked = new Map<string, number>(), duplicateTotals = new Map<string, number>()
   const reviewed: Data[] = rows.map(row => {
    const k = `${row.provider}:${row.id}`, maps = b.mapping.filter((m: Data) => m.source === k)
    requireThat(maps.length === 1 && !mapped.has(k), 'Source mapping must be unique'); mapped.add(k)
    const map = maps[0]; requireThat(map.line === driver.line && map.department === driver.department && (batch || map.month === period), 'Review the exact expense line, department and month for every source')
    const order = row.order ?? map.order ?? null
    requireThat(!row.order || !map.order || row.order === map.order, 'Paid bill cannot move to another PO')
-   if (map.duplicateOf) {
-    const other = actualRows.find(r => `${r.provider}:${r.id}` === map.duplicateOf)
-    const otherMap = b.mapping.find((m: Data) => m.source === map.duplicateOf)
-    requireThat(row.kind === 'actual' && other && other !== row && other.provider !== row.provider && other.amount === row.amount && !otherMap?.duplicateOf && (other.order ?? otherMap?.order ?? null) === order, 'Duplicate settlement must match one independent actual and its PO exactly', 409)
+   requireThat(!map.duplicateMatches || !map.duplicateOf, 'Choose one duplicate target or explicit duplicate parts', 409)
+   requireThat(map.duplicateOf || map.duplicateAmount == null && map.duplicateAmounts == null, 'A duplicate amount requires a source actual', 409)
+   let matches: Data[] = []
+   if (map.duplicateMatches != null) {
+    requireThat(Array.isArray(map.duplicateMatches) && map.duplicateMatches.length > 0 && map.duplicateMatches.length <= actualRows.length, 'Choose explicit duplicate parts', 409)
+    matches = map.duplicateMatches
+   } else if (map.duplicateOf) matches = [{ source: map.duplicateOf, amount: map.duplicateAmount, amounts: map.duplicateAmounts }]
+   const seen = new Set<string>(), duplicateMatches: Data[] = []
+   for (const match of matches) {
+    requireThat(match && typeof match === 'object' && !Array.isArray(match) && typeof match.source === 'string', 'Choose a source actual for every duplicate part', 409)
+    const other = actualRows.find(r => `${r.provider}:${r.id}` === match.source)
+    const otherMap = b.mapping.find((m: Data) => m.source === match.source)
+    requireThat(row.kind === 'actual' && other && other !== row && other.provider !== row.provider && !otherMap?.duplicateOf && !otherMap?.duplicateMatches && !seen.has(match.source) && (other.order ?? otherMap?.order ?? null) === order, 'Duplicate parts require distinct independent actuals from another provider with the same PO', 409)
+    seen.add(match.source)
+    requireThat(batch ? match.amount == null : match.amounts == null, 'Match duplicate parts in the reviewed accounting periods', 409)
+    if (batch && match.amounts != null) requireThat(typeof match.amounts === 'object' && !Array.isArray(match.amounts) && Object.keys(match.amounts).length === periods.length && Object.keys(match.amounts).every(m => periods.includes(m)), 'Allocate each duplicate part across every reviewed month explicitly', 409)
+    const entered = batch ? match.amounts?.[period] : match.amount
+    if (entered == null) requireThat(other.amount === row.amount, 'Unequal source actuals require an explicit matched amount', 409)
+    const amount = entered == null ? row.amount : cents(entered, 'Duplicate matched amount', { negative: true })
+    requireThat(amount === 0 ? row.amount === 0 || other.amount === 0 : amount > 0 ? row.amount > 0 && other.amount > 0 : row.amount < 0 && other.amount < 0, 'Duplicate parts must retain both source directions', 409)
+    const total = addMoney(duplicateTotals.get(match.source) ?? 0, amount)
+    requireThat(Math.abs(total) <= Math.abs(other.amount), 'Duplicate parts exceed the independent source actual; no payment may be removed twice', 409)
+    duplicateTotals.set(match.source, total)
+    duplicateMatches.push({ source: match.source, amount })
    }
-   if (row.kind === 'actual' && order && !map.duplicateOf) {
+   const duplicateAmount = sumMoney(duplicateMatches.map(m => m.amount)), countedAmount = row.amount - duplicateAmount
+   requireThat(Number.isSafeInteger(countedAmount) && (row.amount >= 0 ? countedAmount >= 0 : countedAmount <= 0), 'Duplicate parts exceed the source row', 409)
+   if (row.kind === 'actual' && order) {
     requireThat(purse.some(p => p.id === order), 'Linked PO is not in this reviewed source')
-    linked.set(order, addMoney(linked.get(order) ?? 0, row.amount))
+    linked.set(order, addMoney(linked.get(order) ?? 0, countedAmount))
    }
-   return { ...row, line: map.line, department: map.department, month: period, order, duplicateOf: map.duplicateOf ?? null }
+   return { ...row, line: map.line, department: map.department, month: period, order, duplicateOf: map.duplicateOf ?? null, duplicateMatches, duplicateAmount, countedAmount }
   })
   const ledgerMapping = (Array.isArray(b.ledgerMapping) ? b.ledgerMapping : []).filter((m: Data) => ledgerRows.some(r => r.id === m.row))
   requireThat(ledgerMapping.length === ledgerRows.length && (!ledgerRows.length || b.ledgerConfirmed === true), 'Review every accepted ledger row explicitly before accepting spend', 409)
@@ -150,10 +172,10 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
    const seen = new Set<string>()
    for (const match of matches) {
     const other = reviewed.find(r => `${r.provider}:${r.id}` === match.source)
-    requireThat(other?.kind === 'actual' && !other.duplicateOf && !seen.has(match.source) && match.amount !== 0 && (match.amount > 0 ? row.amount > 0 && other.amount > 0 : row.amount < 0 && other.amount < 0), 'Ledger parts must match distinct source actuals in the same direction', 409)
+    requireThat(other?.kind === 'actual' && !seen.has(match.source) && match.amount !== 0 && (match.amount > 0 ? row.amount > 0 && other.countedAmount > 0 : row.amount < 0 && other.countedAmount < 0), 'Ledger parts must match distinct source actuals in the same direction', 409)
     seen.add(match.source)
     const matched = addMoney(matchedSources.get(match.source) ?? 0, match.amount)
-    requireThat(Math.abs(matched) <= Math.abs(other.amount), 'Ledger matches exceed the source actual; no duplicate amount may be removed twice', 409)
+    requireThat(Math.abs(matched) <= Math.abs(other.countedAmount), 'Ledger matches exceed the source actual; no duplicate amount may be removed twice', 409)
     matchedSources.set(match.source, matched)
    }
    const additionalAmount = row.amount - sumMoney(matches.map(m => m.amount))
@@ -165,7 +187,7 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
    return { id: row.id, date: row.date, account: row.account, reference: row.reference, amount: row.amount, file: row.file, description: row.description, source: map.source ?? null, matches, additionalAmount, order: map.order ?? null }
   })
   for (const po of purse) requireThat((linked.get(po.id) ?? 0) >= 0 && (linked.get(po.id) ?? 0) <= po.amount, 'Net linked actuals must be between zero and the PO amount; reconcile before accepting', 409)
-  const actual = sumMoney([...reviewed.filter(r => r.kind === 'actual' && !r.duplicateOf).map(r => r.amount), ...reconciledLedger.map(r => r.additionalAmount)])
+  const actual = sumMoney([...reviewed.filter(r => r.kind === 'actual').map(r => r.countedAmount), ...reconciledLedger.map(r => r.additionalAmount)])
   const committed = sumMoney(rows.filter(r => r.kind === 'commitment').map(r => r.provider === 'purse' ? r.status === 'closed' ? 0 : r.amount - (linked.get(r.id) ?? 0) : r.amount))
   const released = sumMoney(purse.filter(r => r.status === 'closed').map(r => r.amount - (linked.get(r.id) ?? 0)))
   requireThat([actual, committed, released, actual + committed].every(Number.isSafeInteger) && actual + committed >= 0, 'Spend total exceeds exact money limits or refunds exceed reviewed spend', 409)
