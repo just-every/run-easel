@@ -2027,7 +2027,7 @@
       "executable": false
     },
     "src/easel/saved-reports.ts": {
-      "sha256": "7448c11c279312e6a6a9b14be105186615590d8499ac327734bb775c3d61be54",
+      "sha256": "630e968503b46bbbd65088a8e024c5ba8389f9f8368edd615d6b1d4b1cb29e05",
       "executable": false
     },
     "src/easel/scenario-access.ts": {
@@ -4839,7 +4839,7 @@
       "executable": false
     },
     "tests/gauge-schedule-browser.mjs": {
-      "sha256": "561a5e156f71899a8b8ee65857b335154c31beb5d4d1a2907047be894bcbd333",
+      "sha256": "7c4eab491d8d8c173b21f8ad51ddeda4f228e97f9684673d56e6a5483658cf5d",
       "executable": false
     },
     "tests/gauge-utilization.test.mjs": {

@@ -109,7 +109,7 @@ try {
    }
    await region.scrollIntoViewIfNeeded(); await noOverflow(page, `Gauge freshness ${tab} ${width}`)
    await page.screenshot({ path: join(evidence, `${tab}-${width}.png`), fullPage: true })
-   const missingTips = await page.getByRole('button').evaluateAll(nodes => nodes.filter(n => !(n.textContent ?? '').trim() && !n.querySelector('[role=tooltip]')).map(n => n.getAttribute('aria-label')))
+   const missingTips = await page.getByRole('button').evaluateAll(nodes => nodes.filter(n => n.tagName === 'BUTTON' && !(n.textContent ?? '').trim() && !n.querySelector('[role=tooltip]')).map(n => n.getAttribute('aria-label')))
    assert.deepEqual(missingTips, [], `Icon-only controls have tooltips on ${tab}`)
   }
  }

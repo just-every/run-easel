@@ -112,7 +112,7 @@ export async function savedReport(c: Context, id: string) {
  }))
  const freshness = [source, ...(comparison ? [comparison] : []), ...versions.map(v => v.view)].flatMap(view => (view.gaugeFreshness ?? [])
   .filter((row: Data) => selected.has(row.line) && requested.includes(row.month) && (!d.department || row.department === d.department) &&
-   dimensions.some(dimension => reportDimensionMatch(c, definition, sourceDimensions.structure, row, dimension.id)))
+   dimensions.some(dimension => reportDimensionMatch(c, definition, view.dimensionStructure, row, dimension.id)))
   .map((row: Data) => ({ ...row, version: view.scenario.name })))
  const layout = find(c.s, 'dashboard-layout', `${d.id}|${c.x.actor.email}`)
  return { gaugeFreshness: freshness, reportDisplay: layout?.definitionRevision === d.revision ? layout?.reportDisplay ?? 'table' : 'table', layoutRevision: layout?.revision ?? 0, definitionRevision: d.revision, name: d.name, definition, currency: source.workspace.currency, sourceName: source.scenario.name,
