@@ -1,20 +1,21 @@
 import type { Bindings } from '../auth.server'
 import { Fault, requireThat, text, type Data } from './types'
 
-export type SpendProvider = 'ramp' | 'purse' | 'coaster'
+export type SpendProvider = 'ramp' | 'purse' | 'coaster' | 'brex'
 export function spendProvider(value: string): SpendProvider {
- requireThat(value === 'ramp' || value === 'purse' || value === 'coaster', 'Unknown spend provider', 404)
+ requireThat(value === 'ramp' || value === 'purse' || value === 'coaster' || value === 'brex', 'Unknown spend provider', 404)
  return value
 }
 export function spendOrigin(env: Bindings, provider: SpendProvider) {
  if (provider === 'ramp') return 'https://api.ramp.com'
+ if (provider === 'brex') return 'https://api.brex.com'
  let url: URL
  const configured = provider === 'purse' ? env.PURSE_ORIGIN : env.COASTER_ORIGIN
  try { url = new URL(configured ?? '') } catch { throw new Fault(503, `Configure ${provider.toUpperCase()}_ORIGIN before connecting`) }
  requireThat(!url.username && !url.password && url.pathname === '/' && !url.search && !url.hash && (url.protocol === 'https:' || env.AUTH_LOCAL === 'true' && url.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(url.hostname)), 'Spend connections require an HTTPS origin; local development permits loopback', 503)
  return url.origin
 }
-export const spendOwnerStep = (p: SpendProvider) => `Revoke this credential in ${p === 'ramp' ? 'Ramp developer settings' : p === 'purse' ? 'Purse Settings → Integration tokens' : 'Coaster Settings → API keys'}; Easel deletes only its local copy and cannot confirm provider revocation`
+export const spendOwnerStep = (p: SpendProvider) => `Revoke this credential in ${p === 'ramp' ? 'Ramp developer settings' : p === 'purse' ? 'Purse Settings → Integration tokens' : p === 'brex' ? 'Brex developer settings' : 'Coaster Settings → API keys'}; Easel deletes only its local copy and cannot confirm provider revocation`
 export async function spendRequest(origin: string, token: string, path: string) {
  const url = new URL(path, origin)
  requireThat(url.origin === origin && !url.username && !url.password && !url.hash, 'Unsafe spend pagination URL', 502)
@@ -37,7 +38,28 @@ const sourceId = (v: unknown) => { const id = text(v, 'Source ID', 120); require
 const minor = (n: unknown) => { requireThat(typeof n === 'number' && Number.isSafeInteger(n) && n >= 0, 'Spend source requires nonnegative exact minor units', 502); return n }
 export async function readSpend(provider: SpendProvider, origin: string, token: string, ids: string[]) {
  const rows: Data[] = []
- if (provider === 'coaster') {
+ if (provider === 'brex') {
+  let cursor: string | null = null
+  const cursors = new Set<string>(), seen = new Set<string>()
+  do {
+   const path = '/v2/transactions/card/primary?limit=100' + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '')
+   requireThat(!cursors.has(path) && cursors.size < 20, 'Brex pagination did not complete', 502); cursors.add(path)
+   const value = await spendRequest(origin, token, path)
+   requireThat(Array.isArray(value.items) && value.items.length <= 100 && (value.next_cursor == null || typeof value.next_cursor === 'string' && value.next_cursor.length > 0 && value.next_cursor.length <= 2000), 'Brex pagination is incomplete', 502)
+   for (const item of value.items) {
+    const id = sourceId(item.id); requireThat(!seen.has(id), 'Brex returned duplicate transactions', 502); seen.add(id)
+    requireThat(['PURCHASE','REFUND','CHARGEBACK','REWARDS_CREDIT','COLLECTION','BNPL_FEE'].includes(item.type), 'Unsupported Brex transaction type', 502)
+    if (['COLLECTION','REWARDS_CREDIT'].includes(item.type)) continue
+    requireThat(item.type !== 'CHARGEBACK', 'Brex chargebacks require separate reconciliation; no direction is inferred', 502)
+    requireThat(item.amount && typeof item.amount.currency === 'string' && typeof item.posted_at_date === 'string', 'Brex transaction is incomplete', 502)
+    const date = item.posted_at_date.slice(0,10)
+    requireThat(/^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date)) && new Date(date).toISOString().slice(0,10) === date, 'Brex returned an invalid posted date', 502)
+    const rawAmount = signedMinor(item.amount.amount), magnitude = Math.abs(rawAmount)
+    rows.push({ id, provider, currency: item.amount.currency, amount: item.type === 'REFUND' ? -magnitude : magnitude, rawAmount, reference: id, sourceDate: item.posted_at_date, kind: 'actual', status: item.type })
+   }
+   cursor = value.next_cursor ?? null
+  } while (cursor)
+ } else if (provider === 'coaster') {
   requireThat(ids.length > 0 && ids.length <= 20 && new Set(ids).size === ids.length, 'Choose one to twenty distinct Coaster report IDs')
   for (const id of ids) {
    const report = await spendRequest(origin, token, '/api/coaster/public-api/v1/claims/' + sourceId(id) + '/final-report')

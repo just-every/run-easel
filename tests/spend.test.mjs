@@ -9,12 +9,12 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test', COASTER_ORIGIN: 'https://coaster.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
  const route = (...parts) => parts.join('/')
  const f = await spendFixture(h), post = async (path, body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/' + path, body, cookie); assert.equal(r.status, status, r.text); return r.value }
- for (const p of ['ramp','purse','coaster']) {
+ for (const p of ['ramp','purse','coaster','brex']) {
   await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: false }, 400)
   await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
  }
  const secrets = await h.db.prepare('SELECT sealed FROM e_connection_secrets').all()
- assert.equal(secrets.results.length, 3)
+ assert.equal(secrets.results.length, 4)
  for (const key of Object.values(spendKeys)) assert.ok(!JSON.stringify(secrets).includes(key), 'Stored credentials are sealed')
  const status = await h.get('/api/easel/connections/spend/ramp')
  assert.equal(status.suffix, '1001'); assert.equal(status.scope, 'transactions:read'); assert.equal(status.schedule, 'Manual'); assert.ok(!JSON.stringify(status).includes(spendKeys.ramp))
@@ -58,7 +58,7 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  const reader = await h.person('synthetic-easel-200@example.test', 'viewer')
  await post(route('spend','preview'), again, 403, reader)
  await h.get('/api/easel/connections/spend/ramp', reader, 403)
- for (const cookie of [planner, reader]) for (const p of ['ramp','purse','coaster']) {
+ for (const cookie of [planner, reader]) for (const p of ['ramp','purse','coaster','brex']) {
   await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true }, 403, cookie)
   await post(route('connections','spend',p,'disconnect'), {}, 403, cookie)
  }
@@ -83,13 +83,13 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  } finally { await portable.exports.abort(archiveId) }
  // An archive restores connection metadata without the deliberately excluded credentials.
  await h.db.prepare('DELETE FROM e_connection_secrets').run()
- for (const p of ['ramp','purse','coaster']) {
+ for (const p of ['ramp','purse','coaster','brex']) {
   const restored = await h.get('/api/easel/' + route('connections','spend',p))
   assert.equal(restored.connected, false); assert.equal(restored.canDisconnect, true); assert.match(restored.error, /Reconnect after restore/)
   const reconnected = await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
   assert.equal(reconnected.connected, true, 'Restored metadata cannot strand native reconnect when the excluded credential is absent')
  }
- for (const p of ['ramp','purse','coaster']) { const disconnected = await post(route('connections','spend',p,'disconnect'), {}); assert.equal(disconnected.connected, false); assert.equal(disconnected.providerRevocation.status, 'unsupported'); assert.match(disconnected.ownerStep, /cannot confirm provider revocation/) }
+ for (const p of ['ramp','purse','coaster','brex']) { const disconnected = await post(route('connections','spend',p,'disconnect'), {}); assert.equal(disconnected.connected, false); assert.equal(disconnected.providerRevocation.status, 'unsupported'); assert.match(disconnected.ownerStep, /cannot confirm provider revocation/) }
  assert.equal((await h.db.prepare('SELECT COUNT(*) n FROM e_connection_secrets').first()).n, 0)
  assert.equal((await h.get('/api/easel/spend')).length, 1, 'Disconnect retains accepted evidence')
  const activity = await h.get('/api/easel/activity'); assert.match(JSON.stringify(activity), /spend-connected/); assert.match(JSON.stringify(activity), /spend-disconnected/)
@@ -134,7 +134,7 @@ test('Reviewed refunds, authenticated Purse bill settlements and PO releases con
 test('Scoped final Coaster reports move from approved obligation to reimbursed actual with fresh reviewed provenance', async t => {
  const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test', COASTER_ORIGIN: 'https://coaster.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
  const f = await spendFixture(h), post = async (op,b,status=200) => { const r = await h.send('/api/easel/spend/'+op,b,h.owner); assert.equal(r.status,status,r.text); return r.value }
- for (const p of ['ramp','purse','coaster']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`,{key:spendKeys[p],consent:true},h.owner)).status,200)
+ for (const p of ['ramp','purse','coaster','brex']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`,{key:spendKeys[p],consent:true},h.owner)).status,200)
  const input = { ...f.input,reports:['synthetic-easel-301'],mapping:[...f.input.mapping,{...f.input.mapping[1],source:'coaster:synthetic-easel-301'}] }
  let preview = await post('preview',input)
  assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[12025,44986,42989,57011])
@@ -174,6 +174,22 @@ test('Reviewed ledger matches remove only explicit equal source overlaps and pre
  assert.deepEqual([preview.actual,preview.committed,preview.remaining,preview.forecast],[14025,37975,48000,52000],'Matched card is not counted again and an independent ledger expense remains')
  await post('preview',{...reconciled,ledgerConfirmed:false},409)
  await post('preview',{...reconciled,ledgerMapping:reconciled.ledgerMapping.map(r=>({...r,source:'ramp:synthetic-easel-101'}))},409)
+ const parts = {...input,ledgerConfirmed:true,ledgerMapping:[{row:ledger.rows[0].id,matches:[{source:'ramp:synthetic-easel-101',amount:'100.25'}]},{row:ledger.rows[1].id,matches:[{source:'ramp:synthetic-easel-101',amount:'20.00'}]}]}
+ const split = await post('preview',parts)
+ assert.deepEqual([split.actual,split.committed,split.remaining,split.forecast],[14025,37975,48000,52000],'A card payment split across ledger rows is removed exactly once and the unmatched amount remains actual')
+ assert.deepEqual(split.ledgerRows.map(r=>[r.matches[0].amount,r.additionalAmount]),[[10025,2000],[2000,0]])
+ const overmatched=structuredClone(parts);overmatched.ledgerMapping[0].matches[0].amount='100.26';await post('preview',overmatched,409)
+ const reversed=structuredClone(parts);reversed.ledgerMapping[0].matches[0].amount='-100.25';await post('preview',reversed,409)
+ const repeated=structuredClone(parts);repeated.ledgerMapping[0].matches.push({source:'ramp:synthetic-easel-101',amount:'1.00'});await post('preview',repeated,409)
+ provider.state.refunds=[6000]
+ const combined={...input,ledgerConfirmed:true,mapping:[...input.mapping,{...input.mapping[0],source:'ramp:synthetic-easel-110'}],ledgerMapping:[{row:ledger.rows[0].id,matches:[{source:'ramp:synthetic-easel-101',amount:'100.25'},{source:'ramp:synthetic-easel-110',amount:'20.00'}]},{row:ledger.rows[1].id,matches:[{source:'ramp:synthetic-easel-101',amount:'20.00'}]}]}
+ const combinedPreview=await post('preview',combined)
+ assert.deepEqual([combinedPreview.actual,combinedPreview.committed,combinedPreview.remaining,combinedPreview.forecast],[18025,31975,50000,50000],'Several source actuals may reconcile one ledger row without removing a provider amount twice')
+ assert.deepEqual(combinedPreview.ledgerRows.map(r=>r.additionalAmount),[0,0])
+ provider.state.refunds=[]
+ const allocatedResidual=structuredClone(parts);allocatedResidual.ledgerMapping[0].order='synthetic-easel-102'
+ const residual=await post('preview',allocatedResidual);assert.deepEqual([residual.actual,residual.committed,residual.remaining,residual.forecast],[14025,35975,50000,50000],'Only the unmatched ledger remainder reduces the linked PO in addition to the provider payment')
+ const noResidual=structuredClone(parts);noResidual.ledgerMapping[1].order='synthetic-easel-102';await post('preview',noResidual,409)
  const linked={...reconciled,ledgerMapping:reconciled.ledgerMapping.map((r,i)=>i===1?{...r,order:'synthetic-easel-102'}:r)}
  await post('accept',{...linked,fingerprint:preview.fingerprint},409)
  preview=await post('preview',linked)
@@ -188,4 +204,57 @@ test('Reviewed ledger matches remove only explicit equal source overlaps and pre
  const refused=await h.send('/api/easel/spend/ledger',{...linked,revision:accepted.scenario.revision},reader);assert.equal(refused.status,403)
  await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
  await post('ledger',{...linked,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision},409)
+})
+
+
+test('Reviewed Brex settlements and exact recurring allocations replace all selected months atomically while preserving unreviewed assumptions', async t => {
+ const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-03-15T12:00:00Z' }); t.after(() => h.close())
+ const f = await spendFixture(h, { recurring: true }), post = async (op, b, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/spend/' + op, b, cookie); assert.equal(r.status, status, r.text); return r.value }
+ for (const p of ['ramp','purse','brex']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`, { key: spendKeys[p], consent: true }, h.owner)).status, 200)
+ const months = ['2026-01','2026-02'], amounts = { 'ramp:synthetic-easel-101': ['120.25','0.00'], 'purse:synthetic-easel-102': ['300.00','200.00'], 'brex:synthetic-easel-601': ['0.00','80.00'], 'brex:synthetic-easel-602': ['0.00','-10.00'] }
+ const input = { ...f.input, providers: ['ramp','purse','brex'], months, mapping: Object.entries(amounts).map(([source, values]) => ({ source, line: f.line.id, department: f.department.id, month: '2026-01', ...(source.startsWith('purse:') ? {} : { order: 'synthetic-easel-102' }), allocations: Object.fromEntries(months.map((m, i) => [m, values[i]])) })) }
+ const sources = await post('sources', { providers: ['brex'], month: '2026-02' })
+ assert.deepEqual(sources.map(r => [r.id,r.amount,r.rawAmount,r.status]), [['synthetic-easel-601',8000,-8000,'PURCHASE'],['synthetic-easel-602',-1000,1000,'REFUND']], 'Brex transaction type determines spend direction; account collections never become an expense')
+ assert.deepEqual(await post('sources', { providers: ['brex'], month: '2026-01' }), [], 'Posted dates select the requested accounting month')
+ provider.state.brexType='BNPL_FEE'; assert.equal((await post('sources',{providers:['brex'],month:'2026-02'}))[0].amount,8000,'A settled card fee remains expense rather than an account transfer'); provider.state.brexType='PURCHASE'
+ const status = await h.get('/api/easel/connections/spend/brex'); assert.equal(status.scope,'transactions.card.readonly'); assert.equal(status.suffix,'1004')
+ const before = await h.get('/api/easel/scenario/' + f.forecast.id)
+ let preview = await post('preview', input)
+ assert.deepEqual(preview.cells.map(r => [r.month,r.budget,r.actual,r.committed,r.remaining,r.forecast]), [['2026-01',100000,12025,17975,70000,30000],['2026-02',100000,7000,13000,80000,20000]], 'Every source is allocated exactly once across the independently expected monthly cells')
+ assert.deepEqual(await h.get('/api/easel/scenario/' + f.forecast.id),before,'The complete schedule preview writes nothing')
+ const changed = structuredClone(input); changed.mapping[1].allocations['2026-02'] = '199.99'; await post('preview',changed,409)
+ const unsafe = structuredClone(input); unsafe.mapping[0].allocations = {'2026-01':'121.25','2026-02':'-1.00'}; await post('preview',unsafe,409)
+ const missing = structuredClone(input); delete missing.mapping[1].allocations['2026-02']; await post('preview',missing,400)
+ await post('preview',{...input,months:['2026-02','2026-01']},400)
+ await post('preview',{...input,months:undefined},409)
+ provider.state.brexDate = '2026-02-16'; await post('accept',{...input,fingerprint:preview.fingerprint},409); provider.state.brexDate = '2026-02-15'
+ const remapped = structuredClone(input); remapped.mapping[1].allocations = {'2026-01':'310.00','2026-02':'190.00'}; await post('accept',{...remapped,fingerprint:preview.fingerprint},409)
+ const reader = await h.person('synthetic-easel-620@example.test','viewer'); await post('preview',input,403,reader)
+ await post('accept',{...input,fingerprint:preview.fingerprint})
+ let accepted = await h.get('/api/easel/scenario/' + f.forecast.id)
+ assert.deepEqual(accepted.calculation.cells.filter(r => r.line === f.line.id && r.department === f.department.id && ['2026-01','2026-02','2026-03'].includes(r.month)).map(r => [r.month,r.amount]), [['2026-01',30000],['2026-02',20000],['2026-03',100000]], 'Only reviewed recurring months change; later assumptions retain the original amount')
+ assert.deepEqual(accepted.inputs.expense[0].spendMonths, {'2026-01':30000,'2026-02':20000})
+ assert.equal(accepted.inputs.expense[0].amountCents,100000)
+ assert.deepEqual((await h.get('/api/easel/spend'))[0].cells.map(r => [r.month,r.actual,r.committed]), [['2026-01',12025,17975],['2026-02',7000,13000]])
+ const fresh = {...input,revision:accepted.scenario.revision}
+ await post('preview',{...fresh,months:['2026-01']},409)
+ preview = await post('preview',fresh); await post('accept',{...fresh,fingerprint:preview.fingerprint})
+ accepted = await h.get('/api/easel/scenario/' + f.forecast.id)
+ assert.deepEqual(accepted.inputs.expense[0].spendMonths,{'2026-01':30000,'2026-02':20000},'Repeated source reads replace rather than append')
+ const otherLine = await h.command('line',{name:'Other supplier cost',type:'operating-expense'})
+ await h.command('expense',{scenario:f.forecast.id,name:'Other assumption',kind:'recurring',line:otherLine.id,department:f.department.id,start:'2026-01',amount:'1000'})
+ const updated = await h.get('/api/easel/scenario/' + f.forecast.id), other = updated.inputs.expense.find(r => r.line === otherLine.id)
+ await post('preview',{...input,revision:updated.scenario.revision,driver:other.id,mapping:input.mapping.map(r=>({...r,line:otherLine.id}))},409)
+ for (const type of ['CHARGEBACK','UNRECOGNIZED']) { provider.state.brexType = type; await post('sources',{providers:['brex'],month:'2026-02'},502) }
+ provider.state.brexType = 'PURCHASE'; provider.state.brexCurrency = 'EUR'; await post('preview',{...input,revision:updated.scenario.revision},409); provider.state.brexCurrency = 'USD'
+ provider.state.brexAmount = 0.1; await post('sources',{providers:['brex'],month:'2026-02'},502); provider.state.brexAmount = -8000
+ provider.state.status = 302; await post('sources',{providers:['brex'],month:'2026-02'},502); provider.state.status = 200
+ assert.ok(!provider.state.calls.some(u=>u.includes('untrusted')))
+ assert.equal((await h.get('/api/easel/connections/spend/ramp')).error,null,'A failed Brex-only read does not mark an unread Ramp connection unhealthy')
+ await h.command('account-map',{account:'500',target:f.line.id}); await h.command('department-map',{source:'Operations',department:f.department.id})
+ const closeData = {filename:'synthetic-easel-621.csv',csv:'Date,Account,Department,Amount,Reference\n2026-01-15,500,Operations,0.01,synthetic-easel-622\n',columns:{date:'Date',account:'Account',department:'Department',amount:'Amount',reference:'Reference'},dateFormat:'YYYY-MM-DD',amountMode:'debit-positive'}
+ const closePreview = await h.kit('actuals','preview',closeData); await h.kit('actuals','commit',{...closeData,fingerprint:closePreview.fingerprint})
+ await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
+ await post('accept',{...input,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision,fingerprint:preview.fingerprint},409)
+ assert.deepEqual((await h.get('/api/easel/scenario/'+f.budget.id)).calculation.cells.filter(r=>r.line===f.line.id&&['2026-01','2026-02'].includes(r.month)).map(r=>r.amount),[100000,100000],'The approved recurring budget remains immutable')
 })

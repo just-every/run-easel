@@ -1,13 +1,20 @@
 import assert from 'node:assert/strict'
-export const spendKeys = { ramp: 'synthetic-easel-1001', purse: 'synthetic-easel-1002', coaster: 'synthetic-easel-1003' }
+export const spendKeys = { ramp: 'synthetic-easel-1001', purse: 'synthetic-easel-1002', coaster: 'synthetic-easel-1003', brex: 'synthetic-easel-1004' }
 export function spendProvider() {
- const state = { card: 12025, po: 50000, currency: 'USD', status: 200, next: null, calls: [], refunds: [], poStatus: 'issued', bills: [], reportAmount: 7011, reportStatus: 'approved', reportApproved: true }
+ const state = { card: 12025, po: 50000, currency: 'USD', status: 200, next: null, calls: [], refunds: [], poStatus: 'issued', bills: [], reportAmount: 7011, reportStatus: 'approved', reportApproved: true, brexAmount: -8000, brexRefund: 1000, brexType: 'PURCHASE', brexCursor: 'synthetic-easel-610', brexDate: '2026-02-15', brexCurrency: 'USD' }
  return { state, async outbound(request) {
-  const url = new URL(request.url), provider = url.hostname === 'api.ramp.com' ? 'ramp' : url.hostname === 'purse.example.test' ? 'purse' : 'coaster'
-  assert.ok(['api.ramp.com','purse.example.test','coaster.example.test'].includes(url.hostname), 'Only configured provider origins are used')
+  const url = new URL(request.url), provider = url.hostname === 'api.ramp.com' ? 'ramp' : url.hostname === 'api.brex.com' ? 'brex' : url.hostname === 'purse.example.test' ? 'purse' : 'coaster'
+  assert.ok(['api.ramp.com','api.brex.com','purse.example.test','coaster.example.test'].includes(url.hostname), 'Only configured provider origins are used')
   assert.equal(request.method, 'GET'); assert.equal(request.headers.get('authorization'), `Bearer ${spendKeys[provider]}`)
   state.calls.push(url.href)
   if (state.status !== 200) return new Response('private provider error', { status: state.status, headers: { location: 'https://untrusted.example.test/' } })
+  if (provider === 'brex') {
+   assert.equal(url.pathname, '/v2/transactions/card/primary')
+   assert.equal(url.searchParams.get('limit'), '100')
+   const item = (id, amount, type, date = state.brexDate) => ({ id, amount: { amount, currency: state.brexCurrency }, type, posted_at_date: date, initiated_at_date: date, description: 'Synthetic provider transaction' })
+   if (url.searchParams.has('cursor')) { assert.equal(url.searchParams.get('cursor'), state.brexCursor); return Response.json({ items: [item('synthetic-easel-602', state.brexRefund, 'REFUND')], next_cursor: null }) }
+   return Response.json({ items: [item('synthetic-easel-601', state.brexAmount, state.brexType), item('synthetic-easel-603', 100000, 'COLLECTION'), item('synthetic-easel-604', 5000, 'REWARDS_CREDIT')], next_cursor: state.brexCursor })
+  }
   if (provider === 'ramp') {
    assert.equal(url.pathname, '/developer/v1/transactions')
    return Response.json({ data: [{ id: 'synthetic-easel-101', state: 'CLEARED', amount: 999999, entity_amount: { value: state.card, currency: state.currency }, currency_code: 'USD', user_transaction_time: '2026-01-15T12:00:00Z' }, ...state.refunds.map((amount, i) => ({ id: `synthetic-easel-${110+i}`, state: 'CLEARED', entity_amount: { value: amount, currency: state.currency }, user_transaction_time: '2026-01-20T12:00:00Z' }))], page: { next: state.next } })
@@ -20,11 +27,11 @@ export function spendProvider() {
   return Response.json({ order: { id: 'synthetic-easel-102', number: 'PO-102', revision: 1, supplier: 'synthetic-easel-103', currency: state.currency, status: state.poStatus, needDate: '2026-01-31', issuedAt: '2026-01-01T12:00:00Z', totalMinor: state.po, freightMinor: 0, taxMinor: 0, otherMinor: 0, lines: [{ id: 'synthetic-easel-104', amountMinor: state.po }], bills: state.bills } })
  } }
 }
-export async function spendFixture(h) {
+export async function spendFixture(h, { recurring = false } = {}) {
  await h.command('workspace', { name: 'Synthetic spend company', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Operations' }), line = await h.command('line', { name: 'Software', type: 'operating-expense' })
  let budget = (await h.get('/api/easel/state')).scenarios[0]
- await h.command('expense', { scenario: budget.id, name: 'Supplier assumption', kind: 'one-off', line: line.id, department: department.id, start: '2026-01', amount: '1000' })
+ await h.command('expense', { scenario: budget.id, name: 'Supplier assumption', kind: recurring ? 'recurring' : 'one-off', line: line.id, department: department.id, start: '2026-01', amount: '1000' })
  budget = (await h.get('/api/easel/state')).scenarios[0]
  await h.command('approve-budget', { scenario: budget.id, revision: budget.revision })
  const forecast = (await h.get('/api/easel/state')).scenarios.find(s => s.kind === 'forecast')

@@ -247,7 +247,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   if (e.kind === 'one-off') add(e.line, e.department, e.start, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace: `${e.name}: one-off ${money(e.amountCents)} in ${monthLabel(e.start)}` })
   else {
    const trace = `${e.name}: recurring ${money(e.amountCents)} a month from ${monthLabel(e.start)}${e.end ? ` to ${monthLabel(e.end)}` : ''}`
-   for (const m of months) if (active(e, m)) add(e.line, e.department, m, { kind: 'expense', id: e.originId, label: e.name, amount: e.amountCents, trace })
+   for (const m of months) if (active(e, m)) add(e.line, e.department, m, { kind: 'expense', id: e.originId, label: e.name, amount: e.spendMonths?.[m] ?? e.amountCents, trace: e.spendMonths?.[m] !== undefined ? `${e.name}: reviewed operational spend ${money(e.spendMonths[m])} in ${monthLabel(m)}; unreviewed months retain the recurring assumption` : trace })
   }
  }
 

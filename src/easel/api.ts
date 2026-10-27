@@ -204,7 +204,7 @@ api.post('/api/easel/spend/:op', async c => {
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  let result
  try { result = op === 'sources' ? await spendSources(ctx, c.env, input) : await spendReview(ctx, c.env, op, input) }
- catch (error) { if (spendReadFailed(ctx, error)) await commit(ctx); throw error }
+ catch (error) { if (spendReadFailed(ctx, error, input.providers)) await commit(ctx); throw error }
  if (op === 'accept') await commit(ctx)
  else await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return c.json(result)
