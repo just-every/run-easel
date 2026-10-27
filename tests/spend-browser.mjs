@@ -28,6 +28,18 @@ try {
   await scope.getByText('••••' + spendKeys[p].slice(-4), { exact: true }).waitFor()
   assert.equal(await scope.locator('input[type=password]').count(), 0)
   await capture(scope, p + '-spend-connected')
+  if (p === 'ramp') {
+   await runtime.db.prepare('DELETE FROM e_connection_secrets WHERE id=?').bind('spend-ramp').run()
+   await page.reload()
+   await scope.getByText('Reconnect after restore; spend credentials are excluded from archives', { exact: true }).waitFor()
+   assert.equal(await scope.getByRole('button', { name: 'Connect Ramp spend', exact: true }).count(), 1)
+   assert.equal(await scope.getByRole('button', { name: 'Disconnect Ramp spend', exact: true }).count(), 1)
+   await capture(scope, 'ramp-spend-restore')
+   await scope.getByLabel('Ramp read-only credential', { exact: true }).fill(spendKeys.ramp)
+   await scope.getByLabel('Allow read-only Ramp spend access', { exact: true }).check()
+   await action('/connections/spend/ramp/connect', () => scope.getByRole('button', { name: 'Connect Ramp spend', exact: true }).click())
+   await scope.getByText('••••1001', { exact: true }).waitFor()
+  }
  }
  await page.goto(runtime.origin + '/app?tab=review')
  const review = card('Committed spend')

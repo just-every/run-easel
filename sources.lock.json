@@ -5191,7 +5191,7 @@
       "executable": false
     },
     "tests/spend-browser.mjs": {
-      "sha256": "4288b2fb99da485d567cc278b917c0dd76bccd0a7b34288b6c416cbd6ff9a4e6",
+      "sha256": "9532fa9025610c3683a059d7d20c58a85b71977051252c68e452877b9da1af24",
       "executable": false
     },
     "tests/spend-fixture.mjs": {
