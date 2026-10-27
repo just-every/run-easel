@@ -5199,7 +5199,7 @@
       "executable": false
     },
     "tests/spend.test.mjs": {
-      "sha256": "a0008fc625fba86a656d6c3b4e6aacf77377601154786506b225c9d7ca251ace",
+      "sha256": "8ccb26166be43729d48dadc79eb3363707426bd62efcf6abff46a7c4ed1da828",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {

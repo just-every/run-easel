@@ -9,12 +9,16 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
  const route = (...parts) => parts.join('/')
  const f = await spendFixture(h), post = async (path, body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/' + path, body, cookie); assert.equal(r.status, status, r.text); return r.value }
- for (const p of ['ramp','purse']) await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
+ for (const p of ['ramp','purse']) {
+  await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: false }, 400)
+  await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
+ }
  const secrets = await h.db.prepare('SELECT sealed FROM e_connection_secrets').all()
  assert.equal(secrets.results.length, 2)
  for (const key of Object.values(spendKeys)) assert.ok(!JSON.stringify(secrets).includes(key), 'Stored credentials are sealed')
  const status = await h.get('/api/easel/connections/spend/ramp')
  assert.equal(status.suffix, '1001'); assert.equal(status.scope, 'transactions:read'); assert.equal(status.schedule, 'Manual'); assert.ok(!JSON.stringify(status).includes(spendKeys.ramp))
+ assert.equal(status.owner, 'owner@example.test')
  const before = await h.get('/api/easel/scenario/' + f.forecast.id)
  const preview = await post(route('spend','preview'), f.input)
  assert.deepEqual([preview.budget, preview.committed, preview.actual, preview.remaining, preview.forecast], [100000,37975,12025,50000,50000], 'A linked card is actual once and reduces its PO commitment once')
@@ -33,6 +37,8 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  const accepted = await h.get('/api/easel/scenario/' + f.forecast.id)
  assert.equal(accepted.calculation.cells.find(c => c.line === f.line.id && c.department === f.department.id && c.month === '2026-01').amount, 50000, 'Accepted source replaces the 100000-cent assumption rather than adding to it')
  assert.equal(accepted.inputs.expense.length, 1)
+ const refreshed = await h.get('/api/easel/connections/spend/ramp'); assert.equal(refreshed.rowCount, 1); assert.equal(refreshed.lastRefresh, '2026-02-15T12:00:00Z')
+ assert.equal((await h.get('/api/easel/spend'))[0].forecastChanged, false)
  await post(route('spend','accept'), { ...f.input, fingerprint: preview.fingerprint }, 409)
  const again = { ...f.input, revision: accepted.scenario.revision }, p2 = await post(route('spend','preview'), again)
  await post(route('spend','accept'), { ...again, fingerprint: p2.fingerprint })
@@ -40,7 +46,10 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  assert.equal((await h.get('/api/easel/scenario/' + f.budget.id)).calculation.cells.find(c => c.line === f.line.id && c.month === '2026-01').amount, 100000, 'Approved budget remains frozen')
  provider.state.next = 'https://untrusted.example.test/'; await post(route('spend','preview'), { ...again, revision: accepted.scenario.revision + 1 }, 502); provider.state.next = null
  provider.state.currency = 'EUR'; await post(route('spend','preview'), { ...again, revision: accepted.scenario.revision + 1 }, 409); provider.state.currency = 'USD'
- for (const code of [302,429,500]) { provider.state.status = code; await post(route('spend','sources'), { orders: f.input.orders, month: f.input.month }, 502) }
+ for (const code of [302,429,500]) {
+  provider.state.status = code; await post(route('spend','sources'), { orders: f.input.orders, month: f.input.month }, 502)
+  if (code === 429) assert.match((await h.get('/api/easel/connections/spend/ramp')).rateLimit, /rate limit/)
+ }
  assert.match((await h.get('/api/easel/connections/spend/ramp')).error, /HTTP 500/)
  assert.ok(provider.state.calls.every(url => !url.includes('untrusted')), 'Neither redirects nor pagination can send a credential to another origin')
  provider.state.status = 200
@@ -49,12 +58,17 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
  const reader = await h.person('synthetic-easel-200@example.test', 'viewer')
  await post(route('spend','preview'), again, 403, reader)
  await h.get('/api/easel/connections/spend/ramp', reader, 403)
+ for (const cookie of [planner, reader]) for (const p of ['ramp','purse']) {
+  await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true }, 403, cookie)
+  await post(route('connections','spend',p,'disconnect'), {}, 403, cookie)
+ }
  await h.stepUp()
  const issued = await post(route('tokens','issue'), { label: 'Synthetic spend caller', kind: 'personal', scope: 'write', expiresInSeconds: 3600 })
  for (const path of [route('connections','spend','ramp'),'spend']) {
   const r = await h.mf.dispatchFetch(h.origin + '/api/easel/' + path, { headers: { authorization: `Bearer ${issued.token}` } }); assert.equal(r.status,403,'Finance API credentials cannot read native-only spend custody or source detail')
  }
  const tokenWrite = await h.mf.dispatchFetch(h.origin + '/api/easel/spend/accept', { method: 'POST', headers: { authorization: `Bearer ${issued.token}`, 'content-type': ['application','json'].join('/') }, body: JSON.stringify(again) }); assert.equal(tokenWrite.status,403)
+ const tokenDisconnect = await h.mf.dispatchFetch(h.origin + '/api/easel/connections/spend/ramp/disconnect', { method: 'POST', headers: { authorization: `Bearer ${issued.token}`, 'content-type': ['application','json'].join('/') }, body: '{}' }); assert.equal(tokenDisconnect.status,403)
  const cross = await h.mf.dispatchFetch(h.origin + '/api/easel/connections/spend/ramp/disconnect', { method: 'POST', headers: { cookie: h.owner, origin: 'https://untrusted.example.test', 'content-type': ['application','json'].join('/') }, body: '{}' }); assert.equal(cross.status, 403)
  const archive = await h.mf.dispatchFetch(h.origin + '/api/easel/export', { headers: { cookie: h.owner } }); assert.equal(archive.status, 200)
  const { default: JSZip } = await import('jszip'), zip = await JSZip.loadAsync(await archive.arrayBuffer())
