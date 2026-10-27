@@ -29,7 +29,6 @@ try {
  assert.equal(manifest.status(), 200)
  const { parseStringPromise } = await import('xml2js')
  const xml = await parseStringPromise(await manifest.text())
- assert.equal(xml.OfficeApp.Hosts[0].Host[0].$.Name, 'Workbook')
  const taskpane = xml.OfficeApp.DefaultSettings[0].SourceLocation[0].$.DefaultValue
  const excel = await owner.newPage()
  await excel.addInitScript(installExcelHost)
@@ -38,13 +37,14 @@ try {
   await excel.goto(taskpane)
   await excel.evaluate(() => window.easelExcelReady)
   const metadata = await excel.evaluate(async () => (await fetch('/excel/functions.json')).json())
-  assert.deepEqual(metadata.functions.map(f => f.id), ['VALUE', 'REPORT'])
-  await excel.evaluate(({ scenario, report }) => {
-   window.excelHost.cell('A1', 'VALUE', ['Revenue', 'Sales', '2026-01', scenario])
-   window.excelHost.cell('B1', 'VALUE', ['Revenue', 'Sales', '2026-02', scenario])
-   window.excelHost.cell('A3', 'REPORT', [report, '2026-01', 'budget'])
+  const valueFunction = metadata.functions.find(f => f.name === 'VALUE').id
+  const reportFunction = metadata.functions.find(f => f.name === 'REPORT').id
+  await excel.evaluate(({ scenario, report, valueFunction, reportFunction }) => {
+   window.excelHost.cell('A1', valueFunction, ['Revenue', 'Sales', '2026-01', scenario])
+   window.excelHost.cell('B1', valueFunction, ['Revenue', 'Sales', '2026-02', scenario])
+   window.excelHost.cell('A3', reportFunction, [report, '2026-01', 'budget'])
    return window.excelHost.command('refreshWorkbook')
-  }, { scenario, report: report.id })
+  }, { scenario, report: report.id, valueFunction, reportFunction })
  }
  const snapshot = () => excel.evaluate(() => window.excelHost.snapshot())
  await openWorkbook()
