@@ -55,7 +55,7 @@ try {
  await card.getByLabel('Query name', { exact: true }).fill('Monthly active users')
  await card.getByLabel('Warehouse', { exact: true }).selectOption('snowflake')
  await card.getByLabel('Metric name', { exact: true }).fill('active_users')
- await card.getByLabel('Read-only query', { exact: true }).fill("SELECT TO_CHAR(month, 'YYYY-MM') AS period, n AS value FROM usage.monthly_active")
+ await card.getByLabel('Read-only query', { exact: true }).fill("SELECT TO_CHAR(month, 'YYYY-MM') AS period, n AS value FROM usage.monthly_active ORDER BY period DESC")
  await card.getByRole('button', { name: 'Save query', exact: true }).click(); await settle(page)
  remote.warehouse.snowflake = [{ period: '2026-01', value: '1500' }]
  await card.getByRole('button', { name: 'Preview result', exact: true }).click(); await settle(page)

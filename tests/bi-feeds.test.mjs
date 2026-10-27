@@ -43,7 +43,7 @@ test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped B
  await h.get('/api/easel/warehouse', planner, 403)
 
  // One reviewed read-only query per metric.
- const sql = "WITH measured AS (SELECT TO_CHAR(month, 'YYYY-MM') AS period, active_users AS value FROM usage.monthly_active) SELECT period, SUM(value) AS value FROM measured GROUP BY period"
+ const sql = "WITH measured AS (SELECT TO_CHAR(month, 'YYYY-MM') AS period, active_users AS value FROM usage.monthly_active) SELECT period, SUM(value) AS value FROM measured GROUP BY period ORDER BY period DESC"
  const refused = [
   'DELETE FROM usage.monthly_active', 'select 1; drop table usage.x', `${sql} -- sneaky`, 'select a into b from c',
   'with x as (select 1 as period, 2 as value) insert into y select * from x',
@@ -131,15 +131,15 @@ test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped B
  assert.deepEqual(await calc(), driven)
 
  // Editing the query withdraws approval until it is reviewed again.
- const edited = (await june('warehouse-query-save', { id: saved.id, revision: afterPreview.revision, name: 'Monthly active users', warehouse: 'snowflake', metric: 'active_users', sql: `${sql} ORDER BY 1` })).value
+ const edited = (await june('warehouse-query-save', { id: saved.id, revision: afterPreview.revision, name: 'Monthly active users', warehouse: 'snowflake', metric: 'active_users', sql: `${sql} LIMIT 600` })).value
  assert.equal(edited.approved, null)
  assert.equal((await june('warehouse-refresh', { id: saved.id, revision: edited.revision })).status, 409)
 
  // BigQuery and Databricks return the same shape; malformed results are refused.
  remote.warehouse.bigquery = [{ period: '2026-01', value: '250.5' }]; remote.warehouse.databricks = [{ period: '2026-01', value: '12' }]
- const bq = (await june('warehouse-query-save', { name: 'Shipments', warehouse: 'bigquery', metric: 'shipments', sql: 'SELECT FORMAT_DATE("%Y-%m", d) AS period, n AS value FROM ops.shipments' })).value
+ const bq = (await june('warehouse-query-save', { name: 'Shipments', warehouse: 'bigquery', metric: 'shipments', sql: 'SELECT FORMAT_DATE("%Y-%m", d) AS period, n AS value FROM ops.shipments ORDER BY 1 DESC' })).value
  assert.deepEqual((await june('warehouse-query-preview', { id: bq.id, revision: bq.revision })).value.rows, [{ period: '2026-01', hundredths: 25050 }])
- const db = (await june('warehouse-query-save', { name: 'Orders', warehouse: 'databricks', metric: 'orders', sql: "SELECT date_format(month, 'yyyy-MM') AS period, CAST(n AS DECIMAL(12,2)) AS value FROM ops.orders" })).value
+ const db = (await june('warehouse-query-save', { name: 'Orders', warehouse: 'databricks', metric: 'orders', sql: "SELECT date_format(month, 'yyyy-MM') AS period, CAST(n AS DECIMAL(12,2)) AS value FROM ops.orders ORDER BY period ASC" })).value
  assert.deepEqual((await june('warehouse-query-preview', { id: db.id, revision: db.revision })).value.rows, [{ period: '2026-01', hundredths: 1200 }])
  remote.warehouse.databricks = [{ period: '2026-13', value: '1' }]
  assert.equal((await june('warehouse-query-preview', { id: db.id, revision: (await h.get('/api/easel/warehouse')).queries.find(q => q.metric === 'orders').revision })).status, 400)
