@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "218514b0e3d2b31c1f734177d500eb10af2172dfbe705ec7b4150e3f2b03c701",
+      "sha256": "26019a89bf1782dc02f90a370ddf7ed96c149cbc68389b13d58963e169a3c099",
       "executable": false
     },
     ".gitignore": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "4e203fec8e630f96898f39e359f4f94ea30997bfdb73bc5d969bc2a59f800963",
+      "sha256": "66da2034d3adfa5470f5dc3be5b667f73fb846ba4e976250e61d1d6c12bd1992",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "c7e2c1a1d6cec4c1451fdd2dfdf57439666d55cc1d15c9f3318b982374ca7fcb",
+      "sha256": "dcc579e1b8ffc155a6491455bdbcbd51e29f5641af6944b6d2a97feb2eaae8b9",
       "executable": false
     },
     "DEMO.md": {
@@ -675,11 +675,11 @@
       "executable": false
     },
     "package.json": {
-      "sha256": "463f062c69465eb2ffd5dddf5ce8678faeb7f7d5471fe51f393dc2c213ee8211",
+      "sha256": "9a0dc1a308c3086f0c5255acc9d3d7e4b6f3aad8bba01899b6a89a3030b66418",
       "executable": false
     },
     "pnpm-lock.yaml": {
-      "sha256": "8db5cba826ed53b42ccfa9c5e7d718069ad387bdc0118f3147ebc11ab73c3d55",
+      "sha256": "f70d5dca4be57cd4b9e516e8f76811c52fbafcc6cf7626446ac98ac98a98095d",
       "executable": false
     },
     "public/apple-touch-icon.png": {
@@ -2147,11 +2147,15 @@
       "executable": false
     },
     "src/easel/warehouse-provider.ts": {
-      "sha256": "5609c8d329d65173a4431c78394e61885bd1e2de9a9ae082e62e22d3beabc1cc",
+      "sha256": "ca6a9bf540c5a7c79d10ab67852ae2ca3bfe563ee173694e6855de7aaac6d40d",
+      "executable": false
+    },
+    "src/easel/warehouse-query-policy.ts": {
+      "sha256": "7c81359f0d7418ecb8896d8e7d9a2e141547e2380ee493f26d57fb42fceb8d19",
       "executable": false
     },
     "src/easel/warehouse.ts": {
-      "sha256": "d248b322b48065049919fc86467fba35ba2bbe7e624f4993ebf378c653dae0f4",
+      "sha256": "dd7bc3614ccb7a4002be8931fd70d459a9b19ec7db1c3b0b1a05aab36e6322c5",
       "executable": false
     },
     "src/easel/weekly-cash-workbook.ts": {
@@ -4515,7 +4519,7 @@
       "executable": false
     },
     "src/ui/warehouse.tsx": {
-      "sha256": "ffb4ce6ea688bc74f51b66769aec8cf1d4aff583662cbb89812d797e3c80c087",
+      "sha256": "e96b34acb10401375aad70e5270b79ef3e3a07bccde1bb1a019abbcc968f43b8",
       "executable": false
     },
     "src/ui/weekly-cash.tsx": {
@@ -4579,11 +4583,11 @@
       "executable": false
     },
     "tests/bi-feeds-browser.mjs": {
-      "sha256": "292b67a72c255f1455731c5edc0d1ad441c33ef06f377729d925e0b9b6697661",
+      "sha256": "00b60086a5dd773604b30598ef97602f544a6a4dac5e5daa84189783c23337d6",
       "executable": false
     },
     "tests/bi-feeds.test.mjs": {
-      "sha256": "e5b664245dbcc7bd724474b37f905b8c8da3a0759c986a3a53e7d9e1aafb4e34",
+      "sha256": "969533a62cfa8421c5687e8b19d3fee1b2fe035733d668627f47c80a872baf2f",
       "executable": false
     },
     "tests/billing-fixture.mjs": {
