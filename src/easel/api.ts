@@ -67,7 +67,7 @@ import { gaugeStatus, gaugeConnection } from './gauge-connection'
 import { gaugeUtilization } from './gauge-utilization'
 import { starterModels } from './starter-models'
 import { grid } from './grid'
-import { excelValues, excelWrite } from './excel'
+import { excelValues, excelReport, excelWrite } from './excel'
 import { historyBudget } from './history-budget'
 import { dashboards, dashboardList, dashboardView } from './dashboards'
 import { dashboardWorkbook } from './dashboard-workbook'
@@ -526,9 +526,10 @@ api.get('/api/easel/department-statements/:id/document.xlsx', async c => {
 })
 
 api.get('/api/office/manifest/:host', c => {
- const host = choice(c.req.param('host'), ['PowerPoint', 'Word'] as const, 'Office host')
+ const host = choice(c.req.param('host'), ['PowerPoint', 'Word', 'Excel'] as const, 'Office host')
  return c.body(officeManifest(runtimeBindings(c.env).AUTH_ORIGIN, host), 200, { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'no-store', 'content-disposition': `attachment; filename=easel-${host.toLowerCase()}.xml` })
 })
+api.get('/api/easel/excel/report/:id', c => read(c, ctx => excelReport(ctx, c.req.param('id'), c.req.query())))
 api.get('/api/easel/excel/:id/value', c => read(c, ctx => excelValues(ctx, c.req.param('id'), c.req.query())))
 api.get('/api/easel/dashboards/:id/office', c => read(c, ctx => officeReport(ctx, c.req.param('id'), c.req.query())))
 api.get('/api/easel/dashboards/:id/office.xlsx', async c => {

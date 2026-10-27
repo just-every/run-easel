@@ -1,0 +1,76 @@
+{
+  "functions": [
+    {
+      "id": "VALUE",
+      "name": "VALUE",
+      "description": "Read live permitted Easel values.",
+      "parameters": [
+        {
+          "name": "line",
+          "description": "Line selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        },
+        {
+          "name": "department",
+          "description": "Department selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        },
+        {
+          "name": "month",
+          "description": "Month selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        },
+        {
+          "name": "scenario",
+          "description": "Scenario selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        }
+      ],
+      "result": {
+        "type": "number",
+        "dimensionality": "scalar"
+      },
+      "options": {
+        "stream": true,
+        "requiresAddress": true
+      }
+    },
+    {
+      "id": "REPORT",
+      "name": "REPORT",
+      "description": "Read live permitted Easel values.",
+      "parameters": [
+        {
+          "name": "report",
+          "description": "Report selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        },
+        {
+          "name": "period",
+          "description": "Period selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        },
+        {
+          "name": "metric",
+          "description": "Metric selector",
+          "type": "string",
+          "dimensionality": "scalar"
+        }
+      ],
+      "result": {
+        "type": "any",
+        "dimensionality": "matrix"
+      },
+      "options": {
+        "stream": true,
+        "requiresAddress": true
+      }
+    }
+  ]
+}
