@@ -10,6 +10,15 @@ function minor(value: unknown) {
  return amount
 }
 
+// These are no-write reviews: a source conflict belongs beside this review,
+// rather than refreshing the application and discarding finance's allocation.
+async function cashResponse(path: string, body: D) {
+ const response = await fetch(`/api/easel/pantry/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+ if (!response.ok) { const value: D = await response.json(); throw Error(value.error ?? 'Cash source read failed') }
+ return response
+}
+async function cashJson(path: string, body: D) { return (await cashResponse(path, body)).json() as Promise<D> }
+
 export function PantryCashReview({ scenario, basis, start, render }: { scenario: string; basis: string; start: string; render: (view: D) => ReactNode }) {
  const [review, setReview] = useState<D | null>(null), [result, setResult] = useState<D | null>(null), [request, setRequest] = useState<D | null>(null)
  const date = useDate(), generation = useRef(0)
@@ -19,7 +28,7 @@ export function PantryCashReview({ scenario, basis, start, render }: { scenario:
   <Form submit="Review Pantry open items" onSubmit={async values => {
    invalidate(); setReview(null)
    const current = generation.current
-   const [source, plan] = await Promise.all([api('pantry/cash', values), api(`scenario/${scenario}`)])
+   const [source, plan] = await Promise.all([cashJson('cash', values), api(`scenario/${scenario}`)])
    if (current !== generation.current) return
    setReview({ source, revision: plan.scenario.revision, days: (plan.calculation.dailyCash ?? []).filter((r: D) => r.date > source.asOf && (r.collections > 0 || r.payments > 0)) })
   }}>
@@ -37,7 +46,7 @@ export function PantryCashReview({ scenario, basis, start, render }: { scenario:
      const replacements = review.days.map((r: D, i: number) => ({ date: r.date, collections: minor(values[`collections-${i}`]), payments: minor(values[`payments-${i}`]) })).filter((r: D) => r.collections || r.payments)
      const body = { scenario, revision: review.revision, asOf: review.source.asOf, sourceFingerprint: review.source.digest, basis, ...(start ? { start } : {}), replacements, additionalCollections: minor(values.additionalCollections), additionalPayments: minor(values.additionalPayments) }
      const current = generation.current
-     const next = await api('pantry/cash-forecast', body)
+     const next = await cashJson('cash-forecast', body)
      if (current === generation.current) { setRequest(body); setResult(next) }
     }}>
      <div onChange={invalidate}>
@@ -57,8 +66,7 @@ export function PantryCashReview({ scenario, basis, start, render }: { scenario:
    <h3>Combined cash forecast</h3>
    <Action label="Download combined cash Excel" run={async () => {
     try {
-     const response = await fetch('/api/easel/pantry/cash-forecast', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...request, format: 'xlsx' }) })
-     if (!response.ok) { const value: D = await response.json(); throw Error(value.error ?? 'Combined cash export failed') }
+     const response = await cashResponse('cash-forecast', { ...request, format: 'xlsx' })
      const url = URL.createObjectURL(await response.blob()), link = document.createElement('a')
      link.href = url; link.download = 'easel-combined-cash.xlsx'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (error) { invalidate(); setExportError((error as Error).message) }
