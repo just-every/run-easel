@@ -185,7 +185,7 @@ test('Excel refresh reads live filtered cells and write-back follows submission 
   const host = () => {
    results = new Map()
    const runtime = excelFunctions({
-    CustomFunctions: { associate: (name, fn) => { formula = fn }, Error: CellError, ErrorCode: { notAvailable: 'unavailable' } },
+    CustomFunctions: { associate: (name, fn) => { if (name === 'VALUE') formula = fn }, Error: CellError, ErrorCode: { notAvailable: 'unavailable' } },
     Excel: { run: async fn => fn({ workbook: { application: { calculate: () => calculations++ } }, sync: async () => {} }) },
     read: selector => read(selector.month),
    })

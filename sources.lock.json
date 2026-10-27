@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "c7e2c1a1d6cec4c1451fdd2dfdf57439666d55cc1d15c9f3318b982374ca7fcb",
+      "sha256": "e1814844553e6216c80ec6a22da47518257b5a14f380689af7820b6c264144fe",
       "executable": false
     },
     "DEMO.md": {
@@ -187,7 +187,7 @@
       "executable": false
     },
     "docs/excel-bridge.md": {
-      "sha256": "db6d00de80d2d71f66b2a579f2b996f29061015b5f7783a9b750bd242e7f8922",
+      "sha256": "1bbdf2f5776d7d854f01a51aa0afa0176f6807384c86c36160aa53674a41bf3c",
       "executable": false
     },
     "docs/first-plan.md": {
@@ -711,7 +711,7 @@
       "executable": false
     },
     "public/excel/functions.mjs": {
-      "sha256": "953bb43219bc4b0eb5ea46dbf22400bdf0d89caede6f88a617f6f5f06667f9ed",
+      "sha256": "d1b815f67988fb6a6016f966fdacde21dde4a8afc2602dddcb3543ebdbe91795",
       "executable": false
     },
     "public/excel/index.html": {
@@ -4879,7 +4879,7 @@
       "executable": false
     },
     "tests/grid.test.mjs": {
-      "sha256": "4d17c688cd780b54ba1da8e020ba529c91ad939e10ca89ddf54057c882938ec8",
+      "sha256": "a6718a8961690500ad6b23f5a831c0b960ab2dbaf276b92895c0d97f95fbd973",
       "executable": false
     },
     "tests/groups-browser.mjs": {
