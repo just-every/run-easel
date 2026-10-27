@@ -4,6 +4,7 @@ import { zonedInstant, addDays } from './calendar-time'
 import type { Context } from './context'
 import { connectionAuthority, gaugeObservationAuthority } from './gauge-connection'
 import { gaugeCheck } from './gauge-check'
+import { recordGaugeObservation } from './gauge-freshness'
 import { workspace } from './model'
 import { month } from './months'
 import { deliverNotifications } from './notify-dispatch'
@@ -66,6 +67,7 @@ export async function runGaugeSchedule(original: Bindings) {
  const run = gaugeDue(c.s, row.refreshSchedule, c.now)
  if (!row.connected || !run || row.refreshSchedule.ownerId !== actor.id || row.refreshSchedule.owner !== actor.email) return
  put(c.s, 'connection', 'gauge', { ...row, refreshSchedule: { ...row.refreshSchedule, lastRun: run.scheduledAt }, scheduledAt: run.scheduledAt, scheduleZone: run.zone, dispatchedAt: c.now, error: 'Scheduled observation pending; outcome not yet confirmed' })
+ recordGaugeObservation(c, row.refreshSchedule.month, null, 'Scheduled observation pending; outcome not yet confirmed')
  await commit(c)
  c = await open(); row = get(c.s, 'connection', 'gauge')
  if (!row.connected || row.refreshSchedule?.savedAt !== schedule.savedAt) return

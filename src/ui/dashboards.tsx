@@ -1,3 +1,4 @@
+import { GaugeFreshness } from './gauge-freshness'
 import { SavedReportPanel } from './saved-reports'
 import { useEffect, useState } from 'react'
 import type { Shared } from './app'
@@ -107,6 +108,7 @@ export function Dashboards({ state, refresh }: Shared) {
     {creator && <div className="row"><button type="button" className="quiet" onClick={() => setEditor('edit')}>Edit and share</button><Action kind="danger" label="Delete dashboard" confirm={`Delete ${definition.name} for everyone who can read it?`} run={async () => { await command('dashboard-delete', { id: definition.id, revision: definition.revision }); setView(null); await changed() }} /></div>}
     <p><a href={`/api/easel/dashboards/${encodeURIComponent(definition.id)}/document.xlsx`} download>Download dashboard (Excel)</a></p>
     {definition.report && <p><a href={`/api/easel/dashboards/${encodeURIComponent(definition.id)}/report.xlsx`} download>Download saved report (Excel)</a></p>}
+    <GaugeFreshness rows={view.gaugeFreshness} />
     {view.blocked && <p role="alert" className="error">{view.blocked}</p>}
     {definition.department && <p>Company cash, burn and runway are unavailable in this department view.</p>}
     <details><summary>Arrange my dashboard</summary><p>Choose the order and display for your own view. The shared definition stays available to every reader.</p><WidgetControls widgets={widgets} setWidgets={setWidgets} /><Action label="Save my layout" run={async () => { await command('dashboard-layout', { dashboard: definition.id, revision: view.layoutRevision, definitionRevision: definition.revision, widgets }); await changed(definition.id) }} />{dirty && <p role="status">You have unsaved layout changes.</p>}</details>

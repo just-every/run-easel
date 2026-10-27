@@ -1,3 +1,4 @@
+import { gaugeFreshnessSheet } from './gauge-freshness-workbook'
 import { dimensionActuals } from './dimension-actuals'
 import { dimensionalCells } from './dimensions-report'
 import { scopedReader } from './group-projections'
@@ -109,8 +110,12 @@ export async function savedReport(c: Context, id: string) {
    variance, varianceBps, priorYearActual: prior, yoy, yoyBps,
    highlight: varianceBps !== null && Math.abs(varianceBps) > definition.highlightBps }
  }))
+ const freshness = [source, ...(comparison ? [comparison] : []), ...versions.map(v => v.view)].flatMap(view => (view.gaugeFreshness ?? [])
+  .filter((row: Data) => selected.has(row.line) && requested.includes(row.month) && (!d.department || row.department === d.department) &&
+   dimensions.some(dimension => reportDimensionMatch(c, definition, sourceDimensions.structure, row, dimension.id)))
+  .map((row: Data) => ({ ...row, version: view.scenario.name })))
  const layout = find(c.s, 'dashboard-layout', `${d.id}|${c.x.actor.email}`)
- return { reportDisplay: layout?.definitionRevision === d.revision ? layout?.reportDisplay ?? 'table' : 'table', layoutRevision: layout?.revision ?? 0, definitionRevision: d.revision, name: d.name, definition, currency: source.workspace.currency, sourceName: source.scenario.name,
+ return { gaugeFreshness: freshness, reportDisplay: layout?.definitionRevision === d.revision ? layout?.reportDisplay ?? 'table' : 'table', layoutRevision: layout?.revision ?? 0, definitionRevision: d.revision, name: d.name, definition, currency: source.workspace.currency, sourceName: source.scenario.name,
   versions: versions.map(v => ({ id: v.id, name: v.name })), comparisonName: comparison?.scenario.name ?? null, department: d.department, rows, monthly,
   missingMonths: actuals.missingMonths, blockedMonths: actuals.blockedMonths,
   units: { money: 'integer minor units', percentages: 'basis points; half away from zero; unavailable for zero denominator' } }
@@ -135,7 +140,7 @@ export function savedReportWorkbook(view: Data): Uint8Array {
    formula(`C${n}-D${n}`, row.variance), formula(`ROUND((C${n}-D${n})*10000/D${n},0)`, row.varianceBps), rollup(row, 'C', row.months.map((m: string) => addMonths(m, -12)), row.priorYearActual),
    formula(`C${n}-H${n}`, row.yoy), formula(`ROUND((C${n}-H${n})*10000/H${n},0)`, row.yoyBps), row.highlight ? 'Above threshold' : '', ...versions.map((v: Data, i: number) => rollup(row, column(5 + i), row.months, row.versions[v.id]))])
  }
- return workbook([{ name: 'Saved report', rows }, { name: 'Monthly', rows: monthly }, { name: 'Availability', rows: [
+ return workbook([gaugeFreshnessSheet(view.gaugeFreshness), { name: 'Saved report', rows }, { name: 'Monthly', rows: monthly }, { name: 'Availability', rows: [
   ['Unavailable values are blank, never zero. Accepted periods without this row have an observed zero.'],
   ['Missing actual periods', ...view.missingMonths], ['Blocked actual periods', ...view.blockedMonths],
  ] }])

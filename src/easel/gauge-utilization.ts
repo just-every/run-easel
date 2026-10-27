@@ -2,6 +2,7 @@ import type { Bindings } from '../auth.server'
 import type { Context } from './context'
 import { connectionAuthority } from './gauge-connection'
 import { gaugeSource } from './gauge-source'
+import { recordGaugeObservation } from './gauge-freshness'
 import { requireEditable, scenarioInputs, workspace } from './model'
 import { month, addMonths } from './months'
 import { bump } from './plan'
@@ -39,8 +40,7 @@ export async function gaugeUtilization(c: Context, env: Bindings, op: string, b:
  const before = driver.gaugeActuals ?? {}, prior = before[period]
  if (prior && JSON.stringify({ ...prior.source, asOf: null }) === JSON.stringify({ ...source, asOf: null }) && prior.hourlyRateCents === driver.hourlyRateCents) return { ...result, unchanged: true }
  put(c.s, 'revenue', driver.id, { ...driver, gaugeActuals: { ...before, [period]: { source, digest, amountCents, hourlyRateCents: driver.hourlyRateCents, acceptedBy: c.x.actor.email, acceptedAt: c.now } }, gaugeUndo: { before, resultingRevision: scenario.revision + 1, digest, month: period } })
- const connection = get(c.s, 'connection', 'gauge')
- put(c.s, 'connection', 'gauge', { ...connection, lastRefresh: c.now, rowCount: 1, error: null, rateLimit: null })
+ recordGaugeObservation(c, period, source, null)
  bump(c, scenario, 'gauge-utilization-accepted', driver.id, { digest, month: period, source: stable, amountCents })
  return result
 }

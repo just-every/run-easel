@@ -1,3 +1,4 @@
+import { gaugeFreshness } from './gauge-freshness'
 import { workingCalculation } from './calculation'
 // Monthly review: actual against the approved budget and the forecast kept
 // before the month closed, with the accepted rows and plan sources behind
@@ -37,7 +38,8 @@ export async function variance(c: Context, month: string) {
  const forecast = forecastFor(s, month)
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
- const priorCalc: Calculation | null = prior ? (await snapshot(c.db, prior.snapshot)).body.calculation : null
+ const priorBody = prior ? (await snapshot(c.db, prior.snapshot)).body : null
+ const priorCalc: Calculation | null = priorBody?.calculation ?? null
  const currentCalc = await workingCalculation(c, forecast.id, month)
  const actual = cellMap(currentCalc, month)
  const comparison = await versionComparison(c, forecast, budget, currentCalc, month)
@@ -78,7 +80,7 @@ export async function variance(c: Context, month: string) {
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))
  const names = await actorNames(c.db, [budget.body.approvedBy?.email, ...rows.flatMap(row => [row.explanation?.writtenBy, row.explanation?.confirmedBy])])
- return { month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
+ return { gaugeFreshness: [...(await gaugeFreshness(c, budget.body.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Approved budget' })), ...(await gaugeFreshness(c, priorBody?.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Prior forecast' }))], month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
 }
 
 /** AGENT-007: citations bind accepted rows visible in this exact variance, never client-supplied evidence. */

@@ -1,3 +1,4 @@
+import { gaugeFreshness } from './gauge-freshness'
 import type { Calculation } from './engine'
 import { scopedCalculation, scopedReader } from './group-projections'
 import { reportDefinition, savedReport } from './saved-reports'
@@ -52,7 +53,7 @@ export async function dashboardView(c: Context, id: unknown) {
  // A revised definition changes the available widgets. A stale personal
  // layout is not silently rewritten and cannot supply removed widgets.
  const personal = layout && layout.definitionRevision === dashboard.revision
- return { dashboard, widgets: personal ? layout.widgets : dashboard.widgets, layoutRevision: layout?.revision ?? 0,
+ return { gaugeFreshness: await gaugeFreshness(c, m.inputs.revenue, { department: dashboard.department, months: calculation.months.filter(month => !calculation.actualsThrough || month > calculation.actualsThrough) }), dashboard, widgets: personal ? layout.widgets : dashboard.widgets, layoutRevision: layout?.revision ?? 0,
   currency: m.workspace.currency, scenarioName: sc.name, departmentName: m.departments.find(d => d.id === dashboard.department)?.name ?? '', rows, blocked }
 }
 

@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "37c57b317f5225d4695c1005888c76109dc9b62345b3c605cc54da8b400a76ea",
+      "sha256": "218514b0e3d2b31c1f734177d500eb10af2172dfbe705ec7b4150e3f2b03c701",
       "executable": false
     },
     ".gitignore": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "68637bb0705dad49f8e90ea3b11042e44cd966ce271ce51006b4b06b8218583b",
+      "sha256": "4e203fec8e630f96898f39e359f4f94ea30997bfdb73bc5d969bc2a59f800963",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "ce2fea0a58b2a6bfa872504a60ec27aaa48e088412f9e0af97f39a720535fcf8",
+      "sha256": "c7e2c1a1d6cec4c1451fdd2dfdf57439666d55cc1d15c9f3318b982374ca7fcb",
       "executable": false
     },
     "DEMO.md": {
@@ -1359,7 +1359,7 @@
       "executable": false
     },
     "src/easel/dashboards.ts": {
-      "sha256": "95c1350320ac4d7f6e3ebcb6b665e1fe7311af5dfa3972b9403ac6915f70b43b",
+      "sha256": "8d5592239320407f8e3e9ca75dc29b11b6fd7a541a17ef5a827bc33d20254690",
       "executable": false
     },
     "src/easel/dataset.ts": {
@@ -1575,11 +1575,19 @@
       "executable": false
     },
     "src/easel/gauge-check.ts": {
-      "sha256": "173dfeac12692025c6685b9d1ed4bcf1562902df15bb7da7fe45a17120173ea3",
+      "sha256": "3f938410ff6c04fe965c198500891a2aa1f6dcfa140cc077ae6b3c34f4616274",
       "executable": false
     },
     "src/easel/gauge-connection.ts": {
-      "sha256": "f7f332769611c5f8190e7c9ed19271b04ff9413ed32725ec313ebcf7dd9b58d5",
+      "sha256": "c01abac86f9924d3b09487e2d6afde6b67ead67569ed2e84030fd8fce03cd168",
+      "executable": false
+    },
+    "src/easel/gauge-freshness-workbook.ts": {
+      "sha256": "29ca343428720299e8a7c94f2d37f75937319efc981f19c3d03c6e99d8795f94",
+      "executable": false
+    },
+    "src/easel/gauge-freshness.ts": {
+      "sha256": "b876c556e3a8e98ccca62af8aeb3a2d2b133787a33e020a97cdb526350fd3d44",
       "executable": false
     },
     "src/easel/gauge-origin.ts": {
@@ -1591,7 +1599,7 @@
       "executable": false
     },
     "src/easel/gauge-schedule.ts": {
-      "sha256": "ae0ea0b255b73de887577daa3f46b165e591332eae08af4737f62682db51a1f0",
+      "sha256": "8c4b388489b996932c2863b7e3febc708146b7219e3fce47eb699bd321523ad8",
       "executable": false
     },
     "src/easel/gauge-source.ts": {
@@ -1599,7 +1607,7 @@
       "executable": false
     },
     "src/easel/gauge-utilization.ts": {
-      "sha256": "2bca4c1af561b34ee81d11e3a2769eebe1fa3fc1e181ffeec47970a31a17125e",
+      "sha256": "afc2c41b14a72f614204aeb853167821d193569b5477a699196bea2eeb53dfdb",
       "executable": false
     },
     "src/easel/greenhouse-provider.ts": {
@@ -1979,7 +1987,7 @@
       "executable": false
     },
     "src/easel/report-workbooks.ts": {
-      "sha256": "51ba551f244da0b34be225b9a96efde577ba2ad9fb3f94a026dede41861eba65",
+      "sha256": "65c83b32f8b3ad1d6f280d77833eac410ea76c9fd68ce2b1377486ddea9cd2ab",
       "executable": false
     },
     "src/easel/revenue-drivers.ts": {
@@ -1991,7 +1999,7 @@
       "executable": false
     },
     "src/easel/review.ts": {
-      "sha256": "4b8b4b21812ae43ea348492ee78d637f29ee5fc6184d42ac1993faaf2633c80b",
+      "sha256": "959c1c9e445594824fc2dec580220c920bb07c2fe3830998de6e36df28e68dcc",
       "executable": false
     },
     "src/easel/sandboxes.ts": {
@@ -2019,7 +2027,7 @@
       "executable": false
     },
     "src/easel/saved-reports.ts": {
-      "sha256": "c8d7f22047427ca4d8b592d70c5f3389839b3a155672d5ae9176aa46b561c05e",
+      "sha256": "7448c11c279312e6a6a9b14be105186615590d8499ac327734bb775c3d61be54",
       "executable": false
     },
     "src/easel/scenario-access.ts": {
@@ -2131,7 +2139,7 @@
       "executable": false
     },
     "src/easel/views.ts": {
-      "sha256": "0f7a8f468dbaee81fb4f7e1fc1bba46c0594f601e5f595eb98fed3b73d86a35f",
+      "sha256": "8b7e1ca9af6617b2e3639dfe00a96fb3a7974ddb686f5a2a9ca7608b63034ae9",
       "executable": false
     },
     "src/easel/warehouse-metrics.ts": {
@@ -4215,7 +4223,7 @@
       "executable": false
     },
     "src/ui/dashboards.tsx": {
-      "sha256": "f2b631b5f0b0f16f2b517c7cef1614cef18a6507b5a0725d5d59b329464a5b56",
+      "sha256": "5a6bcec93378116a92a3dffbbc5afc699cf961547e53fd988a093106ffce8089",
       "executable": false
     },
     "src/ui/decision-followup.tsx": {
@@ -4256,6 +4264,10 @@
     },
     "src/ui/gauge-connection.tsx": {
       "sha256": "2635621d1793cc0623cb9563f1782f0311b36d094fafae76d00ed37a262954e3",
+      "executable": false
+    },
+    "src/ui/gauge-freshness.tsx": {
+      "sha256": "6f717e104c1869b9035bc4da5067231faf6419f3f95f44e78b683d8e73429553",
       "executable": false
     },
     "src/ui/gauge-utilization.tsx": {
@@ -4327,7 +4339,7 @@
       "executable": false
     },
     "src/ui/overview.tsx": {
-      "sha256": "f7ecf854efaf0e790f84d7dfd1318cb52d031ce9cd536a86bfa39d89c83ccc83",
+      "sha256": "b1a8db77cdbca6e0cd8217c32412568eb3dfb5665b7cee58d68894a51bae2688",
       "executable": false
     },
     "src/ui/owner-questions.tsx": {
@@ -4359,7 +4371,7 @@
       "executable": false
     },
     "src/ui/plan.tsx": {
-      "sha256": "eeeb4208dfe1bd7cd315f02075c2c62203079e7f7532bd8ea408a371c9928210",
+      "sha256": "51be932bf430892ddbba8f7fb9b23155b624e727a1a5ba2d94ceaeca9a497eb5",
       "executable": false
     },
     "src/ui/planning-grid.css": {
@@ -4399,7 +4411,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "20c1a587e2da22ddd05a91f92d82b2fc7c0a303e5cd4b5ccc30c38ada1ef14ae",
+      "sha256": "46616b3617a09b4513981cac580042a93af8bd14599f6cb121e0062ad8fd9e63",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -4407,7 +4419,7 @@
       "executable": false
     },
     "src/ui/saved-reports.tsx": {
-      "sha256": "84e4a92c27f1fcb8a3590f6ffee16821b1ce9dff3c7e208c7426dd16e93fb4c8",
+      "sha256": "e7a2903e3aeac96228faf2b068af874025d4c6d08e110ca1247114e7f477b57b",
       "executable": false
     },
     "src/ui/scenarios.tsx": {
@@ -4611,7 +4623,7 @@
       "executable": false
     },
     "tests/built-browser-runtime.mjs": {
-      "sha256": "cf266566f0cf9271c4a2461654b470a8478815e104bf03b273bf5110c812eafd",
+      "sha256": "20660b6cd17f8ea5e0430ea0adf0f19a2bd329710f845a3ab904f0e271267d8f",
       "executable": false
     },
     "tests/calculation-background.mjs": {
@@ -4827,11 +4839,11 @@
       "executable": false
     },
     "tests/gauge-schedule-browser.mjs": {
-      "sha256": "a3ea2a904745a66d062b388858aa45e0202b428758d12190fae8316c9bfdcad2",
+      "sha256": "561a5e156f71899a8b8ee65857b335154c31beb5d4d1a2907047be894bcbd333",
       "executable": false
     },
     "tests/gauge-utilization.test.mjs": {
-      "sha256": "b39058385b81e36cf02fb895ee8422cb488964a77f1887f8b281c8c0dcd3a271",
+      "sha256": "0bf03c614aef2cae2bd2da9961a729d97931cc9c4606cc67f326690a4fe3345b",
       "executable": false
     },
     "tests/greenhouse-browser.mjs": {
