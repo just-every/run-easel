@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "c27643da9aa0f63aafcde058049f0587deb23aaf2d3b058e432f4289dd28df43",
+      "sha256": "ce416d53d67a9833dacc18cee0743236aeae2d2d7b0380b99ce79335786de165",
       "executable": false
     },
     ".gitignore": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "43bb970220222840699613f421f37da56d51dbe88e1aefb9f2966a47f16d4e14",
+      "sha256": "ec77ea05c2968a0ea5bea79d8a90f4c906fde3da6d972336d2f1398f10f88dfd",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "6fbb174f54bb3f06b6a8bde8f5ca04e5784ce5fcb7a07fc641222061f8948c3e",
+      "sha256": "7efa5cf14b828d235433371141816663cd2e783bb097a7be8ebe7d05d7aa69d7",
       "executable": false
     },
     "DEMO.md": {
@@ -4626,10 +4626,6 @@
       "sha256": "71c085340ee2875344717f88c4ba3a08c25253a9789f93d778e3d4543c28b057",
       "executable": false
     },
-    "tests/combined-cash-browser.mjs": {
-      "sha256": "512c2e8b230be83ba8891de6b0b5a34981d920bc370d0be5760b21d918450f2a",
-      "executable": false
-    },
     "tests/commentary-model-browser.mjs": {
       "sha256": "386afeb042f4ad8035b8edb28fc574c212b03f5c3d6ff50e4005619133a1752f",
       "executable": false
@@ -5231,7 +5227,7 @@
       "executable": false
     },
     "tests/weekly-cash-browser.mjs": {
-      "sha256": "f65a092e0c64dbebe5d54f6c06577b8d69a3a9d3842513387488b5434a696871",
+      "sha256": "e08c5447631955309beb6372c664501942bb2964048d82277417bc5c0ed91ccc",
       "executable": false
     },
     "tests/weekly-cash.test.mjs": {

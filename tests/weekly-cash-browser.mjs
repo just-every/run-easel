@@ -1,118 +1,191 @@
-// FIN-007: real native sessions and Overview at desktop and phone widths.
+// Native combined source review through the built Worker. Provider boundaries
+// and a fixed UTC clock are controlled; the shipped UI and commands are real.
 import assert from 'node:assert/strict'
-const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
-import { mkdir, rm, readFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
-import { fresh, freePort, start } from './browser-runtime.mjs'
-import { api, noOverflow, session } from './browser-journey.mjs'
+import { Miniflare, convertV4MiniflareOptions } from 'miniflare'
+import { unstable_splitSqlQuery } from 'wrangler'
+import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { command, freePort } from './browser-runtime.mjs'
+import { noOverflow, settle, track } from './browser-journey.mjs'
+import { pantryProvider, pantryGrant } from './pantry-provider.mjs'
 import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
-const existing = process.argv.includes('--existing'), root = existing ? process.cwd() : await fresh()
+const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
+if (!process.argv.includes('--existing-build')) await command(process.cwd(), ['build'])
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-weekly-cash')
 await mkdir(evidence, { recursive: true })
-const overview = page => page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Overview', exact: true }).click()
-const card = page => page.getByRole('region', { name: '13-week planned cash', exact: true })
-let server, browser
+const scratch = await mkdtemp(join(tmpdir(), 'easel-combined-cash-')), port = await freePort(), origin = `https://127.0.0.1:${port}`
+const configPath = resolve('dist/server/wrangler.json'), workerDir = dirname(configPath), config = JSON.parse(await readFile(configPath, 'utf8')), entry = resolve(workerDir, config.main), scripts = [], messages = []
+async function enumerate(path) { for (const file of await readdir(path, { withFileTypes: true })) { const full = join(path, file.name); if (file.isDirectory()) await enumerate(full); else if (/\.m?js$/.test(file.name)) scripts.push(full) } }
+await enumerate(workerDir)
+const provider = pantryProvider(), bankGrant = { environment: 'sandbox', clientId: 'synthetic-easel-31', secret: 'synthetic-easel-32', accessToken: 'synthetic-easel-33', consent: true }
+// Instrument only the existing business-clock boundary. Authentication keeps
+// its real clock, including D1 session expiry, as in the HTTP flow harness.
+const modules = await Promise.all([entry, ...scripts.filter(path => path !== entry)].map(async path => {
+ const contents = await readFile(path, 'utf8')
+ if (path !== entry) return { type: 'ESModule', path }
+ const boundary = /async function currentTime\([^)]*\) \{[^}]*\}/g
+ assert.equal([...contents.matchAll(boundary)].length, 1, 'The business-clock boundary is instrumented once')
+ return { type: 'ESModule', path, contents: contents.replace(boundary, `async function currentTime() { return '2026-02-01T12:00:00.000Z' }`) }
+}))
+const mf = new Miniflare({ ...convertV4MiniflareOptions({
+ host: '127.0.0.1', port, https: true, inspectorPort: 0, modules, modulesRoot: workerDir, compatibilityDate: config.compatibility_date, compatibilityFlags: config.compatibility_flags, d1Databases: { DB: 'easel-combined-cash' },
+ bindings: { PANTRY_ORIGIN: 'https://pantry.example.test', AUTH_ORIGIN: origin, OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'synthetic-easel-session-01234567890123456789', SETUP_TOKEN: 'synthetic-easel-bootstrap-01234567890123456789', MAIL_PROVIDER: 'resend', MAIL_API_KEY: 'synthetic-easel-1', MAIL_FROM: 'Easel <easel@example.test>' },
+ assets: { directory: resolve(workerDir, config.assets.directory), binding: 'ASSETS', run_worker_first: true, routerConfig: { has_user_worker: true }, assetConfig: { html_handling: config.assets.html_handling, not_found_handling: config.assets.not_found_handling } },
+ outboundService: async request => {
+  const url = new URL(request.url)
+  if (url.hostname === 'api.resend.com') { messages.push(await request.json()); return Response.json({ id: crypto.randomUUID() }) }
+  if (url.hostname === 'pantry.example.test') return provider.outbound(request)
+  assert.equal(url.origin, 'https://sandbox.plaid.com')
+  const body = await request.json(); assert.equal(body.access_token, bankGrant.accessToken)
+  if (url.pathname === '/accounts/balance/get') return Response.json({ accounts: [{ account_id: 'synthetic-easel-34', type: 'depository', balances: { current: 6000, iso_currency_code: 'USD' } }, { account_id: 'synthetic-easel-35', type: 'depository', balances: { current: 4000, iso_currency_code: 'USD' } }] })
+  assert.equal(url.pathname, '/transactions/get'); return Response.json({ transactions: [], total_transactions: 0 })
+ },
+}), resourcePersistencePath: scratch })
+let browser
 try {
- const port = await freePort()
- server = await start(root, port)
+ await mf.ready
+ const db = await mf.getD1Database('DB')
+ for (const file of (await readdir('./migrations/core')).filter(f => f.endsWith('.sql')).sort()) await db.batch(unstable_splitSqlQuery(await readFile(`migrations/core/${file}`, 'utf8')).map(sql => db.prepare(sql)))
  browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
- const seeder = await session(browser, root, server.origin, 'owner', 1440)
- const cmd = (op, body) => api(seeder.context, server.origin, `command/${op}`, body)
- await cmd('workspace', { name: 'Harbor Services', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
- const dept = await cmd('department', { name: 'Operations' })
- const revenue = await cmd('line', { name: 'Service revenue', type: 'revenue' })
- const payroll = await cmd('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
- const spend = await cmd('line', { name: 'Software', type: 'operating-expense' })
- const scenario = (await api(seeder.context, server.origin, 'state')).scenarios[0].id
- await cmd('scenario-cash', { scenario, basis: 'estimate', opening: '400000', receivables: '20000', payables: '5000', collectionLag: 0, paymentLag: 0 })
- await cmd('revenue', { scenario, name: 'Customer service agreement', kind: 'contract', department: dept.id, line: revenue.id, start: '2026-01', startDate: '2026-01-15', termMonths: '12', contractValue: '1200000', billingCadence: 'monthly', dsoDays: '10' })
- await cmd('position', { scenario, title: 'Delivery team', holder: 'Private payroll sentinel', department: dept.id, line: payroll.id, start: '2026-01', annualSalary: '360000', onCostPercent: '20', payDay: '15', payMonthOffset: '0' })
- await cmd('expense', { scenario, name: 'Annual software', kind: 'one-off', department: dept.id, line: spend.id, start: '2026-01', amount: '24000' })
- await cmd('member', { email: 'board@dev.localhost', name: 'Board', role: 'viewer' })
- await seeder.context.close()
- for (const width of [1440, 390]) {
-  const owner = await session(browser, root, server.origin, 'owner', width), p = owner.page
-  try {
-   await p.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Plan', exact: true }).click()
-   const positions = p.locator('section.card').filter({ has: p.getByRole('heading', { name: 'Positions', exact: true }) })
-   const edit = () => positions.getByRole('row').filter({ has: p.getByRole('cell', { name: 'Delivery team', exact: true }) }).getByRole('button', { name: 'Edit', exact: true }).click()
-   await edit()
-   const firstDay = width === 1440 ? '15' : '14', secondDay = width === 1440 ? '31' : '30'
-   await positions.getByLabel('Payroll pay day', { exact: true }).fill(firstDay)
-   await positions.getByLabel('Second payroll pay day', { exact: true }).fill(secondDay)
-   await Promise.all([p.waitForResponse(r => r.url().includes('/command/position') && r.ok()), positions.getByRole('button', { name: 'Save position', exact: true }).click()])
-   await p.reload()
-   await p.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Plan', exact: true }).click()
-   await edit()
-   assert.equal(await positions.getByLabel('Payroll pay day', { exact: true }).inputValue(), firstDay)
-   assert.equal(await positions.getByLabel('Second payroll pay day', { exact: true }).inputValue(), secondDay)
-   const scheduled = await api(owner.context, server.origin, `scenario/${scenario}`)
-   assert.equal(scheduled.calculation.dailyCash.find(r => r.date === `2026-01-${firstDay}`).payments, 1800000)
-   assert.equal(scheduled.calculation.dailyCash.find(r => r.date === `2026-01-${secondDay}`).payments, 1800000 + (secondDay === '31' ? 2400000 + 500000 : 0))
-   assert.equal(scheduled.calculation.dailyCash.find(r => r.date === '2026-02-28').payments, 1800000, 'second payroll date clamps to February end')
-   await noOverflow(p, `FIN-007 semimonthly Plan ${width}`)
-   await positions.getByLabel('Second payroll pay day', { exact: true }).scrollIntoViewIfNeeded()
-   await p.screenshot({ path: join(evidence, `semimonthly-plan-${width}.png`) })
-   const expenses = p.locator('section.card').filter({ has: p.getByRole('heading', { name: 'Expenses', exact: true }) })
-   const editExpense = () => expenses.getByRole('row').filter({ has: p.getByRole('cell', { name: 'Annual software', exact: true }) }).getByRole('button', { name: 'Edit', exact: true }).click()
-   await editExpense()
-   await expenses.getByLabel('Vendor payment timing', { exact: true }).selectOption('date')
-   const paymentDate = width === 1440 ? '2026-01-08' : '2026-01-09'
-   await expenses.getByLabel('Planned payment date', { exact: true }).fill(paymentDate)
-   await Promise.all([p.waitForResponse(r => r.url().includes('/command/expense') && r.ok()), expenses.getByRole('button', { name: 'Save expense', exact: true }).click()])
-   await p.reload()
-   await p.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Plan', exact: true }).click()
-   await editExpense()
-   assert.equal(await expenses.getByLabel('Vendor payment timing', { exact: true }).inputValue(), 'date')
-   assert.equal(await expenses.getByLabel('Planned payment date', { exact: true }).inputValue(), paymentDate)
-   const dated = await api(owner.context, server.origin, `scenario/${scenario}`)
-   assert.equal(dated.calculation.dailyCash.find(r => r.date === paymentDate).payments, 2400000)
-   assert.deepEqual(dated.calculation.cash, scheduled.calculation.cash, 'an explicit date within the period preserves every monthly cash value')
-   assert.match(dated.calculation.cells.find(r => r.line === spend.id && r.month === '2026-01').sources[0].trace, new RegExp(`planned payment on ${paymentDate}`))
-   await noOverflow(p, `FIN-007 dated spend Plan ${width}`)
-   await expenses.getByLabel('Planned payment date', { exact: true }).scrollIntoViewIfNeeded()
-   await p.screenshot({ path: join(evidence, `planned-spend-plan-${width}.png`) })
-   await overview(p)
-   const c = card(p), table = c.getByRole('table', { name: 'Weekly planned cash', exact: true })
-   await table.waitFor()
-   assert.equal(await table.getByRole('row').count(), 14)
-   const first = table.getByRole('row').nth(1)
-   assert.match(await first.innerText(), /400,000.00/)
-   await c.getByLabel('Week starting', { exact: true }).selectOption('2026-01-22')
-   await c.getByLabel('Cash adjustment', { exact: true }).fill(width === 1440 ? '-125.01' : '-250.02')
-   const note = `Customer timing reviewed at ${width}`
-   await c.getByLabel('Adjustment note', { exact: true }).fill(note)
-   await Promise.all([p.waitForResponse(r => r.url().includes('/command/weekly-cash-override') && r.ok()), c.getByRole('button', { name: 'Save weekly adjustment', exact: true }).click()])
-   await p.reload(); await overview(p); await card(p).getByText(note, { exact: true }).waitFor()
-   const result = await api(owner.context, server.origin, `weekly-cash/${scenario}?start=2026-01-01`)
-   const plannedWeek = result.weeks.find(w => w.start <= paymentDate && w.end >= paymentDate)
-   assert.equal(plannedWeek.payments, 2400000 + (width === 390 ? 1800000 : 0), 'explicit spend date reaches its planned week together with that week’s payroll')
-   assert.equal(result.weeks.find(w => w.start === '2026-01-29').payments, 1800000 + 500000, 'month end does not charge dated spend a second time')
-   assert.equal(result.weeks[3].adjustment, width === 1440 ? -12501 : -25002)
-   assert.equal(result.weeks[3].note, note)
-   for (const r of result.reconciliation) assert.equal(r.difference, result.weeks[3].adjustment)
-   assert.doesNotMatch(await card(p).innerText(), /Private payroll sentinel/)
-   const [download] = await Promise.all([p.waitForEvent('download'), card(p).getByRole('link', { name: 'Download weekly cash Excel', exact: true }).click()])
-   const book = await readWorkbook(await readFile(await download.path())); proveFormulas(book)
-   assert.equal(book.getWorksheet('Reconciliation').getCell('F3').result, result.weeks[3].adjustment)
-   await noOverflow(p, `FIN-007 finance ${width}`)
-   await card(p).screenshot({ path: join(evidence, `weekly-finance-${width}.png`) })
-   // The phone's table scrolls within the card; inspect the closing and note columns too.
-   if (width === 390) {
-    await card(p).getByRole('region', { name: 'Weekly planned cash', exact: true }).evaluate(el => { el.scrollLeft = el.scrollWidth })
-    await card(p).screenshot({ path: join(evidence, 'weekly-finance-390-notes.png') })
-   }
-  } finally { await owner.context.close() }
-  const board = await session(browser, root, server.origin, 'board', width)
-  try {
-   await overview(board.page); await card(board.page).getByRole('table', { name: 'Weekly planned cash', exact: true }).waitFor()
-   assert.equal(await card(board.page).getByRole('button', { name: 'Save weekly adjustment', exact: true }).count(), 0)
-   const readable = await api(board.context, server.origin, `weekly-cash/${scenario}?start=2026-01-01`)
-   assert.equal(readable.weeks[3].adjustment, width === 1440 ? -12501 : -25002)
-   assert.doesNotMatch(JSON.stringify(readable), /Private payroll sentinel/)
-   await noOverflow(board.page, `FIN-007 board ${width}`)
-   await card(board.page).screenshot({ path: join(evidence, `weekly-board-${width}.png`) })
-  } finally { await board.context.close() }
-  console.log(`FIN-007 ${width}: native semimonthly pay schedule and adjustment persisted; weekly cash, month-end differences and read-only board view passed`)
+ const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 }, acceptDownloads: true }), page = await context.newPage()
+ await page.clock.install({ time: new Date('2026-02-01T12:00:00.000Z') })
+ track(page)
+ const post = async (path, body, status = 200) => { const r = await context.request.post(origin + path, { headers: { origin }, data: body, maxRedirects: 0 }); assert.equal(r.status(), status, await r.text()); return status === 200 ? r.json() : null }
+ const cmd = (op, body) => post('/api/easel/command/' + op, body)
+ const get = async path => { const r = await context.request.get(origin + '/api/easel/' + path); assert.equal(r.status(), 200, await r.text()); return r.json() }
+ await post('/auth/bootstrap', { token: 'synthetic-easel-bootstrap-01234567890123456789', displayName: 'Fran Finance' }, 303)
+ await cmd('workspace', { name: 'Harbour Services', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const dept = await cmd('department', { name: 'Operations' }), revenue = await cmd('line', { name: 'Service revenue', type: 'revenue' }), spend = await cmd('line', { name: 'Supplier spend', type: 'operating-expense' }), payroll = await cmd('line', { name: 'Payroll', type: 'operating-expense', payroll: true }), interest = await cmd('line', { name: 'Interest', type: 'operating-expense' })
+ const scenario = (await get('state')).scenarios[0].id, base = { scenario, department: dept.id, start: '2026-02' }
+ await cmd('scenario-cash', { scenario, basis: 'estimate', opening: '10000', collectionLag: 0, paymentLag: 0 })
+ await cmd('revenue', { ...base, line: revenue.id, name: 'Customer schedule', kind: 'contract', startDate: '2026-02-10', termMonths: 12, contractValue: '600', billingCadence: 'monthly', dsoDays: 12 })
+ await cmd('expense', { ...base, line: spend.id, name: 'Existing bill estimate', kind: 'one-off', amount: '20', paymentMethod: 'date', paymentDate: '2026-02-15' })
+ await cmd('expense', { ...base, line: spend.id, name: 'New planned spend', kind: 'one-off', amount: '10' })
+ await cmd('position', { ...base, line: payroll.id, title: 'Private payroll sentinel', annualSalary: '1200', payDay: 15, secondPayDay: 28, onCostPercent: 0 })
+ await cmd('debt', { ...base, start: '2026-01', line: interest.id, name: 'Scheduled loan', debtKind: 'term', maturity: '2026-12', opening: '1200', rateKind: 'fixed', annualRate: 0, amortization: 'equal-principal', amortizationStart: '2026-01', termMonths: 12, draws: {}, repayments: {} })
+ await post('/api/easel/connections/pantry/connect', pantryGrant)
+ await post('/api/easel/connections/plaid/connect', bankGrant)
+ await post('/api/easel/connections/plaid/refresh', {})
+ await cmd('member', { email: 'board@example.test', name: 'Board', role: 'viewer' })
+ await post('/api/easel/invite', { email: 'board@example.test' })
+ const message = messages.find(m => m.to.includes('board@example.test')), token = new URL(message.text.match(/https:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
+ const viewer = await browser.newContext({ ignoreHTTPSErrors: true }), board = await viewer.newPage()
+ const confirmed = await viewer.request.post(origin + '/auth/confirm', { headers: { origin }, data: { token }, maxRedirects: 0 }); assert.equal(confirmed.status(), 303)
+ await page.goto(origin + '/setup'); await page.getByLabel('I confirm this owner account is ready to use.', { exact: true }).check(); await page.getByRole('button', { name: 'Finish setup', exact: true }).click()
+ const panel = () => page.getByRole('region', { name: '13-week planned cash', exact: true })
+ const action = async (path, click, status = 200) => { const pending = page.waitForResponse(r => r.url().endsWith(path) && r.request().method() === 'POST'); await click(); const r = await pending; assert.equal(r.status(), status, await r.text()); await settle(page); return status === 200 ? r.json() : null }
+ const review = () => action('/pantry/cash', () => panel().getByRole('button', { name: 'Review Pantry open items', exact: true }).click())
+ const preview = (status = 200) => action('/pantry/cash-forecast', () => panel().getByRole('button', { name: 'Preview combined cash', exact: true }).click(), status)
+ const allocations = async () => {
+  const details = panel().locator('details').filter({ has: page.getByText('Review planned cash replacements', { exact: true }) })
+  if (await details.getAttribute('open') === null) await details.locator('summary').click()
+  await panel().getByLabel('Replace collections on 2026-02-22', { exact: true }).fill('50.00')
+  await panel().getByLabel('Replace payments on 2026-02-15', { exact: true }).fill('20.00')
  }
-} finally { await browser?.close(); await server?.close(); if (!existing) await rm(root, { recursive: true, force: true }) }
+ for (const width of [1440, 390]) {
+  await page.setViewportSize({ width, height: 1000 }); await page.goto(origin + '/app?tab=plan'); await settle(page)
+  const positions = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Positions', exact: true }) })
+  const editPosition = () => positions.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Private payroll sentinel', exact: true }) }).getByRole('button', { name: 'Edit', exact: true }).click()
+  await editPosition()
+  const firstDay = width === 1440 ? '15' : '14', secondDay = width === 1440 ? '31' : '30'
+  await positions.getByLabel('Payroll pay day', { exact: true }).fill(firstDay); await positions.getByLabel('Second payroll pay day', { exact: true }).fill(secondDay)
+  await action('/command/position', () => positions.getByRole('button', { name: 'Save position', exact: true }).click())
+  await page.reload(); await editPosition()
+  assert.equal(await positions.getByLabel('Payroll pay day', { exact: true }).inputValue(), firstDay); assert.equal(await positions.getByLabel('Second payroll pay day', { exact: true }).inputValue(), secondDay)
+  const scheduled = await get(`scenario/${scenario}`)
+  assert.equal(scheduled.calculation.dailyCash.find(r => r.date === `2026-02-${firstDay}`).payments, width === 1440 ? 7000 : 5000)
+  assert.equal(scheduled.calculation.dailyCash.find(r => r.date === '2026-02-28').payments, width === 1440 ? 16000 : 15000, 'Second payroll installment clamps without losing cents')
+  await noOverflow(page, `Semimonthly plan ${width}`); await positions.screenshot({ path: join(evidence, `semimonthly-plan-${width}.png`) })
+  const expenses = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Expenses', exact: true }) })
+  const editSpend = () => expenses.getByRole('row').filter({ has: page.getByRole('cell', { name: 'New planned spend', exact: true }) }).getByRole('button', { name: 'Edit', exact: true }).click()
+  await editSpend(); await expenses.getByLabel('Vendor payment timing', { exact: true }).selectOption('date')
+  const paymentDate = width === 1440 ? '2026-02-20' : '2026-02-21'
+  await expenses.getByLabel('Planned payment date', { exact: true }).fill(paymentDate)
+  await action('/command/expense', () => expenses.getByRole('button', { name: 'Save expense', exact: true }).click())
+  await page.reload(); await editSpend()
+  assert.equal(await expenses.getByLabel('Vendor payment timing', { exact: true }).inputValue(), 'date'); assert.equal(await expenses.getByLabel('Planned payment date', { exact: true }).inputValue(), paymentDate)
+  const dated = await get(`scenario/${scenario}`)
+  assert.equal(dated.calculation.dailyCash.find(r => r.date === paymentDate).payments, 1000); assert.deepEqual(dated.calculation.cash, scheduled.calculation.cash)
+  await noOverflow(page, `Dated spend plan ${width}`); await expenses.screenshot({ path: join(evidence, `planned-spend-plan-${width}.png`) })
+  await page.goto(origin + '/app?tab=overview'); await settle(page)
+  await panel().getByLabel('Weekly cash first day', { exact: true }).fill('2026-02-02'); await settle(page)
+  const negative = width === 1440 ? '-125.01' : '-250.02', negativeCents = width === 1440 ? -12501 : -25002
+  await panel().getByLabel('Week starting', { exact: true }).selectOption('2026-02-02'); await panel().getByLabel('Cash adjustment', { exact: true }).fill(negative); await panel().getByLabel('Adjustment note', { exact: true }).fill('Customer collection review')
+  await action('/command/weekly-cash-override', () => panel().getByRole('button', { name: 'Save weekly adjustment', exact: true }).click())
+  await page.reload(); await settle(page)
+  const persisted = await get(`weekly-cash/${scenario}?start=2026-02-02`); assert.equal(persisted.weeks[0].adjustment, negativeCents); assert.equal(persisted.weeks[0].note, 'Customer collection review')
+  const plannedDownload = page.waitForEvent('download'); await panel().getByRole('link', { name: 'Download weekly cash Excel', exact: true }).click()
+  const plannedBook = await readWorkbook(await readFile(await (await plannedDownload).path())); proveFormulas(plannedBook)
+  assert.ok(plannedBook.getWorksheet('Weekly cash').getColumn(8).values.includes('Customer collection review'))
+  await board.setViewportSize({ width, height: 1000 }); await board.goto(origin + '/app?tab=overview')
+  const boardPanel = board.getByRole('region', { name: '13-week planned cash', exact: true }); await boardPanel.getByRole('table', { name: 'Weekly planned cash', exact: true }).waitFor()
+  assert.equal(await boardPanel.getByRole('button', { name: 'Save weekly adjustment', exact: true }).count(), 0); assert.equal(await boardPanel.getByLabel('Weekly cash sources', { exact: true }).count(), 0); assert.equal(await boardPanel.getByLabel('Weekly cash basis', { exact: true }).count(), 0)
+  const boardRead = await viewer.request.get(origin + `/api/easel/weekly-cash/${scenario}?start=2026-02-02`); assert.equal(boardRead.status(), 200); const readable = await boardRead.json(); assert.equal(readable.weeks[0].adjustment, negativeCents); assert.doesNotMatch(JSON.stringify(readable), /Private payroll sentinel/)
+  await noOverflow(board, `Weekly board ${width}`); await boardPanel.screenshot({ path: join(evidence, `weekly-board-${width}.png`) })
+  await panel().getByLabel('Weekly cash first day', { exact: true }).fill('2026-02-02'); await settle(page)
+  await panel().getByLabel('Week starting', { exact: true }).selectOption('2026-02-02')
+  await panel().getByLabel('Cash adjustment', { exact: true }).fill('1.23')
+  await panel().getByLabel('Adjustment note', { exact: true }).fill('Reviewed timing')
+  await action('/command/weekly-cash-override', () => panel().getByRole('button', { name: 'Save weekly adjustment', exact: true }).click())
+  const unchanged = await get(`scenario/${scenario}`)
+  await panel().getByLabel('Weekly cash sources', { exact: true }).selectOption('pantry')
+  const source = await review()
+  assert.deepEqual(source.events.map(e => [e.kind, e.date, e.amount]), [['bill', '2026-02-15', 2000], ['invoice', '2026-02-22', 5000]])
+  const items = panel().getByRole('table', { name: 'Pantry open cash items', exact: true })
+  assert.match(await items.innerText(), /12 days late/); assert.match(await items.innerText(), /50.00/); assert.match(await items.innerText(), /20.00/)
+  await noOverflow(page, `Combined source review ${width}`); await panel().screenshot({ path: join(evidence, `source-review-${width}.png`) })
+  await allocations(); const combined = await preview()
+  assert.deepEqual(combined.weeks.slice(0, 4).map(w => [w.collections, w.payments, w.adjustment, w.closing]), [[0, 0, 123, 990123], [0, 7000, 0, 983123], [5000, 1000, 0, 987123], [0, 15000, 0, 972123]])
+  assert.equal(combined.weeks.length, 13); assert.equal(combined.reconciliation[0].difference, 123)
+  const table = panel().getByRole('table', { name: 'Weekly planned cash', exact: true })
+  assert.equal(await table.getByRole('row').count(), 14)
+  assert.deepEqual((await table.getByRole('row').nth(3).getByRole('cell').allTextContents()).slice(1, 6), ['$9,831.23', '$50.00', '$10.00', '$0.00', '$9,871.23'])
+  assert.match(await table.innerText(), /Reviewed timing/); assert.doesNotMatch(await panel().innerText(), /Private payroll sentinel/)
+  assert.match(await panel().getByRole('table', { name: 'Weekly to monthly cash reconciliation', exact: true }).innerText(), /\$1.23/)
+  await noOverflow(page, `Combined forecast ${width}`); await panel().screenshot({ path: join(evidence, `combined-plan-${width}.png`) })
+  const download = page.waitForEvent('download'); await panel().getByRole('button', { name: 'Download combined cash Excel', exact: true }).click()
+  const book = await readWorkbook(await readFile(await (await download).path())); proveFormulas(book)
+  assert.equal(book.getWorksheet('Weekly cash').getCell('H4').value, 'Reviewed timing')
+  assert.equal(book.getWorksheet('Weekly cash').getCell('G7').value.result, 972123)
+  assert.equal(book.getWorksheet('Reconciliation').getCell('F3').value.result, 123)
+  await panel().getByText('Review planned cash replacements', { exact: true }).click()
+  await panel().getByLabel('Additional source collections', { exact: true }).fill('0.01')
+  assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)
+  await preview(400); assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)
+  await panel().getByLabel('Additional source collections', { exact: true }).fill('0.00')
+  // Explicitly additional cash is a distinct reviewed choice, not inferred.
+  await panel().getByLabel('Replace collections on 2026-02-22', { exact: true }).fill('0.00')
+  await panel().getByLabel('Additional source collections', { exact: true }).fill('50.00')
+  const additional = await preview(); assert.equal(additional.weeks[2].collections, 10000); assert.equal(additional.reconciliation[0].difference, 5123)
+  await allocations(); await panel().getByLabel('Additional source collections', { exact: true }).fill('0.00'); await preview()
+  provider.reversed = true
+  await action('/pantry/cash-forecast', () => panel().getByRole('button', { name: 'Download combined cash Excel', exact: true }).click(), 409)
+  assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)
+  assert.match(await panel().innerText(), /Resolve every open-item date/)
+  await preview(409)
+  await review(); assert.match(await panel().innerText(), /No fully paid invoice history/); assert.equal(await panel().getByRole('button', { name: 'Preview combined cash', exact: true }).count(), 0)
+  await panel().screenshot({ path: join(evidence, `unresolved-source-${width}.png`) }); provider.reversed = false
+  await panel().getByLabel('Weekly cash basis', { exact: true }).selectOption('bank'); await settle(page)
+  await review(); await allocations(); const bank = await preview()
+  assert.equal(bank.bank.accountCount, 2); assert.equal(bank.bank.balanceCents, 1000000)
+  assert.equal(bank.weeks[3].closing, 982123); assert.equal(bank.reconciliation[0].difference, 10123)
+  assert.match(await panel().getByRole('table', { name: 'Weekly planned cash', exact: true }).innerText(), /\$9,821.23/)
+  assert.match(await panel().getByRole('table', { name: 'Weekly to monthly cash reconciliation', exact: true }).innerText(), /\$101.23/)
+  await noOverflow(page, `Combined bank ${width}`); await panel().screenshot({ path: join(evidence, `combined-bank-${width}.png`) })
+  const bankDownload = page.waitForEvent('download'); await panel().getByRole('button', { name: 'Download combined cash Excel', exact: true }).click()
+  const bankBook = await readWorkbook(await readFile(await (await bankDownload).path())); proveFormulas(bankBook)
+  assert.equal(bankBook.getWorksheet('Weekly cash').getCell('G7').value.result, 982123)
+  assert.equal(bankBook.getWorksheet('Reconciliation').getCell('F3').value.result, 10123)
+  assert.deepEqual(await get(`scenario/${scenario}`), unchanged, 'Combined review and exports preserve the monthly plan and its revision')
+  await cmd('weekly-cash-override', { scenario, start: '2026-02-02', adjustment: '2.34', note: 'New revision from finance' })
+  await panel().getByText('Review planned cash replacements', { exact: true }).click()
+  await preview(409)
+  assert.match(await panel().innerText(), /scenario changed after review/)
+  assert.equal(await panel().getByRole('heading', { name: 'Combined cash forecast', exact: true }).count(), 0)
+  const icons = await panel().locator('button').evaluateAll(buttons => buttons.filter(b => !b.textContent.trim()).map(b => b.getAttribute('aria-label')))
+  assert.deepEqual(icons, [], 'Cash controls have visible labels')
+  console.log(`FIN-007 ${width}: native payroll, dated spend, signed adjustments and viewer reads; combined cash: exact source replacements, payroll, debt, spend, noted adjustments, reconciliation, Excel and fail-closed review passed`)
+ }
+ await viewer.close(); await context.close()
+} finally { await browser?.close(); await mf.dispose(); await rm(scratch, { recursive: true, force: true }) }

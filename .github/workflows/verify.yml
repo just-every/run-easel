@@ -119,7 +119,7 @@ jobs:
         run: |
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/approval-chains-browser.mjs
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/connectors-browser.mjs --existing-build
-          EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/combined-cash-browser.mjs
+          EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/weekly-cash-browser.mjs --existing-build
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-approval-chains
 
