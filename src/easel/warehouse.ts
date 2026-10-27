@@ -9,10 +9,11 @@ import type { Bindings } from '../auth.server'
 import { requireCapability, requireFinance } from './access'
 import type { Context } from './context'
 import { openConnection, sealConnection } from './connection-seal'
+import { readOnlyQuery } from './warehouse-query-policy'
 import { scopedReader } from './group-projections'
 import { sha256 } from './store'
 import { all, choice, find, get, put, remove, requireThat, text, uid, type Data } from './types'
-import { readOnlyQuery, runWarehouseQuery, warehouseCredentials, warehousePurpose, WAREHOUSE_LABEL, WAREHOUSES, type Warehouse } from './warehouse-provider'
+import { runWarehouseQuery, warehouseCredentials, warehousePurpose, WAREHOUSE_LABEL, WAREHOUSES, type Warehouse } from './warehouse-provider'
 
 const secretId = (w: Warehouse) => `warehouse:${w}`
 export const METRIC = /^[a-z][a-z0-9_]{0,59}$/
@@ -67,7 +68,7 @@ export async function warehouseCommand(c: Context, env: Bindings, op: string, b:
   const warehouse = choice(b.warehouse, WAREHOUSES, 'a warehouse'), metric = text(b.metric, 'Metric name', 60)
   requireThat(METRIC.test(metric), 'Metric names use lowercase letters, digits and underscores, starting with a letter')
   requireThat(!all(c.s, 'warehouse-query').some(q => q.id !== prior?.id && q.metric === metric), 'Another query already supplies this metric', 409)
-  const id = prior?.id ?? uid(), next = { name: text(b.name, 'Query name'), warehouse, metric, sql: readOnlyQuery(b.sql) }
+  const id = prior?.id ?? uid(), next = { name: text(b.name, 'Query name'), warehouse, metric, sql: readOnlyQuery(b.sql, warehouse) }
   const changed = !prior || prior.sql !== next.sql || prior.warehouse !== warehouse || prior.metric !== metric
   put(c.s, 'warehouse-query', id, { ...(prior ?? {}), ...next, revision: (prior?.revision ?? 0) + 1, ...(changed ? { preview: null, approved: null } : {}), savedBy: c.x.actor.email, savedAt: c.now })
   if (prior && prior.metric !== metric) for (const m of all(c.s, 'warehouse-metric').filter(m => m.metric === prior.metric)) remove(c.s, 'warehouse-metric', m.id)
