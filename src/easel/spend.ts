@@ -24,7 +24,7 @@ export async function spendStatus(c: Context, env: Bindings, name: string) {
  authority(c); const p = spendProvider(name), row = find(c.s, 'connection', secretId(p))
  const stored = await c.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind(secretId(p)).first()
  const configured = p === 'ramp' || !!env.PURSE_ORIGIN
- return { ...row, provider: p, configured, connected: !!(stored && row?.connected && configured && row.origin === spendOrigin(env, p)), scope: p === 'purse' ? 'read-purchase-orders' : 'transactions:read', schedule: 'Manual', ownerStep: spendOwnerStep(p), error: row?.connected && !stored ? 'Reconnect after restore; spend credentials are excluded from archives' : row?.error ?? null }
+ return { ...row, provider: p, configured, canDisconnect: !!(stored || row?.connected), connected: !!(stored && row?.connected && configured && row.origin === spendOrigin(env, p)), scope: p === 'purse' ? 'read-purchase-orders' : 'transactions:read', schedule: 'Manual', ownerStep: spendOwnerStep(p), error: row?.connected && !stored ? 'Reconnect after restore; spend credentials are excluded from archives' : row?.error ?? null }
 }
 export async function spendConnection(c: Context, env: Bindings, name: string, op: string, b: Data) {
  authority(c); const p = spendProvider(name), id = secretId(p), prior = find(c.s, 'connection', id)
@@ -34,7 +34,8 @@ export async function spendConnection(c: Context, env: Bindings, name: string, o
   c.activity.push({ action: 'spend-disconnected', record: id, detail: { localCredentialDeleted: true, providerRevocation: 'unsupported', ownerStep: spendOwnerStep(p) } })
   return [c.db.prepare('DELETE FROM e_connection_secrets WHERE id=?').bind(id)]
  }
- requireThat(!prior?.connected, 'Disconnect before replacing the spend credential', 409)
+ const stored = await c.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind(id).first()
+ requireThat(!prior?.connected || !stored, 'Disconnect before replacing the spend credential', 409)
  requireThat(b.consent === true, 'Explicitly approve read-only spend access')
  const token = text(b.key, 'Read-only spend credential', 2000); requireThat(!/\s/.test(token), 'Credential cannot contain whitespace')
  const origin = spendOrigin(env, p), sealed = await sealConnection(env.SESSION_SECRET, token, purpose(p))

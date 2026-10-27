@@ -81,6 +81,14 @@ test('Reviewed Ramp cards and Purse POs replace one forecast assumption with exa
   for (const key of Object.values(spendKeys)) assert.ok(!body.includes(key))
   for (const row of secrets.results) assert.ok(!body.includes(row.sealed))
  } finally { await portable.exports.abort(archiveId) }
+ // An archive restores connection metadata without the deliberately excluded credentials.
+ await h.db.prepare('DELETE FROM e_connection_secrets').run()
+ for (const p of ['ramp','purse']) {
+  const restored = await h.get('/api/easel/' + route('connections','spend',p))
+  assert.equal(restored.connected, false); assert.equal(restored.canDisconnect, true); assert.match(restored.error, /Reconnect after restore/)
+  const reconnected = await post(route('connections','spend',p,'connect'), { key: spendKeys[p], consent: true })
+  assert.equal(reconnected.connected, true, 'Restored metadata cannot strand native reconnect when the excluded credential is absent')
+ }
  for (const p of ['ramp','purse']) { const disconnected = await post(route('connections','spend',p,'disconnect'), {}); assert.equal(disconnected.connected, false); assert.equal(disconnected.providerRevocation.status, 'unsupported'); assert.match(disconnected.ownerStep, /cannot confirm provider revocation/) }
  assert.equal((await h.db.prepare('SELECT COUNT(*) n FROM e_connection_secrets').first()).n, 0)
  assert.equal((await h.get('/api/easel/spend')).length, 1, 'Disconnect retains accepted evidence')

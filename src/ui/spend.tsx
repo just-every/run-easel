@@ -28,7 +28,7 @@ function SpendConnection({ provider }: { provider: string }) {
     <Field label={`Allow read-only ${label} spend access`} name="consent" type="checkbox" />
    </Form>}
    {!status.configured && <p>Ask the installation owner to configure the Purse connection.</p>}
-   {status.connected && <Action label={`Disconnect ${label} spend`} kind="danger" run={async () => { await api(`${connectionPath}/${provider}/disconnect`, {}); await load() }} />}
+   {status.canDisconnect && <Action label={`Disconnect ${label} spend`} kind="danger" run={async () => { await api(`${connectionPath}/${provider}/disconnect`, {}); await load() }} />}
    <p className="muted">{status.ownerStep}</p>
   </>}
  </section>

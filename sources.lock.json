@@ -2059,7 +2059,7 @@
       "executable": false
     },
     "src/easel/spend.ts": {
-      "sha256": "bb62b702a80a65eda1551592148dd7e113af7f1b1b92abb120423d303799d3fd",
+      "sha256": "5a9ec7e48e2feb0751f4d2df2bcd3949b3e0c00139621d16b3c91c7909588c13",
       "executable": false
     },
     "src/easel/starter-catalog.ts": {
@@ -4443,7 +4443,7 @@
       "executable": false
     },
     "src/ui/spend.tsx": {
-      "sha256": "a40f5605233877ba46a62eececba4931e298008476ae69b94466c65be6382199",
+      "sha256": "787647b270f0bc5e46145a489a71336522faf5289e3b2934caaf110a1301bf32",
       "executable": false
     },
     "src/ui/starter-models.tsx": {
@@ -5199,7 +5199,7 @@
       "executable": false
     },
     "tests/spend.test.mjs": {
-      "sha256": "8ccb26166be43729d48dadc79eb3363707426bd62efcf6abff46a7c4ed1da828",
+      "sha256": "556a6da77ccabfa95f3d61075c903f246ddef5ea7ae1c638287b1560d928db51",
       "executable": false
     },
     "tests/spreadsheet-export.test.mjs": {
