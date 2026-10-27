@@ -9,7 +9,10 @@ const csvRows = text => text.trim().split('\r\n').slice(1).map(line => line.spli
 
 test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped BI token and the nightly CSV and Parquet drop carry the same pay-free dataset rows', async t => {
  let now = '2026-03-10T15:00:00.000Z'
- const remote = providerFakes(), h = await harness({ now: () => now, outbound: remote.outbound }); t.after(() => h.close())
+ const remote = providerFakes()
+ let responseOverride
+ const outbound = request => responseOverride && new URL(request.url).hostname.endsWith('snowflakecomputing.com') ? responseOverride(request) : remote.outbound(request)
+ const h = await harness({ now: () => now, outbound }); t.after(() => h.close())
  const run = async at => { now = at; await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' }) }
  await h.command('workspace', { name: 'Harbour Analytics', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const sales = await h.command('department', { name: 'Sales' })
@@ -40,8 +43,22 @@ test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped B
  await h.get('/api/easel/warehouse', planner, 403)
 
  // One reviewed read-only query per metric.
- const sql = "SELECT TO_CHAR(month, 'YYYY-MM') AS period, active_users AS value FROM usage.monthly_active"
- for (const bad of ['DELETE FROM usage.monthly_active', 'select 1; drop table usage.x', `${sql} -- sneaky`, 'select a into b from c', 'with x as (select 1 as period, 2 as value) insert into y select * from x']) assert.equal((await june('warehouse-query-save', { name: 'Bad', warehouse: 'snowflake', metric: 'active_users', sql: bad })).status, 400, bad)
+ const sql = "WITH measured AS (SELECT TO_CHAR(month, 'YYYY-MM') AS period, active_users AS value FROM usage.monthly_active) SELECT period, SUM(value) AS value FROM measured GROUP BY period ORDER BY period DESC"
+ const refused = [
+  'DELETE FROM usage.monthly_active', 'select 1; drop table usage.x', `${sql} -- sneaky`, 'select a into b from c',
+  'with x as (select 1 as period, 2 as value) insert into y select * from x',
+  'WITH x AS (DELETE FROM usage.monthly_active RETURNING *) SELECT * FROM x',
+  'SELECT period, FROM', 'SELECT period, value FROM usage.monthly_active FOR UPDATE',
+  "SELECT SYSTEM$SEND_EMAIL('synthetic-easel-1') AS value", 'SELECT ops.mutate() AS value',
+  "SELECT * FROM TABLE(unknown_function())", "SELECT * FROM @stage", 'SELECT * FROM t /* hidden */',
+ ]
+ for (const warehouse of ['snowflake', 'bigquery', 'databricks']) {
+  const before = remote.calls.length
+  for (const bad of refused) assert.equal((await june('warehouse-query-save', { name: 'Bad', warehouse, metric: 'active_users', sql: bad })).status, 400, `${warehouse}: ${bad}`)
+  const nativeOnly = warehouse === 'bigquery' ? "SELECT * FROM EXTERNAL_QUERY('synthetic-easel-1', 'DELETE FROM t')" : warehouse === 'databricks' ? "SELECT * FROM read_files('synthetic-easel-1')" : 'SELECT * FROM t CHANGES(INFORMATION => DEFAULT) AT(OFFSET => -60)'
+  assert.equal((await june('warehouse-query-save', { name: 'Bad', warehouse, metric: 'active_users', sql: nativeOnly })).status, 400)
+  assert.equal(remote.calls.length, before, 'policy refusals never contact a provider, including OAuth')
+ }
  assert.equal((await june('warehouse-query-save', { name: 'Users', warehouse: 'snowflake', metric: 'active_users', sql }, planner)).status, 403)
  const saved = (await june('warehouse-query-save', { name: 'Monthly active users', warehouse: 'snowflake', metric: 'active_users', sql })).value
  assert.equal(saved.approved, null)
@@ -63,16 +80,66 @@ test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped B
  assert.deepEqual(['2026-01', '2026-02', '2026-03', '2026-04'].map(m => cell(driven, m).amount), [300000, 320100, 360000, 396000])
  assert.match(cell(driven, '2026-02').sources[0].trace, /warehouse metric active_users for this month, 1,?600\.50 units.*finance-approved query/)
 
+ // Streamed bytes, complete body deadline and row bounds refuse atomically.
+ const result = rows => ({ resultSetMetaData: { rowType: [{ name: 'PERIOD' }, { name: 'VALUE' }], partitionInfo: [{}] }, data: rows })
+ const monthly = Array.from({ length: 600 }, (_, i) => [`${2026 + Math.floor(i / 12)}-${String(i % 12 + 1).padStart(2, '0')}`, '1'])
+ responseOverride = () => Response.json(result(monthly))
+ let current = (await h.get('/api/easel/warehouse')).queries.find(q => q.id === saved.id)
+ const full = await june('warehouse-query-preview', { id: saved.id, revision: current.revision })
+ assert.equal(full.status, 200, full.text); assert.equal(full.value.rows.length, 600)
+ assert.deepEqual(full.value.rows[599], { period: '2075-12', hundredths: 100 })
+ // Exactly the ceiling remains usable; it is not an unconditional size refusal.
+ const boundary = JSON.stringify({ ...result([['2026-01', '1']]), padding: '' })
+ responseOverride = () => new Response(boundary.replace('"padding":""', '"padding":"' + 'x'.repeat(4_000_000 - Buffer.byteLength(boundary)) + '"'))
+ current = (await h.get('/api/easel/warehouse')).queries.find(q => q.id === saved.id)
+ const atByteLimit = await june('warehouse-query-preview', { id: saved.id, revision: current.revision })
+ assert.equal(atByteLimit.status, 200, atByteLimit.text)
+ assert.deepEqual(atByteLimit.value.rows, [{ period: '2026-01', hundredths: 100 }])
+ const snapshot = await h.get('/api/easel/warehouse')
+ const stream = (chunks, headers = {}) => new Response(new ReadableStream({ start(controller) { for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk)); controller.close() } }), { headers })
+ const small = JSON.stringify(result([['2026-01', '9999']]))
+ const failures = [
+  ['row overflow', () => Response.json(result([...monthly, ['2076-01', '1']])), 409, /too many rows/],
+  ['declared oversized', () => new Response(small, { headers: { 'content-length': '4000001' } }), 502, /too large/],
+  ['chunked oversized', () => stream(['{"padding":"', 'x'.repeat(2_000_000), 'x'.repeat(2_000_000), '"}']), 502, /too large/],
+  ['invalid JSON', () => stream(['{"data":']), 502, /invalid JSON/],
+  ['body deadline', () => new Response(new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode('{')); }, cancel() {} })), 502, /timed out/],
+ ]
+ for (const [label, respond, status, message] of failures) {
+  responseOverride = respond
+  // Both doors must refuse without replacing the last accepted observation.
+  for (const op of label === 'body deadline' ? ['warehouse-refresh'] : ['warehouse-query-preview', 'warehouse-refresh']) {
+   const q = snapshot.queries.find(q => q.id === saved.id), start = performance.now()
+   const refused = await june(op, { id: q.id, revision: q.revision })
+   assert.equal(refused.status, status, `${label} ${op}: ${refused.text}`)
+   assert.match(refused.value.error, message, label)
+   if (label === 'body deadline') assert.ok(performance.now() - start < 30000, 'a stalled body cannot outlive the request deadline')
+   assert.deepEqual(await h.get('/api/easel/warehouse'), snapshot, `${label}: last refresh, approval and preview stay unchanged`)
+   assert.deepEqual(await calc(), driven, `${label}: prior metric quantities and the plan stay unchanged`)
+  }
+ }
+ // A valid chunked response below the ceiling is accepted.
+ responseOverride = () => stream([small.slice(0, 20), small.slice(20)])
+ current = snapshot.queries.find(q => q.id === saved.id)
+ assert.equal((await june('warehouse-query-preview', { id: saved.id, revision: current.revision })).status, 200)
+ responseOverride = undefined
+ const afterPreview = (await h.get('/api/easel/warehouse')).queries.find(q => q.id === saved.id)
+ const beforeInvalidEdit = await h.get('/api/easel/warehouse'), beforeCalls = remote.calls.length
+ assert.equal((await june('warehouse-query-save', { ...afterPreview, sql: 'SELECT unknown_function()' })).status, 400)
+ assert.equal(remote.calls.length, beforeCalls)
+ assert.deepEqual(await h.get('/api/easel/warehouse'), beforeInvalidEdit, 'an invalid edit cannot withdraw approval or replace stored metrics')
+ assert.deepEqual(await calc(), driven)
+
  // Editing the query withdraws approval until it is reviewed again.
- const edited = (await june('warehouse-query-save', { id: saved.id, revision: refreshed.revision, name: 'Monthly active users', warehouse: 'snowflake', metric: 'active_users', sql: `${sql} ORDER BY 1` })).value
+ const edited = (await june('warehouse-query-save', { id: saved.id, revision: afterPreview.revision, name: 'Monthly active users', warehouse: 'snowflake', metric: 'active_users', sql: `${sql} LIMIT 600` })).value
  assert.equal(edited.approved, null)
  assert.equal((await june('warehouse-refresh', { id: saved.id, revision: edited.revision })).status, 409)
 
  // BigQuery and Databricks return the same shape; malformed results are refused.
  remote.warehouse.bigquery = [{ period: '2026-01', value: '250.5' }]; remote.warehouse.databricks = [{ period: '2026-01', value: '12' }]
- const bq = (await june('warehouse-query-save', { name: 'Shipments', warehouse: 'bigquery', metric: 'shipments', sql: 'SELECT FORMAT_DATE("%Y-%m", d) AS period, n AS value FROM ops.shipments' })).value
+ const bq = (await june('warehouse-query-save', { name: 'Shipments', warehouse: 'bigquery', metric: 'shipments', sql: 'SELECT FORMAT_DATE("%Y-%m", d) AS period, n AS value FROM ops.shipments ORDER BY 1 DESC' })).value
  assert.deepEqual((await june('warehouse-query-preview', { id: bq.id, revision: bq.revision })).value.rows, [{ period: '2026-01', hundredths: 25050 }])
- const db = (await june('warehouse-query-save', { name: 'Orders', warehouse: 'databricks', metric: 'orders', sql: 'SELECT period, value FROM ops.orders' })).value
+ const db = (await june('warehouse-query-save', { name: 'Orders', warehouse: 'databricks', metric: 'orders', sql: "SELECT date_format(month, 'yyyy-MM') AS period, CAST(n AS DECIMAL(12,2)) AS value FROM ops.orders ORDER BY period ASC" })).value
  assert.deepEqual((await june('warehouse-query-preview', { id: db.id, revision: db.revision })).value.rows, [{ period: '2026-01', hundredths: 1200 }])
  remote.warehouse.databricks = [{ period: '2026-13', value: '1' }]
  assert.equal((await june('warehouse-query-preview', { id: db.id, revision: (await h.get('/api/easel/warehouse')).queries.find(q => q.metric === 'orders').revision })).status, 400)

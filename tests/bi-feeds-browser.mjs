@@ -1,70 +1,105 @@
-// REPORT-007: finance and a board reader open a saved report's BI dataset in
-// the browser, download its CSV and Parquet files, and finance sees the
-// warehouse metrics and drop controls, at desktop and phone widths.
+// Built native screens with real sessions and D1; only provider HTTP edges are faked.
 import assert from 'node:assert/strict'
-import { mkdir, readFile, rm } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import { fresh, freePort, command, start } from './browser-runtime.mjs'
-import { api, noOverflow, session, settle } from './browser-journey.mjs'
+import { builtBrowserRuntime } from './built-browser-runtime.mjs'
+import { command } from './browser-runtime.mjs'
+import { noOverflow, settle, track } from './browser-journey.mjs'
+import { providerFakes } from './provider-fakes.mjs'
 import { readParquet } from './parquet-reader.mjs'
 
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
-const existing = process.argv.includes('--existing'), root = existing ? process.cwd() : await fresh()
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-bi-feeds')
 await mkdir(evidence, { recursive: true })
-let server, browser, finance
+if (!process.argv.includes('--existing-build')) await command(process.cwd(), ['build'])
+const remote = providerFakes(), messages = []
+let oversized = false
+const runtime = await builtBrowserRuntime({ https: true, bindings: { AUTH_LOCAL: 'false', MAIL_PROVIDER: 'resend', MAIL_API_KEY: 'synthetic-easel-900000001' }, outbound: async request => {
+ if (new URL(request.url).hostname === 'api.resend.com') { messages.push(await request.json()); return Response.json({ id: crypto.randomUUID() }) }
+ if (oversized && new URL(request.url).hostname.endsWith('snowflakecomputing.com')) return new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(' '.repeat(2_000_000))); c.enqueue(new TextEncoder().encode(' '.repeat(2_000_001))); c.close() } }))
+ return remote.outbound(request)
+} })
+let browser, finance, board
 try {
- const port = await freePort()
- await command(root, ['setup', '--owner-email', 'owner@example.test', '--port', String(port)])
- server = await start(root, port)
- browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--use-mock-keychain', '--password-store=basic'] })
- finance = await session(browser, root, server.origin, 'owner', 1440)
- const call = (path, body) => api(finance.context, server.origin, path, body), cmd = (op, body) => call(`command/${op}`, body)
+ browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--no-sandbox', '--use-mock-keychain', '--password-store=basic'] })
+ finance = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 }, acceptDownloads: true })
+ const send = async (path, body, status = 200) => {
+  const r = await finance.request[body === undefined ? 'get' : 'post'](runtime.origin + path, { headers: { origin: runtime.origin }, ...(body === undefined ? {} : { data: body }), maxRedirects: 0 })
+  assert.equal(r.status(), status, await r.text()); return status === 200 ? r.json() : null
+ }
+ const call = (path, body) => send('/api/easel/' + path, body), cmd = (op, body) => call('command/' + op, body)
+ await send('/auth/bootstrap', { token: runtime.bootstrap, displayName: 'Fran Finance' }, 303)
+ const page = await finance.newPage(); track(page); page.on('dialog', d => d.accept())
+ await page.goto(runtime.origin + '/setup'); await page.getByLabel('I confirm this owner account is ready to use.', { exact: true }).check(); await page.getByRole('button', { name: 'Finish setup', exact: true }).click(); await page.waitForURL('**/app')
  await cmd('workspace', { name: 'Harbour Analytics', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const sales = await cmd('department', { name: 'Sales' })
  const revenue = await cmd('line', { name: 'Platform usage', type: 'revenue' })
  const payroll = await cmd('line', { name: 'Salaries', type: 'operating-expense', payroll: true })
- await cmd('member', { email: 'board@dev.localhost', name: 'Board', role: 'viewer' })
+ await cmd('member', { email: 'board@example.test', name: 'Board', role: 'viewer' })
  const budget = (await call('state')).scenarios[0]
  await cmd('position', { scenario: budget.id, title: 'Private principal engineer', holder: 'Private Person', department: sales.id, line: payroll.id, start: '2026-01', annualSalary: '120000', onCostPercent: '0' })
  await cmd('revenue', { scenario: budget.id, name: 'Active users', kind: 'usage', line: revenue.id, department: sales.id, start: '2026-01', startUsage: '1000', growthPercent: '10', unitPrice: '2', warehouseMetric: 'active_users', collectionLag: 0 })
  await cmd('dashboard-save', { name: 'Board feed', scenario: budget.id, audience: 'board', department: '', widgets: [{ metric: 'revenue', display: 'table' }], report: { row: 'line', period: 'month', through: '2026-03', lines: [revenue.id, payroll.id], comparisons: [], highlightBps: 1000 } })
+ await call('invite', { email: 'board@example.test' })
+ const token = new URL(messages.find(m => m.to.includes('board@example.test')).text.match(/https?:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
+ board = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 }, acceptDownloads: true })
+ assert.equal((await board.request.post(runtime.origin + '/auth/confirm', { headers: { origin: runtime.origin }, data: { token }, maxRedirects: 0 })).status(), 303)
 
- for (const [as, width] of [['owner', 1440], ['board', 1440], ['owner', 390], ['board', 390]]) {
-  const who = await session(browser, root, server.origin, as, width)
-  try {
-   const page = who.page
-   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Reports', exact: true }).click(); await settle(page)
-   const feed = page.getByLabel('BI dataset')
-   await feed.waitFor()
-   assert.match(await feed.innerText(), /one row per report row, month and series/i)
-   for (const [name, file, magic] of [['Download dataset (CSV)', `dataset-${as}-${width}.csv`, 'row_id,'], ['Download dataset (Parquet)', `dataset-${as}-${width}.parquet`, 'PAR1']]) {
-    const download = page.waitForEvent('download')
-    await feed.getByRole('link', { name, exact: true }).click()
-    const saved = join(evidence, file); await (await download).saveAs(saved)
-    const bytes = await readFile(saved)
-    assert.equal(bytes.subarray(0, magic.length).toString('latin1'), magic)
-    assert.doesNotMatch(bytes.toString('latin1'), /Private principal engineer|Private Person|annualSalary/)
-    if (file.endsWith('.parquet')) assert.ok(readParquet(new Uint8Array(bytes)).rows.length >= 6)
-   }
-   if (as === 'owner') {
-    assert.ok(await feed.getByText('Connect Chest, Google Drive or SharePoint', { exact: false }).count() > 0, 'finance is told how to enable drops')
-    await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Settings', exact: true }).click(); await settle(page)
-    const card = page.getByLabel('Warehouse metrics')
-    await card.waitFor()
-    for (const name of ['Connect Snowflake', 'Connect BigQuery', 'Connect Databricks']) await card.getByRole('button', { name, exact: true }).waitFor()
-    await noOverflow(page, `REPORT-007 warehouse ${width}`)
-    await card.screenshot({ path: join(evidence, `warehouse-${width}.png`) })
-   } else assert.equal(await feed.getByRole('heading', { name: 'Nightly drops' }).count(), 0, 'readers never see drop controls')
-   await page.getByRole('navigation', { name: 'Easel' }).getByRole('button', { name: 'Reports', exact: true }).click(); await settle(page)
-   await noOverflow(page, `REPORT-007 BI dataset ${as} ${width}`)
-   await page.getByLabel('BI dataset').screenshot({ path: join(evidence, `bi-dataset-${as}-${width}.png`) })
-  } finally { await who.context.close() }
+ // Query validation and a bounded provider refusal appear beside the native actions.
+ await page.goto(runtime.origin + '/app?tab=settings')
+ const card = page.getByLabel('Warehouse metrics')
+ await card.getByLabel('Snowflake account', { exact: true }).fill('acme-prod.us-east-1')
+ await card.getByLabel('Snowflake token', { exact: true }).fill('synthetic-easel-sf')
+ await card.getByRole('button', { name: 'Connect Snowflake', exact: true }).click(); await settle(page)
+ await card.getByRole('button', { name: 'Disconnect Snowflake', exact: true }).waitFor()
+ await card.getByLabel('Query name', { exact: true }).fill('Monthly active users')
+ await card.getByLabel('Warehouse', { exact: true }).selectOption('snowflake')
+ await card.getByLabel('Metric name', { exact: true }).fill('active_users')
+ await card.getByLabel('Read-only query', { exact: true }).fill("SELECT TO_CHAR(month, 'YYYY-MM') AS period, n AS value FROM usage.monthly_active ORDER BY period DESC")
+ await card.getByRole('button', { name: 'Save query', exact: true }).click(); await settle(page)
+ remote.warehouse.snowflake = [{ period: '2026-01', value: '1500' }]
+ await card.getByRole('button', { name: 'Preview result', exact: true }).click(); await settle(page)
+ const result = card.getByRole('table', { name: 'Result of Monthly active users', exact: true })
+ assert.deepEqual(await result.locator('tbody tr').first().getByRole('cell').allTextContents(), ['2026-01', '1500.00'])
+ await card.getByRole('button', { name: 'Approve this query and result', exact: true }).click(); await settle(page)
+ await card.getByRole('button', { name: 'Refresh metric', exact: true }).click(); await settle(page)
+ const accepted = await call('warehouse'), plan = await call(`scenario/${budget.id}`)
+ assert.equal(plan.calculation.cells.find(c => c.line === revenue.id && c.month === '2026-01').amount, 300000)
+ oversized = true
+ await card.getByRole('button', { name: 'Refresh metric', exact: true }).click(); await settle(page)
+ await card.getByRole('alert').filter({ hasText: 'response is too large; prior metrics were kept' }).waitFor()
+ const calls = remote.calls.length
+ await card.getByLabel('Query name', { exact: true }).fill('Unsafe query')
+ await card.getByLabel('Warehouse', { exact: true }).selectOption('snowflake')
+ await card.getByLabel('Metric name', { exact: true }).fill('unsafe_metric')
+ await card.getByLabel('Read-only query', { exact: true }).fill("SELECT SYSTEM$SEND_EMAIL('synthetic-easel-1')")
+ await card.getByRole('button', { name: 'Save query', exact: true }).click(); await settle(page)
+ await card.getByRole('alert').filter({ hasText: 'function is not supported' }).waitFor()
+ assert.equal(remote.calls.length, calls, 'unsafe SQL is refused before provider contact')
+ assert.deepEqual(await call('warehouse'), accepted, 'native refusals retain accepted metrics and approval')
+ assert.deepEqual(await call(`scenario/${budget.id}`), plan, 'native refusals keep the plan unchanged')
+ for (const width of [1440, 390]) {
+  await page.setViewportSize({ width, height: 1000 }); await settle(page); await noOverflow(page, `Warehouse errors ${width}`)
+  for (const button of await card.getByRole('button').all()) {
+   if ((await button.innerText()).trim()) continue
+   await button.focus(); assert.ok(await page.getByRole('tooltip').isVisible(), 'icon controls show a tooltip on focus')
+  }
+  await card.screenshot({ path: join(evidence, `warehouse-errors-${width}.png`) })
  }
- console.log('REPORT-007: BI dataset downloads, warehouse metric controls and drop controls at 1440/390 without overflow')
-} finally {
- await finance?.context.close()
- await browser?.close()
- await server?.close()
- if (!existing) await rm(root, { recursive: true, force: true })
-}
+ for (const [as, context] of [['owner', finance], ['board', board]]) {
+  const p = as === 'owner' ? page : await context.newPage(); if (as === 'board') track(p)
+  await p.setViewportSize({ width: 1440, height: 1000 }); await p.goto(runtime.origin + '/app?tab=reports')
+  const feed = p.getByLabel('BI dataset'); await feed.waitFor()
+  for (const [name, extension, magic] of [['Download dataset (CSV)', 'csv', 'row_id,'], ['Download dataset (Parquet)', 'parquet', 'PAR1']]) {
+   const download = p.waitForEvent('download'); await feed.getByRole('link', { name, exact: true }).click()
+   const saved = join(evidence, `dataset-${as}.${extension}`); await (await download).saveAs(saved)
+   const bytes = await readFile(saved); assert.equal(bytes.subarray(0, magic.length).toString('latin1'), magic)
+   assert.doesNotMatch(bytes.toString('latin1'), /Private principal engineer|Private Person|annualSalary/)
+   if (extension === 'parquet') assert.ok(readParquet(new Uint8Array(bytes)).rows.length >= 6)
+  }
+  if (as === 'owner') assert.ok(await feed.getByText('Connect Chest, Google Drive or SharePoint', { exact: false }).count() > 0)
+  else assert.equal(await feed.getByRole('heading', { name: 'Nightly drops' }).count(), 0)
+  for (const width of [1440, 390]) { await p.setViewportSize({ width, height: 1000 }); await settle(p); await noOverflow(p, `BI dataset ${as} ${width}`); await feed.screenshot({ path: join(evidence, `bi-dataset-${as}-${width}.png`) }) }
+ }
+ console.log('REPORT-007 native supported SELECT, approval, metric refresh, policy and streamed-byte refusals retain metrics and plan; dataset privacy asserted at 1440, screens captured at 1440 and 390')
+} finally { await finance?.close(); await board?.close(); await browser?.close(); await runtime.close() }

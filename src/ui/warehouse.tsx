@@ -16,7 +16,7 @@ export function WarehouseInputs() {
  const connected = view?.connections.filter((c: D) => c.connected) ?? []
  return <section className="card" aria-label="Warehouse metrics">
   <h2>Warehouse metrics</h2>
-  <p className="muted">Operational metrics such as active users flow in from Snowflake, BigQuery or Databricks through one read-only query per metric that finance reviews. Previewing changes nothing; a refresh runs only the approved query text; a usage revenue driver bound to the metric uses the measured month. Use a read-only role or grant: Easel also refuses anything but one SELECT. Credentials are sealed and excluded from archives.</p>
+  <p className="muted">Operational metrics such as active users flow in from Snowflake, BigQuery or Databricks through one read-only query per metric that finance reviews. Previewing changes nothing; a refresh runs only the approved query text; a usage revenue driver bound to the metric uses the measured month. Use a read-only role or grant. Easel parses one supported SELECT, refuses unknown functions, and limits each response to 600 rows and 4 MB within 25 seconds. Credentials are sealed and excluded from archives.</p>
   {error && <p role="alert" className="error">{error}</p>}
   {view && <>
    {view.connections.map((c: D) => <div key={c.warehouse} className="pack">
