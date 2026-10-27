@@ -18,13 +18,17 @@ const configPath = resolve('dist/server/wrangler.json'), workerDir = dirname(con
 async function enumerate(path) { for (const file of await readdir(path, { withFileTypes: true })) { const full = join(path, file.name); if (file.isDirectory()) await enumerate(full); else if (/\.m?js$/.test(file.name)) scripts.push(full) } }
 await enumerate(workerDir)
 const provider = pantryProvider(), bankGrant = { environment: 'sandbox', clientId: 'synthetic-easel-31', secret: 'synthetic-easel-32', accessToken: 'synthetic-easel-33', consent: true }
-const clockEntry = join(workerDir, 'cash-clock-entry.mjs'), clock = join(workerDir, 'cash-clock.mjs')
+// Instrument only the existing business-clock boundary. Authentication keeps
+// its real clock, including D1 session expiry, as in the HTTP flow harness.
+const modules = await Promise.all(scripts.map(async path => {
+ const contents = await readFile(path, 'utf8')
+ if (path !== entry) return { type: 'ESModule', path }
+ const boundary = /async function currentTime\([^)]*\) \{[^}]*\}/g
+ assert.equal([...contents.matchAll(boundary)].length, 1, 'The business-clock boundary is instrumented once')
+ return { type: 'ESModule', path, contents: contents.replace(boundary, `async function currentTime() { return '2026-02-01T12:00:00.000Z' }`) }
+}))
 const mf = new Miniflare({ ...convertV4MiniflareOptions({
- host: '127.0.0.1', port, https: true, inspectorPort: 0, modules: [
-  { type: 'ESModule', path: clockEntry, contents: `import './cash-clock.mjs'; export {default} from './${config.main}';` },
-  { type: 'ESModule', path: clock, contents: `const RealDate=Date; globalThis.Date=class extends RealDate { constructor(...args){super(...(args.length?args:['2026-02-01T12:00:00.000Z']))} static now(){return RealDate.parse('2026-02-01T12:00:00.000Z')} };` },
-  ...scripts.map(path => ({ type: 'ESModule', path })),
- ], modulesRoot: workerDir, compatibilityDate: config.compatibility_date, compatibilityFlags: config.compatibility_flags, d1Databases: { DB: 'easel-combined-cash' },
+ host: '127.0.0.1', port, https: true, inspectorPort: 0, modules, modulesRoot: workerDir, compatibilityDate: config.compatibility_date, compatibilityFlags: config.compatibility_flags, d1Databases: { DB: 'easel-combined-cash' },
  bindings: { PANTRY_ORIGIN: 'https://pantry.example.test', AUTH_ORIGIN: origin, OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'synthetic-easel-session-01234567890123456789', SETUP_TOKEN: 'synthetic-easel-bootstrap-01234567890123456789', MAIL_PROVIDER: 'resend', MAIL_API_KEY: 'synthetic-easel-1', MAIL_FROM: 'Easel <easel@example.test>' },
  assets: { directory: resolve(workerDir, config.assets.directory), binding: 'ASSETS', run_worker_first: true, routerConfig: { has_user_worker: true }, assetConfig: { html_handling: config.assets.html_handling, not_found_handling: config.assets.not_found_handling } },
  outboundService: async request => {
