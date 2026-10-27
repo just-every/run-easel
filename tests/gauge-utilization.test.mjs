@@ -25,10 +25,12 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
   }
   assert.equal(url.pathname, '/api/gauge/state')
   assert.equal(req.method, 'GET'); assert.ok(['2026-01-01', '2026-02-01'].includes(url.searchParams.get('from')))
+  const expectedTo = url.searchParams.get('from') === '2026-01-01' ? '2026-01-31' : '2026-02-28'
+  assert.equal(url.searchParams.get('to'), expectedTo, 'Gauge reads the complete inclusive calendar month')
   reads++
   const respond = () => {
    res.writeHead(status, { 'content-type': 'application/json', ...(status === 429 ? { 'retry-after': '120' } : {}) })
-   res.end(JSON.stringify({ scope: 'utilization:read', from: wrongPeriod ? '2026-02-01' : url.searchParams.get('from'), to: url.searchParams.get('to'), participantCount: 3, availableSeconds: missing ? null : 1728000, knownAvailableSeconds: missing ? 10000 : 1728000, missingCalendarDays: missing ? 1 : 0, approvedBillableSeconds: billable, asOf: now, personName: 'Provider private sentinel' }))
+   res.end(JSON.stringify({ scope: 'utilization:read', from: wrongPeriod ? '2026-02-01' : url.searchParams.get('from'), to: expectedTo, participantCount: 3, availableSeconds: missing ? null : 1728000, knownAvailableSeconds: missing ? 10000 : 1728000, missingCalendarDays: missing ? 1 : 0, approvedBillableSeconds: billable, asOf: now, personName: 'Provider private sentinel' }))
   }
   if (holdReads) { pendingReads.push(respond); if (pendingReads.length === 2) pendingReads.splice(0).forEach(release => release()) }
   else respond()
@@ -41,6 +43,10 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  const line = await h.command('line', { name: 'Services', type: 'revenue' })
  const budget = (await h.get('/api/easel/state')).scenarios[0]
  const b = { scenario: budget.id, kind: 'services', name: 'Agency services', line: line.id, department: dept.id, start: '2026-01', collectionLag: 1, monthlyHours: '160', utilizationPercent: '75', hourlyRate: '150' }
+ const region = await h.command('dimension', { name: 'Region' })
+ const east = await h.command('dimension-member', { dimension: region.id, name: 'East' })
+ const west = await h.command('dimension-member', { dimension: region.id, name: 'West' })
+ b.dimensions = { [region.id]: east.id }
  const driver = await h.command('revenue', b)
  const viewer = await h.person('board@example.test', 'viewer'), outsider = await h.person('engineering@example.test', 'contributor', [other.id])
  const post = async (path, body, code = 200, cookie = h.owner) => { const r = await h.send(path.startsWith('/') ? path : `/api/easel/${path}`, body, cookie); assert.equal(r.status, code, r.text); return r.value }
@@ -182,6 +188,14 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  await post('/api/easel/connections/gauge/check', { month: '2026-02' })
  const january = (await view()).gaugeFreshness[0]
  assert.equal(january.lastSuccess, lastSuccess); assert.match(january.error, /HTTP 503/, 'Another month cannot clear this month failure')
+ await post('connections/gauge/schedule', { cadence: 'hourly', month: '2026-03', consent: true })
+ const unobserved = await h.get('/api/easel/connections/gauge')
+ assert.equal(unobserved.checkedMonth, '2026-03'); assert.equal(unobserved.stale, true)
+ for (const field of ['lastRefresh', 'observedAt', 'observation', 'lastChecked', 'error', 'rateLimit']) assert.equal(unobserved[field], null, `${field} belongs to the selected unobserved month`)
+ assert.equal(unobserved.rowCount, 0)
+ await post('connections/gauge/schedule', { cadence: 'hourly', month: '2026-01', consent: true })
+ const restored = await h.get('/api/easel/connections/gauge')
+ assert.equal(restored.lastRefresh, lastSuccess); assert.match(restored.error, /HTTP 503/)
  assert.equal(amount(await view(), '2026-01'), 1500004)
  const visible = (await h.get(reportPath, viewer)).gaugeFreshness
  assert.equal(visible.length, 1); assert.equal(visible[0].stale, true)
@@ -191,17 +205,34 @@ test('REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, sou
  assert.deepEqual(outsideHealth, [], 'An unrelated department receives no source provenance')
  const advisory = await h.person('advisory@example.test', 'contributor', [dept.id])
  assert.equal((await h.get(`/api/easel/scenario/${budget.id}`, advisory)).gaugeFreshness[0].acceptedDigest, preview.digest)
- await h.command('member', { email: 'board@example.test', name: 'Board', role: 'viewer', departments: [], active: false })
- await h.get(reportPath, viewer, 404)
- const workbook = async path => {
-  const r = await h.mf.dispatchFetch(h.origin + path, { headers: { cookie: h.owner } })
-  assert.equal(r.status, 200); return readWorkbook(await r.arrayBuffer())
+ const workbook = async (path, cookie = h.owner) => {
+  const r = await h.mf.dispatchFetch(h.origin + path, { headers: { cookie } })
+  assert.equal(r.status, 200, await r.clone().text()); return readWorkbook(await r.arrayBuffer())
  }
- for (const path of [`/api/easel/scenario/${budget.id}/document.xlsx`, `${reportPath}.xlsx`]) {
+ for (const path of [`/api/easel/scenario/${budget.id}/document.xlsx`, `${dashboardPath}/document.xlsx`, `${reportPath}.xlsx`]) {
   const book = await workbook(path), row = book.getWorksheet('Gauge freshness').getRow(3).values
   assert.equal(row[2], '2026-01'); assert.equal(row[4], lastSuccess); assert.equal(row[6], 'Stale')
-  assert.match(row[7], /HTTP 503/); assert.equal(row[10], preview.digest)
+  assert.match(row[7], /HTTP 503/); assert.equal(row[8], acceptedAt); assert.equal(row[9], accepted.gaugeFreshness[0].acceptedObservedAt); assert.equal(row[10], preview.digest); assert.equal(row[11], 'changed-since-acceptance')
  }
+ const aggregateSheet = (await workbook(`${dashboardPath}/document.xlsx`, viewer)).getWorksheet('Gauge freshness')
+ assert.equal(aggregateSheet.rowCount, 3); assert.equal(aggregateSheet.getCell('D3').value, lastSuccess)
+ assert.match(aggregateSheet.getCell('G3').value, /HTTP 503/)
+ assert.equal(aggregateSheet.getCell('J3').value, null, 'Aggregate-only download omits the accepted digest')
+ const restrictBoard = member => h.command('member', { email: 'board@example.test', name: 'Board', role: 'viewer', departments: [], dimensionMembers: { [region.id]: [member] } })
+ await restrictBoard(west.id)
+ for (const path of [dashboardPath, reportPath]) assert.deepEqual((await h.get(path, viewer)).gaugeFreshness, [], 'A different dimension cannot read source metadata')
+ const excludedBook = await workbook(`${dashboardPath}/document.xlsx`, viewer)
+ assert.equal(excludedBook.getWorksheet('Gauge freshness').rowCount, 2, 'Download applies the current dimension grant')
+ assert.equal(excludedBook.getWorksheet('Dashboard').lastRow.getCell(5).value, null, 'Unavailable scoped headcount has no fabricated ending balance')
+ await restrictBoard(east.id)
+ for (const path of [dashboardPath, reportPath]) {
+  const rows = (await h.get(path, viewer)).gaugeFreshness
+  assert.equal(rows.length, 1); assert.equal(rows[0].lastSuccess, lastSuccess); assert.equal(rows[0].acceptedDigest, undefined)
+ }
+ assert.equal((await workbook(`${dashboardPath}/document.xlsx`, viewer)).getWorksheet('Gauge freshness').rowCount, 3)
+ await h.command('member', { email: 'board@example.test', name: 'Board', role: 'viewer', departments: [], active: false })
+ await h.get(reportPath, viewer, 404)
+ await h.get(`${dashboardPath}/document.xlsx`, viewer, 403)
  const csv = await h.get(`/api/easel/scenario/${budget.id}/document.csv`)
  assert.ok(csv.includes(lastSuccess)); assert.ok(csv.includes(preview.digest)); assert.ok(csv.includes('HTTP 503'))
  await post('/api/easel/connections/gauge/check', { month: '2026-01' })
