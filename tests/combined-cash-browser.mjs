@@ -20,7 +20,7 @@ await enumerate(workerDir)
 const provider = pantryProvider(), bankGrant = { environment: 'sandbox', clientId: 'synthetic-easel-31', secret: 'synthetic-easel-32', accessToken: 'synthetic-easel-33', consent: true }
 // Instrument only the existing business-clock boundary. Authentication keeps
 // its real clock, including D1 session expiry, as in the HTTP flow harness.
-const modules = await Promise.all(scripts.map(async path => {
+const modules = await Promise.all([entry, ...scripts.filter(path => path !== entry)].map(async path => {
  const contents = await readFile(path, 'utf8')
  if (path !== entry) return { type: 'ESModule', path }
  const boundary = /async function currentTime\([^)]*\) \{[^}]*\}/g
