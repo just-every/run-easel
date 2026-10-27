@@ -2143,7 +2143,7 @@
       "executable": false
     },
     "src/easel/warehouse-query-policy.ts": {
-      "sha256": "7c81359f0d7418ecb8896d8e7d9a2e141547e2380ee493f26d57fb42fceb8d19",
+      "sha256": "c82f797b37b05d93ee90e73a343adc4092f5c336af90cde1a2d51bdad9443d2a",
       "executable": false
     },
     "src/easel/warehouse.ts": {
@@ -4571,11 +4571,11 @@
       "executable": false
     },
     "tests/bi-feeds-browser.mjs": {
-      "sha256": "00b60086a5dd773604b30598ef97602f544a6a4dac5e5daa84189783c23337d6",
+      "sha256": "33f498e8356ee4c5f83f75b52512241716a1972880dc42daab6b4913626d1009",
       "executable": false
     },
     "tests/bi-feeds.test.mjs": {
-      "sha256": "969533a62cfa8421c5687e8b19d3fee1b2fe035733d668627f47c80a872baf2f",
+      "sha256": "3b17442616531fe9f069d2368934636f9e187c777e66cff873ac60ae44feacd7",
       "executable": false
     },
     "tests/billing-fixture.mjs": {

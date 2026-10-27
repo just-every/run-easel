@@ -11,7 +11,7 @@ import type { Warehouse } from './warehouse-provider'
 const parsers = { snowflake: new SnowflakeParser(), bigquery: new BigQueryParser(), databricks: new HiveParser() }
 const spark = new SparkSQL()
 const functions = new Set('ABS AVG CEIL CEILING COALESCE CONCAT COUNT DATE DATE_FORMAT DATE_TRUNC EXTRACT FLOOR FORMAT_DATE IF IFNULL IFF LEFT LENGTH LOWER LTRIM MAX MIN NULLIF REGEXP_REPLACE REPLACE RIGHT ROUND RTRIM SUBSTR SUBSTRING SUM TO_CHAR TO_DATE TRIM TRUNC UPPER YEAR MONTH DAY'.split(' '))
-const nodes = new Set('select expr column_ref function aggr_func cast expr_list binary_expr unary_expr number bool null default origin star single_quote_string double_quote_string string backticks_quote_string case when else interval extract date timestamp'.split(' '))
+const nodes = new Set('select expr column_ref function aggr_func cast expr_list binary_expr unary_expr number bool null default origin star single_quote_string double_quote_string string backticks_quote_string case when else interval extract date timestamp ASC DESC'.split(' '))
 const prohibited = /\b(insert|update|delete|merge|drop|create|alter|truncate|grant|revoke|into|copy|call|execute|exec|export|load|unload|put|get|remove|use|set|reset|begin|commit|rollback|attach|detach|vacuum|pragma|lock|unlock)\b/i
 
 // Strip quoted tokens only for the keyword check. The dialect parser still sees
