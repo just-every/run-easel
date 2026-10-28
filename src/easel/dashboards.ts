@@ -6,17 +6,18 @@ import { workingCalculation } from './calculation'
 import { requireFinance, requireMember, visibleInput } from './access'
 import { canSeeDashboard } from './dashboard-access'
 import { dashboardMetrics } from './dashboard-metrics'
+import { pipelineCoverage } from './pipeline-coverage'
 import type { Context } from './context'
 import { model } from './model'
 import { frozenModel } from './reforecasts'
 import { scenarioAccess } from './scenario-access'
 import { all, choice, find, get, put, remove, requireThat, text, uid, type Data } from './types'
 
-const METRICS = ['revenue', 'grossMargin', 'headcount', 'arr', 'burn', 'runway', 'closingCash'] as const
+const METRICS = ['revenue', 'grossMargin', 'headcount', 'arr', 'burn', 'runway', 'closingCash','pipelineCoverage'] as const
 const DISPLAYS = ['tile', 'chart', 'table'] as const
 
 function widgets(value: unknown): Data[] {
- requireThat(Array.isArray(value) && value.length > 0 && value.length <= METRICS.length, 'Choose one to seven dashboard widgets')
+ requireThat(Array.isArray(value) && value.length > 0 && value.length <= METRICS.length, 'Choose one to eight dashboard widgets')
  const result = value.map(w => ({ metric: choice(w?.metric, METRICS, 'a dashboard metric'), display: choice(w?.display, DISPLAYS, 'a widget display') }))
  requireThat(new Set(result.map(w => w.metric)).size === result.length, 'Each metric may appear once')
  return result
@@ -44,6 +45,11 @@ export async function dashboardView(c: Context, id: unknown) {
  const calculation: Calculation = 'calculation' in m ? m.calculation as Calculation : await workingCalculation(c, sc.id)
  const rows = dashboardMetrics({ lines: m.lines, calculation: scopedCalculation(c.s, c.x, calculation, m.lines) }, m.inputs.revenue.filter(input => !scopedReader(c.x) || visibleInput(c.x, 'revenue', input)), dashboard.department)
  if (scopedReader(c.x)) for (const row of rows) row.headcount = null
+ for(const row of rows){
+  const pipeline=pipelineCoverage(m.inputs.revenue.filter(input=>!scopedReader(c.x)||visibleInput(c.x,'revenue',input)),row.month,m.workspace.fiscalYearStart ?? 1,m.scenario.pipelineCoverageTargetCents ?? 0,dashboard.department,m.scenario.pipelineSources,m.workspace.currency)
+  row.pipelineCoverage=pipeline.coverageBps
+  row.pipelineCoverageBasis=pipeline.coverageBps===null?'Accepted pipeline or quarterly bookings target unavailable':`Weighted open bookings / finance quarterly bookings target; next fiscal quarter ${pipeline.from} through ${pipeline.to}; target ${pipeline.targetCents} ${m.workspace.currency} minor units`
+ }
  const blocked = pending ? 'Complete the in-progress actuals import before reading final dashboard metrics.' : null
  if (blocked) for (const row of rows) {
   for (const metric of METRICS) if (metric !== 'headcount') row[metric] = null

@@ -1,4 +1,5 @@
 import { workingCalculation } from './calculation'
+import { pipelineCoverage } from './pipeline-coverage'
 // Refresh creates explicit, cited work. A blocked source is visible to finance;
 // it never supplies a made-up zero or a conclusion to a contributor.
 import { cashHealth } from './cash-health'
@@ -11,7 +12,7 @@ import { notify } from './notify'
 import { Fault, all, put, uid, type Data } from './types'
 import { formatHundredths, formatMoney } from './units'
 
-const triggers = new Set(['metric-refresh', 'metric-rule-save', 'actuals-accepted', 'close-month'])
+const triggers = new Set(['metric-refresh', 'metric-rule-save', 'actuals-accepted', 'close-month','pipeline-refresh'])
 export const needsMetricRefresh = (c: Context) => c.activity.some(e => triggers.has(e.action))
 
 function overspend(rule: Data, c: Context, forecast: Data, calc: Calculation, budget: Data) {
@@ -60,7 +61,12 @@ export async function evaluateMetricTasks(c: Context) {
   if (!reason && forecast) {
    try {
     const calc = await workingCalculation(c, forecast.id)
-    if (rule.kind === 'overspend') {
+    if(rule.kind==='pipeline-coverage'){
+     const inputs=model(c.s,forecast.id).inputs.revenue
+     const coverage=pipelineCoverage(inputs,forecast.actualsThrough ?? c.now.slice(0,7),w.fiscalYearStart ?? 1,forecast.pipelineCoverageTargetCents ?? 0,rule.department,forecast.pipelineSources,w.currency)
+     if(coverage.coverageBps===null)reason='Accepted pipeline and a positive finance-set quarterly bookings target are required; coverage is unavailable.'
+     else if(coverage.coverageBps<rule.coverageBps)hits=[{month:coverage.from,dedup:`${rule.id}|${forecast.id}|${coverage.from}`,evidence:{kind:'pipeline-coverage',currency:w.currency,...coverage,thresholdBps:rule.coverageBps,forecastRevision:forecast.revision,summary:`${coverage.from} through ${coverage.to}: weighted open bookings ${formatMoney(coverage.weightedCents,w.currency)} / finance quarterly target ${formatMoney(coverage.targetCents,w.currency)} = ${formatHundredths(coverage.coverageBps)}% coverage, below ${formatHundredths(rule.coverageBps)}%.`,sources:coverage.sources}}]
+    } else if (rule.kind === 'overspend') {
      const budget = await snapshot(c.db, forecast.budgetSnapshot)
      if (budget.body.calculation.currency !== rule.currency) reason = 'The approved budget has a different currency; this rule cannot compare those amounts.'
      else if (forecast.actualsThrough && !budget.body.calculation.months.includes(forecast.actualsThrough)) reason = 'The latest closed month has no approved budget period; only covered months can be compared.'

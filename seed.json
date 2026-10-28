@@ -359,6 +359,12 @@
       "clauses": [
         "CONNECT-011"
       ]
+    },
+    {
+      "id": "pipeline-drivers",
+      "clauses": [
+        "REV-001"
+      ]
     }
   ],
   "nonGoals": [

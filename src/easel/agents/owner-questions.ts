@@ -80,7 +80,9 @@ export async function ownerQuestions(c: Context, op: string, b: Data): Promise<D
   const due = Date.parse(b.dueAt)
   requireThat(Number.isFinite(due) && due > Date.parse(c.now), 'Choose a future escalation time')
   const id = uid(), owner = text(b.owner, 'Input owner', 254).toLowerCase()
+  if(row.input.pipeline)requireThat(row.providerOwner && row.providerOwner===owner,'Use the finance-reviewed CRM owner → native person map for this deal',409)
   const q = { id, revision: 1, scenario: forecast.id, scenarioRevision: forecast.revision, inputKind: row.kind, originId: row.originId, field: row.field, inputName: row.name, department: row.department, owner, source: text(b.source, 'Reviewed ownership source', 1000), question: text(b.question, 'Structured question', 1000), expectedDate: row.value, dueAt: new Date(due).toISOString(), status: 'open', askedBy: c.x.actor.email, askedAt: c.now, inputFingerprint: sha256(canonicalJson(row.input)), history: [] }
+  if(row.input.pipeline)q.source=row.ownershipSource!
   requireThat(await questionOwner(c, owner, q), 'The named owner must be active and permitted to read this input', 403)
   requireThat(!all(c.s, 'owner-question').some(v => v.scenario === q.scenario && v.originId === q.originId && v.field === q.field && v.status === 'open'), 'This input already has an unanswered question', 409)
   changedDate(c, q, row.input, row.value)

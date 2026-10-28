@@ -14,6 +14,7 @@ const theme = { href: '/rer-theme.css', productName: branding.name, accentColor:
 export interface Bindings {
  ASSETS?: Fetcher
  GAUGE_ORIGIN?: string
+ ORBIT_ORIGIN?: string
  PANTRY_ORIGIN?: string
  PURSE_ORIGIN?: string
  COASTER_ORIGIN?: string
