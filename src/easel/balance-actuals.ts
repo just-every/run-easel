@@ -11,7 +11,7 @@ export function balanceActuals(groups: Data[], periods: string[]) {
    const key = JSON.stringify([g.account, g.accountType, g.department])
    const a = accounts.get(key) ?? { account: g.account, accountType: g.accountType, department: g.department, target: g.target, blocked: g.blocked, amount: 0, rows: 0, batches: [] as string[], periods: [] as string[] }
    a.amount += g.amount; a.rows += g.rows
-   a.batches = [...new Set([...a.batches, ...g.batches])]
+   a.batches = [...new Set([...a.batches, ...g.batches])].sort()
    a.periods = [...new Set([...a.periods, g.period])].sort()
    accounts.set(key, a)
   }

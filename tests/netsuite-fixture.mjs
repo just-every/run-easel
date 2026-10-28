@@ -7,9 +7,9 @@ const recording=JSON.parse(await readFile(new URL('./netsuite-suiteql-recording.
 const encode=s=>encodeURIComponent(s).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())
 const decimal=n=>`${n<0?'-':''}${Math.floor(Math.abs(n)/100)}.${String(Math.abs(n)%100).padStart(2,'0')}`
 export function netsuiteProvider(){
- const state={status:200,change:false,extra:'',badTrial:false,badPage:false,drift:false,remove:false,dimensionChange:false,revocation:200,reads:[],nonces:new Set(),entries:null,trials:null,large:true,largeMonth:'2024-01',splits:600,trialReads:0}
+ const state={status:200,change:false,extra:'',badTrial:false,badPage:false,drift:false,remove:false,dimensionChange:false,intercompany:false,revocation:200,reads:[],nonces:new Set(),entries:null,trials:null,large:true,largeMonth:'2024-01',splits:600,trialReads:0}
  const periods=[{id:'1',name:'Opening boundary',startdate:'2023-12-01',enddate:'2023-12-31',isyear:'F',isquarter:'F',isadjust:'F',closed:'T'},...recording.months.map(m=>({id:m.period,name:m.month,startdate:m.month+'-01',enddate:new Date(Date.UTC(Number(m.month.slice(0,4)),Number(m.month.slice(5)),0)).toISOString().slice(0,10),isyear:'F',isquarter:'F',isadjust:'F',closed:'T'})),{id:'99',name:'2025 fiscal adjustment',startdate:'2025-12-31',enddate:'2025-12-31',isyear:'F',isquarter:'F',isadjust:'T',closed:'T'},{id:'100',name:'2025 parent year',startdate:'2025-01-01',enddate:'2025-12-31',isyear:'T',isquarter:'F',isadjust:'F',closed:'T'}]
- const chart=()=>state.entries?[...new Set(state.entries.map(e=>e[2]))].map((code,i)=>({id:String(100+i),code,name:code,type:code.startsWith('4')?'Income':code==='3000'?'Equity':'Other',isinactive:'F'})):[...recording.accounts,...(state.extra?[{id:'401',code:'4001',name:'New subscription revenue',type:'Income',isinactive:'F'}]:[]),...(state.extra==='both'?[{id:'402',code:'9999',name:'Uncovered income',type:'Income',isinactive:'F'}]:[])]
+ const chart=()=>state.entries?[...new Set(state.entries.map(e=>e[2]))].map((code,i)=>({id:String(100+i),code,name:code,type:code.startsWith('4')?'Income':code==='3000'?'Equity':'Other',isinactive:'F'})):[...recording.accounts,...(state.intercompany?recording.intercompany.accounts:[]),...(state.extra?[{id:'401',code:'4001',name:'New subscription revenue',type:'Income',isinactive:'F'}]:[]),...(state.extra==='both'?[{id:'402',code:'9999',name:'Uncovered income',type:'Income',isinactive:'F'}]:[])]
  const posting=(sub,period,tx,line,account,amount,date)=>({transactionid:String(tx),transactiontype:'Journal',date:date??periods.find(p=>p.id===period).startdate,periodid:period,lineid:String(line),accountid:account,bookid:'1',subsidiaryid:sub,debit:decimal(Math.max(amount,0)),credit:decimal(Math.max(-amount,0)),memo:'Recorded accounting observation',reference:'NS-'+tx,departmentid:'1',classid:'1',locationid:state.dimensionChange?'2':'1'})
  state.outbound=async request=>{
   const u=new URL(request.url)
@@ -39,7 +39,8 @@ export function netsuiteProvider(){
      const prior=last?Math.round(Number(sub==='1'?last.cadCashClosing:last.eurCashClosing)*100):base
      const correction=state.change&&selected.includes('27')?2500:0,removed=state.remove&&selected.includes('27')?(sub==='1'?10000:8000):0
      const extra=selected.includes('28')?(state.extra==='both'?5000:state.extra?2500:0):0
-     rows=[{accountid:'100',balance:decimal(prior+correction-removed+extra+(state.badTrial?1:0)+(state.drift&&state.trialReads%2?1:0))},{accountid:'300',balance:decimal(-base)},{accountid:'400',balance:decimal(-(prior-base+correction-removed))},...(extra?[{accountid:'401',balance:'-25.00'}]:[]),...(extra===5000?[{accountid:'402',balance:'-25.00'}]:[])]
+     rows=[{accountid:'100',balance:decimal(prior+correction-removed+extra+(state.badTrial?1:0)+(state.drift?state.trialReads:0))},{accountid:'300',balance:decimal(-base)},{accountid:'400',balance:decimal(-(prior-base+correction-removed))},...(extra?[{accountid:'401',balance:'-25.00'}]:[]),...(extra===5000?[{accountid:'402',balance:'-25.00'}]:[])]
+     if(state.intercompany&&selected.includes('27'))for(const [accountid,delta]of Object.entries(recording.intercompany.trialAdjustments[sub])){const old=rows.find(r=>r.accountid===accountid);if(old)old.balance=decimal(Math.round(Number(old.balance)*100)+delta);else rows.push({accountid,balance:decimal(delta)})}
     }
    }else{
     rows=[]
@@ -50,6 +51,7 @@ export function netsuiteProvider(){
      else{rows.push(posting(sub,m.period,1000+Number(m.period),1,'100',amount),posting(sub,m.period,1000+Number(m.period),2,'400',-amount))}
      if(state.extra&&m.period==='28')for(const a of chart().filter(a=>['401','402'].includes(a.id)))rows.push(posting(sub,m.period,2000+Number(a.id),1,'100',2500),posting(sub,m.period,2000+Number(a.id),2,a.id,-2500))
     }
+    if(!state.entries&&state.intercompany&&selected.includes('27'))for(const [tx,line,account,amount]of recording.intercompany.postings[sub])rows.push(posting(sub,'27',tx,line,account,amount))
    }
   }else{
    const kind=q.includes('FROM account ')?'accounts':q.includes('FROM subsidiary ')?'subsidiaries':q.includes('FROM accountingbook ')?'books':q.includes('FROM accountingperiod ')?'periods':q.includes('FROM department ')?'departments':q.includes('FROM classification ')?'classes':q.includes('FROM location ')?'locations':null
