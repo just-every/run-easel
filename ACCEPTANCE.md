@@ -32,7 +32,7 @@ Core · published · **partial** · Cites BASE-SIGNIN-001, BASE-ROLE-001
 4. A signed-in person without active planning membership receives no plan data.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 1: Finance saves; point 1: reads back the company name; point 1: fiscal-year start; point 1: first plan month for a twelve-month plan; point 2: Shared; point 2: ordinary departments; point 2: revenue; point 2: cost-of-sales; point 2: operating-expense lines retain their payroll classification; point 3: The planning membership distinguishes company finance; point 3: viewers; point 4: A signed-in person without active planning membership receives no plan data. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: Finance saves; point 1: reads back the company name; point 1: fiscal-year start; point 1: first plan month for a twelve-month plan; point 2: Shared; point 2: ordinary departments; point 2: revenue; point 2: cost-of-sales; point 2: operating-expense lines retain their payroll classification; point 3: The planning membership distinguishes company finance; point 3: contributors assigned to named departments; point 3: viewers; point 4: A signed-in person without active planning membership receives no plan data. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-002 — Actuals preview that writes nothing
 
@@ -76,7 +76,7 @@ Core · published · **partial** · Cites BASE-INPUT-003
 3. A correcting file can instead be reviewed and imported.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: An import used by a closed forecast month cannot be undone; point 3: A correcting file can instead be reviewed; point 3: imported. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Undo removes exactly the rows written by the selected import; point 1: keeps unrelated rows; point 2: An import used by a closed forecast month cannot be undone; point 3: A correcting file can instead be reviewed; point 3: imported. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-005 — Labeled opening cash and explicit cash timing
 
@@ -90,7 +90,7 @@ Core · published · **partial** · Rules D-1
 3. Each month's cash shows its arithmetic.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 3 audited outcomes. Complete assertion mapping remains owed for point 2: payments follow explicit lags (months) plus opening receivables; point 2: payables; point 2: payroll is paid in its month; point 3: Each month's cash shows its arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 1: and every cash figure says which; point 2: payments follow explicit lags (months) plus opening receivables; point 2: payables; point 2: payroll is paid in its month; point 3: Each month's cash shows its arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-006 — Exact revenue drivers with traces
 
@@ -120,7 +120,7 @@ Core · published · **partial** · Rules D-1
 4. A contributor cannot change another department's inputs through any planning door.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: Owner-granted Pay detail exposes all departments to finance; point 2: only assigned departments to contributors; point 3: Viewers; point 3: other departments retain aggregate amounts without individual position inputs; point 3: salaries or restricted source detail; point 4: A contributor cannot change another department's inputs through any planning door. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: From the entered start through end month; point 2: Owner-granted Pay detail exposes all departments to finance; point 2: only assigned departments to contributors; point 3: Viewers; point 3: other departments retain aggregate amounts without individual position inputs; point 3: salaries or restricted source detail; point 4: A contributor cannot change another department's inputs through any planning door. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-008 — Expenses, schedules and visible allocations
 
@@ -166,7 +166,7 @@ Core · published · **partial** · Rules D-2, D-1
 4. The forecast opens with the approved budget's arithmetic.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 5 audited outcomes. Complete assertion mapping remains owed for point 1: Budget approval requires the exact reviewed revision; point 1: every requested department to be submitted; point 2: The snapshot contains inputs; point 2: outputs; point 2: time; point 2: submissions. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 4 audited outcomes. Complete assertion mapping remains owed for point 1: Budget approval requires the exact reviewed revision; point 1: every requested department to be submitted; point 2: The snapshot contains inputs; point 2: outputs; point 2: time; point 2: submissions; point 4: The forecast opens with the approved budget's arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-011 — Scenario branch and comparison
 
@@ -180,7 +180,7 @@ Core · published · **partial**
 3. Every changed assumption and every moved cell is listed.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 1: A downside branch can delay hiring or change churn without changing its source; point 3: Every changed assumption; point 3: every moved cell is listed. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A downside branch can delay hiring or change churn without changing its source; point 2: The comparison shows monthly profit; point 2: closing cash side by side; point 3: Every changed assumption; point 3: every moved cell is listed. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-012 — Proposals promoted at exact revisions
 
@@ -211,7 +211,7 @@ Core · published · **partial** · Rules D-2
 4. Finance or the department's contributor writes and confirms the business explanation.
 
 **Evidence.** `tests/easel.test.mjs`; `tests/browser-journey.mjs`
-**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: The forecast as it stood is kept as an immutable snapshot first; point 2: closed months then use actuals; point 3: For a closed month; point 3: each line; point 3: department shows actual against the approved budget; point 3: the kept forecast; point 3: with the accepted rows behind it; point 3: the budget sources; point 4: Finance or the department's contributor writes; point 4: confirms the business explanation. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Finance closes the next month on the forecast once accepted actuals cover it; point 2: The forecast as it stood is kept as an immutable snapshot first; point 2: closed months then use actuals; point 3: For a closed month; point 3: each line; point 3: department shows actual against the approved budget; point 3: the kept forecast; point 3: with the accepted rows behind it; point 3: the budget sources; point 3: and a draft that marks any timing explanation as an unconfirmed hypothesis; point 4: Finance or the department's contributor writes; point 4: confirms the business explanation. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-014 — Published review pack with decisions
 
@@ -226,7 +226,7 @@ Core · published · **partial** · Rules D-2
 4. Recording action progress leaves the published pack unchanged.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: Publication captures numbers; point 1: budget; point 1: forecast revisions; point 1: source files; point 1: their digests; point 1: explanations; point 1: decisions; point 1: actions; point 2: Every member; point 2: including a viewer; point 2: downloads the published HTML; point 2: CSV; point 3: Published outputs contain no individual pay detail. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Publication captures numbers; point 1: budget; point 1: forecast revisions; point 1: source files; point 1: their digests; point 1: explanations; point 1: decisions; point 1: actions; point 2: Every member; point 2: including a viewer; point 2: downloads the published HTML; point 2: CSV; point 3: Published outputs contain no individual pay detail; point 4: Recording action progress leaves the published pack unchanged. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-015 — Excel workbook move-in with provenance
 
