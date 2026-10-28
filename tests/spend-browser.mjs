@@ -22,7 +22,7 @@ try {
  const send = async (path, body, status = 200) => { const r = await context.request[body === undefined ? 'get' : 'post'](runtime.origin + path, { headers: { origin: runtime.origin }, ...(body === undefined ? {} : { data: body }), maxRedirects: 0 }); assert.equal(r.status(), status, await r.text()); return status === 200 ? r.json() : null }
  await send('/auth/bootstrap', { token: runtime.bootstrap, displayName: 'Fran Finance' }, 303)
  await page.goto(runtime.origin + '/setup'); await page.getByLabel('I confirm this owner account is ready to use.', { exact: true }).check(); await page.getByRole('button', { name: 'Finish setup', exact: true }).click(); await page.waitForURL('**/app')
- const f = await spendFixture({ command: (op, b) => send('/api/easel/command/' + op, b), get: p => send(p) })
+ const f = await spendFixture({ command: (op, b) => send('/api/easel/command/' + op, b), get: p => send(p) }, { split: true })
  const card = name => page.locator('section.card').filter({ has: page.getByRole('heading', { name, exact: true }) })
  const action = async (suffix, run) => { console.log('Native spend action:', suffix); const pending = page.waitForResponse(r => r.url().endsWith(suffix) && r.request().method() === 'POST'); await run(); const r = await pending.catch(async error => { console.error('Spend screen alerts:', await page.getByRole('alert').allTextContents()); throw error }); assert.equal(r.status(), 200, await r.text()); await settle(page); return r.json() }
  const capture = async (scope, name, focus) => { for (const width of [1440,390]) { await page.setViewportSize({ width, height: 1000 }); await settle(page); if (focus) { await focus.evaluate(el => el.blur()); await focus.focus(); await settle(page) } await noOverflow(page, `${name} ${width}`); if (width === 1440) await readableText(page); await scope.screenshot({ path: join(evidence, `${name}-${width}.png`) }) } await page.setViewportSize({ width: 1440, height: 1000 }) }
@@ -173,6 +173,36 @@ try {
  assert.equal(await review.getByRole('table',{name:'Budget and committed spend',exact:true}).locator('tbody tr').count(),2)
  const recurring = await send('/api/easel/scenario/'+f.forecast.id)
  assert.deepEqual(recurring.calculation.cells.filter(r=>r.line===f.line.id&&['2026-01','2026-02','2026-03'].includes(r.month)).map(r=>[r.month,r.amount]),[['2026-01',30000],['2026-02',20000],['2026-03',100000]])
+ // Allocate the same reviewed source across two lines and departments in one native acceptance.
+ await review.getByLabel('Allocation end month for recurring expense',{exact:true}).fill('2026-02')
+ await review.getByLabel('Read Brex cards',{exact:true}).check()
+ await review.getByLabel('Purse PO IDs, separated by commas',{exact:true}).fill('synthetic-easel-102')
+ await action('/spend/sources',()=>review.getByRole('button',{name:'Read spend sources',exact:true}).click())
+ await review.getByLabel('Replace forecast expense',{exact:true}).selectOption(f.driver.id)
+ await review.getByLabel('Allocate spend to Team assumption',{exact:true}).check()
+ await review.getByLabel('I reviewed every ledger row',{exact:true}).waitFor()
+ await settle(page)
+ for (const id of ['synthetic-easel-101','synthetic-easel-601','synthetic-easel-602']) await review.getByLabel('PO link for '+id,{exact:true}).selectOption('synthetic-easel-102')
+ const splitAmounts = {'synthetic-easel-101':['100.25','0.00','20.00','0.00'],'synthetic-easel-102':['200.00','100.00','100.00','100.00'],'synthetic-easel-601':['0.00','40.00','0.00','40.00'],'synthetic-easel-602':['0.00','-5.00','0.00','-5.00']}
+ for (const [source,values] of Object.entries(splitAmounts)) for (const [i,id] of [f.driver.id,f.otherDriver.id].entries()) for (const [j,m] of ['2026-01','2026-02'].entries()) await review.getByLabel(`Allocation for ${source} in ${m} for ${id}`,{exact:true}).fill(values[i*2+j])
+ await review.getByLabel('Source actual for ledger '+ledgerRows.rows[0].id,{exact:true}).selectOption('ramp:synthetic-easel-101')
+ await review.getByLabel('PO link for ledger '+ledgerRows.rows[1].id,{exact:true}).selectOption('synthetic-easel-102')
+ await review.getByLabel('I reviewed every ledger row',{exact:true}).check()
+ const split = await action('/spend/preview',()=>review.getByRole('button',{name:'Preview committed spend',exact:true}).click())
+ assert.deepEqual(split.cells.map(r=>[r.lineName,r.departmentName,r.month,r.budget,r.actual,r.committed,r.remaining,r.forecast]),[
+  ['Software','Operations','2026-01',100000,12025,7975,80000,20000],['Software','Operations','2026-02',0,3500,6500,-10000,10000],
+  ['Services','Engineering','2026-01',60000,2000,8000,50000,10000],['Services','Engineering','2026-02',60000,3500,6500,50000,10000],
+ ])
+ assert.deepEqual(await review.getByRole('table',{name:'Budget and committed spend',exact:true}).first().locator('tbody tr').allTextContents(),[
+  'SoftwareOperations2026-01$1,000.00$79.75$120.25$800.00$0.00','SoftwareOperations2026-02$0.00$65.00$35.00-$100.00$0.00',
+  'ServicesEngineering2026-01$600.00$80.00$20.00$500.00$0.00','ServicesEngineering2026-02$600.00$65.00$35.00$500.00$0.00',
+ ])
+ await capture(review,'spend-multiple-allocation')
+ await action('/spend/accept',()=>review.getByRole('button',{name:'Accept reviewed spend',exact:true}).click())
+ await page.reload(); await review.getByRole('heading',{name:'Accepted spend reviews',exact:true}).waitFor()
+ assert.equal(await review.getByRole('table',{name:'Budget and committed spend',exact:true}).locator('tbody tr').count(),4)
+ const splitForecast = await send('/api/easel/scenario/'+f.forecast.id)
+ assert.deepEqual(splitForecast.inputs.expense.map(r=>[r.id,r.spendMonths]),[[f.driver.id,{'2026-01':20000,'2026-02':10000}],[f.otherDriver.id,{'2026-01':10000,'2026-02':10000}]])
  await page.goto(runtime.origin + '/app?tab=settings')
  for (const [p,label] of [['ramp','Ramp'],['purse','Purse'],['coaster','Coaster'],['brex','Brex']]) {
   const scope = card(label + ' spend connection')
@@ -181,5 +211,5 @@ try {
 
  }
  await context.close()
- console.log('SPEND-001 native custody, Brex settlements, recurring allocation, Coaster obligations, refunds, ledger reconciliation, PO release, persisted forecast and disconnect passed at 1440; changed screens captured at 1440 and 390')
+ console.log('SPEND-001 native custody, Brex settlements, recurring and multi-department allocation, Coaster obligations, refunds, ledger reconciliation, PO release, persisted forecast and disconnect passed at 1440; changed screens captured at 1440 and 390')
 } finally { await browser?.close(); await runtime.close() }

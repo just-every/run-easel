@@ -27,15 +27,21 @@ export function spendProvider() {
   return Response.json({ order: { id: 'synthetic-easel-102', number: 'PO-102', revision: 1, supplier: 'synthetic-easel-103', currency: state.currency, status: state.poStatus, needDate: '2026-01-31', issuedAt: '2026-01-01T12:00:00Z', totalMinor: state.po, freightMinor: 0, taxMinor: 0, otherMinor: 0, lines: [{ id: 'synthetic-easel-104', amountMinor: state.po }], bills: state.bills } })
  } }
 }
-export async function spendFixture(h, { recurring = false } = {}) {
+export async function spendFixture(h, { recurring = false, split = false } = {}) {
  await h.command('workspace', { name: 'Synthetic spend company', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Operations' }), line = await h.command('line', { name: 'Software', type: 'operating-expense' })
  let budget = (await h.get('/api/easel/state')).scenarios[0]
  await h.command('expense', { scenario: budget.id, name: 'Supplier assumption', kind: recurring ? 'recurring' : 'one-off', line: line.id, department: department.id, start: '2026-01', amount: '1000' })
+ let otherDepartment, otherLine
+ if (split) {
+  otherDepartment = await h.command('department', { name: 'Engineering' })
+  otherLine = await h.command('line', { name: 'Services', type: 'operating-expense' })
+  await h.command('expense', { scenario: budget.id, name: 'Team assumption', kind: 'recurring', line: otherLine.id, department: otherDepartment.id, start: '2026-01', amount: '600' })
+ }
  budget = (await h.get('/api/easel/state')).scenarios[0]
  await h.command('approve-budget', { scenario: budget.id, revision: budget.revision })
  const forecast = (await h.get('/api/easel/state')).scenarios.find(s => s.kind === 'forecast')
  const view = await h.get('/api/easel/scenario/' + forecast.id), driver = view.inputs.expense[0]
  const mapping = ['ramp:synthetic-easel-101','purse:synthetic-easel-102'].map(source => ({ source, line: line.id, department: department.id, month: '2026-01', ...(source.startsWith('ramp:') ? { order: 'synthetic-easel-102' } : {}) }))
- return { department, line, budget, forecast, driver, input: { scenario: forecast.id, revision: forecast.revision, driver: driver.id, month: '2026-01', orders: ['synthetic-easel-102'], mapping } }
+ return { department, line, budget, forecast, driver, otherDepartment, otherLine, otherDriver: view.inputs.expense.find(r => r.line === otherLine?.id), input: { scenario: forecast.id, revision: forecast.revision, driver: driver.id, month: '2026-01', orders: ['synthetic-easel-102'], mapping } }
 }

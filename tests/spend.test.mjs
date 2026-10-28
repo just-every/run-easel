@@ -355,3 +355,77 @@ test('Explicit cross-provider payment parts conserve residual actuals and refuse
  const wrongRefund = structuredClone(refundInput); wrongRefund.mapping[4].duplicateAmount='5.00'; await post('preview',wrongRefund,409)
  assert.equal((await h.get('/api/easel/scenario/'+f.budget.id)).calculation.cells.find(r=>r.line===f.line.id&&r.month==='2026-01').amount,100000)
 })
+
+test('One reviewed source allocation updates several departments and lines atomically without losing commitments, ledger matches or frozen budgets', async t => {
+ const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
+ const f = await spendFixture(h, { recurring: true, split: true })
+ const post = async (op, body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/spend/' + op, body, cookie); assert.equal(r.status, status, r.text); return r.value }
+ for (const p of ['ramp','purse']) assert.equal((await h.send(`/api/easel/connections/spend/${p}/connect`, { key: spendKeys[p], consent: true }, h.owner)).status, 200)
+ provider.state.bills = [{ id:'synthetic-easel-801', reference:'BILL-801', currency:'USD', totalMinor:10000, paymentStatus:'paid', paymentStatusAt:'2026-01-16T12:00:00Z' }]
+ const targets = [f.driver.id,f.otherDriver.id].flatMap(driver => ['2026-01','2026-02'].map(month => ({ driver, month })))
+ const parts = values => targets.map((target, i) => ({ ...target, amount: values[i] }))
+ let input = { ...f.input, targets, mapping: [
+  { source:'ramp:synthetic-easel-101', order:'synthetic-easel-102', parts:parts(['60.25','20.00','20.00','20.00']) },
+  { source:'purse:synthetic-easel-102', parts:parts(['200.00','100.00','150.00','50.00']) },
+  { source:'purse:synthetic-easel-102--synthetic-easel-801', parts:parts(['40.00','20.00','20.00','20.00']), duplicateMatches:[{source:'ramp:synthetic-easel-101',parts:parts(['40.00','20.00','20.00','20.00'])}] },
+ ] }
+ const before = await h.get('/api/easel/scenario/' + f.forecast.id), frozen = await h.get('/api/easel/scenario/' + f.budget.id)
+ let preview = await post('preview', input)
+ assert.deepEqual(preview.cells.map(r => [r.line,r.department,r.month,r.budget,r.actual,r.committed,r.remaining,r.forecast]), [
+  [f.line.id,f.department.id,'2026-01',100000,6025,13975,80000,20000],
+  [f.line.id,f.department.id,'2026-02',100000,2000,8000,90000,10000],
+  [f.otherLine.id,f.otherDepartment.id,'2026-01',60000,2000,13000,45000,15000],
+  [f.otherLine.id,f.otherDepartment.id,'2026-02',60000,2000,3000,55000,5000],
+ ])
+ assert.deepEqual(await h.get('/api/easel/scenario/'+f.forecast.id), before, 'Reviewing several expense cells writes nothing')
+ for (const change of [
+  b => { b.mapping[1].parts[3].amount = '49.99' },
+  b => { b.mapping[0].parts[3].amount = '-20.00'; b.mapping[0].parts[0].amount = '100.25' },
+  b => { b.mapping[2].duplicateMatches[0].parts[3].amount = '20.01' },
+  b => { b.mapping[0].parts.pop() },
+  b => { b.targets[3] = b.targets[0] },
+ ]) { const invalid = structuredClone(input); change(invalid); const r = await h.send('/api/easel/spend/preview', invalid, h.owner); assert.ok([400,409].includes(r.status), r.text) }
+ const remapped = structuredClone(input); remapped.mapping[1].parts[2].amount='140.00'; remapped.mapping[1].parts[3].amount='60.00'
+ await post('accept',{...remapped,fingerprint:preview.fingerprint},409)
+ const reader = await h.person(['synthetic-easel-802','example.test'].join('@'),'contributor',[f.department.id])
+ await post('accept',{...input,fingerprint:preview.fingerprint},403,reader)
+ assert.deepEqual(await h.get('/api/easel/scenario/'+f.forecast.id),before,'Refused allocations leave every department unchanged')
+ // Review an ordinary ledger import in each department before committing the entire allocation.
+ await h.command('account-map',{account:'500',target:f.line.id}); await h.command('account-map',{account:'501',target:f.otherLine.id})
+ await h.command('department-map',{source:'Operations',department:f.department.id}); await h.command('department-map',{source:'Engineering',department:f.otherDepartment.id})
+ const actuals = {filename:'synthetic-easel-803.csv',csv:'Date,Account,Department,Amount,Reference\n2026-01-16,500,Operations,10.00,synthetic-easel-804\n2026-01-17,501,Engineering,30.00,synthetic-easel-805\n',columns:{date:'Date',account:'Account',department:'Department',amount:'Amount',reference:'Reference'},dateFormat:'YYYY-MM-DD',amountMode:'debit-positive'}
+ const actualPreview = await h.kit('actuals','preview',actuals); await h.kit('actuals','commit',{...actuals,fingerprint:actualPreview.fingerprint})
+ input.revision = (await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision
+ const operations = await post('ledger',input), engineering = await post('ledger',{...input,driver:f.otherDriver.id,targets:undefined})
+ input = {...input,ledgerConfirmed:true,ledgerMapping:[{row:operations.rows[0].id,source:'ramp:synthetic-easel-101'},{row:engineering.rows[0].id,order:'synthetic-easel-102'}]}
+ preview = await post('preview',input)
+ assert.deepEqual(preview.cells.map(r=>[r.actual,r.committed,r.forecast]),[[6025,13975,20000],[2000,8000,10000],[5000,10000,15000],[2000,3000,5000]])
+ const overmatch = structuredClone(input); overmatch.ledgerMapping[0].source='purse:synthetic-easel-102--synthetic-easel-801'
+ await post('preview',overmatch,409)
+ const ledgerBefore = (await h.db.prepare('SELECT * FROM e_actuals ORDER BY id').all()).results
+ await post('accept',{...input,fingerprint:preview.fingerprint})
+ let accepted = await h.get('/api/easel/scenario/'+f.forecast.id)
+ assert.equal(accepted.scenario.revision,input.revision+1,'One acceptance changes every cell at one revision')
+ assert.deepEqual(accepted.inputs.expense.map(r=>[r.id,r.spendMonths]),[[f.driver.id,{'2026-01':20000,'2026-02':10000}],[f.otherDriver.id,{'2026-01':15000,'2026-02':5000}]])
+ assert.deepEqual(accepted.calculation.cells.filter(r=>[f.line.id,f.otherLine.id].includes(r.line)&&['2026-01','2026-02','2026-03'].includes(r.month)).map(r=>[r.line,r.month,r.amount]).sort(),[
+  [f.line.id,'2026-01',20000],[f.line.id,'2026-02',10000],[f.line.id,'2026-03',100000],
+  [f.otherLine.id,'2026-01',15000],[f.otherLine.id,'2026-02',5000],[f.otherLine.id,'2026-03',60000],
+ ].sort())
+ assert.deepEqual((await h.db.prepare('SELECT * FROM e_actuals ORDER BY id').all()).results,ledgerBefore,'Spend review never rewrites the ledger')
+ assert.deepEqual(await h.get('/api/easel/scenario/'+f.budget.id),frozen)
+ assert.deepEqual((await h.get('/api/easel/spend'))[0].cells.map(r=>[r.driver,r.month,r.forecast]),[[f.driver.id,'2026-01',20000],[f.driver.id,'2026-02',10000],[f.otherDriver.id,'2026-01',15000],[f.otherDriver.id,'2026-02',5000]])
+ await post('accept',{...input,fingerprint:preview.fingerprint},409)
+ input.revision=accepted.scenario.revision
+ await post('preview',{...input,targets:targets.slice(0,2)},409)
+ await post('preview',{...input,driver:f.otherDriver.id,targets:targets.slice(2)},409)
+ preview=await post('preview',input)
+ provider.state.po=55000
+ await post('accept',{...input,fingerprint:preview.fingerprint},409)
+ input.mapping[1].parts[3].amount='100.00'
+ preview=await post('preview',input); await post('accept',{...input,fingerprint:preview.fingerprint})
+ accepted=await h.get('/api/easel/scenario/'+f.forecast.id)
+ assert.deepEqual(accepted.inputs.expense.find(r=>r.id===f.otherDriver.id).spendMonths,{'2026-01':15000,'2026-02':10000},'A fresh complete source review replaces the prior allocation without counting it again')
+ await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
+ await post('preview',{...input,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision},409)
+ assert.deepEqual(await h.get('/api/easel/scenario/'+f.budget.id),frozen)
+})

@@ -81,29 +81,51 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
  authority(c); requireThat(['preview','accept','ledger'].includes(op), 'Unknown spend review action', 404)
  const sc = scenarioAccess(c.s, c.x, b.scenario), driver = get(c.s, 'expense', b.driver), period = month(b.month)
  requireEditable(c.s, c.x, sc, driver.department)
- const batch = Array.isArray(b.months), periods: string[] = batch ? b.months.map((m: unknown) => month(m)) : [period]
+ const primaryDriver = driver.id
+ const multiple = Array.isArray(b.targets), batch = Array.isArray(b.months)
+ requireThat(!multiple || !batch, 'Choose expense cells or a monthly schedule, not both')
+ const periods: string[] = batch ? b.months.map((m: unknown) => month(m)) : [period]
  requireThat(periods.length > 0 && periods.length <= 24 && new Set(periods).size === periods.length && periods[0] === period && periods.every((m, i) => i === 0 || m > periods[i - 1]), 'Choose distinct ordered allocation months starting in the reviewed month')
- requireThat(sc.kind === 'forecast' && !sc.sandbox && (!sc.currency || sc.currency === workspace(c.s).currency) && driver.scenario === sc.id && ['one-off','recurring'].includes(driver.kind) && !Object.keys(driver.dimensions ?? {}).length && periods.every(m => driver.kind === 'one-off' ? m === driver.start : m >= driver.start && (!driver.end || m <= driver.end)), 'Select an active company forecast expense for every reviewed month', 409)
- requireThat(driver.kind !== 'recurring' || batch || op === 'ledger', 'Recurring spend requires a complete explicit allocation schedule', 409)
- requireThat(sc.revision === b.revision && periods.every(m => !sc.actualsThrough || m > sc.actualsThrough), 'Forecast changed or month is closed; review again', 409)
- const line = get(c.s, 'line', driver.line); requireThat(!line.payroll && !line.nonCash, 'Spend requires an ordinary non-payroll expense line')
+ const targets: { driver: Data; month: string }[] = multiple ? b.targets.map((t: Data) => ({ driver: get(c.s, 'expense', t.driver), month: month(t.month) })) : periods.map(month => ({ driver, month }))
+ const targetKey = (driver: Data, period: string) => `${driver.id}:${period}`
+ const targetKeys = targets.map(t => targetKey(t.driver, t.month))
+ requireThat(targets.length > 0 && targets.length <= 48 && new Set(targetKeys).size === targets.length && targets[0].driver.id === driver.id && targets[0].month === period, 'Choose distinct expense cells starting with the primary expense and month')
+ requireThat(new Set(targets.map(t => `${t.driver.line}:${t.driver.department}:${t.month}`)).size === targets.length, 'Choose only one expense for each line, department and month', 409)
+ for (const t of targets) {
+  const d = t.driver, m = t.month
+  requireEditable(c.s, c.x, sc, d.department)
+  requireThat(sc.kind === 'forecast' && !sc.sandbox && (!sc.currency || sc.currency === workspace(c.s).currency) && d.scenario === sc.id && ['one-off','recurring'].includes(d.kind) && !Object.keys(d.dimensions ?? {}).length && (d.kind === 'one-off' ? m === d.start : m >= d.start && (!d.end || m <= d.end)), 'Select an active company forecast expense for every reviewed month', 409)
+  requireThat(d.kind !== 'recurring' || batch || multiple || op === 'ledger', 'Recurring spend requires a complete explicit allocation schedule', 409)
+  requireThat(sc.revision === b.revision && (!sc.actualsThrough || m > sc.actualsThrough), 'Forecast changed or month is closed; review again', 409)
+  const line = get(c.s, 'line', d.line); requireThat(!line.payroll && !line.nonCash, 'Spend requires an ordinary non-payroll expense line')
+ }
  if (op === 'ledger') { const rows = await rowsFor(c.db, c.s, period, driver.line, driver.department); return { rows, total: sumMoney(rows.map(r => r.amount)) } }
  const prior = find(c.s, 'spend-review', driver.id)
- requireThat(!prior?.cells || prior.cells.every((r: Data) => periods.includes(r.month)), 'Include every previously reviewed allocation month; no prior cell may be silently dropped', 409)
- const sourceRows: Data[] = await spendSources(c, env, { providers: b.providers, orders: b.orders, reports: b.reports, month: period, allPeriods: batch })
+ const priorCells = prior ? prior.cells ?? [prior] : []
+ requireThat(priorCells.every((r: Data) => targetKeys.includes(`${r.driver}:${r.month}`)), 'Include every previously reviewed allocation cell; no prior cell may be silently dropped', 409)
+ for (const d of new Map(targets.map(t => [t.driver.id, t.driver])).values()) {
+  requireThat(!d.spendMonths || Object.keys(d.spendMonths).every(m => targetKeys.includes(targetKey(d, m))), 'Include every previously reviewed expense month', 409)
+ }
+ for (const review of all(c.s, 'spend-review').filter(r => r.driver !== primaryDriver)) {
+  requireThat(!(review.cells ?? [review]).some((r: Data) => targets.some(t => t.driver.id === r.driver)), 'An expense already belongs to another spend review; revise that review instead', 409)
+ }
+ const sourceRows: Data[] = await spendSources(c, env, { providers: b.providers, orders: b.orders, reports: b.reports, month: period, allPeriods: batch || multiple })
  requireThat(sourceRows.length > 0 && sourceRows.every(r => r.currency === workspace(c.s).currency), 'Spend source currency differs; no exchange rate is inferred', 409)
  requireThat(Array.isArray(b.mapping) && b.mapping.length === sourceRows.length, 'Map every selected source row explicitly')
  const allocations = new Map<string, Record<string, number>>(), mapped = new Set<string>()
  for (const row of sourceRows) {
   const key = `${row.provider}:${row.id}`, maps = b.mapping.filter((m: Data) => m.source === key)
   requireThat(maps.length === 1 && !mapped.has(key), 'Source mapping must be unique'); mapped.add(key)
+  const parts = maps[0].parts
+  if (multiple) requireThat(Array.isArray(parts) && parts.length === targets.length && parts.every((p: Data) => p && typeof p === 'object' && targetKeys.includes(`${p.driver}:${p.month}`)) && new Set(parts.map((p: Data) => `${p.driver}:${p.month}`)).size === targets.length, 'Allocate each source across every expense cell explicitly')
   const values = batch ? maps[0].allocations : { [period]: row.amount }
-  requireThat(values && typeof values === 'object' && !Array.isArray(values) && Object.keys(values).length === periods.length && Object.keys(values).every(m => periods.includes(m)), 'Allocate each source across every reviewed month explicitly')
+  if (!multiple) requireThat(values && typeof values === 'object' && !Array.isArray(values) && Object.keys(values).length === periods.length && Object.keys(values).every(m => periods.includes(m)), 'Allocate each source across every reviewed month explicitly')
   const amounts: Record<string, number> = {}
-  for (const m of periods) {
-   const value = batch ? cents(values[m], 'Allocated amount', { negative: true }) : values[m]
+  for (const t of targets) {
+   const key = targetKey(t.driver, t.month)
+   const value = multiple ? cents(parts.find((p: Data) => `${p.driver}:${p.month}` === key).amount, 'Allocated amount', { negative: true }) : batch ? cents(values[t.month], 'Allocated amount', { negative: true }) : values[t.month]
    requireThat(Number.isSafeInteger(value) && (row.amount < 0 ? value <= 0 : value >= 0), 'An allocation must retain the source amount direction', 409)
-   amounts[m] = value
+   amounts[key] = value
   }
   requireThat(sumMoney(Object.values(amounts)) === row.amount, 'Allocated amounts must sum exactly to their source; no unallocated balance is inferred', 409)
   allocations.set(key, amounts)
@@ -112,19 +134,20 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
  const budget = all(c.s, 'scenario').find(s => s.kind === 'budget' && s.status === 'frozen')
  requireThat(budget, 'Approve a budget before reviewing committed spend', 409)
  const budgetView = await scenarioView(c, budget.id)
- async function cell(period: string) {
+ async function cell(driver: Data, period: string) {
+  const line = get(c.s, 'line', driver.line)
   const cells = await actualCells(c.db, c.s, period)
   const ledgerRows = await rowsFor(c.db, c.s, period, driver.line, driver.department)
   requireThat(ledgerRows.every(r => !Object.keys(r.dimensions ?? {}).length), 'Dimensioned ledger spend requires a dedicated dimension review', 409)
   requireThat(!cells.some(v => v.line === driver.line && v.department === driver.department && v.month === period && v.rows !== ledgerRows.length), 'Ledger row projection is incomplete', 409)
   const currentCell = current.calculation.cells.find(r => r.line === driver.line && r.department === driver.department && r.month === period)
   requireThat(currentCell && currentCell.sources.every(r => r.kind === 'expense' && r.id === driver.originId), 'The forecast cell mixes other sources; use a dedicated spend assumption', 409)
-  const rows: Data[] = sourceRows.map(row => ({ ...row, sourceAmount: row.amount, amount: allocations.get(`${row.provider}:${row.id}`)![period] })), purse = rows.filter(r => r.provider === 'purse' && r.kind === 'commitment'), actualRows = rows.filter(r => r.kind === 'actual')
+  const rows: Data[] = sourceRows.map(row => ({ ...row, sourceAmount: row.amount, amount: allocations.get(`${row.provider}:${row.id}`)![targetKey(driver, period)] })), purse = rows.filter(r => r.provider === 'purse' && r.kind === 'commitment'), actualRows = rows.filter(r => r.kind === 'actual')
   const mapped = new Set<string>(), linked = new Map<string, number>(), duplicateTotals = new Map<string, number>()
   const reviewed: Data[] = rows.map(row => {
    const k = `${row.provider}:${row.id}`, maps = b.mapping.filter((m: Data) => m.source === k)
    requireThat(maps.length === 1 && !mapped.has(k), 'Source mapping must be unique'); mapped.add(k)
-   const map = maps[0]; requireThat(map.line === driver.line && map.department === driver.department && (batch || map.month === period), 'Review the exact expense line, department and month for every source')
+   const map = maps[0]; requireThat(multiple || map.line === driver.line && map.department === driver.department && (batch || map.month === period), 'Review the exact expense line, department and month for every source')
    const order = row.order ?? map.order ?? null
    requireThat(!row.order || !map.order || row.order === map.order, 'Paid bill cannot move to another PO')
    requireThat(!map.duplicateMatches || !map.duplicateOf, 'Choose one duplicate target or explicit duplicate parts', 409)
@@ -141,9 +164,10 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
     const otherMap = b.mapping.find((m: Data) => m.source === match.source)
     requireThat(row.kind === 'actual' && other && other !== row && other.provider !== row.provider && !otherMap?.duplicateOf && !otherMap?.duplicateMatches && !seen.has(match.source) && (other.order ?? otherMap?.order ?? null) === order, 'Duplicate parts require distinct independent actuals from another provider with the same PO', 409)
     seen.add(match.source)
-    requireThat(batch ? match.amount == null : match.amounts == null, 'Match duplicate parts in the reviewed accounting periods', 409)
+    requireThat(multiple ? match.amount == null && match.amounts == null : batch ? match.amount == null && match.parts == null : match.amounts == null && match.parts == null, 'Match duplicate parts in the reviewed accounting periods', 409)
+    if (multiple && match.parts != null) requireThat(Array.isArray(match.parts) && match.parts.length === targets.length && match.parts.every((p: Data) => p && targetKeys.includes(`${p.driver}:${p.month}`)) && new Set(match.parts.map((p: Data) => `${p.driver}:${p.month}`)).size === targets.length, 'Match duplicate parts in every reviewed expense cell explicitly', 409)
     if (batch && match.amounts != null) requireThat(typeof match.amounts === 'object' && !Array.isArray(match.amounts) && Object.keys(match.amounts).length === periods.length && Object.keys(match.amounts).every(m => periods.includes(m)), 'Allocate each duplicate part across every reviewed month explicitly', 409)
-    const entered = batch ? match.amounts?.[period] : match.amount
+    const entered = multiple ? match.parts?.find((p: Data) => p.driver === driver.id && p.month === period)?.amount : batch ? match.amounts?.[period] : match.amount
     if (entered == null) requireThat(other.amount === row.amount, 'Unequal source actuals require an explicit matched amount', 409)
     const amount = entered == null ? row.amount : cents(entered, 'Duplicate matched amount', { negative: true })
     requireThat(amount === 0 || (amount > 0 ? row.amount > 0 && other.amount > 0 : row.amount < 0 && other.amount < 0), 'Duplicate parts must retain both source directions', 409)
@@ -158,7 +182,7 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
     requireThat(purse.some(p => p.id === order), 'Linked PO is not in this reviewed source')
     linked.set(order, addMoney(linked.get(order) ?? 0, countedAmount))
    }
-   return { ...row, line: map.line, department: map.department, month: period, order, duplicateOf: map.duplicateOf ?? null, duplicateMatches, duplicateAmount, countedAmount }
+   return { ...row, line: driver.line, department: driver.department, month: period, order, duplicateOf: map.duplicateOf ?? null, duplicateMatches, duplicateAmount, countedAmount }
   })
   const ledgerMapping = (Array.isArray(b.ledgerMapping) ? b.ledgerMapping : []).filter((m: Data) => ledgerRows.some(r => r.id === m.row))
   requireThat(ledgerMapping.length === ledgerRows.length && (!ledgerRows.length || b.ledgerConfirmed === true), 'Review every accepted ledger row explicitly before accepting spend', 409)
@@ -192,23 +216,26 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
   const released = sumMoney(purse.filter(r => r.status === 'closed').map(r => r.amount - (linked.get(r.id) ?? 0)))
   requireThat([actual, committed, released, actual + committed].every(Number.isSafeInteger) && actual + committed >= 0, 'Spend total exceeds exact money limits or refunds exceed reviewed spend', 409)
   // A source record can replace the same driver again, but cannot enter two forecasts or cells.
-  for (const review of all(c.s, 'spend-review').filter(r => r.driver !== driver.id)) requireThat(!review.rows.some((r: Data) => mapped.has(`${r.provider}:${r.id}`)), 'This source is already accepted into another driver', 409)
+  for (const review of all(c.s, 'spend-review').filter(r => r.driver !== primaryDriver)) requireThat(!review.rows.some((r: Data) => mapped.has(`${r.provider}:${r.id}`)), 'This source is already accepted into another driver', 409)
   requireThat(budgetView.calculation.currency === workspace(c.s).currency && budgetView.calculation.months.includes(period), 'Budget has no comparable month or currency', 409)
   const budgetAmount = budgetView.calculation.cells.filter((r: Data) => r.line === driver.line && r.department === driver.department && r.month === period).reduce((n: number, r: Data) => n + r.amount, 0)
   return { scenario: sc.id, revision: sc.revision, driver: driver.id, month: period, currency: workspace(c.s).currency, line: driver.line, lineName: line.name, department: driver.department, departmentName: get(c.s, 'department', driver.department).name, budget: budgetAmount, actual, committed, released, ledgerRows: reconciledLedger, remaining: budgetAmount - actual - committed, forecast: actual + committed, rows: reviewed, budgetSnapshot: budget!.id }
 
  }
  const cells = []
- for (const m of periods) cells.push(await cell(m))
+ for (const t of targets) cells.push(await cell(t.driver, t.month))
  const ledgerIds = cells.flatMap(r => r.ledgerRows.map((l: Data) => l.id))
  requireThat((b.ledgerMapping ?? []).length === ledgerIds.length, 'Ledger mapping contains an unreviewed row', 409)
- const result = { ...cells[0], ...(batch ? { cells } : {}) }, fingerprint = pantryDigest(result)
+ const result = { ...cells[0], ...(batch || multiple ? { cells } : {}) }, fingerprint = pantryDigest(result)
  if (op === 'preview') return { ...result, fingerprint }
  requireThat(b.fingerprint === fingerprint, 'Spend source or mapping changed; preview again', 409)
- put(c.s, 'expense', driver.id, driver.kind === 'recurring' ? { ...driver, spendMonths: Object.fromEntries(cells.map(r => [r.month, r.forecast])) } : { ...driver, amountCents: result.forecast })
+ for (const d of new Map(targets.map(t => [t.driver.id, t.driver])).values()) {
+  const allocated = cells.filter(r => r.driver === d.id)
+  put(c.s, 'expense', d.id, d.kind === 'recurring' ? { ...d, spendMonths: Object.fromEntries(allocated.map(r => [r.month, r.forecast])) } : { ...d, amountCents: allocated[0].forecast })
+ }
  put(c.s, 'spend-review', driver.id, { ...result, fingerprint, acceptedAt: c.now, acceptedBy: c.x.actor.email })
  for (const p of new Set(sourceRows.map(r => r.provider))) { const row = find(c.s, 'connection', secretId(p))!; put(c.s, 'connection', secretId(p), { ...row, lastRefresh: c.now, rowCount: sourceRows.filter(r => r.provider === p).length, error: null }) }
- bump(c, sc, 'spend-accepted', driver.id, { fingerprint, cells: cells.map(r => ({ month: r.month, actual: r.actual, committed: r.committed, remaining: r.remaining })) })
+ bump(c, sc, 'spend-accepted', driver.id, { fingerprint, cells: cells.map(r => ({ driver: r.driver, line: r.line, department: r.department, month: r.month, actual: r.actual, committed: r.committed, remaining: r.remaining })) })
  return { ...result, fingerprint }
 }
 export async function spendReviews(c: Context) {
