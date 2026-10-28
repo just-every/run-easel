@@ -5099,7 +5099,7 @@
       "executable": false
     },
     "tests/netsuite.test.mjs": {
-      "sha256": "8575821e4c489db52e3e86ecd39ca79a4ab95bf8142a4e74127e40da96359032",
+      "sha256": "50e1a36556241d6494b9a34ad9ebc5a073550fd18c712134d3d2a214d06a0128",
       "executable": false
     },
     "tests/notifications.test.mjs": {

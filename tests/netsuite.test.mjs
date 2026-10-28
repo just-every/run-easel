@@ -91,7 +91,7 @@ test('CONNECT-003 NetSuite SuiteQL backfills separate reconciled months and impo
  for(const file of Object.values(zip.files).filter(f=>!f.dir)){const text=await file.async('string');assert.ok(!text.includes(netsuiteGrant.tokenSecret));assert.ok(!text.includes(sealed.sealed),'Portable export excludes encrypted provider credentials too')}
  provider.status=429;await call(['connections','netsuite','check'].join('/'),{});assert.ok((await h.get('/api/easel/connections/netsuite')).rateLimit);provider.status=200
  await call(['connections','netsuite','check'].join('/'),{});assert.equal((await h.get('/api/easel/connections/netsuite')).error,null)
- 
+
  const disconnected=await call(['connections','netsuite','disconnect'].join('/'),{});assert.equal(disconnected.connected,false);assert.equal(disconnected.providerRevocation.status,'owner-action-required');assert.equal(await h.db.prepare("SELECT id FROM e_connection_secrets WHERE id='netsuite'").first(),null)
  assert.equal((await h.get('/api/easel/actuals')).months.find(m=>m.period==='2026-02').revenue,19500)
  const entityView=await h.get(`/api/easel/scenario/${approval.forecast.id}`);assert.equal(entityView.calculation.profit[0].revenue,10000);assert.equal(entityView.actualsHistory.cells.find(c=>c.month==='2026-01'&&c.line===f.line.id).amount,10000)
