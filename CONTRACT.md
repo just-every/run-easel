@@ -1096,7 +1096,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001 · *Rules:* D-1, D-2
 
-**Requirement.** Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width. [Detailed semantics](docs/planning-semantics.md#report-002--dashboards). REV-001 carries pipeline coverage, REV-002 imported ARR and REPORT-001, REPORT-008 saved-report widgets.
+**Requirement.** Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width. [Detailed semantics](docs/planning-semantics.md#report-002--dashboards). REV-001 carries pipeline coverage, REV-002 imported ARR and REPORT-001 saved-report widgets.
 
 **Acceptance.**
 1. At 1440/390 finance creates runway, ARR and headcount tiles, saves and shares with board; rendered numbers equal API metrics.
