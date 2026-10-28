@@ -39,7 +39,7 @@ export function validateElimination(c: Context, rule: Data, from: Data, to: Data
   const leftRows=(left as Data).entityLedger??[],rightRows=(right as Data).entityLedger??[]
   const current={from:ledgerEliminationSources(leftRows,rule.selection.from,rule.month,'from'),to:ledgerEliminationSources(rightRows,rule.selection.to,rule.month,'to')}
   requireThat(canonicalJson(current)===canonicalJson(rule.ledger),'Accepted source rows or mappings changed; review this elimination again',409)
-  const peersUsed=peers.filter(p=>p.id!==rule.id&&p.ledger).flatMap(p=>[...Object.values(p.selection.from),...Object.values(p.selection.to)].flat() as string[])
+  const peersUsed=peers.filter(p=>p.id!==rule.id&&p.month===rule.month&&p.ledger).flatMap(p=>[...Object.values(p.selection.from),...Object.values(p.selection.to)].flat() as string[])
   requireThat(![...Object.values(rule.selection.from),...Object.values(rule.selection.to)].flat().some(id=>peersUsed.includes(String(id))),'An accepted ledger source is already selected by another elimination',409)
   const total=(side:'from'|'to',field:string,sign:number)=>current[side][field].reduce((n:number,row:Data)=>n+row.amount*sign,0)
   requireThat(rule.fromAmount<=total('from','charge',-1)&&rule.toAmount<=total('to','charge',1),'Eliminated charge exceeds selected accepted ledger sources',409)

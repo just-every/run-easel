@@ -5,6 +5,8 @@ import { actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { intacctAuthority, intacctKey } from './intacct-connection'
 import { readIntacctLedger } from './intacct-provider'
+import { reconcileIntacctLedger } from './intacct-trial'
+import { acceptedLedgerFilter } from './ledger-scope'
 
 import { all, find, put, requireThat, type Data } from './types'
 
@@ -24,7 +26,6 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  requireThat(!all(c.s,'batch').some(r=>r.intacctSource?.entity===binding.entity&&r.intacctSource?.month===b.month&&['importing','undoing'].includes(r.status)),'Inspect and continue or undo the active Intacct month journal before pulling it again',409)
  const source = await readIntacctLedger(key, binding.sourceEntity, b.month, c.now.slice(0, 10))
  requireThat(source.currency===binding.currency,'The bound entity base currency changed',409)
- if(op==='commit')requireThat(source.trialBalance.balanced,'Intacct ledger and independent trial balance differ; review account differences before acceptance',409)
  requireThat(source.to <= c.now.slice(0, 10), 'A Intacct import cannot include future dates')
  requireThat(all(c.s,'entity').some(e=>e.id===binding.entity&&e.currency===source.currency),'The bound entity currency changed',409)
  requireThat(typeof b.includeOpening === 'boolean', 'Choose whether this is the first Intacct month')
@@ -79,15 +80,22 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  // Removed provider lines are journaled as visible reversals.
  for(const before of prior.values())push({id:before.intacctLine,transactionId:before.intacctTransactionId,date:before.date,accountId:before.intacctAccountId,account:before.account,accountName:before.accountName,accountType:before.accountType,accountCategory:before.intacctAccountCategory,normalBalance:before.intacctNormalBalance,department:before.department==='(blank)'?'':before.department,sourceDimensions:before.sourceDimensions,dimensionLabels:before.dimensionLabels,entryUrl:before.intacctEntryUrl,description:before.description,reference:before.reference,opening:before.intacctOpening},safe(-before.amount))
  requireThat(deltas.length<=5000,'Intacct journal exceeds 5,000 rows; no partial source accepted',409)
- const digest = sha256(canonicalJson({ source: source.digest, binding, includeOpening:b.includeOpening, deltas, metadata }))
+ const acceptedFilter=acceptedLedgerFilter(c.s)
+ const accepted=await c.db.prepare(`SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctCompany')=? AND json_extract(value,'$.intacctBook')='ACCRUAL' AND json_extract(value,'$.entity')=? AND json_extract(value,'$.intacctMonth')<=? AND ${acceptedFilter.sql}`).bind(key.companyId,binding.entity,source.month,...acceptedFilter.params).all<{value:string}>()
+ const ledgerRows=accepted.results.map(row=>JSON.parse(row.value))
+ const ledger=reconcileIntacctLedger(source.chart,source.trialBalance,ledgerRows,deltas,history,source.month)
+ const trialBalance={...source.trialBalance,ledger,balanced:source.trialBalance.balanced&&ledger.balanced}
+ if(op==='commit')requireThat(trialBalance.balanced,`Intacct and the proposed Easel ledger differ; review account differences${ledger.reviewMonths.length?` and prior periods ${ledger.reviewMonths[0]} through ${ledger.reviewMonths.at(-1)}`:''} before acceptance`,409)
+ const ledgerFingerprint=sha256(canonicalJson(ledgerRows.map(row=>canonicalJson(row)).sort()))
+ const digest = sha256(canonicalJson({ source: source.digest, binding, includeOpening:b.includeOpening, deltas, metadata,ledgerFingerprint,trialBalance }))
  const inventory={chart:source.chart,dimensions:source.dimensions}
  const priorInventory=history.filter(r=>r.status==='accepted').at(-1)?.inventory
  const changes=(current:Data[],prior:Data[]=[])=>(current.map(row=>{const before=prior.find(r=>r.id===row.id);return{...row,change:!before?'new':canonicalJson(before)!==canonicalJson(row)?'changed':'unchanged'}})).filter(row=>row.change!=='unchanged')
  const sourceChanges={accounts:changes(inventory.chart,priorInventory?.chart),dimensions:canonicalJson(source.dimensions)===canonicalJson(priorInventory?.dimensions??{})?[]:[{change:'changed',metadata:source.dimensions}]}
  const changedTransactions=new Set(deltas.filter(r=>!r.opening).map(r=>r.transactionId)).size
- const sourceSummary={month:source.month,from:source.from,to:source.to,currency:source.currency,entity:source.entity,easelEntity:binding.entity,book:source.book,chart:source.chart,dimensions:source.dimensions,trialBalance:source.trialBalance,ledgerRows:source.rows.length,openingIncluded:b.includeOpening,changes:sourceChanges,limits:{rows:5000,bytes:2000000}}
+ const sourceSummary={month:source.month,from:source.from,to:source.to,currency:source.currency,entity:source.entity,easelEntity:binding.entity,book:source.book,chart:source.chart,dimensions:source.dimensions,trialBalance,ledgerRows:source.rows.length,openingIncluded:b.includeOpening,changes:sourceChanges,limits:{rows:5000,bytes:2000000}}
  const monthId=JSON.stringify([key.companyId,'ACCRUAL',binding.sourceEntity,source.month])
- const receipt={id:monthId,company:key.companyId,book:'ACCRUAL',sourceEntity:binding.sourceEntity,entity:binding.entity,currency:source.currency,month:source.month,through:source.to,sourceFingerprint:digest,sourceDigest:source.digest,trialBalance:source.trialBalance,ledgerRows:source.rows.length,changedRows:deltas.length,openingIncluded:b.includeOpening,inventory,binding}
+ const receipt={id:monthId,company:key.companyId,book:'ACCRUAL',sourceEntity:binding.sourceEntity,entity:binding.entity,currency:source.currency,month:source.month,through:source.to,sourceFingerprint:digest,sourceDigest:source.digest,trialBalance,ledgerRows:source.rows.length,changedRows:deltas.length,openingIncluded:b.includeOpening,inventory,binding}
 
  const recordMonth = (context: Context) => {
   put(context.s,'intacct-month',monthId,{...find(context.s,'intacct-month',monthId),...receipt,status:'accepted',acceptedAt:context.now})

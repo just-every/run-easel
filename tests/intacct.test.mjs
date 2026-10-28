@@ -29,6 +29,31 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  }
  await h.get('/api/easel/actuals',h.owner,409)
  status=await h.get('/api/easel/connections/intacct');assert.equal(status.months.filter(m=>m.status==='accepted').length,52)
+ // A prior-period correction must not be certified by a later unchanged or changed pull.
+ const januaryInput={sourceEntity:'CA',month:'2026-01',includeOpening:false}
+ const januaryReceipt=() => h.get('/api/easel/connections/intacct').then(s=>s.months.find(m=>m.entity===f.ca.id&&m.month==='2026-01'))
+ const receiptBefore=await januaryReceipt(),ledgerBefore=await h.get('/api/easel/actuals?entity='+f.ca.id)
+ provider.corrections['2025-12']=100
+ let stale=await h.kit('intacct','preview',januaryInput)
+ assert.equal(stale.changedRows,0);assert.equal(stale.source.trialBalance.balanced,false)
+ assert.equal(stale.source.trialBalance.ledger.differences.find(r=>r.account==='1000').difference,-100)
+ assert.ok(stale.source.trialBalance.ledger.reviewMonths.includes('2025-12'))
+ const refused=await h.kit('intacct','commit',{...januaryInput,fingerprint:stale.fingerprint,sourceFingerprint:stale.sourceFingerprint},h.owner,409)
+ assert.match(refused.error,/prior periods/)
+ assert.deepEqual(await januaryReceipt(),receiptBefore)
+ assert.deepEqual(await h.get('/api/easel/actuals?entity='+f.ca.id),ledgerBefore)
+ provider.corrections['2026-01']=100
+ stale=await h.kit('intacct','preview',januaryInput)
+ assert.equal(stale.changedRows,2);assert.equal(stale.source.trialBalance.balanced,false)
+ await h.kit('intacct','commit',{...januaryInput,fingerprint:stale.fingerprint,sourceFingerprint:stale.sourceFingerprint},h.owner,409)
+ await acceptIntacct(h,{sourceEntity:'CA',month:'2025-12',includeOpening:false})
+ const repaired=await acceptIntacct(h,januaryInput)
+ assert.equal(repaired.source.trialBalance.balanced,true);assert.deepEqual(repaired.source.trialBalance.ledger.differences,[])
+ assert.equal((await h.kit('intacct','preview',januaryInput)).unchanged,true)
+ // Restore the recording through reviewed correcting journals, preserving the remaining journey.
+ provider.corrections={}
+ await acceptIntacct(h,{sourceEntity:'CA',month:'2025-12',includeOpening:false})
+ await acceptIntacct(h,januaryInput)
  const input={sourceEntity:'CA',month:'2026-02',includeOpening:false},before=await h.db.prepare('SELECT COUNT(*) AS n FROM e_actuals').first()
  assert.equal((await h.kit('intacct','preview',input)).unchanged,true)
  assert.deepEqual(await h.db.prepare('SELECT COUNT(*) AS n FROM e_actuals').first(),before)
@@ -126,6 +151,19 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  assert.equal(january.before.balanceSheet.payables-january.balanceSheet.payables,9000)
  assert.equal(january.before.cash.collections-january.cash.collections,8000)
  assert.equal(january.before.cash.payments-january.cash.payments,8000)
+ // An outstanding opening balance remains eligible in February; duplicates within it do not.
+ for(const [entity,end,average]of [[f.ca,'0.9','0.8'],[f.eu,'1.125','1.25']])await h.command('entity-rate',{entity:entity.id,month:'2026-02',monthEnd:end,average,budget:average})
+ for(const forecast of [approved.forecast,euApproved.forecast])await h.command('close-month',{scenario:forecast.id,month:'2026-02'})
+ const februaryElimination={...elimination,name:'February carried provider balances',month:'2026-02',fromAmount:'125',cashReceived:'125',toAmount:'80',cashPaid:'80',ledgerSources:{from:{...elimination.ledgerSources.from,charge:pick(f.ca,f.revenue.id,'2026-02'),cash:pick(f.ca,'cash','2026-02')},to:{...elimination.ledgerSources.to,charge:pick(f.eu,f.expense.id,'2026-02'),cash:pick(f.eu,'cash','2026-02')}}}
+ await h.command('entity-elimination-save',februaryElimination)
+ await h.command('entity-elimination-save',februaryElimination,h.owner,409)
+ const consecutive=(await h.get(groupPath)).consolidated.slice(0,2)
+ for(const m of consecutive){assert.deepEqual(m.unavailable,[]);assert.equal(m.before.balanceSheet.receivables-m.balanceSheet.receivables,9000);assert.equal(m.before.balanceSheet.payables-m.balanceSheet.payables,9000)}
+ const february=consecutive[1]
+ assert.equal(february.before.profit.revenue-february.profit.revenue,10000)
+ assert.equal(february.before.profit.operatingExpenses-february.profit.operatingExpenses,10000)
+ assert.equal(february.before.cash.collections-february.cash.collections,10000)
+ assert.equal(february.before.cash.payments-february.cash.payments,10000)
  const workbookResponse=await h.mf.dispatchFetch(h.origin+groupPath+'/workbook',{headers:{cookie:h.owner}}),book=await readWorkbook(await workbookResponse.arrayBuffer())
  for(const name of ['Profit and loss','Balance sheet','Cash bridge']){const sheet=book.getWorksheet(name);if(sheet)sheet.eachRow(row=>row.eachCell(cell=>{if(cell.value?.formula)assert.equal(evaluate(sheet,cell.address),cell.result)}))}
  await h.command('member',{email:'intacct-board@example.test',name:'Canadian scoped reader',role:'viewer',dimensionMembers:{[f.ca.dimension]:[f.ca.member]}})

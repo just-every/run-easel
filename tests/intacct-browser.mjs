@@ -60,6 +60,18 @@ try{
  await capture(page,actuals,'intacct-history-review')
  await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await actuals.getByRole('button',{name:'Review next Intacct history month',exact:true}).waitFor()
  for(const sourceEntity of ['CA','EU'])for(let i=sourceEntity==='CA'?1:0;i<26;i++){const month=`${2024+Math.floor(i/12)}-${String(i%12+1).padStart(2,'0')}`;await acceptIntacct(h,{sourceEntity,month,includeOpening:i===0})}
+ provider.corrections['2025-12']=100
+ await actuals.getByLabel('Intacct month',{exact:true}).fill('2026-01');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click()
+ await actuals.getByText(/Review prior Intacct periods 2024-01 through 2025-12/).waitFor()
+ assert.equal(await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).count(),0)
+ const differences=actuals.getByRole('table',{name:'Easel ledger reconciliation differences'})
+ assert.match(await differences.innerText(),/1000/);assert.match(await differences.innerText(),/2,801/)
+ await capture(page,actuals,'intacct-prior-period-difference')
+ await actuals.getByLabel('Intacct month',{exact:true}).fill('2025-12');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await differences.waitFor({state:'hidden'})
+ await actuals.getByLabel('Intacct month',{exact:true}).fill('2026-01');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await differences.waitFor({state:'hidden'})
+ const reconciled=(await h.get('/api/easel/connections/intacct')).months.find(m=>m.entity===f.ca.id&&m.month==='2026-01')
+ assert.equal(reconciled.trialBalance.ledger.balanced,true)
+ provider.corrections={};await acceptIntacct(h,{sourceEntity:'CA',month:'2025-12',includeOpening:false});await acceptIntacct(h,{sourceEntity:'CA',month:'2026-01',includeOpening:false})
  provider.change=true
  await actuals.getByLabel('Intacct month',{exact:true}).fill('2026-02');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByText(/1 changed transactions · 2 journal deltas/).waitFor()
  await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await settle(page)
