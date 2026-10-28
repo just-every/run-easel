@@ -4711,11 +4711,11 @@
       "executable": false
     },
     "src/site/docs/docs.css": {
-      "sha256": "dea7f1cbf0400e00eace362564a28db3902c87680ad55f8c57e3e1df6d57d9bf",
+      "sha256": "c0ea32ef45fe8ab6c6e241227b38e9d977f7e96abd07f66e22b42c8b48ae30cb",
       "executable": false
     },
     "src/site/docs/DocsArticle.tsx": {
-      "sha256": "d7bbc480b50d1459c1ceda37e566ff8db8149e6ea80509fd96cb71b5ed778cf1",
+      "sha256": "68a78bbf8942ea5248a64570a06801567eb678caf82a007e62e5ac26bc436d9b",
       "executable": false
     },
     "src/site/docs/DocsFrame.tsx": {
@@ -4879,11 +4879,15 @@
       "executable": false
     },
     "src/site/pages.tsx": {
-      "sha256": "b6d8dca12d51f72d353c535e189a28b7b3e88728d4b2a210161550a7f7e9e673",
+      "sha256": "41fb0f20832c233a937772d43a64c27f210fa0c4f612b952cd85177951c71b05",
       "executable": false
     },
     "src/site/run.ts": {
       "sha256": "81f0b68e19709eb6c9745b8dc703b0bd524ed7ff3ac37e0441632b30bb76287c",
+      "executable": false
+    },
+    "src/site/shared-pages.css": {
+      "sha256": "abb395535017eeb817cafabe631688e01e50056b97985d91345a881958c7767e",
       "executable": false
     },
     "src/site/shell/breaks.ts": {

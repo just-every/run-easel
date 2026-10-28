@@ -1,0 +1,7 @@
+/* Keep the shared pages' classes independent of same-named homepage cards.
+   These selectors never match the approved landing page. */
+.run-page .chooser .chip { min-height: 24px; padding: 0 10px; border-radius: 999px; font-size: 13px; line-height: 1; font-weight: 600; color: var(--site-body); background: color-mix(in srgb,var(--site-ink) 8%,var(--surface)); }
+.run-page .chooser .other-ways pre, .run-page .chooser .self .other-ways pre code { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; }
+.hosting-page main > .card { padding: 30px 34px; border-radius: var(--rer-radius,22px); background: color-mix(in srgb,var(--rer-surface,#fff) 88%,transparent); border: 1px solid var(--site-line); box-shadow: 0 24px 48px -36px color-mix(in srgb,var(--site-ink) 45%,transparent); }
+.hosting-page .go .btn { background: var(--site-accent); color: var(--site-accent-ink); border-radius: var(--rer-button-radius,999px); }
+@media(max-width:760px) { .hosting-page main > .card { padding: 22px 18px; } }

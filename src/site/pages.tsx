@@ -14,6 +14,7 @@ import { run } from './run'
 import { breaks } from './shell/breaks'
 import { SiteHeader } from './shell/SiteHeader'
 import './shell/site.css'
+import './shared-pages.css'
 
 const description = 'Free, open source FP&A: Easel connects your ledger, payroll and CRM, forecasts P&L, balance sheet and cash, keeps Excel live and flags any month below your cash floor.'
 
@@ -47,8 +48,8 @@ export function sitePages({ styles, contract, hosting }: SiteContext): SiteBuild
  return {
   pages: [
    { path: '/', html: tie(document('Easel · Plan the year. Protect the cash.', description, <Landing />, 'landing-body')) },
-   { path: '/run', html: runPageHtml(identity, run, contract, homepageHeader) },
-   { path: '/docs/hosting', html: hostingPageHtml(identity, run, hosting, contract, homepageHeader) },
+   { path: '/run', html: runPageHtml(identity, run, contract, homepageHeader).replace('<body>', '<body class="run-page">') },
+   { path: '/docs/hosting', html: hostingPageHtml(identity, run, hosting ?? null, contract, homepageHeader).replace('<body>', '<body class="hosting-page">') },
    ...(contract ? [{ path: '/contract', html: contractPageHtml(identity, run, contract) }] : []),
    { path: '/docs', html: breaks(tie(document('Docs · Easel', docsLead, <DocsIndex />))) },
    ...docsPages.map(page => ({ path: `/docs/${page.slug}`, html: breaks(tie(document(`${page.title} · Easel docs`, page.summary, <DocsArticle slug={page.slug} />))) })),

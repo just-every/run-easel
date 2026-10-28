@@ -92,3 +92,7 @@
  .docs-pager { grid-template-columns: 1fr; }
  .docs-pager-next { grid-column: 1; }
 }
+
+/* The one-line getting-started recipe stays readable in its article column. */
+.docs-article[data-doc=getting-started] .docs-code pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; }
+.docs-shell:has(.docs-article[data-doc=getting-started]) .eyebrow { font-size: 13px; }
