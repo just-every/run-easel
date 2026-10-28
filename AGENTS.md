@@ -41,3 +41,9 @@ Agents act as a signed-in person through `API.md`, with that person's authority.
 ## Tests
 
 `pnpm test:easel` runs one flow test per `CONTRACT.md` clause through the HTTP API on real workerd and D1. `node tests/browser.mjs` is the full proof from a fresh clone: journeys at 1440 and 390, setup rerun, build, preview, deploy dry run, export and restore. Run the tests of what you touch plus `pnpm typecheck`; CI runs the full wall. Keep tests to flows a person would notice breaking.
+
+## Contract projections and source integrity
+
+`CONTRACT.md` is the acceptance and Status source. Lander-Regenerate for a touched clause is `node scripts/contract-docs.mjs write --clauses SPEND-001`, followed by `node scripts/contract-docs.mjs check --clauses SPEND-001`; use a comma-separated clause list when needed. This updates the selected acceptance rows, summary counts and the generated claims index. Legacy acceptance prose outside those rows is preserved. With no clause argument, the command selects previously generated acceptance rows.
+
+Resolve the contract source first after a merge, keeping newer main judgments, then regenerate its views. Stage all intended files before `node scripts/edition-authoring/cli.mjs lock`; run `node scripts/edition-authoring/cli.mjs check` afterward. Generate the source lock last, and commit it with the source and generated views.

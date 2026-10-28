@@ -86,7 +86,7 @@ jobs:
           pnpm install --frozen-lockfile
       - name: Check edition source lock freshness
         if: matrix.shard == 'types-site'
-        run: node scripts/edition-authoring/cli.mjs check && pnpm exec rer check
+        run: node scripts/contract-docs.mjs check && node scripts/edition-authoring/cli.mjs check && pnpm exec rer check
       - name: Types and run site
         if: matrix.shard == 'types-site'
         run: pnpm typecheck && pnpm exec rer build --site

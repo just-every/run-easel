@@ -109,7 +109,7 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
  for (const review of all(c.s, 'spend-review').filter(r => r.driver !== primaryDriver)) {
   requireThat(!(review.cells ?? [review]).some((r: Data) => targets.some(t => t.driver.id === r.driver)), 'An expense already belongs to another spend review; revise that review instead', 409)
  }
- const sourceRows: Data[] = await spendSources(c, env, { providers: b.providers, orders: b.orders, reports: b.reports, month: period, allPeriods: batch || multiple })
+ const sourceRows: Data[] = await spendSources(c, env, { providers: b.providers, orders: b.orders, reports: b.reports, month: period, allPeriods: batch || multiple && new Set(targets.map(t => t.month)).size > 1 })
  requireThat(sourceRows.length > 0 && sourceRows.every(r => r.currency === workspace(c.s).currency), 'Spend source currency differs; no exchange rate is inferred', 409)
  requireThat(Array.isArray(b.mapping) && b.mapping.length === sourceRows.length, 'Map every selected source row explicitly')
  const allocations = new Map<string, Record<string, number>>(), mapped = new Set<string>()

@@ -188,13 +188,15 @@ try {
  await review.getByLabel('Source actual for ledger '+ledgerRows.rows[0].id,{exact:true}).selectOption('ramp:synthetic-easel-101')
  await review.getByLabel('PO link for ledger '+ledgerRows.rows[1].id,{exact:true}).selectOption('synthetic-easel-102')
  await review.getByLabel('I reviewed every ledger row',{exact:true}).check()
+ await review.getByLabel('Matched amount for ledger '+ledgerRows.rows[0].id,{exact:true}).fill('100.25')
+ await review.getByLabel('PO link for ledger '+ledgerRows.rows[0].id,{exact:true}).selectOption('synthetic-easel-102')
  const split = await action('/spend/preview',()=>review.getByRole('button',{name:'Preview committed spend',exact:true}).click())
  assert.deepEqual(split.cells.map(r=>[r.lineName,r.departmentName,r.month,r.budget,r.actual,r.committed,r.remaining,r.forecast]),[
-  ['Software','Operations','2026-01',100000,12025,7975,80000,20000],['Software','Operations','2026-02',0,3500,6500,-10000,10000],
+  ['Software','Operations','2026-01',100000,14025,5975,80000,20000],['Software','Operations','2026-02',0,3500,6500,-10000,10000],
   ['Services','Engineering','2026-01',60000,2000,8000,50000,10000],['Services','Engineering','2026-02',60000,3500,6500,50000,10000],
  ])
  assert.deepEqual(await review.getByRole('table',{name:'Budget and committed spend',exact:true}).first().locator('tbody tr').allTextContents(),[
-  'SoftwareOperations2026-01$1,000.00$79.75$120.25$800.00$0.00','SoftwareOperations2026-02$0.00$65.00$35.00-$100.00$0.00',
+  'SoftwareOperations2026-01$1,000.00$59.75$140.25$800.00$0.00','SoftwareOperations2026-02$0.00$65.00$35.00-$100.00$0.00',
   'ServicesEngineering2026-01$600.00$80.00$20.00$500.00$0.00','ServicesEngineering2026-02$600.00$65.00$35.00$500.00$0.00',
  ])
  await capture(review,'spend-multiple-allocation')
