@@ -1,0 +1,299 @@
+{
+  "evidence": "Synthetic recorded provider fake. No live NetSuite sandbox account was used. Trial aggregates are specified independently of returned posting pages.",
+  "accounts": [
+    {
+      "id": "100",
+      "code": "1000",
+      "name": "Operating bank",
+      "type": "Bank",
+      "isinactive": "F"
+    },
+    {
+      "id": "300",
+      "code": "3000",
+      "name": "Opening equity",
+      "type": "Equity",
+      "isinactive": "F"
+    },
+    {
+      "id": "400",
+      "code": "4000",
+      "name": "Subscription revenue",
+      "type": "Income",
+      "isinactive": "F"
+    }
+  ],
+  "subsidiaries": [
+    {
+      "id": "1",
+      "name": "Canada",
+      "currency": "CAD",
+      "isinactive": "F"
+    },
+    {
+      "id": "2",
+      "name": "Europe",
+      "currency": "EUR",
+      "isinactive": "F"
+    }
+  ],
+  "books": [
+    {
+      "id": "1",
+      "name": "Primary book",
+      "isprimary": "T"
+    },
+    {
+      "id": "2",
+      "name": "Secondary book (excluded)",
+      "isprimary": "F"
+    }
+  ],
+  "departments": [
+    {
+      "id": "1",
+      "name": "Subscriptions",
+      "isinactive": "F"
+    }
+  ],
+  "classes": [
+    {
+      "id": "1",
+      "name": "Product",
+      "isinactive": "F"
+    }
+  ],
+  "locations": [
+    {
+      "id": "1",
+      "name": "East",
+      "isinactive": "T"
+    }
+  ],
+  "months": [
+    {
+      "month": "2024-01",
+      "period": "2",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "600.00",
+      "eurCashClosing": "480.00"
+    },
+    {
+      "month": "2024-02",
+      "period": "3",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "700.00",
+      "eurCashClosing": "560.00"
+    },
+    {
+      "month": "2024-03",
+      "period": "4",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "800.00",
+      "eurCashClosing": "640.00"
+    },
+    {
+      "month": "2024-04",
+      "period": "5",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "900.00",
+      "eurCashClosing": "720.00"
+    },
+    {
+      "month": "2024-05",
+      "period": "6",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1000.00",
+      "eurCashClosing": "800.00"
+    },
+    {
+      "month": "2024-06",
+      "period": "7",
+      "cadMovement": "0.00",
+      "eurMovement": "0.00",
+      "cadCashClosing": "1000.00",
+      "eurCashClosing": "800.00"
+    },
+    {
+      "month": "2024-07",
+      "period": "8",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1100.00",
+      "eurCashClosing": "880.00"
+    },
+    {
+      "month": "2024-08",
+      "period": "9",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1200.00",
+      "eurCashClosing": "960.00"
+    },
+    {
+      "month": "2024-09",
+      "period": "10",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1300.00",
+      "eurCashClosing": "1040.00"
+    },
+    {
+      "month": "2024-10",
+      "period": "11",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1400.00",
+      "eurCashClosing": "1120.00"
+    },
+    {
+      "month": "2024-11",
+      "period": "12",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1500.00",
+      "eurCashClosing": "1200.00"
+    },
+    {
+      "month": "2024-12",
+      "period": "13",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1600.00",
+      "eurCashClosing": "1280.00"
+    },
+    {
+      "month": "2025-01",
+      "period": "14",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1700.00",
+      "eurCashClosing": "1360.00"
+    },
+    {
+      "month": "2025-02",
+      "period": "15",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1800.00",
+      "eurCashClosing": "1440.00"
+    },
+    {
+      "month": "2025-03",
+      "period": "16",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "1900.00",
+      "eurCashClosing": "1520.00"
+    },
+    {
+      "month": "2025-04",
+      "period": "17",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2000.00",
+      "eurCashClosing": "1600.00"
+    },
+    {
+      "month": "2025-05",
+      "period": "18",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2100.00",
+      "eurCashClosing": "1680.00"
+    },
+    {
+      "month": "2025-06",
+      "period": "19",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2200.00",
+      "eurCashClosing": "1760.00"
+    },
+    {
+      "month": "2025-07",
+      "period": "20",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2300.00",
+      "eurCashClosing": "1840.00"
+    },
+    {
+      "month": "2025-08",
+      "period": "21",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2400.00",
+      "eurCashClosing": "1920.00"
+    },
+    {
+      "month": "2025-09",
+      "period": "22",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2500.00",
+      "eurCashClosing": "2000.00"
+    },
+    {
+      "month": "2025-10",
+      "period": "23",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2600.00",
+      "eurCashClosing": "2080.00"
+    },
+    {
+      "month": "2025-11",
+      "period": "24",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2700.00",
+      "eurCashClosing": "2160.00"
+    },
+    {
+      "month": "2025-12",
+      "period": "25",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2800.00",
+      "eurCashClosing": "2240.00"
+    },
+    {
+      "month": "2026-01",
+      "period": "26",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "2900.00",
+      "eurCashClosing": "2320.00"
+    },
+    {
+      "month": "2026-02",
+      "period": "27",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "3000.00",
+      "eurCashClosing": "2400.00"
+    },
+    {
+      "month": "2026-03",
+      "period": "28",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "3100.00",
+      "eurCashClosing": "2480.00"
+    },
+    {
+      "month": "2026-04",
+      "period": "29",
+      "cadMovement": "100.00",
+      "eurMovement": "80.00",
+      "cadCashClosing": "3200.00",
+      "eurCashClosing": "2560.00"
+    }
+  ]
+}

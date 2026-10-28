@@ -1,4 +1,5 @@
 import { IntacctImport } from './intacct'
+import { NetSuiteImport } from './netsuite'
 import { PantryImport } from './pantry'
 import { XeroImport } from './xero'
 import { QboImport } from './qbo'
@@ -35,7 +36,7 @@ export function Actuals({ state, refresh }: Shared) {
   <IntacctImport state={state} refresh={refresh}/>
   <SourceGuard state={state} refresh={refresh} />
   <PantryImport state={state} refresh={refresh} />
-  <QboImport refresh={refresh} state={state}/><XeroImport refresh={refresh} state={state}/>
+  <NetSuiteImport state={state} refresh={refresh}/><QboImport refresh={refresh} state={state}/><XeroImport refresh={refresh} state={state}/>
   <CsvImport state={state} refresh={refresh} />
   <section className="card">
    <h2>Imports</h2>

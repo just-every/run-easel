@@ -19,7 +19,7 @@ export function Entities({ state, refresh }: Pick<Shared, 'state' | 'refresh'>) 
   <section className="card" aria-label="Entities">
    <h2>Entities</h2>
    <p>Each entity has a separate source plan and local currency. Consolidation translates each entity before applying the rules finance reviews.</p>
-   <Table caption="Entity source plans" heads={['Entity', 'Local currency', 'Source plan', 'Reporting currency']}>{settings.entities.map((e: D) => <tr key={e.id}><td>{e.name}</td><td>{e.currency}</td><td>{state.scenarios.find((s: D) => s.id === e.scenario)?.name}</td><td>{settings.groups.find((g: D) => g.id === e.group)?.reporting}</td></tr>)}</Table>
+   <Table caption="Entity source plans" heads={['Entity', 'Local currency', 'Source plan / current forecast', 'Reporting currency']}>{settings.entities.map((e: D) => <tr key={e.id}><td>{e.name}</td><td>{e.currency}</td><td>{state.scenarios.find((s: D) => s.id === e.scenario)?.name}{e.forecast&&<><br/>{state.scenarios.find((s:D)=>s.id===e.forecast)?.name}</>}</td><td>{settings.groups.find((g: D) => g.id === e.group)?.reporting}</td></tr>)}</Table>
    {settings.finance && <>
     <Form submit="Add entity" onSubmit={run('entity-save')}>
      <Field label="Entity name" name="name" />
@@ -38,7 +38,7 @@ export function Entities({ state, refresh }: Pick<Shared, 'state' | 'refresh'>) 
      <Field label="Rate month" name="month" type="month" />
      {['budget', 'average', 'monthEnd'].map(k => <Field key={k} label={`${k === 'monthEnd' ? 'Month-end' : k === 'average' ? 'Average' : 'Budget'} rate`} name={k} required={false} />)}
     </Form>
-    <h3>Reviewed eliminations</h3>
+    <h3>Reviewed eliminations</h3><LedgerEliminations settings={settings} state={state} refresh={refresh}/>
     <p className="muted">Amounts are in each source entity’s local currency. The two sides must agree after translation and must be backed by the selected source drivers. Rules apply only in the month entered.</p>
     <Table caption="Elimination rules" heads={['Name', 'Month', 'Revenue / expense', 'Receivable / payable', 'Received / paid', '']}>{settings.rules.map((r: D) => <tr key={r.id}><td>{r.name}</td><td>{monthLabel(r.month)}</td><td>{money(r.fromAmount, settings.entities.find((e: D) => e.id === r.fromEntity)?.currency)} / {money(r.toAmount, settings.entities.find((e: D) => e.id === r.toEntity)?.currency)}</td><td>{r.receivable} / {r.payable} cents</td><td>{r.cashReceived} / {r.cashPaid} cents</td><td><Action label="Remove elimination" kind="danger" run={async () => { await command('entity-elimination-delete', { id: r.id }); await refresh() }} /></td></tr>)}</Table>
     <Form submit="Save reviewed elimination" onSubmit={async v => { const [fromEntity, fromOrigin] = v.fromSource.split(':'), [toEntity, toOrigin] = v.toSource.split(':'); await run('entity-elimination-save')({ ...v, fromEntity, fromOrigin, toEntity, toOrigin }) }}>
@@ -86,4 +86,27 @@ function AcceptedLedgerElimination({settings,refresh}:{settings:D;refresh:()=>Pr
   {([['fromAmount','Revenue'],['toAmount','Expense'],['receivable','Receivable'],['payable','Payable'],['cashReceived','Received'],['cashPaid','Paid']] as const).map(([name,label])=><Field key={name} label={`${label} local amount to eliminate`} name={name} defaultValue="0"/>)}
   <Field label="I reviewed the selected accepted ledger sources" name="reviewed" type="checkbox"/>
  </Form></details>
+}
+function LedgerEliminations({settings,state,refresh}:{settings:D;state:D;refresh:()=>Promise<void>}){
+ const [fromEntity,setFrom]=useState(''),[toEntity,setTo]=useState(''),[month,setMonth]=useState(''),[revenueLine,setRevenue]=useState(''),[expenseLine,setExpense]=useState(''),[selected,setSelected]=useState<Record<string,string[]>>({})
+ const select=(field:string,id:string,checked:boolean)=>setSelected(old=>({...old,[field]:checked?[...(old[field]??[]),id]:(old[field]??[]).filter(v=>v!==id)}))
+ const sources=settings.ledgerEvidence??[]
+ const fields=[['fromAmount','Revenue charge',fromEntity,revenueLine,-1],['toAmount','Expense charge',toEntity,expenseLine,1],['receivable','Receivable balance',fromEntity,'bs:receivables',1],['payable','Payable balance',toEntity,'bs:payables',-1],['cashReceived','Cash received',fromEntity,'cash',1],['cashPaid','Cash paid',toEntity,'cash',-1]] as const
+ if(!sources.length)return null
+ return <details><summary>Review elimination from accepted entity ledger evidence</summary>
+  <p>Select each actual charge, balance and settlement explicitly in the entities’ local currencies. Source changes invalidate this review. Net postings cannot support overlapping eliminations.</p>
+  <label>Revenue entity<select aria-label="Ledger revenue entity" value={fromEntity} onChange={e=>{setFrom(e.target.value);setSelected({})}}><option value="">Choose entity</option>{settings.entities.map((e:D)=><option key={e.id} value={e.id}>{e.name} · {e.currency}</option>)}</select></label>
+  <label>Expense entity<select aria-label="Ledger expense entity" value={toEntity} onChange={e=>{setTo(e.target.value);setSelected({})}}><option value="">Choose entity</option>{settings.entities.filter((e:D)=>e.id!==fromEntity).map((e:D)=><option key={e.id} value={e.id}>{e.name} · {e.currency}</option>)}</select></label>
+  <label>Evidence month<input aria-label="Ledger evidence month" type="month" value={month} onChange={e=>{setMonth(e.target.value);setSelected({})}}/></label>
+  <label>Revenue line<select aria-label="Ledger revenue line" value={revenueLine} onChange={e=>{setRevenue(e.target.value);setSelected({})}}><option value="">Choose line</option>{state.lines.filter((l:D)=>l.type==='revenue').map((l:D)=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
+  <label>Expense line<select aria-label="Ledger expense line" value={expenseLine} onChange={e=>{setExpense(e.target.value);setSelected({})}}><option value="">Choose line</option>{state.lines.filter((l:D)=>l.type!=='revenue'&&!l.payroll&&!l.nonCash).map((l:D)=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
+  <Form submit="Save reviewed ledger elimination" onSubmit={async v=>{await command('entity-elimination-save',{...v,evidence:'ledger',fromEntity,toEntity,month,revenueLine,expenseLine,ledgerEvidence:selected});setSelected({});await refresh()}}>
+   <Field label="Ledger elimination name" name="name"/>
+   {fields.map(([field,label,entity,target,sign])=>{const rows=(sources.find((s:D)=>s.entity===entity)?.rows??[]).filter((r:D)=>!r.blocked&&r.target===target&&r.amount*sign>0&&(field==='receivable'||field==='payable'?r.month<=month:r.month===month));return <fieldset key={field}><legend>{label}</legend>
+    {rows.length?rows.map((r:D)=><label className="check" key={r.id}><input type="checkbox" checked={(selected[field]??[]).includes(r.id)} onChange={e=>select(field,r.id,e.target.checked)}/>{r.month} · {r.account} · {r.description} · {money(r.amount*sign,settings.entities.find((e:D)=>e.id===entity)?.currency)} · transaction {r.transaction||'source balance'}</label>):<p>No matching accepted evidence selected.</p>}
+    <Field label={`Eliminate local ${label.toLowerCase()}`} name={field} defaultValue="0"/>
+   </fieldset>})}
+   <Field label="I reviewed the selected actual ledger evidence" name="reviewed" type="checkbox"/>
+  </Form>
+ </details>
 }

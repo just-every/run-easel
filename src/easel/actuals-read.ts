@@ -1,6 +1,8 @@
 import { dimensionAllowed } from './access'
 import { acceptedLedgerFilter,entityReceipts,ledgerWhere } from './ledger-scope'
 import { intacctEntryUrl } from './intacct-links'
+import { ledgerPredicate, ledgerDimensions } from './ledger-scope'
+import { netsuiteTransactionUrl } from './netsuite-links'
 import { resolveDimensions } from './dimension-mapping'
 import { xeroTransactionUrl } from './xero-links'
 import { qboTransactionUrl } from './qbo-links'
@@ -106,6 +108,7 @@ export async function rowsFor(db: D1Database, s: State, month: string, line: str
    try { const origin = new URL(v.pantryOrigin); if (!origin.username && !origin.password && origin.pathname === '/' && !origin.search && !origin.hash && (origin.protocol === 'https:' || origin.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(origin.hostname))) providerUrl = new URL('/app/search?' + new URLSearchParams({type:'journal',record:v.pantryEntry}), origin).href } catch {}
   }
   if(v.intacctCompany)providerUrl=intacctEntryUrl(v.intacctEntryUrl)
+  if(v.netsuiteAccount)providerUrl=netsuiteTransactionUrl(v.netsuiteAccount,v.netsuiteTransactionType,v.netsuiteTransactionId)??undefined
   if(v.xeroRealm)providerUrl=xeroTransactionUrl(v.xeroEnvironment,v.xeroTransactionType,v.xeroTransactionId)??undefined
   if (v.qboRealm && /^[A-Za-z0-9_-]{1,120}$/.test(v.qboTransactionId)) {
    providerUrl=qboTransactionUrl(v.qboEnvironment,v.qboTransactionType,v.qboTransactionId)??undefined

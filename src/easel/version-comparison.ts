@@ -1,3 +1,4 @@
+import { scopedCalculation } from './group-projections'
 import { ledgerEntity } from './ledger-scope'
 import { canSeeScenario } from './scenario-access'
 import { filterCalculation } from './views'
@@ -17,7 +18,7 @@ export async function versionComparison(c: Context, forecast: Data, budget: Data
  ]
  for(const e of entries)e.calculation=filterCalculation(c.x,e.calculation,all(c.s,'line').filter(l=>l.payroll).map(l=>l.id),c.s)
  const versions = entries.map(e => ({ id: e.scenario.id, name: e.scenario.name, kind: e.scenario.kind, revision: e.scenario.revision, currency: e.calculation.currency, ...('snapshot' in e ? { snapshot: e.snapshot } : {}) }))
- const cells = entries.map(e => new Map(e.calculation.cells.filter(cell => cell.month === month).map(cell => [`${cell.line}|${cell.department}`, cell.amount])))
+ const cells = entries.map(e => new Map(scopedCalculation(c.s,c.x,e.calculation,[]).cells.filter(cell => cell.month === month).map(cell => [`${cell.line}|${cell.department}`, cell.amount])))
  const keys = [...new Set(cells.flatMap(map => [...map.keys()]))]
  const comparisons = (key: string, actual: number) => entries.map((e, i) => {
   const amount = e.calculation.months.includes(month) ? cells[i].get(key) ?? 0 : null

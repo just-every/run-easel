@@ -91,9 +91,8 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   c.activity.push({ action: op, record: budget.id, scenario: budget.id, before: budget.revision, after: budget.revision, detail: { snapshot: snapshotId } })
   const forecastId = uid()
   put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, horizon: m.workspace.horizon, ...(budget.currency ? { currency: budget.currency } : {}), parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
-  const entity=boundEntity(s,budget)
-  if(entity)put(s,'entity',entity.id,{...entity,forecast:forecastId})
   copyInputs(s, budget.id, forecastId)
+  const entity=boundEntity(s,budget);if(entity){put(s,'scenario',forecastId,{...get(s,'scenario',forecastId),entity:entity.id,currency:entity.currency});put(s,'entity',entity.id,{...entity,forecast:forecastId})}
   c.activity.push({ action: 'forecast-opened', record: forecastId, scenario: forecastId, after: 1, detail: { from: budget.id } })
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
  }

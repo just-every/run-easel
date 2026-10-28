@@ -14,7 +14,8 @@ import { all, put, requireThat, text, uid, type Data } from './types'
 export async function historyBudget(c: Context, op: string, b: Data): Promise<Data | undefined> {
  if (op !== 'budget-from-actuals') return undefined
  requireFinance(c.x)
- const source=b.scenario?scenarioAccess(c.s,c.x,b.scenario):undefined
+ const selected=b.scenario??(b.entity?all(c.s,'entity').find(e=>e.id===b.entity)?.scenario:undefined)
+ const source=selected?scenarioAccess(c.s,c.x,selected):undefined
  const entity=source?ledgerEntity(c.s,source.id):undefined
  const w = {...workspace(c.s),...(entity?{currency:all(c.s,'entity').find(e=>e.id===entity)!.currency}:{})}, months = range(w.planStart, w.horizon)
  await assertHistorySources(c, months.map(m => addMonths(m, -12)),source?.id)
@@ -34,13 +35,13 @@ export async function historyBudget(c: Context, op: string, b: Data): Promise<Da
     provenance: { file: 'Accepted actuals at budget creation', sheet: 'Actuals', cells: Object.fromEntries(months.map(m => [m, `${addMonths(m, -12)}:${line.id}:${department.id}`])) } })
   }
  }
- requireThat(definitions.length, 'No mapped prior-year line and department history is available', 409)
+ requireThat(definitions.length || entity, 'No mapped prior-year line and department history is available', 409)
  const id = uid(), name = text(b.name, 'Budget name')
  const original = all(c.s, 'scenario').find(sc => sc.kind === 'budget' && !sc.alternativeBudget)
- const budget = { name, ...(entity?{entity,currency:w.currency}:{}), kind: 'budget', alternativeBudget: true, status: 'working', revision: 1, horizon: w.horizon, createdBy: c.x.actor.email, createdAt: c.now, parent: null, actualsThrough: null,
+ const budget = { name, ...(entity?{entity,currency:w.currency}:{}), kind: 'budget', alternativeBudget: true, status: 'working', revision: 1, horizon: w.horizon, createdBy: c.x.actor.email, createdAt: c.now, parent: source?.id??null, actualsThrough: null,
   cash: original?.cash ?? { openingCents: 0, basis: 'estimate', receivablesCents: 0, payablesCents: 0, collectionLag: 0, paymentLag: 0 }, seededFromActuals: { at: c.now, by: c.x.actor.email, months: months.map(m => addMonths(m, -12)), growth } }
  put(c.s, 'scenario', id, budget)
- for (const definition of definitions) put(c.s, 'schedule', uid(), { ...definition, scenario: id, originId: uid() })
+ for (const definition of definitions) put(c.s, 'schedule', uid(), { ...definition, ...(entity?{dimensions:{[all(c.s,'entity').find(e=>e.id===entity)!.dimension]:all(c.s,'entity').find(e=>e.id===entity)!.member}}:{}), scenario: id, originId: uid() })
  c.activity.push({ action: op, record: id, scenario: id, after: 1, detail: { sourceMonths: budget.seededFromActuals.months, schedules: definitions.length } })
  return { ...budget, id }
 }

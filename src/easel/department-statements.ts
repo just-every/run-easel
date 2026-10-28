@@ -1,3 +1,5 @@
+import { scenarioAccess,canSeeScenario } from './scenario-access'
+import { ledgerScope } from './ledger-scope'
 import { hasFullScope } from './access-grants'
 import { captureStatementDimensions, scopedStatementRows } from './statement-dimensions'
 // Monthly department statements are scoped before they are stored or mailed.
@@ -8,13 +10,13 @@ import { monthLabel } from './months'
 import { variance } from './review'
 import { all, find, get, put, requireThat, uid, type Data } from './types'
 
-export function queueDepartmentStatements(c: Context, month: string) {
+export function queueDepartmentStatements(c: Context, month: string, forecast?:string) {
  const ids: string[] = []
  for (const d of departments(c.s)) {
   const recipients = all(c.s, 'member').filter(m => statementOwner(c.s, m.email, d.id)).map(m => m.email)
-  if (!recipients.length || all(c.s, 'department-statement').some(s => s.month === month && s.department === d.id)) continue
+  if (!recipients.length || all(c.s, 'department-statement').some(s => s.month === month && s.department === d.id && s.forecast===forecast)) continue
   const id = uid()
-  put(c.s, 'department-statement', id, { month, label: monthLabel(month), currency: workspace(c.s).currency, department: d.id, departmentName: d.name, createdAt: c.now, rows: null,
+  put(c.s, 'department-statement', id, { ...(forecast?{forecast}:{}), month, label: monthLabel(month), currency: forecast?get(c.s,'scenario',forecast).currency??workspace(c.s).currency:workspace(c.s).currency, department: d.id, departmentName: d.name, createdAt: c.now, rows: null,
    deliveries: recipients.map(recipient => ({ recipient, deliveryId: uid(), status: 'pending', attempts: 0 })) })
   c.activity.push({ action: 'department-statement-queued', record: id, detail: { month, department: d.id, recipients: recipients.length } })
   ids.push(id)
@@ -29,12 +31,13 @@ export function statementOwner(s: Context['s'], email: string, department: strin
  const x = access(s, { id: '', email, name: member.name, baseRole: 'member', session: '', version: 0 })
  return x.statementDepartments?.includes(department) === true && seesDepartmentDetail(x, department)
 }
-const canRead = (c: Context, s: Data) => c.x.role === 'finance' || seesDepartmentDetail(c.x, s.department)
+const canRead = (c: Context, s: Data) => (!s.forecast||canSeeScenario(c.x,get(c.s,'scenario',s.forecast)))&&(c.x.role === 'finance' || seesDepartmentDetail(c.x, s.department))
 
 export function statementWork(c: Context, s: Data): Data {
+ if(s.forecast)scenarioAccess(c.s,c.x,s.forecast)
  const dimensionRestricted = !hasFullScope(c.s, c.x, {}, s.department)
  const rows: Data[] = scopedStatementRows(c, s).map((r: Data) => {
-  const explanation = find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`) ?? null
+  const explanation = find(c.s, 'explanation', `${s.forecast&&ledgerScope(c.s,s.forecast)?s.forecast+'|':''}${s.month}|${r.line}|${s.department}`) ?? null
   const restricted = (r.payroll || find(c.s, 'line', r.line)?.payroll) && !seesPayDetail(c.x, s.department)
   return { ...r, citations: restricted ? [] : r.citations.filter((citation: Data) => dimensionAllowed(c.s, c.x, citation.dimensions ?? {}, false, s.department)), explanation: restricted || dimensionRestricted ? null : explanation }
  })
@@ -45,7 +48,7 @@ export function statementWork(c: Context, s: Data): Data {
  const tasks = dimensionRestricted ? [] : [...metricTasks, ...submissions, ...calendarTasks, ...actions]
  const toConfirm = rows.filter((r: Data) => {
   if (dimensionRestricted) return false
-  const explanation = find(c.s, 'explanation', `${s.month}|${r.line}|${s.department}`)
+  const explanation = find(c.s, 'explanation', `${s.forecast&&ledgerScope(c.s,s.forecast)?s.forecast+'|':''}${s.month}|${r.line}|${s.department}`)
   return explanation?.status !== 'confirmed' && (r.variance !== 0 || explanation)
  })
  const { dimensionCells: _privateSlices, ...visible } = s
@@ -58,7 +61,7 @@ export async function captureDepartmentStatement(c: Context, id: string) {
  if (statement.rows !== null) return statement
  // Capture complete evidence internally even when the finance operator cannot
  // read pay. App reads, workbooks and each mail recipient apply their own grant.
- const v = await variance({ ...c, x: { ...c.x, payDetail: true } }, statement.month)
+ const v = await variance({ ...c, x: { ...c.x, payDetail: true } }, statement.month,statement.forecast)
  const rows = v.rows.filter(r => r.department === statement.department).map(r => ({ key: r.key, line: r.line, lineName: r.lineName, payroll: r.payroll || find(c.s, 'line', r.line)?.payroll === true, actual: r.actual, budget: r.budget, variance: r.variance, citations: r.citations }))
  const dimensionCells = await captureStatementDimensions(c, statement, v.budget.snapshot)
  const captured = { ...statement, rows, dimensionCells, capturedAt: c.now }

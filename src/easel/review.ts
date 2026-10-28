@@ -62,6 +62,7 @@ export async function variance(c: Context, month: string,scenario?:string) {
  const rows = []
  for (const k of keys) {
   const [line, department] = k.split('|')
+  if(scopedReader(c.x)&&!seesDepartmentDetail(c.x,department))continue
   const a = actual.get(k)?.amount ?? 0, bud = planned.get(k)?.amount ?? 0, f = kept.get(k)?.amount ?? 0
   const comparisons = comparison.comparisons(k, a)
   if (a === 0 && bud === 0 && f === 0 && comparisons.every(v => !v.amount)) continue
@@ -120,7 +121,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
  if (op === 'explanation' || op === 'explanation-confirm') {
   requireMember(x)
   const month = typeof b.month === 'string' ? b.month : ''
-  const forecast=forecastFor(s,month,b.scenario)
+  const forecast=forecastFor(s,month,(b.scenario??b.forecast))
   scenarioAccess(s,x,forecast.id)
   const line = get(s, 'line', b.line).id
   const department = b.department ? get(s, 'department', b.department).id : ''
@@ -129,12 +130,12 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const prior = find(s, 'explanation', id)
   if (op === 'explanation') {
    requireThat(!prior || prior.status !== 'confirmed' || x.role === 'finance', 'This explanation is confirmed; finance can reopen it', 409)
-   const citationIds = await explanationCitations(c, month, line, department, b.citationIds,b.scenario)
+   const citationIds = await explanationCitations(c, month, line, department, b.citationIds,(b.scenario??b.forecast))
    put(s, 'explanation', id, { month, line, department, text: text(b.text, 'Explanation', 4000), citationIds, status: 'draft', writtenBy: x.actor.email, at: c.now })
    await mentions(c, b.text, department, `Variance explanation · ${month} · ${get(s, 'line', line).name}`, 'review', id)
   } else {
    requireThat(prior, 'Write the explanation first', 409)
-   await explanationCitations(c, month, line, department, prior.citationIds)
+   await explanationCitations(c, month, line, department, prior.citationIds,forecast.id)
    put(s, 'explanation', id, { ...prior, status: 'confirmed', confirmedBy: x.actor.email, confirmedAt: c.now })
   }
   c.activity.push({ action: op, record: id, detail: { month, line, department } })
@@ -143,7 +144,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
  if (op === 'pack-create') {
   requireCapability(x, 'publishing', s)
   const month = typeof b.month === 'string' ? b.month : ''
-  const forecast = forecastFor(s,month,b.scenario)
+  const forecast = forecastFor(s,month,(b.scenario??b.forecast))
   const period = await packPeriod(c, forecast, b), template = packTemplate(c, b.template), last = period.months.at(-1)!
   requireThat(!all(s, 'pack').some(p => p.month === last && p.forecast===forecast.id && p.status === 'draft' && (p.period ?? 'month') === period.period), `A draft pack for ${period.label} already exists`, 409)
   const id = uid(), draft = { months: period.months, forecast: forecast.id, template: template.id }

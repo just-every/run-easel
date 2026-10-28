@@ -120,6 +120,7 @@ jobs:
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/approval-chains-browser.mjs
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/connectors-browser.mjs --existing-build
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/intacct-browser.mjs --existing-build
+          EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/netsuite-browser.mjs --existing-build
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/weekly-cash-browser.mjs --existing-build
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/excel-browser.mjs
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/spend-browser.mjs

@@ -83,7 +83,7 @@ export async function packNumbers(c: Context, pack: Data) {
  const chartMonths = ytd
  const numbers = {
   presentation: { locale: w.locale, timeZone: w.timeZone, dateFormat: w.dateFormat },
-  versionComparison: { currency: w.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
+  versionComparison: { currency: forecastCalc.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
   budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
   lines: lineRows, profit: { month: profitOf(forecastCalc), budget: profitOf(budget.body.calculation) },
   kpis: [
