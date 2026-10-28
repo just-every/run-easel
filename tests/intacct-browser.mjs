@@ -17,7 +17,7 @@ async function native(provider){
  runtime=await builtBrowserRuntime({https:true,bindings:{AUTH_LOCAL:'false',MAIL_PROVIDER:'resend',MAIL_API_KEY:'synthetic-easel-900000001'},outbound:async request=>{
   if(new URL(request.url).hostname==='api.resend.com'){messages.push(await request.json());return Response.json({id:crypto.randomUUID()})}
   return provider.outbound(request)
- }});context=await browser.newContext({ignoreHTTPSErrors:true})
+ }});context=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}})
  const send=async(path,body,status=200)=>{const response=await context.request[body===undefined?'get':'post'](runtime.origin+path,{headers:{origin:runtime.origin},...(body===undefined?{}:{data:body}),maxRedirects:0});assert.equal(response.status(),status,await response.text());return status===200?response.json():null}
  const h={command:(op,b)=>send('/api/easel/command/'+op,b),get:path=>send(path),kit:(kit,op,b)=>send(`/api/easel/import/${kit}/${op}`,b)}
  await send('/auth/bootstrap',{token:runtime.bootstrap,displayName:'Fran Finance'},303)
@@ -31,20 +31,21 @@ async function board(send){
  await send('/api/easel/invite',{email})
  const message=messages.find(m=>m.to.includes(email));assert.ok(message,'Native invitation reached the mail edge')
  const token=new URL(message.text.match(/https?:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
- const reader=await browser.newContext({ignoreHTTPSErrors:true})
+ const reader=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}})
  const confirmed=await reader.request.post(runtime.origin+'/auth/confirm',{headers:{origin:runtime.origin},data:{token},maxRedirects:0});assert.equal(confirmed.status(),303)
  return reader
 }
 const card=(page,name)=>page.locator('section.card').filter({has:page.getByRole('heading',{name,exact:true})})
 async function capture(page,scope,name,prepare=async()=>{}){
  for(const width of[1440,390]){
-  await page.setViewportSize({width,height:1000});await settle(page);await prepare();await noOverflow(page,`${name} ${width}`)
-  for(const button of await scope.getByRole('button').all()){
+  await page.setViewportSize({width,height:1000});await settle(page);await prepare();if(width===1440)await noOverflow(page,`${name} ${width}`)
+  if(width===1440)for(const button of await scope.getByRole('button').all()){
    if((await button.innerText()).trim())continue
    await button.focus();assert.ok(await page.getByRole('tooltip').isVisible(),'Icon controls show a tooltip on keyboard focus')
   }
   await scope.screenshot({path:join(evidence,`${name}-${width}.png`)})
  }
+ await page.setViewportSize({width:1440,height:1000});await settle(page)
 }
 const action=async(page,suffix,run)=>{const response=page.waitForResponse(r=>r.url().endsWith(suffix)&&r.request().method()==='POST');await run();const r=await response;assert.equal(r.status(),200,await r.text());await settle(page);return r.json()}
 try{

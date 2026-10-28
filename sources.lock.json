@@ -4987,7 +4987,7 @@
       "executable": false
     },
     "tests/intacct-browser.mjs": {
-      "sha256": "1db788bd0603060559e11a14c78429334d0ce598a67cf13226e4618347dece80",
+      "sha256": "5d5a727ed8d1d12cc3bce6013d10edae1117e1c3750f95e78fb288d7df9c2e43",
       "executable": false
     },
     "tests/intacct-fixture.mjs": {
