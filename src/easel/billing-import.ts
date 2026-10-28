@@ -1,3 +1,4 @@
+import { ledgerEntity } from './ledger-scope'
 import type { Bindings } from '../auth.server'
 import { actualCells } from './actuals-read'
 import { billingAuthority, billingKey } from './billing-connection'
@@ -33,7 +34,7 @@ export async function billingImport(c: Context, env: Bindings, op: string, b: Da
  const source = await fetchStripeBilling(await billingKey(c, env), months)
  requireThat(source.observations.every(r => r.currency.toUpperCase() === w.currency), 'Billing currency differs from the workspace; no exchange rate is inferred', 409)
  const metrics = calculateBilling(source.observations, months)
- const ledger = await actualCells(c.db, c.s), explanations = b.explanations ?? {}
+ const ledger = await actualCells(c.db,c.s,undefined,ledgerEntity(c.s,sc.id)), explanations = b.explanations ?? {}
  const reconciliation = months.map(period => {
   const rows = ledger.filter(r => r.month === period && r.line === driver.line && r.department === driver.department)
   const billing = metrics.bridge.find((r: Data) => r.month === period) ?? { revenueCents: 0, deferredCents: 0, refundsCents: 0, taxCents: 0 }

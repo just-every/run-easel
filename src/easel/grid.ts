@@ -70,7 +70,7 @@ export async function grid(c: Context, op: string, b: Data): Promise<Data | unde
   try {
    let values: number[] | undefined
    if (b.operation) {
-    const history = b.operation === 'prior-year' ? await historyOverlay(c, supplied.map((cell: Data) => addMonths(cell.month, -12))) : null
+    const history = b.operation === 'prior-year' ? await historyOverlay(c, supplied.map((cell: Data) => addMonths(cell.month, -12)),sc.id) : null
     const prior = supplied.map((cell: Data, i: number) => {
      if (!history) return 0
      const month = addMonths(cell.month, -12)

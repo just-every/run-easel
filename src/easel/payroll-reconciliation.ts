@@ -1,3 +1,4 @@
+import { ledgerEntity } from './ledger-scope'
 // Payroll files remain observations, separate from editable planned positions.
 // Explicit source employee -> position links avoid guessing a person's identity.
 import { requireMember, seesPayDetail } from './access'
@@ -41,7 +42,7 @@ export async function payrollView(c: Context, scenario: string) {
   return { department: d.id, name: d.name, headcount: people.length }
  })
  const payroll = all(c.s, 'payroll-run').filter(r => imports.some(i => i.destination === r.batch))
- const cells = await actualCells(c.db, c.s), ledger = await ledgerReconciliation(c.db, c.s)
+ const cells = await actualCells(c.db,c.s,undefined,ledgerEntity(c.s,scenario)), ledger = await ledgerReconciliation(c.db,c.s,ledgerEntity(c.s,scenario))
  const groups = new Map<string, Data>()
  for (const run of payroll) {
   const month = datePeriod(workspace(c.s), run.payDate), key = `${month}|${run.department}|${run.line}`

@@ -1,3 +1,4 @@
+import { ledgerEntity } from '../ledger-scope'
 // A recalculation of the official forecast with replaced inputs, used by the
 // constraint watch and the response search. It reads the same accepted
 // actuals and ledger context as the working calculation and writes nothing.
@@ -14,8 +15,8 @@ export async function evaluator(c: Context, forecast: Data) {
  const m = model(c.s, forecast.id)
  requireThat(!m.inputs.formula?.length, 'Native-formula forecasts are not searched', 409)
  const through = forecast.actualsThrough ?? undefined
- const actuals = await actualCells(c.db, c.s, through)
- const ledger = through ? await ledgerContext(c, through, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true) : undefined
+ const actuals = await actualCells(c.db,c.s,through,ledgerEntity(c.s,forecast.id))
+ const ledger = through ? await ledgerContext(c, through, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true,ledgerEntity(c.s,forecast.id)) : undefined
  return { model: m, run: (inputs: Data): Calculation => calculate({ ...m, inputs: { ...m.inputs, ...inputs } }, actuals, ledger) }
 }
 

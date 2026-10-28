@@ -46,7 +46,7 @@ export async function versionStructure(c: Context, before: State, modelRevisionB
  for (const sn of c.snapshots) {
   sn.body.structure = capturedStructure(c.s)
   sn.body.dimensionStructure = dimensionStructure(c.s)
-  if (sn.body.calculation?.months) sn.body.actualsHistory = await historyOverlay(c, [...new Set<string>(sn.body.calculation.months.flatMap((m: string) => [m, addMonths(m, -12)]))])
+  if (sn.body.calculation?.months) sn.body.actualsHistory = await historyOverlay(c, [...new Set<string>(sn.body.calculation.months.flatMap((m: string) => [m, addMonths(m, -12)]))],sn.scenario)
   if (sn.kind === 'forecast') {
    sn.body.lines = all(c.s, 'line'); sn.body.departments = all(c.s, 'department')
   }

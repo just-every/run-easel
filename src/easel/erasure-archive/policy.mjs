@@ -67,6 +67,16 @@ export async function validateEaselStaged(staged) {
   } else requireValid(false, 'snapshot_kind');
  }
  for (const [key, r] of records) {
+  if(key.startsWith('intacct-entity-map:')) {
+   const entity=records.get(`entity:${r.entity}`),scenario=records.get(`scenario:${r.scenario}`);
+   requireValid(entity && scenario && entity.scenario===r.scenario && entity.currency===r.currency && r.book==='ACCRUAL' && text(r.company) && text(r.sourceEntity),'intacct_entity_binding');
+   requireValid([...records].filter(([k,v])=>k.startsWith('intacct-entity-map:')&&v.entity===r.entity).length===1,'intacct_entity_unique');
+  }
+  if(key.startsWith('intacct-month:')) {
+   const binding=[...records].find(([k,v])=>k.startsWith('intacct-entity-map:')&&v.company===r.company&&v.sourceEntity===r.sourceEntity&&v.book===r.book)?.[1];
+   requireValid(binding && binding.entity===r.entity && binding.currency===r.currency && /^\d{4}-(0[1-9]|1[0-2])$/.test(r.month) && ['accepted','undone'].includes(r.status),'intacct_receipt');
+   requireValid(r.status!=='accepted'||r.trialBalance?.balanced===true,'intacct_receipt_trial');
+  }
   if (key.startsWith('schedule:') && r.history) {
    const h = r.history;
    requireValid(!r.values && object(h) && records.has(`line:${h.sourceLine}`) && records.has(`department:${h.sourceDepartment}`) && records.has(`scenario:${r.scenario}`), 'history_schedule_reference');

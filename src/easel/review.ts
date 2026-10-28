@@ -1,3 +1,6 @@
+import { filterCalculation } from './views'
+import { ledgerEntity } from './ledger-scope'
+import { scenarioAccess } from './scenario-access'
 import { gaugeFreshness } from './gauge-freshness'
 import { workingCalculation } from './calculation'
 // Monthly review: actual against the approved budget and the forecast kept
@@ -23,31 +26,35 @@ import { all, find, get, put, requireThat, text, uid, type Access, type Data, ty
 
 const cellMap = (calc: Calculation, month: string) => new Map(calc.cells.filter(c => c.month === month).map(c => [`${c.line}|${c.department}`, c]))
 
-export function forecastFor(s: State, month: string) {
- const f = all(s, 'scenario').find(x => x.kind === 'forecast' && !x.alternativeBudget)
- requireThat(f, 'Approve the budget first; the forecast opens then', 409)
+export function forecastFor(s: State, month: string,scenario?:string) {
+ const candidates=all(s,'scenario').filter(x=>x.kind==='forecast'&&!x.alternativeBudget)
+ requireThat(scenario||candidates.length<=1,'Choose an explicit entity forecast for Review',409)
+ const f=scenario?find(s,'scenario',scenario):candidates[0]
+ requireThat(f?.kind==='forecast', 'Approve the budget first; the forecast opens then', 409)
  requireThat(f.actualsThrough && month <= f.actualsThrough, `${monthLabel(month)} is not closed yet`, 409)
  return f
 }
 
 /** Variance rows for a closed month. Detail the person may not see is removed here, on the server. */
-export async function variance(c: Context, month: string) {
+export async function variance(c: Context, month: string,scenario?:string) {
  requireMember(c.x)
  const { s } = c
  const w = workspace(s)
- const forecast = forecastFor(s, month)
+ const forecast = forecastFor(s, month,scenario)
+ scenarioAccess(s,c.x,forecast.id)
+ const entity=ledgerEntity(s,forecast.id)
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorBody = prior ? (await snapshot(c.db, prior.snapshot)).body : null
  const priorCalc: Calculation | null = priorBody?.calculation ?? null
- const currentCalc = await workingCalculation(c, forecast.id, month)
+ const currentCalc = filterCalculation(c.x,await workingCalculation(c,forecast.id,month),lines(s).filter(l=>l.payroll).map(l=>l.id),s)
  const actual = cellMap(currentCalc, month)
  const comparison = await versionComparison(c, forecast, budget, currentCalc, month)
  const planned = cellMap(budget.body.calculation, month)
  const kept = priorCalc ? cellMap(priorCalc, month) : new Map<string, Cell>()
  const next = cellMap(budget.body.calculation, addMonths(month, 1)), previous = cellMap(budget.body.calculation, addMonths(month, -1))
  const lineById = new Map<string, Data>([...comparison.lines, ...lines(s), ...budget.body.lines].map(l => [l.id, l])), deptById = new Map<string, Data>([...comparison.departments, ...departments(s), ...budget.body.departments].map(d => [d.id, d]))
- const money = (n: number) => formatMoney(n, w.currency)
+ const money = (n: number) => formatMoney(n, currentCalc.currency)
  const keys = [...new Set([...actual.keys(), ...planned.keys(), ...kept.keys(), ...comparison.keys])]
  const rows = []
  for (const k of keys) {
@@ -60,7 +67,7 @@ export async function variance(c: Context, month: string) {
   const revenue = l?.type === 'revenue'
   const payroll = l?.payroll === true || (planned.get(k)?.sources ?? []).some(source => source.kind === 'position')
   const detail = seesDepartmentDetail(c.x, department) && (!payroll || seesPayDetail(c.x, department))
-  const citations = detail ? (await rowsFor(c.db, s, month, line, department)) : []
+  const citations = detail ? (await rowsFor(c.db,s,month,line,department,entity,c.x)) : []
   const planSources = detail ? (planned.get(k)?.sources ?? []).map(x => x.trace) : []
   // A budgeted item in the neighbouring month that matches the difference
   // suggests timing. It stays a hypothesis until the department confirms it.
@@ -74,22 +81,22 @@ export async function variance(c: Context, month: string) {
    detail && planSources.length ? `The budget came from: ${planSources.slice(0, 3).join(' | ')}.` : '',
    ...hypotheses,
   ].filter(Boolean).join(' ')
-  const saved = find(s, 'explanation', `${month}|${k}`)
+  const saved = find(s,'explanation',`${entity?forecast.id+'|':''}${month}|${k}`)
   const explanation: Data | null = saved && (!payroll || seesPayDetail(c.x, department)) ? { ...saved, ...(saved.citationIds ? { citationIds: detail ? saved.citationIds : [] } : {}), ...(saved.claims ? { claims: saved.claims.map((claim: Data) => ({ ...claim, citationIds: detail ? claim.citationIds : [] })) } : {}) } : null
   rows.push({ key: k, line, lineName: l?.name ?? line, lineType: l?.type, payroll, department, departmentName: d?.name ?? 'No department', actual: a, budget: bud, priorForecast: priorCalc ? f : null, variance: v, forecastVariance: priorCalc ? a - f : null, favourable: v === 0 ? null : revenue ? v > 0 : v < 0, citations, planSources, hypotheses, draft, explanation, comparisons })
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))
  const names = await actorNames(c.db, [budget.body.approvedBy?.email, ...rows.flatMap(row => [row.explanation?.writtenBy, row.explanation?.confirmedBy])])
- return { gaugeFreshness: [...(await gaugeFreshness(c, budget.body.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Approved budget' })), ...(await gaugeFreshness(c, priorBody?.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Prior forecast' }))], month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
+ return { gaugeFreshness: [...(await gaugeFreshness(c, budget.body.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Approved budget' })), ...(await gaugeFreshness(c, priorBody?.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Prior forecast' }))], month, label: monthLabel(month), currency: currentCalc.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
 }
 
 /** AGENT-007: citations bind accepted rows visible in this exact variance, never client-supplied evidence. */
-async function explanationCitations(c: Context, month: string, line: string, department: string, ids: unknown): Promise<string[]> {
+async function explanationCitations(c: Context, month: string, line: string, department: string, ids: unknown,scenario?:string): Promise<string[]> {
  if (ids === undefined) return []
  requireThat(Array.isArray(ids) && ids.length <= 100 && ids.every(id => typeof id === 'string' && id.length > 0), 'Citation IDs must be an array of at most 100 row IDs')
  const unique = [...new Set(ids as string[])]
  if (!unique.length) return []
- const row = (await variance(c, month)).rows.find(row => row.line === line && row.department === department)
+ const row = (await variance(c,month,scenario)).rows.find(row => row.line === line && row.department === department)
  const visible = new Set(row?.citations.map(row => row.id) ?? [])
  requireThat(unique.every(id => visible.has(id)), 'A citation is not an accepted row visible in this variance')
  return unique
@@ -110,15 +117,16 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
  if (op === 'explanation' || op === 'explanation-confirm') {
   requireMember(x)
   const month = typeof b.month === 'string' ? b.month : ''
-  forecastFor(s, month)
+  const forecast=forecastFor(s,month,b.scenario)
+  scenarioAccess(s,x,forecast.id)
   const line = get(s, 'line', b.line).id
   const department = b.department ? get(s, 'department', b.department).id : ''
   requireDepartment(x, department)
-  const id = `${month}|${line}|${department}`
+  const id = `${ledgerEntity(s,forecast.id)?forecast.id+'|':''}${month}|${line}|${department}`
   const prior = find(s, 'explanation', id)
   if (op === 'explanation') {
    requireThat(!prior || prior.status !== 'confirmed' || x.role === 'finance', 'This explanation is confirmed; finance can reopen it', 409)
-   const citationIds = await explanationCitations(c, month, line, department, b.citationIds)
+   const citationIds = await explanationCitations(c, month, line, department, b.citationIds,b.scenario)
    put(s, 'explanation', id, { month, line, department, text: text(b.text, 'Explanation', 4000), citationIds, status: 'draft', writtenBy: x.actor.email, at: c.now })
    await mentions(c, b.text, department, `Variance explanation · ${month} · ${get(s, 'line', line).name}`, 'review', id)
   } else {
@@ -132,9 +140,9 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
  if (op === 'pack-create') {
   requireCapability(x, 'publishing', s)
   const month = typeof b.month === 'string' ? b.month : ''
-  const forecast = forecastFor(s, month)
+  const forecast = forecastFor(s,month,b.scenario)
   const period = await packPeriod(c, forecast, b), template = packTemplate(c, b.template), last = period.months.at(-1)!
-  requireThat(!all(s, 'pack').some(p => p.month === last && p.status === 'draft' && (p.period ?? 'month') === period.period), `A draft pack for ${period.label} already exists`, 409)
+  requireThat(!all(s, 'pack').some(p => p.month === last && p.forecast===forecast.id && p.status === 'draft' && (p.period ?? 'month') === period.period), `A draft pack for ${period.label} already exists`, 409)
   const id = uid(), draft = { months: period.months, forecast: forecast.id, template: template.id }
   const { fingerprint } = await packNumbers(c, draft)
   put(s, 'pack', id, { month: last, period: period.period, months: period.months, label: period.label, forecast: forecast.id, status: 'draft', title: `${period.label} review`, template: template.id, sections: template.sections, decisions: [], generated: { fingerprint, at: c.now, by: x.actor.email }, refreshes: [], createdBy: x.actor.email, createdAt: c.now })

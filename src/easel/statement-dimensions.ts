@@ -1,3 +1,4 @@
+import { ledgerEntity } from './ledger-scope'
 import { dimensionAllowed } from './access'
 import { hasFullScope } from './access-grants'
 import { dimensionActuals } from './dimension-actuals'
@@ -9,7 +10,7 @@ import { requireThat, type Data } from './types'
 /** Persist atomic actual/budget amounts with the statement; changing grants
  * changes only the projection, never the captured closing figures. */
 export async function captureStatementDimensions(c: Context, statement: Data, budgetSnapshot: string) {
- const [budget, actual] = await Promise.all([snapshot(c.db, budgetSnapshot), dimensionActuals(c.db, c.s)])
+ const [budget, actual] = await Promise.all([snapshot(c.db, budgetSnapshot), dimensionActuals(c.db,c.s,ledgerEntity(c.s,statement.forecast))])
  const include = (cell: Data) => cell.month === statement.month && cell.department === statement.department
  return { actual: dimensionalCells(actual.cells).filter(include), budget: dimensionalCells(budget.body.calculation.cells).filter(include), blocked: actual.blocked.filter(issue => issue.month === statement.month && (!issue.department || issue.department === statement.department)) }
 }

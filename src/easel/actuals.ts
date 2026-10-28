@@ -1,3 +1,6 @@
+import { intacctAuthority } from './intacct-connection'
+import { finishIntacctMonth } from './intacct-month'
+import { ledgerEntity } from './ledger-scope'
 import { assertSourceGuardAcceptance, completeSourceGuards } from './agents/source-guard'
 import { finishXeroMonth } from './xero-month'
 import { xeroAuthority } from './xero-connection'
@@ -23,7 +26,7 @@ import { cents } from './units'
 import { all, choice, find, get, put, requireThat, type Data, type State } from './types'
 
 export function closedImportPeriods(s: State, batch: Data): string[] {
- const closedThrough = all(s, 'scenario').filter(sc => sc.kind === 'forecast' && sc.status === 'working' && sc.actualsThrough).map(sc => sc.actualsThrough as string)
+ const closedThrough = all(s, 'scenario').filter(sc => sc.kind === 'forecast' && sc.status === 'working' && sc.actualsThrough && ledgerEntity(s,sc.id)===batch.entity).map(sc => sc.actualsThrough as string)
  return batch.periods.filter((period: string) => closedThrough.some(through => period <= through))
 }
 
@@ -191,7 +194,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
  if (op === 'preview') return { result: publicPreview(await previewActuals(c, b, provenance)) }
  if (op === 'commit') {
   const p = await previewActuals(c, b, provenance)
-  assertSourceGuardAcceptance(c, p.sha256, p.periods.map((r:Data)=>r.period))
+  assertSourceGuardAcceptance(c, p.sha256, p.periods.map((r:Data)=>r.period),provenance?Object.values(provenance)[0]?.entity:undefined)
   requireThat(p.accepted > 0, 'Nothing in this file can be accepted', 409)
   requireThat(!p.unmappedAccounts.length, `Map these accounts first: ${p.unmappedAccounts.join(', ')}`, 409)
   requireThat(!p.unmappedDepartments.length, `Map these departments first: ${p.unmappedDepartments.join(', ')}`, 409)
@@ -219,6 +222,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
  if (op === 'resume' || op === 'undo' || op === 'status') {
   requireFinance(c.x)
   const batch = get(c.s, 'batch', b.id, 'import')
+  if(batch.intacctSource)intacctAuthority(c)
   if(batch.xeroSource)xeroAuthority(c)
   if(batch.qboSource)qboAuthority(c)
   const job = await jobFor(c.db, batch.destination)
@@ -238,7 +242,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
    const done = undone.state === 'undone'
    const current = get(c2.s, 'batch', batch.id)
    put(c2.s, 'batch', batch.id, { ...current, status: done ? 'undone' : 'undoing', undoneBy: c2.x.actor.email, undoneAt: c2.now })
-   if (done) { finishQboMonth(c2, current, true); finishXeroMonth(c2, current, true) }
+   if (done) { finishIntacctMonth(c2,current,true); finishQboMonth(c2, current, true); finishXeroMonth(c2, current, true) }
    c2.activity.push({ action: done ? 'actuals-undone' : 'actuals-undo-partial', record: batch.id, detail: { file: batch.file, state: undone.state } })
    return { batch: get(c2.s, 'batch', batch.id), job: undone, undo: report }
   } }
@@ -251,7 +255,7 @@ function finishBatch(c: Context, id: string, job: Data) {
  const done = job.state === 'completed'
  put(c.s, 'batch', id, { ...batch, status: done ? 'accepted' : 'importing', jobState: job.state, ...(done ? { acceptedBy: c.x.actor.email, acceptedAt: c.now } : {}) })
  if (done) completeSourceGuards(c, batch)
- if (done) { finishQboMonth(c, batch); finishXeroMonth(c, batch) }
+ if (done) { finishIntacctMonth(c,batch); finishQboMonth(c, batch); finishXeroMonth(c, batch) }
  if (done) c.activity.push({ action: 'actuals-accepted', record: id, detail: { file: batch.file, rows: batch.accepted } })
  return { batch: get(c.s, 'batch', id), job: { id: job.id, state: job.state, checkpoint: job.checkpoint, total: job.total } }
 }

@@ -1,3 +1,4 @@
+import { ledgerEntity } from './ledger-scope'
 import { entityDimensions, boundEntity } from './entity-scope'
 import { requireModelerPromotion } from './agents/modeler-settings'
 import { requireDimensionAccess, validateDimensions } from './dimensions'
@@ -112,8 +113,8 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if (kind === 'schedule' && value.history) {
    requireDepartment(x, value.history.sourceDepartment)
    const months = range(workspace(s).planStart, scenario.horizon ?? workspace(s).horizon).filter(m => !scenario.actualsThrough || m > scenario.actualsThrough)
-   await assertHistorySources(c, months.flatMap(m => referenceMonths(value.history, m)))
-   historySchedule(value, await actualCells(c.db, s), months, workspace(s).currency)
+   await assertHistorySources(c, months.flatMap(m => referenceMonths(value.history, m)),scenario.id)
+   historySchedule(value, await actualCells(c.db,s,undefined,ledgerEntity(s,scenario.id)), months, workspace(s).currency)
   }
   if(kind==='position' && prior?.ats) value.ats=prior.ats
   const id = prior?.id ?? uid()
@@ -154,7 +155,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const scenario = scenarioAccess(s, x, b.scenario)
   requireEditable(s, x, scenario, null)
   const basis = choice(b.basis, ['estimate', 'imported'] as const, 'whether opening cash is an estimate or imported')
-  const imported = basis === 'imported' ? await cashBalance(c.db, s, workspace(s).planStart) : undefined
+  const imported = basis === 'imported' ? await cashBalance(c.db,s,workspace(s).planStart,ledgerEntity(s,scenario.id)) : undefined
   requireThat(!imported || imported.rows > 0, 'No accepted actuals rows are mapped to the cash balance before the first plan month', 409)
   const cash = {
    openingCents: imported ? imported.cents : cents(b.opening, 'Opening cash', { negative: true }),
@@ -181,9 +182,9 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    requireThat(from.status === 'working', 'Proposals change a working scenario; this one is frozen', 409)
   }
   const id = uid()
-  const kind = op === 'branch' ? 'scenario' : 'proposal'
+  const kind = op === 'branch' ? b.budget===true?'budget':'scenario' : 'proposal'
   put(s, 'scenario', id, {
-   name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
+   name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, ...(kind==='budget'?{alternativeBudget:true}:{}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
    ...(from.horizon ? { horizon: from.horizon } : {}), ...(from.currency ? { currency: from.currency } : {}),
    ...((b.privateSandbox === true || from.sandbox) ? { sandbox: { grants: {} } } : {}),
    parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash, ledgerAllocations: from.ledgerAllocations, balanceLedger: from.balanceLedger,
