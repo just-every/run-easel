@@ -1,3 +1,4 @@
+import { netsuiteSourceBlock } from '../netsuite-source'
 import { requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { requireCapability, requireFinance, requirePayDetail } from '../access'
@@ -47,6 +48,7 @@ export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null
+ const netsuite=netsuiteSourceBlock(c,forecast);if(netsuite)return netsuite
  const guards=all(c.s,'source-guard').filter(g=>(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
  return guards.length ? guards.map(guard=>`Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}`).join('; ') : null
 }

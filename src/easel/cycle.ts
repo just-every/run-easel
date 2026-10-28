@@ -1,3 +1,5 @@
+import { netsuiteSourceBlock } from './netsuite-source'
+import { actualCells } from './actuals-read'
 import { beginDepartmentReview, mayReturn, returnedReview, requireCompletedChains } from './approval-chains'
 import { boundEntity } from './entity-scope'
 import { ledgerContext, requireBalancedClose } from './ledger-context'
@@ -110,19 +112,23 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
  if (op === 'close-month') {
   requireCapability(x, 'approvals', s)
   const forecast = scenarioAccess(s, x, b.scenario)
-  requireThat(!boundEntity(s, forecast), 'Entity actuals require an entity-scoped ledger connection', 409)
+  const entity=boundEntity(s,forecast)
+  requireThat(!entity||all(s,'netsuite-month').some(m=>m.entity===entity.id&&m.status==='accepted'),'Entity actuals require an entity-scoped ledger connection',409)
   requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Months close on the working forecast', 409)
   const w = workspace(s)
   const next = forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : w.planStart
+  const sourceBlocked=netsuiteSourceBlock(c,forecast,next)
+  requireThat(!sourceBlocked,sourceBlocked??'',409)
   requireThat(b.month === next, `The next month to close is ${monthLabel(next)}`, 409)
   requireThat(next <= addMonths(w.planStart, (forecast.horizon ?? w.horizon) - 1), 'Every plan month is already closed', 409)
-  const covered = await c.db.prepare('SELECT COUNT(*) AS n FROM e_actuals WHERE period=?').bind(next).first<{ n: number }>()
+  const covered = await c.db.prepare("SELECT COUNT(*) AS n FROM e_actuals WHERE period=? AND (? IS NULL OR json_extract(value,'$.netsuiteEntity')=?)").bind(next,entity?.id??null,entity?.id??null).first<{ n: number }>()
   requireThat(Number(covered?.n) > 0, `No accepted actuals cover ${monthLabel(next)} yet`, 409)
   const pending = all(s, 'batch').filter(x => x.status === 'importing' || x.status === 'undoing')
   requireThat(!pending.length, 'Finish or undo the import in progress first', 409)
-  const ledger = await ledgerContext(c, next, [], forecast.balanceLedger === true)
+  const ledger = await ledgerContext(c, next, [], forecast.balanceLedger === true,entity?.id)
   requireBalancedClose(ledger, next)
-  const priorCalc = await workingCalculation(c, forecast.id, next)
+  await actualCells(c.db,s,next,entity?.id)
+  const priorCalc = await workingCalculation(c, forecast.id)
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'forecast', scenario: forecast.id, label: `Forecast before closing ${monthLabel(next)}`, body: { scenario: forecast, workspace: model(s, forecast.id).workspace, month: next, calculation: priorCalc, inputs: Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, forecast.id, k)])), keptBy: x.actor.email, at: c.now } })
   put(s, 'scenario', forecast.id, { ...forecast, ...(ledger ? { balanceLedger: true } : {}), ...(forecast.rollingWindow ? { horizon: monthsBetween(w.planStart, next) + 1 + forecast.rollingWindow } : {}), actualsThrough: next, priorForecasts: [...(forecast.priorForecasts ?? []), { month: next, snapshot: snapshotId }] })

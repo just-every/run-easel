@@ -1,3 +1,4 @@
+import { boundEntity } from './entity-scope'
 import { sourceGuardBlock } from './agents/source-guard'
 import { get, requireThat } from './types'
 import { activeCalculationJob } from './calculation-jobs'
@@ -14,17 +15,19 @@ import { model } from './model'
 /** Every working calculation uses the same historical dependency checks.
  * Frozen models continue to read their immutable captured arithmetic. */
 export async function workingCalculation(c: Context, scenario: string, through?: string) {
- const blocked = sourceGuardBlock(c, get(c.s, 'scenario', scenario))
+ const source=get(c.s,'scenario',scenario)
+ const blocked=sourceGuardBlock(c,through?{...source,actualsThrough:through}:source)
  requireThat(!blocked, blocked ?? '', 409)
  const pending = await activeCalculationJob(c, scenario, c.calculationJob)
  if (pending) throw new CalculationPending([scenario], pending)
  if (!c.calculationJob && unfinishedWorkbook(c.s, scenario)) throw new CalculationPending([scenario])
  const m = model(c.s, scenario)
+ if(through!==undefined)m.scenario={...m.scenario,actualsThrough:through}
  if (m.inputs.formula?.length) return calculateNativeContext(c,scenario,through)
  const consumed = historySourceMonths(m)
- await assertHistorySources(c, consumed)
+ await assertHistorySources(c, consumed,boundEntity(c.s,m.scenario)?.id)
  const close = through ?? m.scenario.actualsThrough ?? undefined
- const actuals = close || consumed.length ? await actualCells(c.db, c.s, close) : []
- const ledger = close ? await ledgerContext(c, close, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true) : undefined
+ const actuals = close || consumed.length ? await actualCells(c.db, c.s, close,boundEntity(c.s,m.scenario)?.id) : []
+ const ledger = close ? await ledgerContext(c, close, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true,boundEntity(c.s,m.scenario)?.id) : undefined
  return calculate(m, actuals, ledger)
 }

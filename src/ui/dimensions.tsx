@@ -27,7 +27,7 @@ export function Dimensions({ state, refresh }: Pick<Shared, 'state' | 'refresh'>
   <h3>Source dimension rules</h3>
   <Table caption="Source dimension rules" heads={['Source', 'Match', 'Dimension member', '']}>{(state.dimensionMaps ?? []).map((r: D) => <tr key={r.id}><td>{r.sourceKind}: {r.source}</td><td>{r.match}</td><td>{state.dimensionMembers.find((m: D) => m.id === r.member)?.name}</td><td><Action label="Delete" run={async () => { await command('dimension-map-delete', { id: r.id }); await refresh() }} /></td></tr>)}</Table>
   {dimension && <Form key={`map-${dimension}`} submit="Save source dimension rule" onSubmit={async (b, form) => { await command('dimension-map', { ...b, dimension }); form.reset(); await refresh() }}>
-   <Field label="Source dimension kind" name="sourceKind" options={['department', 'class', 'tracking-option'].map(value => ({ value, label: value }))} />
+   <Field label="Source dimension kind" name="sourceKind" options={['department', 'class', 'tracking-option', 'location', 'subsidiary'].map(value => ({ value, label: value }))} />
    <Field label="Source member value" name="source" /><Field label="Source member match" name="match" defaultValue="exact" options={[{ value: 'exact', label: 'Exact' }, { value: 'prefix', label: 'Prefix' }]} /><Field label="Mapped member" name="member" options={options(members)} />
   </Form>}
  </section>

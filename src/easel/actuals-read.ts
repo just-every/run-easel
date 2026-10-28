@@ -1,3 +1,4 @@
+import { netsuiteTransactionUrl } from './netsuite-links'
 import { resolveDimensions } from './dimension-mapping'
 import { xeroTransactionUrl } from './xero-links'
 import { qboTransactionUrl } from './qbo-links'
@@ -10,22 +11,23 @@ import { lines, workspace } from './model'
 import { monthLabel } from './months'
 import { find, requireThat, type Data, type State } from './types'
 
-async function grouped(db: D1Database) {
- const { results } = await db.prepare("SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, COALESCE(json_extract(value,'$.sourceDimensions'),'{}') AS sourceDimensions, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),''), COALESCE(json_extract(value,'$.sourceDimensions'),'{}')").all<any>()
- return results.map(r => ({ ...r, amount: Number(r.amount), rows: Number(r.rows), batches: String(r.batches).split(',') }))
+async function grouped(db: D1Database, entity?:string) {
+ const { results } = await db.prepare("SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, COALESCE(json_extract(value,'$.sourceDimensions'),'{}') AS sourceDimensions, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches, json_extract(value,'$.netsuiteEntity') AS sourceEntity FROM e_actuals GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),''), COALESCE(json_extract(value,'$.sourceDimensions'),'{}'), json_extract(value,'$.netsuiteEntity')").all<any>()
+ return results.filter(r=>!entity||r.sourceEntity===entity).map(r => ({ ...r, amount: Number(r.amount), rows: Number(r.rows), batches: String(r.batches).split(',') }))
 }
 const resolved = (s: State, g: Data) => {
  const mapping = resolveAccount(s, g.account, g.accountType)
  const department = find(s, 'department-map', g.department)
- return { ...mapping, department: department?.department ?? '', blocked: !mapping.target || !department || (!!department.department && !find(s, 'department', department.department)) }
+ const dimensions=(g.sourceEntity||g.netsuiteEntity)?resolveDimensions(s,typeof g.sourceDimensions==='string'?JSON.parse(g.sourceDimensions):g.sourceDimensions):null
+ return { ...mapping, department: department?.department ?? '', blocked: !!dimensions?.unresolved.length || !mapping.target || !department || (!!department.department && !find(s, 'department', department.department)) }
 }
 
 /** Only consumed periods must be complete; a later unresolved month does not
  * prevent an earlier review. Counts detect missing net-zero account groups. */
-export async function actualCells(db: D1Database, s: State, through?: string): Promise<ActualCell[]> {
+export async function actualCells(db: D1Database, s: State, through?: string, entity?:string): Promise<ActualCell[]> {
  const lineType = new Map(lines(s).map(l => [l.id, l.type]))
  const cells = new Map<string, ActualCell>()
- for (const g of await grouped(db)) {
+ for (const g of await grouped(db, entity)) {
   const r = resolved(s, g)
   if (through && g.period >= workspace(s).planStart && g.period <= through) requireThat(!r.blocked, `Actuals reconciliation blocked for ${g.period}; map account ${g.account} and department ${g.department}`, 409)
   if (r.blocked || !r.target || !lineType.has(r.target)) continue
@@ -42,10 +44,10 @@ export async function actualCells(db: D1Database, s: State, through?: string): P
  return [...cells.values()]
 }
 
-export async function reconciliation(db: D1Database, s: State) {
+export async function reconciliation(db: D1Database, s: State, entity?:string) {
  const lineType = new Map(lines(s).map(l => [l.id, l.type]))
  const months = new Map<string, Data>(), unmapped = new Map<string, Data>()
- const groups = await grouped(db)
+ const groups = await grouped(db, entity)
  for (const g of groups) {
   const m = months.get(g.period) ?? { period: g.period, label: monthLabel(g.period), rows: 0, imported: 0, mapped: 0, excluded: 0, cash: 0, unmapped: 0, balanceSheet: 0, revenue: 0, costs: 0, blocked: false, unmappedAccounts: [] as string[], unmappedDepartments: [] as string[] }
   m.rows += g.rows; m.imported += g.amount
@@ -80,16 +82,19 @@ export async function cashBalance(db: D1Database, s: State, before: string) {
  return { cents, rows, batches: [...batches] }
 }
 
-export async function rowsFor(db: D1Database, s: State, month: string, line: string, department: string) {
+export async function rowsFor(db: D1Database, s: State, month: string, line: string, department: string, entity?:string) {
  const { results } = await db.prepare('SELECT id, value, amount FROM e_actuals WHERE period=? ORDER BY ABS(amount) DESC, id').bind(month).all<any>()
  const type = lines(s).find(l => l.id === line)?.type
  return results.flatMap(r => {
-  const v = JSON.parse(r.value), mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })
+  const v = JSON.parse(r.value)
+  if(entity&&v.netsuiteEntity!==entity)return []
+  const mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })
   if (mapping.blocked || mapping.target !== line || mapping.department !== department) return []
   let providerUrl: string | undefined
   if (v.pantryOrigin && /^[A-Za-z0-9_-]{1,120}$/.test(v.pantryEntry)) {
    try { const origin = new URL(v.pantryOrigin); if (!origin.username && !origin.password && origin.pathname === '/' && !origin.search && !origin.hash && (origin.protocol === 'https:' || origin.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(origin.hostname))) providerUrl = new URL('/app/search?' + new URLSearchParams({type:'journal',record:v.pantryEntry}), origin).href } catch {}
   }
+  if(v.netsuiteRealm)providerUrl=netsuiteTransactionUrl(v.netsuiteRealm,v.netsuiteTransactionType,v.netsuiteTransactionId)??undefined
   if(v.xeroRealm)providerUrl=xeroTransactionUrl(v.xeroEnvironment,v.xeroTransactionType,v.xeroTransactionId)??undefined
   if (v.qboRealm && /^[A-Za-z0-9_-]{1,120}$/.test(v.qboTransactionId)) {
    providerUrl=qboTransactionUrl(v.qboEnvironment,v.qboTransactionType,v.qboTransactionId)??undefined

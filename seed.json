@@ -349,6 +349,12 @@
       "clauses": [
         "CONNECT-001"
       ]
+    },
+    {
+      "id": "netsuite-actuals",
+      "clauses": [
+        "CONNECT-003"
+      ]
     }
   ],
   "nonGoals": [

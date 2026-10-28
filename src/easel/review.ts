@@ -1,3 +1,5 @@
+import { boundEntity } from './entity-scope'
+import { scenarioAccess } from './scenario-access'
 import { gaugeFreshness } from './gauge-freshness'
 import { workingCalculation } from './calculation'
 // Monthly review: actual against the approved budget and the forecast kept
@@ -36,6 +38,7 @@ export async function variance(c: Context, month: string) {
  const { s } = c
  const w = workspace(s)
  const forecast = forecastFor(s, month)
+ scenarioAccess(s,c.x,forecast.id)
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorBody = prior ? (await snapshot(c.db, prior.snapshot)).body : null
@@ -60,7 +63,7 @@ export async function variance(c: Context, month: string) {
   const revenue = l?.type === 'revenue'
   const payroll = l?.payroll === true || (planned.get(k)?.sources ?? []).some(source => source.kind === 'position')
   const detail = seesDepartmentDetail(c.x, department) && (!payroll || seesPayDetail(c.x, department))
-  const citations = detail ? (await rowsFor(c.db, s, month, line, department)) : []
+  const citations = detail ? (await rowsFor(c.db, s, month, line, department,boundEntity(s,forecast)?.id)) : []
   const planSources = detail ? (planned.get(k)?.sources ?? []).map(x => x.trace) : []
   // A budgeted item in the neighbouring month that matches the difference
   // suggests timing. It stays a hypothesis until the department confirms it.

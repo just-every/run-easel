@@ -3,7 +3,7 @@ import type { Context } from './context'
 import { validateDimensions, type DimensionTags } from './dimensions'
 import { all, get, put, remove, requireThat, text, uid, type Data, type State } from './types'
 
-export const SOURCE_DIMENSIONS = ['department', 'class', 'tracking-option'] as const
+export const SOURCE_DIMENSIONS = ['department', 'class', 'tracking-option', 'location', 'subsidiary'] as const
 /** Rules resolve live, exactly like account mappings. Conflicting rules never pick a winner. */
 export function resolveDimensions(s: State, source: Record<string, string> = {}) {
  const dimensions: DimensionTags = {}, unresolved: Data[] = []

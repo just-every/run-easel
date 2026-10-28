@@ -1,0 +1,14 @@
+{
+  "description": "Synthetic recorded NetSuite SuiteQL response shapes, primary book, two subsidiaries. Amounts are decimal debit-positive strings; no live account data.",
+  "accounts": [
+    {"id":"100","code":"1000","name":"Operating bank","type":"Bank"},
+    {"id":"400","code":"4000","name":"Subscription revenue","type":"Income"},
+    {"id":"300","code":"3000","name":"Equity","type":"Equity"}
+  ],
+  "subsidiaries":[{"id":"1","name":"US parent","currency":"USD"},{"id":"2","name":"Services subsidiary","currency":"USD"}],
+  "departments":[{"id":"10","name":"Subscriptions"}],
+  "classes":[{"id":"20","name":"Enterprise"}],
+  "locations":[{"id":"30","name":"East"}],
+  "books":[{"id":"1"}],
+  "page":{"links":[],"count":1,"hasMore":false,"offset":0,"totalResults":1,"items":[{"transaction_id":"1001","transaction_type":"Journal","line_id":"1","account_id":"100","source_date":"2024-01-15","department_id":"10","class_id":"20","location_id":"30","amount":"100.00"}]}
+}

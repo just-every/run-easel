@@ -712,3 +712,25 @@ The native history form defaults to 24 closed months and allows 12 to 36. Each m
 QuickBooks reports use accrual accounting and their declared currency. Source fiscal-year transfers into retained earnings appear separately in trial reconciliation; they do not become posted revenue. Zero-value observations without a posting account are visible exclusions requiring confirmation. Unknown transaction destinations block acceptance. Current-month reports stop at the observed date. The accounting OAuth grant includes provider write permissions; Easel issues only the allowlisted accounting reads, plus OAuth renewal and explicit revocation.
 
 Stripe run rates use recurring invoice periods and actual subscription end dates. Customer-level movements and cohorts aggregate subscriptions; retention measures the opening active customer base. Invoice service-period allocation, deferred balance, refunds and tax remain separate from ledger revenue. Finance explains any residual difference before acceptance. One driver receives the account's complete monthly totals in each scenario; later customer or seat projections start from those accepted observations. Dashboards and aggregate formula Excel use the same imported ARR and current audience checks. Frozen plans retain their captured observations.
+
+
+### NetSuite SuiteQL actuals (`CONNECT-003`)
+
+A current company-wide native finance session administers
+`GET /api/easel/connections/netsuite` and
+`POST /api/easel/connections/netsuite/:op`. Actions are `connect`, `check`, `map`
+and `disconnect`. Connect takes `realmId`, `roleId`, `consumerKey`,
+`consumerSecret`, `tokenId`, `tokenSecret`, `consent: true` and
+`readOnlyRole: true`. Map takes `subsidiaryId` and an existing `entity` ID.
+Secrets are never returned. Disconnect deletes local credentials and reports the
+required manual token revocation in NetSuite Access Tokens.
+
+`POST /api/easel/import/netsuite/:op` accepts `preview`, `observe` or `commit`
+with `month`, `subsidiaryId` and explicit `includeOpening`. Commit additionally
+requires the preview's `sourceFingerprint` and, when rows changed, `fingerprint`.
+Preview never writes. Observe explicitly retains source changes and their
+working-conclusion hold/impact inventory without importing. Each subsidiary's
+history is accepted independently and in order; the first month imports the
+source opening once. Continue, inspect and undo through the ordinary
+`import/actuals/{resume,status,undo}` doors, with the same native finance boundary.
+See [NetSuite actuals](docs/netsuite.md) for role setup, reconciliation and limits.
