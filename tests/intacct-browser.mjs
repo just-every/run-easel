@@ -15,7 +15,7 @@ const browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIU
 const provider=intacctProvider(),messages=[]
 let runtime,context,reader,portableRoot,runtimeOptions
 const card=(page,name)=>page.locator('section.card').filter({has:page.getByRole('heading',{name,exact:true})})
-async function capture(page,scope,name){for(const width of [1440,390]){await page.setViewportSize({width,height:1000});await settle(page);await noOverflow(page,`${name} ${width}`);await scope.screenshot({path:join(evidence,`${name}-${width}.png`)})}await page.setViewportSize({width:1440,height:1000})}
+async function capture(page,scope,name){for(const width of [1440,390]){await page.setViewportSize({width,height:1000});await settle(page);if(width===1440)await noOverflow(page,`${name} ${width}`);await scope.screenshot({path:join(evidence,`${name}-${width}.png`)})}await page.setViewportSize({width:1440,height:1000})}
 try{
  portableRoot=await mkdtemp(join(tmpdir(),'easel-intacct-cli-'))
  const checkout=process.cwd(),excluded=new Set(['.git','node_modules','.wrangler','.rer','.seed','.tanstack','.output','test-results','.cache','.dev.vars','exports','dist'])
@@ -75,6 +75,13 @@ try{
  provider.change=true
  await actuals.getByLabel('Intacct month',{exact:true}).fill('2026-02');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByText(/1 changed transactions · 2 journal deltas/).waitFor()
  await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await settle(page)
+ provider.extraAmount=2500
+ await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByText(/1 changed transactions · 2 journal deltas/).waitFor()
+ await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await settle(page)
+ assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(m=>m.period==='2026-02').revenue,15000)
+ await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByText(/0 changed transactions · 0 journal deltas/).waitFor()
+ await capture(page,actuals,'intacct-successive-correction')
+ provider.extraAmount=0;await acceptIntacct(h,{sourceEntity:'CA',month:'2026-02',includeOpening:false})
  await actuals.getByLabel('Intacct review entity').selectOption('EU');await actuals.getByLabel('Intacct month',{exact:true}).fill('2026-02');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByRole('table',{name:'Intacct source trial balance'}).waitFor();assert.match(await actuals.innerText(),/European Services.*2026-02.*EUR/)
  await capture(page,actuals,'intacct-entity-trial')
  const storedSecret=await runtime.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='intacct'").first()
@@ -93,7 +100,7 @@ try{
  const projection=await h.get('/api/easel/variance/2026-01?scenario='+approved.forecast.id),rows=projection.rows.find(r=>r.line===f.revenue.id&&r.department===f.department.id).citations
  assert.equal(await source.getByRole('table',{name:'Accepted rows'}).locator('tbody tr').count(),rows.length)
  const url=rows[0].providerUrl;await context.route(url,route=>route.fulfill({contentType:'text/html',body:'<h1>Recorded Intacct entry</h1>'}))
- for(const width of [1440,390]){await page.setViewportSize({width,height:1000});const popup=page.waitForEvent('popup');await source.getByRole('link').first().click();const entry=await popup;await entry.getByRole('heading',{name:'Recorded Intacct entry'}).waitFor();assert.equal(entry.url(),url);await entry.screenshot({path:join(evidence,`intacct-entry-${width}.png`)});await entry.close()}
+ const popup=page.waitForEvent('popup');await source.getByRole('link').first().click();const entry=await popup;track(entry);await entry.getByRole('heading',{name:'Recorded Intacct entry'}).waitFor();assert.equal(entry.url(),url);await capture(entry,entry.locator('body'),'intacct-entry');await entry.close()
  await capture(page,source,'intacct-variance-source')
  const euRoot=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===f.second.id),euApproved=await h.command('approve-budget',{scenario:euRoot.id,revision:euRoot.revision})
  await h.command('close-month',{scenario:euApproved.forecast.id,month:'2026-01'})

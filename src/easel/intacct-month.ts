@@ -1,6 +1,12 @@
 import { intacctAuthority } from './intacct-connection'
 import type { Context } from './context'
-import { find,put,type Data } from './types'
+import { all,find,put,requireThat,type Data } from './types'
+
+/** A reviewed continuation depends on every earlier month in this entity. */
+export function requireIntacctJournalIdle(c:Context,entity:string,except?:string){
+ requireThat(!all(c.s,'batch').some(r=>r.id!==except&&r.intacctSource?.entity===entity&&['importing','undoing'].includes(r.status)),"Finish or undo this entity's active Intacct journal before reviewing or changing another month",409)
+}
+
 /** Receipts are published only after the native journal completes. Undo restores the prior receipt. */
 export function finishIntacctMonth(c:Context,batch:Data,undone=false){
  const source=batch.intacctSource;if(!source)return

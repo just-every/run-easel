@@ -125,7 +125,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const pending = all(s, 'batch').filter(x => (x.status === 'importing' || x.status === 'undoing')&&x.entity===entity)
   requireThat(!pending.length, 'Finish or undo the import in progress first', 409)
   const ledger = await ledgerContext(c, next, [], forecast.balanceLedger === true,entity)
-  requireBalancedClose(ledger, next)
+  await requireBalancedClose(c,ledger,next,entity)
   const priorCalc = await workingCalculation(c, forecast.id, next)
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'forecast', scenario: forecast.id, label: `Forecast before closing ${monthLabel(next)}`, body: { scenario: forecast, workspace: model(s, forecast.id).workspace, month: next, calculation: priorCalc, inputs: Object.fromEntries(INPUT_KINDS.map(k => [k, scenarioInputs(s, forecast.id, k)])), keptBy: x.actor.email, at: c.now } })

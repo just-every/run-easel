@@ -53,7 +53,7 @@ export function intacctProvider(){
      object=body.object
      assert.equal(body.pagesize,'1000');assert.equal(body.returnFormat,'xml')
      if(object==='GLACCOUNT')rows=chart()
-     else if(object==='LINE_OF_BUSINESS')rows=[{id:'B2B',name:'Business services'}]
+     else if(object==='LINE_OF_BUSINESS')rows=[{id:'B2B',name:'Business services'},{id:'B2C',name:'Consumer services'},{id:'Public',name:'Public services'}]
      else if(object==='GLDETAIL'){
       assert.match(body.query,/BOOKID = 'ACCRUAL' AND STATE = 'Posted'/)
       const dates=[...body.query.matchAll(/'(\d{2})\/(\d{2})\/(\d{4})'/g)].map(m=>`${m[3]}-${m[1]}-${m[2]}`);assert.equal(dates.length,2)

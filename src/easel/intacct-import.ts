@@ -6,6 +6,7 @@ import type { Context, KitStep } from './context'
 import { intacctAuthority, intacctKey } from './intacct-connection'
 import { readIntacctLedger } from './intacct-provider'
 import { reconcileIntacctLedger } from './intacct-trial'
+import { requireIntacctJournalIdle } from './intacct-month'
 import { acceptedLedgerFilter } from './ledger-scope'
 
 import { all, find, put, requireThat, type Data } from './types'
@@ -23,7 +24,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const key = await intacctKey(c, env)
  const binding=all(c.s,'intacct-entity-map').find(r=>r.company===key.companyId&&r.sourceEntity===b.sourceEntity&&r.book==='ACCRUAL')
  requireThat(binding,'Bind the Intacct legal entity to its Easel source plan first',409)
- requireThat(!all(c.s,'batch').some(r=>r.intacctSource?.entity===binding.entity&&r.intacctSource?.month===b.month&&['importing','undoing'].includes(r.status)),'Inspect and continue or undo the active Intacct month journal before pulling it again',409)
+ requireIntacctJournalIdle(c,binding.entity)
  const source = await readIntacctLedger(key, binding.sourceEntity, b.month, c.now.slice(0, 10))
  requireThat(source.currency===binding.currency,'The bound entity base currency changed',409)
  requireThat(source.to <= c.now.slice(0, 10), 'A Intacct import cannot include future dates')

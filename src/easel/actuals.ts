@@ -1,5 +1,5 @@
 import { intacctAuthority } from './intacct-connection'
-import { finishIntacctMonth } from './intacct-month'
+import { finishIntacctMonth,requireIntacctJournalIdle } from './intacct-month'
 import { ledgerEntity } from './ledger-scope'
 import { assertSourceGuardAcceptance, completeSourceGuards } from './agents/source-guard'
 import { finishXeroMonth } from './xero-month'
@@ -233,7 +233,10 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
    requireThat(batch.status === 'importing', 'This import is not waiting to continue', 409)
    return { result: {}, kit: () => resumeD1Import(job.id, bound), record: (c2, applied) => finishBatch(c2, batch.id, applied) }
   }
-  if(batch.intacctSource)requireThat(find(c.s,'intacct-month',batch.intacctSource.id)?.batch===batch.id,'Undo the latest Intacct correction first; an earlier batch still supports accepted history',409)
+  if(batch.intacctSource){
+   requireIntacctJournalIdle(c,batch.intacctSource.entity,batch.id)
+   requireThat(find(c.s,'intacct-month',batch.intacctSource.id)?.batch===batch.id,'Undo the latest Intacct correction first; an earlier batch still supports accepted history',409)
+  }
   requireThat(batch.status === 'accepted' || batch.status === 'undoing', 'Only an accepted import can be undone', 409)
   const closedPeriods = closedImportPeriods(c.s, batch)
   requireThat(!closedPeriods.length, `${closedPeriods.map(monthLabel).join(', ')} ${closedPeriods.length === 1 ? 'is' : 'are'} closed with these actuals; import a correcting file instead of undoing`, 409)
