@@ -1,4 +1,4 @@
-import { boundEntity } from './entity-scope'
+import { ledgerEntity } from './ledger-scope'
 import { gaugeFreshnessSheet } from './gauge-freshness-workbook'
 import { dimensionActuals } from './dimension-actuals'
 import { dimensionalCells } from './dimensions-report'
@@ -71,8 +71,8 @@ export async function savedReport(c: Context, id: string) {
  const ttm = range(addMonths(through, -11), 12)
  groups.push({ label: 'YTD', months: ytd }, { label: 'TTM', months: ttm })
  const requested = [...new Set(groups.flatMap(g => [...g.months, ...g.months.map(m => addMonths(m, -12))]))]
- const history = await historyOverlay(c, requested,boundEntity(c.s,get(c.s,'scenario',d.scenario))?.id)
- const dimensionalActuals = await dimensionActuals(c.db, c.s,boundEntity(c.s,get(c.s,'scenario',d.scenario))?.id)
+ const history = await historyOverlay(c,requested,d.scenario)
+ const dimensionalActuals = await dimensionActuals(c.db,c.s,ledgerEntity(c.s,d.scenario))
  const actuals = { ...history, cells: dimensionalCells(dimensionalActuals.cells).filter(cell => !scopedReader(c.x) || seesDepartmentDetail(c.x, cell.department)) }
  const unavailable = new Set([...actuals.blockedMonths, ...actuals.missingMonths])
  const selected = new Set(definition.lines as string[])

@@ -1,3 +1,4 @@
+import { ledgerEntity } from '../ledger-scope'
 import { requireAgent } from './governance'
 // AGENT-004: the company's own forecast errors. Every kept forecast is compared
 // with what closed afterwards; the error is split into timing (it reversed
@@ -29,7 +30,7 @@ export async function forecastLearning(c: Context, scenario: unknown) {
  requireThat(forecast.kind === 'forecast' && forecast.status === 'working' && forecast.actualsThrough, 'Learning reads a working forecast with at least one closed month', 409)
  const m = model(c.s, forecast.id), payOK = c.x.payDetail === true
  const current = await workingCalculation(c, forecast.id)
- const actuals = await actualCells(c.db, c.s)
+ const actuals = await actualCells(c.db,c.s,undefined,ledgerEntity(c.s,forecast.id))
  const kept = await keptForecasts(c, forecast)
  const lineById = new Map(m.lines.map(l => [l.id, l])), deptName = new Map(m.departments.map(d => [d.id, d.name]))
  const firstOpen = addMonths(forecast.actualsThrough, 1)

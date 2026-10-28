@@ -1,46 +1,39 @@
-import { assertSourceGuardAcceptance,completeSourceGuards,sourceGuardCommands } from './agents/source-guard'
+import { stageProviderSource,assertSourceGuardAcceptance,completeSourceGuards } from './agents/source-guard'
 import type { Bindings } from '../auth.server'
 import { canonicalJson, sha256 } from '../modules/import-kit/src/d1/index'
 import { actualsCommand } from './actuals'
 import type { Context, KitStep } from './context'
 import { intacctAuthority, intacctKey } from './intacct-connection'
-import { readIntacctLedger, type IntacctLedgerRow } from './intacct-provider'
-import { intacctUrl } from './intacct-provider'
-import { boundEntity } from './entity-scope'
-import { sourceImpacts } from './agents/source-guard-detection'
+import { readIntacctLedger } from './intacct-provider'
+import { reconcileIntacctLedger } from './intacct-trial'
+import { acceptedLedgerFilter } from './ledger-scope'
+
 import { all, find, put, requireThat, type Data } from './types'
 
 const csv = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`
 const decimal = (n: number) => `${n < 0 ? '-' : ''}${Math.floor(Math.abs(n) / 100)}.${String(Math.abs(n) % 100).padStart(2, '0')}`
 const safe = (n: number) => { requireThat(Number.isSafeInteger(n), 'Intacct actuals exceed exact cents', 409); return n }
 
-type SourceRow = IntacctLedgerRow & { opening?: boolean }
+type SourceRow = Data & { opening?: boolean }
 
 /** Finance reviews the source and mapping fingerprint before the journal accepts a delta. */
 export async function intacctImport(c: Context, env: Bindings, op: string, b: Data): Promise<KitStep | undefined> {
  intacctAuthority(c)
- requireThat(op === 'preview' || op === 'commit' || op==='stage', 'Use the ordinary actuals journal to resume or undo Intacct imports', 404)
+ requireThat(op === 'preview' || op === 'stage' || op === 'commit', 'Use the ordinary actuals journal to resume or undo Intacct imports', 404)
  const key = await intacctKey(c, env)
- const binding=find(c.s,'intacct-entity',key.companyId+':'+b.sourceEntity)
- requireThat(binding,'Map the Intacct entity to its source plan first',409)
- const entity=find(c.s,'entity',binding.entity)!
- const realmId=key.companyId+':'+binding.source
- const environment='web-services'
- const source = await readIntacctLedger(key,binding.source,b.month,c.now.slice(0,10))
- const unsupportedTransactions=[...new Map(source.rows.filter(row=>!intacctUrl(row.providerUrl)).map(row=>[JSON.stringify([row.transactionId,row.transactionType]),{transactionId:row.transactionId,type:row.transactionType}])).values()]
- if(op==='commit')requireThat(!unsupportedTransactions.length,'This source transaction type has no supported Intacct destination; no rows were accepted',409)
- if(op==='commit')requireThat(source.trialBalance.balanced,'Intacct ledger and source trial balance differ; review the displayed account differences before acceptance',409)
- if(op==='commit'&&source.nonPostingRows.length)requireThat(b.acknowledgeNonPosting===source.nonPostingRows.length,'Confirm the reviewed nonposting observations stay out of ledger amounts',409)
+ const binding=all(c.s,'intacct-entity-map').find(r=>r.company===key.companyId&&r.sourceEntity===b.sourceEntity&&r.book==='ACCRUAL')
+ requireThat(binding,'Bind the Intacct legal entity to its Easel source plan first',409)
+ requireThat(!all(c.s,'batch').some(r=>r.intacctSource?.entity===binding.entity&&r.intacctSource?.month===b.month&&['importing','undoing'].includes(r.status)),'Inspect and continue or undo the active Intacct month journal before pulling it again',409)
+ const source = await readIntacctLedger(key, binding.sourceEntity, b.month, c.now.slice(0, 10))
+ requireThat(source.currency===binding.currency,'The bound entity base currency changed',409)
  requireThat(source.to <= c.now.slice(0, 10), 'A Intacct import cannot include future dates')
- requireThat(entity.currency === source.currency, 'Intacct and Easel currencies differ; no exchange rate is inferred', 409)
+ requireThat(all(c.s,'entity').some(e=>e.id===binding.entity&&e.currency===source.currency),'The bound entity currency changed',409)
  requireThat(typeof b.includeOpening === 'boolean', 'Choose whether this is the first Intacct month')
- const old = await c.db.prepare("SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctRealm')=? AND json_extract(value,'$.intacctEnvironment')=? AND json_extract(value,'$.intacctMonth')=?")
-  .bind(realmId, environment, source.month).all<{ value: string }>()
- const existing = await c.db.prepare("SELECT MIN(json_extract(value,'$.intacctMonth')) AS firstMonth FROM e_actuals WHERE json_extract(value,'$.intacctRealm')=? AND json_extract(value,'$.intacctEnvironment')=?")
-  .bind(realmId, environment).first<{ firstMonth: string | null }>()
- const history=all(c.s,'intacct-month').filter(row=>row.realmId===realmId&&row.environment===environment)
+ const old = await c.db.prepare("SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctCompany')=? AND json_extract(value,'$.intacctBook')='ACCRUAL' AND json_extract(value,'$.entity')=? AND json_extract(value,'$.intacctMonth')=?").bind(key.companyId,binding.entity,source.month).all<{value:string}>()
+ const priorFingerprint=sha256(canonicalJson(old.results.map(row=>canonicalJson(JSON.parse(row.value))).sort()))
+ const history=all(c.s,'intacct-month').filter(row=>row.company===key.companyId&&row.entity===binding.entity&&row.book==='ACCRUAL')
  const months = history.filter(row=>row.status==='accepted').map(row=>row.month as string)
- const firstMonth = [existing?.firstMonth, ...history.map(row=>row.month)].filter((value): value is string => typeof value === 'string').sort()[0] ?? null
+ const firstMonth = history.map(row=>row.month).filter((value): value is string => typeof value === 'string').sort()[0] ?? null
  if (!firstMonth) requireThat(b.includeOpening, 'Include the source opening trial balance with the first Intacct month', 409)
  else {
   requireThat(source.month >= firstMonth, 'An earlier Intacct month would change the reviewed opening boundary', 409)
@@ -51,110 +44,91 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
   }
  }
 
+ const moved:Data[]=[]
+ for(let start=0;start<source.rows.length;start+=80){
+  const chunk=source.rows.slice(start,start+80)
+  const existing=await c.db.prepare(`SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctCompany')=? AND json_extract(value,'$.entity')=? AND json_extract(value,'$.intacctLine') IN (${chunk.map(()=>'?').join(',')})`).bind(key.companyId,binding.entity,...chunk.map(r=>r.id)).all<{value:string}>()
+  for(const item of existing.results){const prior=JSON.parse(item.value),current=chunk.find(r=>r.id===prior.intacctLine)!;if(prior.intacctMonth!==source.month)moved.push({record:current.id,before:{month:prior.intacctMonth,date:prior.date,account:prior.account},after:{month:source.month,date:current.date,account:current.account}})}
+ }
+ requireThat(!moved.length,`Intacct moved accepted records across periods; review both periods in a correcting import before acceptance: ${JSON.stringify(moved.map(r=>({record:r.record,before:r.before.month,after:r.after.month})))}`,409)
  const desired: SourceRow[] = [...source.rows]
  if (b.includeOpening) for (const account of source.chart) {
   const amount = source.trialBalance.opening[account.id] ?? 0
   if (!amount) continue
-  desired.push({ id: `opening:${account.id}:${source.from}`, transactionId: '', transactionType: 'Opening', date: new Date(Date.parse(`${source.from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10), accountId: account.id, account: account.code, accountName: account.name, accountType: account.type, amount, class_name: '', location_name: '', customer_name: '', vendor_name: '', description: 'Source trial balance opening', reference: '', sourceDimensions:{}, opening: true })
+  desired.push({ id: `opening:${account.id}:${source.from}`, transactionId: '',  date: new Date(Date.parse(`${source.from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10), accountId: account.id, account: account.code, accountName: account.name, accountType: account.type,accountCategory:account.category,normalBalance:account.normalBalance, amount, department:'', sourceDimensions:{}, dimensionLabels:{},entryUrl:null, description: 'Source trial balance opening', reference: '', opening: true })
  }
- const identity=(row:Data)=>canonicalJson([row.account,row.accountType,row.date,row.department,row.sourceDimensions])
- const accepted=new Map<string,Map<string,Data>>()
- for(const item of old.results) {
+ const prior = new Map<string,Data>()
+ for(const item of old.results){
   const row:Data=JSON.parse(item.value)
   requireThat(typeof row.intacctLine==='string'&&Number.isSafeInteger(row.amount),'Accepted Intacct provenance is incomplete',409)
-  const groups=accepted.get(row.intacctLine)??new Map<string,Data>(),key=identity(row),before=groups.get(key)
-  groups.set(key,{...row,amount:safe((before?.amount??0)+row.amount)})
-  accepted.set(row.intacctLine,groups)
+  const before=prior.get(row.intacctLine)
+  if(before)requireThat(before.account===row.account&&before.date===row.date&&before.department===row.department&&canonicalJson(before.sourceDimensions)===canonicalJson(row.sourceDimensions),'Accepted Intacct provenance changed',409)
+  prior.set(row.intacctLine,{...row,amount:safe((before?.amount??0)+row.amount)})
  }
- const prior=new Map<string,Data>()
- for(const [id,groups] of accepted) {
-  const live=[...groups.values()].filter(r=>r.amount!==0)
-  requireThat(live.length<=1,'Accepted Intacct record has conflicting live identities; review its journal',409)
-  prior.set(id,live[0]??[...groups.values()].at(-1)!)
+ const deltas:SourceRow[]=[],metadata:Record<number,Data>={}
+ const push=(row:SourceRow,amount:number,first=false)=>{
+  if(!amount&&!first)return
+  deltas.push({...row,amount})
+  metadata[deltas.length+1]={intacctPriorFingerprint:priorFingerprint,intacctObservation:source.digest,intacctCompany:key.companyId,intacctBook:'ACCRUAL',intacctMonth:source.month,entity:binding.entity,intacctSourceEntity:binding.sourceEntity,intacctCurrency:source.currency,intacctLine:row.id,intacctOpening:row.opening===true,intacctTransactionId:row.transactionId,intacctAccountId:row.accountId,intacctAccountCategory:row.accountCategory??null,intacctNormalBalance:row.normalBalance??null,intacctEntryUrl:row.entryUrl??null,sourceDimensions:row.sourceDimensions,dimensionLabels:row.dimensionLabels}
  }
- const deltas: SourceRow[] = [], metadata: Record<number, Data> = {},identityChanges:Data[]=[]
- const push = (row: SourceRow, amount: number, firstObservation=false,reversal=false) => {
-  if (!amount && !firstObservation) return
-  deltas.push({ ...row, amount })
-  metadata[deltas.length + 1] = {
-   entity:entity.id, intacctRealm: realmId, intacctEnvironment: environment, intacctMonth: source.month,
-   ...(row.providerUrl?{intacctUrl:row.providerUrl}:{}),
-   entityDimension:entity.dimension,entityMember:entity.member,
-   intacctLine: row.id, intacctOpening: row.opening === true, intacctReversal:reversal,
-   intacctTransactionId: row.transactionId, intacctTransactionType: row.transactionType, intacctAccountId: row.accountId,
-   sourceDimensions: { ...(row.opening ? {entity:binding.source} : row.sourceDimensions), 'easel-entity':entity.id },
-  }
- }
- const sourceRow=(before:Data):SourceRow=>({id:before.intacctLine,transactionId:before.intacctTransactionId,transactionType:before.intacctTransactionType,date:before.date,accountId:before.intacctAccountId,account:before.account,accountName:before.accountName,accountType:before.accountType,amount:before.amount,class_name:before.department==='(blank)'?'':before.department,location_name:before.sourceDimensions?.location??'',customer_name:before.sourceDimensions?.customer??'',vendor_name:before.sourceDimensions?.vendor??'',description:before.description??'',reference:before.reference??'',sourceDimensions:before.sourceDimensions,providerUrl:before.intacctUrl,opening:before.intacctOpening})
- for(const row of desired) {
+ for(const row of desired){
   const before=prior.get(row.id)
-  const dimensions={...(row.opening?{entity:binding.source}:row.sourceDimensions),'easel-entity':entity.id}
-  const currentIdentity=identity({account:row.account,accountType:row.accountType,date:row.date,department:row.class_name||'(blank)',sourceDimensions:dimensions})
-  if(before&&identity(before)!==currentIdentity) {
-   identityChanges.push({record:row.id,before:{account:before.account,date:before.date,dimensions:before.sourceDimensions},after:{account:row.account,date:row.date,dimensions}})
-   push(sourceRow(before),safe(-before.amount),false,true)
-   push(row,row.amount,true)
-  } else push(row,safe(row.amount-(before?.amount??0)),!before)
+  if(before)requireThat(before.account===row.account&&before.date===row.date&&before.department===(row.department||'(blank)')&&before.accountType===row.accountType&&canonicalJson(before.sourceDimensions)===canonicalJson(row.sourceDimensions),'Intacct changed an accepted line identity or period; review a correcting import including both periods',409)
+  push(row,safe(row.amount-(before?.amount??0)),!before)
   prior.delete(row.id)
  }
- // Journal explicit reversals for removed records, retaining their original source identity.
- for(const before of prior.values())push(sourceRow(before),safe(-before.amount),false,true)
- const digest = sha256(canonicalJson({ source: source.digest, binding, deltas, metadata }))
- const inventory={chart:source.chart,classes:source.dimensions.classes,locations:source.dimensions.locations}
- const priorInventory=history.filter(r=>r.inventory).at(-1)?.inventory
- const changes=(current:Data[],prior:Data[]=[])=>(current.map(row=>{const before=prior.find(r=>(r.id??r.RECORDNO)===(row.id??row.RECORDNO));return{...row,change:!before?'new':canonicalJson(before)!==canonicalJson(row)?'changed':'unchanged'}})).filter(row=>row.change!=='unchanged')
- const sourceChanges={records:identityChanges,accounts:changes(inventory.chart,priorInventory?.chart),classes:changes(inventory.classes,priorInventory?.classes),locations:changes(inventory.locations,priorInventory?.locations)}
+ // Removed provider lines are journaled as visible reversals.
+ for(const before of prior.values())push({id:before.intacctLine,transactionId:before.intacctTransactionId,date:before.date,accountId:before.intacctAccountId,account:before.account,accountName:before.accountName,accountType:before.accountType,accountCategory:before.intacctAccountCategory,normalBalance:before.intacctNormalBalance,department:before.department==='(blank)'?'':before.department,sourceDimensions:before.sourceDimensions,dimensionLabels:before.dimensionLabels,entryUrl:before.intacctEntryUrl,description:before.description,reference:before.reference,opening:before.intacctOpening},safe(-before.amount))
+ requireThat(deltas.length<=5000,'Intacct journal exceeds 5,000 rows; no partial source accepted',409)
+ const acceptedFilter=acceptedLedgerFilter(c.s)
+ const accepted=await c.db.prepare(`SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctCompany')=? AND json_extract(value,'$.intacctBook')='ACCRUAL' AND json_extract(value,'$.entity')=? AND json_extract(value,'$.intacctMonth')<=? AND ${acceptedFilter.sql}`).bind(key.companyId,binding.entity,source.month,...acceptedFilter.params).all<{value:string}>()
+ const ledgerRows=accepted.results.map(row=>JSON.parse(row.value))
+ const ledger=reconcileIntacctLedger(source.chart,source.trialBalance,ledgerRows,deltas,history,source.month)
+ const trialBalance={...source.trialBalance,ledger,balanced:source.trialBalance.balanced&&ledger.balanced}
+ if(op==='commit')requireThat(trialBalance.balanced,`Intacct and the proposed Easel ledger differ; review account differences${ledger.reviewMonths.length?` and prior periods ${ledger.reviewMonths[0]} through ${ledger.reviewMonths.at(-1)}`:''} before acceptance`,409)
+ const ledgerFingerprint=sha256(canonicalJson(ledgerRows.map(row=>canonicalJson(row)).sort()))
+ const digest = sha256(canonicalJson({ source: source.digest, binding, includeOpening:b.includeOpening, deltas, metadata,ledgerFingerprint,trialBalance }))
+ const inventory={chart:source.chart,dimensions:source.dimensions}
+ const priorInventory=history.filter(r=>r.status==='accepted').at(-1)?.inventory
+ const changes=(current:Data[],prior:Data[]=[])=>(current.map(row=>{const before=prior.find(r=>r.id===row.id);return{...row,change:!before?'new':canonicalJson(before)!==canonicalJson(row)?'changed':'unchanged'}})).filter(row=>row.change!=='unchanged')
+ const sourceChanges={accounts:changes(inventory.chart,priorInventory?.chart),dimensions:canonicalJson(source.dimensions)===canonicalJson(priorInventory?.dimensions??{})?[]:[{change:'changed',metadata:source.dimensions}]}
  const changedTransactions=new Set(deltas.filter(r=>!r.opening).map(r=>r.transactionId)).size
- const sourceSummary = { entity:entity.id, sourceEntity:binding.source, impacts:sourceImpacts(c,source.month), month: source.month, from: source.from, to: source.to, currency: source.currency, chart: source.chart,
-  dimensions: source.dimensions,
-  trialBalance: source.trialBalance, ledgerRows: source.rows.length,nonPostingRows:source.nonPostingRows,unsupportedTransactions, openingIncluded: b.includeOpening,changes:sourceChanges }
- const monthId = `${environment}:${realmId}:${source.month}`
+ const sourceSummary={month:source.month,from:source.from,to:source.to,currency:source.currency,entity:source.entity,easelEntity:binding.entity,book:source.book,chart:source.chart,dimensions:source.dimensions,trialBalance,ledgerRows:source.rows.length,openingIncluded:b.includeOpening,changes:sourceChanges,limits:{rows:5000,bytes:2000000}}
+ const monthId=JSON.stringify([key.companyId,'ACCRUAL',binding.sourceEntity,source.month])
+ const receipt={id:monthId,company:key.companyId,book:'ACCRUAL',sourceEntity:binding.sourceEntity,entity:binding.entity,currency:source.currency,month:source.month,through:source.to,sourceFingerprint:digest,sourceDigest:source.digest,trialBalance,ledgerRows:source.rows.length,changedRows:deltas.length,openingIncluded:b.includeOpening,inventory,binding}
+
  const recordMonth = (context: Context) => {
-  put(context.s, 'intacct-month', monthId, { environment, realmId, entity:entity.id, inventory, month: source.month, through: source.to, sourceFingerprint: digest, sourceDigest: source.digest, trialBalance: source.trialBalance, ledgerRows: source.rows.length, changedRows: deltas.length, openingIncluded: b.includeOpening, status: 'accepted', acceptedAt: context.now })
-  context.activity.push({ action: 'intacct-month-accepted', record: monthId, detail: { month: source.month, through: source.to, ledgerRows: source.rows.length, changedRows: deltas.length, reconciled: true } })
-  put(context.s,'connection','intacct',{...find(context.s,'connection','intacct'),inventory,lastRefresh:context.now,rowCount:source.rows.length,error:null,rateLimit:null})
+  put(context.s,'intacct-month',monthId,{...find(context.s,'intacct-month',monthId),...receipt,status:'accepted',acceptedAt:context.now})
+  context.activity.push({action:'intacct-month-accepted',record:monthId,detail:{entity:binding.entity,month:source.month,changedRows:deltas.length,reconciled:true}})
+  put(context.s,'connection','intacct',{...find(context.s,'connection','intacct'),lastRefresh:context.now,rowCount:source.rows.length,error:null,rateLimit:null})
  }
- const rows = [['Date', 'Account', 'Account name', 'Account type', 'Department', 'Amount', 'Description', 'Reference'],
-  ...deltas.map(r => [r.date, r.account, r.accountName, r.accountType, r.class_name, decimal(r.amount), r.description, r.opening ? `Intacct opening ${r.accountId}` : `Intacct ${r.transactionType} ${r.transactionId} ${r.reference}`])]
+ if (!deltas.length) {
+  if (op === 'commit') {
+   requireThat(b.sourceFingerprint === digest, 'Intacct changed after preview; review again', 409)
+   assertSourceGuardAcceptance(c,digest,[source.month],binding.entity)
+   recordMonth(c)
+   completeSourceGuards(c,{sha256:digest})
+  }
+  if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:['intacct-normalized-ledger-v1'],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type],category:a.category,normalBalance:a.normalBalance,closingType:a.closingType,closingAccount:a.closingAccount})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
+  return { result: { source: sourceSummary, sourceFingerprint: digest, changedRows: 0, changedTransactions:0, unchanged: true, accepted: op === 'commit' } }
+ }
+ const rows = [['Date', 'Account', 'Account name', 'Account type', 'Department', 'Amount', 'Description', 'Reference','Reviewed source'],
+  ...deltas.map(r => [r.date, r.account, r.accountName, r.accountType, r.department, decimal(r.amount), r.description, r.opening ? `Intacct opening ${r.accountId}` : `Intacct ${r.transactionId} ${r.reference}`,digest])]
  const input = {
-  filename: `intacct-${environment}-${realmId}-${source.month}-${digest.slice(0, 12)}.csv`,
+  filename: `intacct-${binding.entity}-${source.month}-${digest.slice(0, 12)}.csv`,
   csv: rows.map(row => row.map(csv).join(',')).join('\n'),
   columns: { date: 'Date', account: 'Account', accountName: 'Account name', accountType: 'Account type', department: 'Department', amount: 'Amount', description: 'Description', reference: 'Reference' },
   dateFormat: 'YYYY-MM-DD', amountMode: 'debit-positive', fingerprint: b.fingerprint, acknowledgeRejected: 0,
  }
  if (op === 'commit') requireThat(b.sourceFingerprint === digest, 'Intacct changed after preview; review again', 409)
- const acceptanceSha=sha256(new TextEncoder().encode(input.csv))
- if(op==='commit')for(const guard of all(c.s,'source-guard').filter(g=>g.entity===entity.id&&g.month===source.month&&g.id==='intacct:'+realmId))
-  requireThat(guard.sourceDigest===source.digest,'Intacct changed after source review; stage the changed observation again',409)
- if(op==='stage') {
-  requireThat(!b.includeOpening,'Stage refresh observations after the initial opening import',409)
-  const forecast=all(c.s,'scenario').find(sc=>sc.kind==='forecast'&&sc.status==='working'&&sc.id===b.scenario)
-  requireThat(forecast&&boundEntity(c.s,forecast)?.id===entity.id,'Choose the mapped entity forecast for source review',409)
-  const id='intacct:'+realmId,priorGuard=find(c.s,'source-guard',id)
-  const observationRows=[rows[0],...source.rows.map(r=>[r.date,r.account,r.accountName,r.accountType,r.class_name,decimal(r.amount),r.description,'Intacct '+r.transactionType+' '+r.transactionId+' '+r.reference])]
-  const observedMetadata={headers:rows[0],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:[...new Set(source.rows.map(r=>canonicalJson(r.sourceDimensions)))].sort()}
-  const result=await sourceGuardCommands(c,'source-guard-stage',{...b,source:id,label:'Intacct '+binding.source,actuals:{...input,csv:observationRows.map(row=>row.map(csv).join(',')).join('\n')},revision:priorGuard?.revision,observedAt:c.now,nextExpectedAt:b.nextExpectedAt,expectedPayroll:b.expectedPayroll},Object.fromEntries(source.rows.map((r,i)=>[i+2,{entity:entity.id,sourceDimensions:{...r.sourceDimensions,'easel-entity':entity.id}}])),{month:source.month,metadata:observedMetadata})
-  requireThat(result,'Source review was not staged',409)
-  const guard:Data={...find(c.s,'source-guard',id),sha256:acceptanceSha,sourceDigest:source.digest}
-  guard.fingerprint=sha256(canonicalJson({fingerprint:result.fingerprint,source:source.digest,acceptanceSha}))
-  put(c.s,'source-guard',id,guard)
-  return{result:{guard:{...guard,unresolved:result.unresolved},source:sourceSummary}}
- }
- if(!deltas.length) {
-  if(op==='commit') {
-   requireThat(b.sourceFingerprint===digest,'Intacct changed after preview; review again',409)
-   assertSourceGuardAcceptance(c,acceptanceSha,[source.month],entity.id)
-   recordMonth(c);completeSourceGuards(c,{sha256:acceptanceSha})
-  }
-  return{result:{source:sourceSummary,sourceFingerprint:digest,changedRows:0,changedTransactions:0,unchanged:true,accepted:op==='commit'}}
- }
- const step = await actualsCommand(c, op, input, metadata)
+ const step = await actualsCommand(c,op==='stage'?'preview':op,input,metadata)
  requireThat(step, 'Unknown actuals step', 404)
- if (op === 'preview') step.result = { ...step.result, source: sourceSummary, sourceFingerprint: digest, changedRows: deltas.length,changedTransactions }
+ if (op === 'preview'||op==='stage') step.result = { ...step.result, source: sourceSummary, sourceFingerprint: digest, changedRows: deltas.length,changedTransactions }
+ if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},step.result,{headers:['intacct-normalized-ledger-v1'],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type],category:a.category,normalBalance:a.normalBalance,closingType:a.closingType,closingAccount:a.closingAccount})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
  if (op === 'commit' && step.record) {
   const batch=all(c.s,'batch').find(row=>row.file===input.filename&&row.status==='importing')
   requireThat(batch,'Intacct journal batch was not created',409)
-  put(c.s,'batch',batch.id,{...batch,intacctSource:{id:monthId,entity:entity.id,environment:environment,realmId:realmId,month:source.month,through:source.to,sourceFingerprint:digest,sourceDigest:source.digest,trialBalance:source.trialBalance,ledgerRows:source.rows.length,changedRows:deltas.length,openingIncluded:b.includeOpening,inventory}})
+  put(c.s,'batch',batch.id,{...batch,entity:binding.entity,intacctSource:{...receipt,priorReceipt:find(c.s,'intacct-month',monthId)??null}})
  }
  return step
 }

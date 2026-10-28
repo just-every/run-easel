@@ -1,6 +1,6 @@
+import { requireIntacctHistory } from './ledger-scope'
 // Accepted cumulative ledger context. P&L-only extracts retain their published
 // flow; a ledger containing balance-sheet accounts additionally supplies closes.
-import { requireIntacctHistory } from './intacct-month'
 import { reconciliation } from './actuals-read'
 import { requireXeroHistory } from './xero-month'
 import { requireQboHistory } from './qbo-month'
@@ -8,10 +8,11 @@ import type { Context } from './context'
 import { requireThat, type Data } from './types'
 
 export type LedgerContext = { trials: Data[]; allocations: Data[] }
-export async function ledgerContext(c: Context, through: string, allocations: Data[] = [], required = false, entity?:string): Promise<LedgerContext | undefined> {
- if(entity)requireIntacctHistory(c.s,through,entity)
- else { requireQboHistory(c.s,through); requireXeroHistory(c.s,through) }
- const report = await reconciliation(c.db, c.s, entity)
+export async function ledgerContext(c: Context, through: string, allocations: Data[] = [], required = false,entity?:string): Promise<LedgerContext | undefined> {
+ requireIntacctHistory(c.s,through,entity)
+ if(!entity)requireQboHistory(c.s,through)
+ if(!entity)requireXeroHistory(c.s,through)
+ const report = await reconciliation(c.db,c.s,entity)
  const trials = report.trialBalances.filter(t => t.period <= through)
  const enabled = trials.some(t => t.accounts.some((a: Data) => String(a.target).startsWith('bs:')))
  if (!enabled && !required) return undefined

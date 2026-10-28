@@ -37,7 +37,7 @@ export type Line = { id: string; name: string; type: LineType; payroll?: boolean
 export type Department = { id: string; name: string; shared?: boolean }
 export type Source = { kind: string; id?: string; label: string; amount: number; trace: string; dimensions?: DimensionTags }
 export type Cell = { line: string; department: string; month: string; amount: number; basis: 'plan' | 'actual'; sources: Source[] }
-export type ActualCell = { line: string; department: string; month: string; amount: number; rows: number; batches: string[]; dimensions?: DimensionTags; dimensionSources?: { id?:string; dimensions: DimensionTags; amount: number; rows: number; batches: string[] }[] }
+export type ActualCell = { line: string; department: string; month: string; amount: number; rows: number; batches: string[]; dimensions?: DimensionTags; dimensionSources?: { dimensions: DimensionTags; amount: number; rows: number; batches: string[] }[] }
 export type CashMonth = { month: string; opening: number; collections: number; payments: number; closing: number; trace: string; incompleteReasons?: string[] }
 export type ProfitMonth = { month: string; revenue: number; costOfSales: number; operatingExpenses: number; grossMargin: number; profit: number }
 
@@ -320,7 +320,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
   if (!closed(a.month) || !inHorizon.has(a.month)) continue
   const c = cell(a.line, a.department, a.month, 'actual')
   c.amount += a.amount
-  for (const part of a.dimensionSources ?? [a]) c.sources.push({ kind: 'actual', ...('id' in part && part.id ? {id:part.id}:{}), dimensions: part.dimensions ?? {}, label: 'Accepted actuals', amount: part.amount, trace: `${monthLabel(a.month)}: ${money(part.amount)} from ${part.rows} accepted row${part.rows === 1 ? '' : 's'} in ${part.batches.length} import${part.batches.length === 1 ? '' : 's'}` })
+  for (const part of a.dimensionSources ?? [a]) c.sources.push({ kind: 'actual', dimensions: part.dimensions ?? {}, label: 'Accepted actuals', amount: part.amount, trace: `${monthLabel(a.month)}: ${money(part.amount)} from ${part.rows} accepted row${part.rows === 1 ? '' : 's'} in ${part.batches.length} import${part.batches.length === 1 ? '' : 's'}` })
   const type = lineById.get(a.line)?.type
   if (lineById.get(a.line)?.nonCash || inventoryLines.has(`${a.line}|${a.department}`)) continue
   if (type === 'revenue' && contractActualKeys.has(`${a.line}|${a.department}|${a.month}`)) continue

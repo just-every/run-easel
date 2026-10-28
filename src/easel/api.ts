@@ -1,4 +1,4 @@
-import { intacctConnection, intacctStatus } from './intacct-connection'
+import { intacctConnection,intacctStatus } from './intacct-connection'
 import { intacctImport } from './intacct-import'
 import { spendConnection, spendStatus, spendReview, spendReviews, spendSources, spendReadFailed } from './spend'
 import { xeroConnection, xeroStatus } from './xero-connection'
@@ -167,7 +167,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const current = access(state, a)
  if (a.token) requireMember(current)
  if (a.agent) requireAgent({ s: state }, 'mcp')
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|variance\/|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -213,6 +213,11 @@ api.post('/api/easel/spend/:op', async c => {
 })
 api.get('/api/easel/connections/pantry', c => read(c, ctx => pantryStatus(ctx,c.env)))
 api.get('/api/easel/connections/stripe', c => read(c, billingStatus))
+api.get('/api/easel/connections/intacct',c=>read(c,intacctStatus))
+api.post('/api/easel/connections/intacct/:op',async c=>{
+ const ctx=await open(c),result=await intacctConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
+ ctx.extra=result.extra;await commit(ctx);return c.json(await intacctStatus(ctx))
+})
 api.get('/api/easel/connections/qbo', c => read(c, qboStatus))
 api.get('/api/easel/connections/qbo/callback', async c => {
  const ctx=await open(c),result=await qboConnection(ctx,runtimeBindings(c.env),'complete',c.req.query())
@@ -223,13 +228,6 @@ api.post('/api/easel/connections/qbo/:op', async c => {
  const ctx=await open(c),result=await qboConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
  ctx.extra=result.extra;await commit(ctx)
  return c.json({...await qboStatus(ctx),...(result.authorizationUrl?{authorizationUrl:result.authorizationUrl}:{})})
-})
-api.get('/api/easel/connections/intacct', c => read(c,intacctStatus))
-api.post('/api/easel/connections/intacct/:op',async c=>{
- const ctx=await open(c)
- ctx.extra=await intacctConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
- await commit(ctx)
- return c.json(await intacctStatus(ctx))
 })
 api.get('/api/easel/connections/xero', c => read(c, xeroStatus))
 api.get('/api/easel/connections/xero/callback', async c => {
@@ -564,11 +562,11 @@ api.get('/api/easel/dashboards/:id/document.xlsx', async c => {
 })
 
 api.get('/api/easel/dimension-report/:scenario/document.xlsx', async c => {
- const ctx = await open(c), view = await dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'))
+ const ctx = await open(c), view = await dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'),c.req.query('entity'))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(dimensionWorkbook(view), 'easel-dimensions')
 })
-api.get('/api/easel/dimension-report/:scenario', c => read(c, ctx => dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'))))
+api.get('/api/easel/dimension-report/:scenario', c => read(c, ctx => dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'),c.req.query('entity'))))
 
 api.get('/api/easel/entities', c => read(c, async ctx => entitiesView(ctx)))
 api.get('/api/easel/consolidation/:id', c => read(c, ctx => consolidationView(ctx, c.req.param('id'))))
@@ -596,8 +594,8 @@ api.get('/api/easel/translation/:scenario', c => read(c, ctx => translationView(
 api.get('/api/easel/translation-variance/:month', c => read(c, ctx => constantCurrencyVariance(ctx, c.req.param('month'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
 api.get('/api/easel/snapshot/:id', c => read(c, ctx => snapshotView(ctx, c.req.param('id'))))
-api.get('/api/easel/actuals', c => read(c, ctx=>actualsView(ctx,c.req.query('entity'))))
-api.get('/api/easel/variance/:month', c => read(c, ctx => variance(ctx, c.req.param('month'),c.req.query('scenario'))))
+api.get('/api/easel/actuals',c=>read(c,ctx=>actualsView(ctx,c.req.query('entity'))))
+api.get('/api/easel/variance/:month', c => read(c, ctx => variance(ctx,c.req.param('month'),c.req.query('scenario'))))
 api.get('/api/easel/activity', c => read(c, ctx => filteredActivity(ctx, c.req.query())))
 api.get('/api/easel/activity.csv', async c => {
  const ctx = await open(c)
@@ -608,7 +606,7 @@ api.get('/api/easel/activity.csv', async c => {
 
 const spreadsheet = (bytes: Uint8Array, name: string) => new Response(bytes as BodyInit, { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'content-disposition': `attachment; filename="${name}.xlsx"` } })
 api.get('/api/easel/actuals.xlsx', async c => {
- const ctx = await open(c), bytes = actualsWorkbook(await actualsView(ctx,c.req.query('entity')), c.req.query('entity')?get(ctx.s,'entity',c.req.query('entity')).currency:get(ctx.s, 'workspace', 'main').currency)
+ const ctx=await open(c),view=await actualsView(ctx,c.req.query('entity')),bytes=actualsWorkbook(view,view.currency)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(bytes, 'easel-reconciliation')
 })
@@ -641,7 +639,7 @@ api.get('/api/easel/compare.xlsx', async c => {
  return spreadsheet(bytes, 'easel-comparison')
 })
 api.get('/api/easel/variance/:month/document.xlsx', async c => {
- const ctx = await open(c), bytes = varianceWorkbook(await variance(ctx, c.req.param('month'),c.req.query('scenario')))
+ const ctx = await open(c), bytes = varianceWorkbook(await variance(ctx,c.req.param('month'),c.req.query('scenario')))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(bytes, 'easel-variance')
 })
@@ -731,7 +729,7 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
   const evaluation = await evaluateCashAlerts(ctx)
   if (op === 'cash-alert-check') result = { sent: evaluation.sent, blocked: evaluation.blocked }
  }
- const statementIds = op === 'close-month' && !result.alternativeBudget && !result.entity ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
+ const statementIds = op === 'close-month' && !result.alternativeBudget ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  if (op === 'report-schedule-retry') await dispatchSavedReports(result.deliveryIds, c.env, () => open(c), commit)

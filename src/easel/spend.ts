@@ -1,3 +1,4 @@
+import { ledgerEntity } from './ledger-scope'
 import type { Bindings } from '../auth.server'
 import { requireCapability, requireFinance } from './access'
 import { scopedReader } from './group-projections'
@@ -99,7 +100,7 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
   requireThat(sc.revision === b.revision && (!sc.actualsThrough || m > sc.actualsThrough), 'Forecast changed or month is closed; review again', 409)
   const line = get(c.s, 'line', d.line); requireThat(!line.payroll && !line.nonCash, 'Spend requires an ordinary non-payroll expense line')
  }
- if (op === 'ledger') { const rows = await rowsFor(c.db, c.s, period, driver.line, driver.department); return { rows, total: sumMoney(rows.map(r => r.amount)) } }
+ if (op === 'ledger') { const rows = await rowsFor(c.db,c.s,period,driver.line,driver.department,ledgerEntity(c.s,sc.id)); return { rows, total: sumMoney(rows.map(r => r.amount)) } }
  const prior = find(c.s, 'spend-review', driver.id)
  const priorCells = prior ? prior.cells ?? [prior] : []
  requireThat(priorCells.every((r: Data) => targetKeys.includes(`${r.driver}:${r.month}`)), 'Include every previously reviewed allocation cell; no prior cell may be silently dropped', 409)
@@ -136,8 +137,8 @@ export async function spendReview(c: Context, env: Bindings, op: string, b: Data
  const budgetView = await scenarioView(c, budget.id)
  async function cell(driver: Data, period: string) {
   const line = get(c.s, 'line', driver.line)
-  const cells = await actualCells(c.db, c.s, period)
-  const ledgerRows = await rowsFor(c.db, c.s, period, driver.line, driver.department)
+  const cells = await actualCells(c.db,c.s,period,ledgerEntity(c.s,sc.id))
+  const ledgerRows = await rowsFor(c.db,c.s,period,driver.line,driver.department,ledgerEntity(c.s,sc.id))
   requireThat(ledgerRows.every(r => !Object.keys(r.dimensions ?? {}).length), 'Dimensioned ledger spend requires a dedicated dimension review', 409)
   requireThat(!cells.some(v => v.line === driver.line && v.department === driver.department && v.month === period && v.rows !== ledgerRows.length), 'Ledger row projection is incomplete', 409)
   const currentCell = current.calculation.cells.find(r => r.line === driver.line && r.department === driver.department && r.month === period)

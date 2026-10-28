@@ -1,5 +1,4 @@
-import { scopedReader } from './group-projections'
-import { actualCells } from './actuals-read'
+import { entityLedger } from './entity-ledger'
 import { boundEntity } from './entity-scope'
 import { INPUT_KINDS } from './model'
 import { requireFinance, requireMember, requirePayDetail } from './access'
@@ -14,7 +13,7 @@ import { all, find, get, put, requireThat, text, uid, type Data } from './types'
 
 export function requireEntityFinance(c: Context) {
  requireFinance(c.x)
- requireThat(!c.x.actor.token && !scopedReader(c.x) && ['owner', 'admin'].includes(c.x.actor.baseRole), 'Entity configuration requires the native owner or administrator session', 403)
+ requireThat(!c.x.actor.token && ['owner', 'admin'].includes(c.x.actor.baseRole), 'Entity configuration requires the native owner or administrator session', 403)
 }
 
 export async function entityCommands(c: Context, op: string, b: Data): Promise<Data | undefined> {
@@ -71,15 +70,11 @@ export async function entityCommands(c: Context, op: string, b: Data): Promise<D
 export async function entitiesView(c: Context) {
  requireMember(c.x)
  const entities = all(c.s, 'entity').filter(e => entityAllowed(c.s, c.x, e))
- const finance = c.x.role === 'finance' && !c.x.actor.token && !scopedReader(c.x) && ['owner', 'admin'].includes(c.x.actor.baseRole)
+ const finance = c.x.role === 'finance' && !c.x.actor.token && ['owner', 'admin'].includes(c.x.actor.baseRole)
  const origins = finance ? entities.flatMap(entity => ['revenue', 'expense', 'schedule', 'formula'].flatMap(kind => all(c.s, kind).filter(input => input.scenario === entity.scenario).flatMap(input => {
   const line = find(c.s, 'line', input.line)
   return line && !line.payroll && !line.nonCash ? [{ entity: entity.id, origin: input.originId, name: input.name, type: line.type, line: line.name }] : []
  }))) : []
- if(finance)for(const entity of entities)for(const cell of await actualCells(c.db,c.s,undefined,entity.id)) {
-  const line=find(c.s,'line',cell.line)
-  if(!line||line.payroll||line.nonCash)continue
-  for(const source of cell.dimensionSources??[])if(source.id&&!origins.some(o=>o.origin===source.id))origins.push({entity:entity.id,origin:source.id,name:'Accepted Intacct '+source.id.split(':').at(-1)+' · '+cell.month,type:line.type,line:line.name})
- }
- return { entities, groups: all(c.s, 'entity-group').filter(g => entities.some(e => e.group === g.id)), rates: finance ? Object.fromEntries(entities.map(e => [e.id, find(c.s, 'entity-fx', e.id) ?? null])) : {}, rules: finance ? all(c.s, 'entity-elimination').filter(r => entities.some(e => e.group === r.group)) : [], origins, finance }
+ const ledgerSources=finance&&c.x.payDetail?Object.fromEntries(await Promise.all(entities.map(async e=>[e.id,(await entityLedger(c,e.id)).filter(r=>!find(c.s,'line',r.target)?.payroll).map(({rows,...r})=>r)]))):{}
+ return { ledgerSources, entities, groups: all(c.s, 'entity-group').filter(g => entities.some(e => e.group === g.id)), rates: finance ? Object.fromEntries(entities.map(e => [e.id, find(c.s, 'entity-fx', e.id) ?? null])) : {}, rules: finance ? all(c.s, 'entity-elimination').filter(r => entities.some(e => e.group === r.group)) : [], origins, finance }
 }

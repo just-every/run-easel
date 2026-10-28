@@ -1,4 +1,4 @@
-import { boundEntity } from './entity-scope'
+import { ledgerEntity } from './ledger-scope'
 import { workingCalculation } from './calculation'
 // Finance explicitly associates an accepted account balance with schedule origins.
 // This never infers a source record from its name, department or relative size.
@@ -18,7 +18,7 @@ export async function ledgerAllocation(c: Context, op: string, b: Data) {
  requireEditable(c.s, c.x, scenario, null)
  requireThat(Number(b.revision) === scenario.revision, 'The scenario changed; review its current revision', 409)
  requireThat(scenario.actualsThrough && b.month === scenario.actualsThrough, 'Allocate the last closed month', 409)
- const ledger = await ledgerContext(c, b.month,[],false,boundEntity(c.s,scenario)?.id)
+ const ledger = await ledgerContext(c,b.month,[],false,ledgerEntity(c.s,scenario.id))
  const trial = ledger?.trials.find(t => t.period === b.month)
  requireThat(trial?.balanced, 'Resolve the trial balance first', 409)
  const target = b.target

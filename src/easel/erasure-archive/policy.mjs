@@ -16,6 +16,15 @@ export async function validateEaselStaged(staged) {
  const mappedRecords = rawRecords.map(r => transformErased({ ...r, value: parse(r.value) }, maps));
  const records = new Map(mappedRecords.map(r => [`${r.kind}:${r.id}`, { ...r.value, id: r.id }]));
  const activity = rawActivity.map(r => transformErased({ ...r, detail: parse(r.detail) }, maps));
+ const actuals=await staged.read('e_actuals');
+ for(const row of actuals){
+  const value=transformErased(parse(row.value),maps);
+  if(!value.intacctCompany)continue;
+  const binding=[...records].find(([key,r])=>key.startsWith('intacct-entity-map:')&&r.company===value.intacctCompany&&r.sourceEntity===value.intacctSourceEntity&&r.book===value.intacctBook)?.[1];
+  requireValid(binding && binding.entity===value.entity && binding.currency===value.intacctCurrency && value.intacctBook==='ACCRUAL','intacct_actual_boundary');
+  requireValid(text(value.intacctLine) && typeof value.intacctOpening==='boolean' && Number.isSafeInteger(value.amount) && value.amount===row.amount && value.period===row.period,'intacct_actual_provenance');
+ }
+
  const snapshots = new Map();
  for (const row of rawSnapshots) {
   requireValid(typeof row.body === 'string' && await sha256(row.body) === row.sha256, 'snapshot_digest');
@@ -67,6 +76,16 @@ export async function validateEaselStaged(staged) {
   } else requireValid(false, 'snapshot_kind');
  }
  for (const [key, r] of records) {
+  if(key.startsWith('intacct-entity-map:')) {
+   const entity=records.get(`entity:${r.entity}`),scenario=records.get(`scenario:${r.scenario}`);
+   requireValid(entity && scenario && entity.scenario===r.scenario && entity.currency===r.currency && r.book==='ACCRUAL' && text(r.company) && text(r.sourceEntity),'intacct_entity_binding');
+   requireValid([...records].filter(([k,v])=>k.startsWith('intacct-entity-map:')&&v.entity===r.entity).length===1,'intacct_entity_unique');
+  }
+  if(key.startsWith('intacct-month:')) {
+   const binding=[...records].find(([k,v])=>k.startsWith('intacct-entity-map:')&&v.company===r.company&&v.sourceEntity===r.sourceEntity&&v.book===r.book)?.[1];
+   requireValid(binding && binding.entity===r.entity && binding.currency===r.currency && /^\d{4}-(0[1-9]|1[0-2])$/.test(r.month) && ['accepted','undone'].includes(r.status),'intacct_receipt');
+   requireValid(r.status!=='accepted'||r.trialBalance?.balanced===true,'intacct_receipt_trial');
+  }
   if (key.startsWith('schedule:') && r.history) {
    const h = r.history;
    requireValid(!r.values && object(h) && records.has(`line:${h.sourceLine}`) && records.has(`department:${h.sourceDepartment}`) && records.has(`scenario:${r.scenario}`), 'history_schedule_reference');

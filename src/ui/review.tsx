@@ -24,10 +24,10 @@ import { ConstantCurrency } from './translation'
 export function Review({ state, refresh }: Shared) {
  const displayDate = useDate()
  const me = state.me
- const [selectedForecast,setSelectedForecast]=useState('')
- const forecasts=state.scenarios.filter((s:D)=>s.kind==='forecast')
- const forecast = forecasts.find((s:D)=>s.id===selectedForecast)??forecasts.find((s:D)=>!s.alternativeBudget)??forecasts[0]
- const currency = forecast?.currency??state.workspace.currency
+ const forecasts=state.scenarios.filter((s:D)=>s.kind==='forecast'&&s.status==='working')
+ const [forecastId,setForecast]=useState(()=>{const requested=typeof window==='undefined'?null:new URL(window.location.href).searchParams.get('reviewScenario');return forecasts.some((s:D)=>s.id===requested)?requested!:forecasts[0]?.id??''})
+ const forecast=forecasts.find((s:D)=>s.id===forecastId)??forecasts[0]
+ const currency=forecast?.currency??state.workspace.currency
  const closedMonths: string[] = []
  if (forecast?.actualsThrough) for (let m = state.workspace.planStart; m <= forecast.actualsThrough; m = addMonths(m, 1)) closedMonths.push(m)
  const [month, setMonth] = useState(() => {
@@ -36,20 +36,21 @@ export function Review({ state, refresh }: Shared) {
  })
  const [v, setV] = useState<D | null>(null)
  const [error, setError] = useState('')
- useEffect(() => { let live = true; setV(null); setError(''); if (month) api(`variance/${month}?scenario=${forecast?.id??''}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state,forecast?.id])
- useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.actualsThrough,forecast?.id,month])
- useEffect(() => { if (month) { const url = new URL(window.location.href); url.searchParams.set('reviewMonth', month); window.history.replaceState(window.history.state, '', url) } }, [month])
+ useEffect(() => { let live = true; setV(null); setError(''); if (month&&forecast) api(`variance/${month}?scenario=${encodeURIComponent(forecast.id)}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state,forecast?.id])
+ useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.id,forecast?.actualsThrough])
+ useEffect(() => { if (forecast) { const url = new URL(window.location.href); url.searchParams.set('reviewScenario',forecast.id);if(month)url.searchParams.set('reviewMonth', month); window.history.replaceState(window.history.state, '', url) } }, [month,forecast?.id])
  const next = forecast ? (forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : state.workspace.planStart) : ''
  const reviewState = { ...state, actorNames: { ...state.actorNames, ...v?.actorNames } }
- const packs = state.packs.filter((p: D) => !month || p.month === month || p.months?.includes(month))
+ const packs = state.packs.filter((p:D)=>p.forecast===forecast?.id&&(!month||p.month===month||p.months?.includes(month)))
  const [fingerprints, setFingerprints] = useState<Record<string, string>>({}), [stores, setStores] = useState<D[]>([])
  useEffect(() => { if (me.role === 'finance') api('connections/pack-stores').then(setStores, () => setStores([])) }, [me.role, state])
  return <>
   {me.role === 'finance' && <><AgentGovernance /><SpendReview state={state} refresh={refresh} /></>}
   <Analyst state={state} refresh={refresh} />
   <section className="card">
-   <h2>Monthly review</h2>{forecasts.length>1&&<label>Review forecast<select aria-label="Review forecast" value={forecast?.id??''} onChange={e=>{setSelectedForecast(e.target.value);setMonth('')}}>{forecasts.map((s:D)=><option key={s.id} value={s.id}>{s.name} · {s.currency??state.workspace.currency}</option>)}</select></label>}
-   {v && <p><a href={`/api/easel/variance/${month}/document.xlsx?scenario=${forecast?.id??''}`} download>Download variances (Excel)</a></p>}
+   <h2>Monthly review</h2>
+   {forecasts.length>1&&<label>Entity forecast<select aria-label="Review entity forecast" value={forecast?.id??''} onChange={e=>{if(e.target.value!==forecast?.id){setForecast(e.target.value);setMonth('')}}}>{forecasts.map((s:D)=><option key={s.id} value={s.id}>{s.name} · {s.currency??state.workspace.currency}</option>)}</select></label>}
+   {v && <p><a href={`/api/easel/variance/${month}/document.xlsx?scenario=${encodeURIComponent(forecast.id)}`} download>Download variances (Excel)</a></p>}
    {!forecast && <p>The forecast opens when the budget is approved.</p>}
    {forecast && <Dots as="p" className="muted">{glue(forecast.name)}{`revision ${forecast.revision}`}{`actuals through ${monthLabel(forecast.actualsThrough)}`}</Dots>}
    {forecast && <Dots as="p" className="muted">{`Forecast through ${monthLabel(addMonths(state.workspace.planStart, (forecast.horizon ?? state.workspace.horizon) - 1))}`}{`${forecast.rollingWindow ? `always ${forecast.rollingWindow} months ahead` : 'fixed horizon'}. Approved budgets keep their original months.`}</Dots>}
@@ -73,10 +74,10 @@ export function Review({ state, refresh }: Shared) {
     {r.citations.length > 0 && <Table caption="Accepted rows" heads={['File', 'Line', 'Date', 'Description', 'Reference', 'Amount']}>{r.citations.map((c: D, i: number) => <tr key={i}><td>{c.file}</td><td className="num">{c.line}</td><td><span className="date-token">{displayDate(c.date)}</span></td><td>{c.description}</td><td>{c.providerUrl ? <a href={c.providerUrl} target="_blank" rel="noreferrer">{c.reference}</a> : c.reference}</td><td className="num">{money(c.amount, currency)}</td></tr>)}</Table>}
     {r.explanation && <p><strong>Explanation ({r.explanation.status}{r.explanation.confirmedBy && <> by <Person state={reviewState} email={r.explanation.confirmedBy} /></>}):</strong> {r.explanation.text}</p>}
     {(me.role === 'finance' || me.departments.includes(r.department)) && <>
-     <Form key={`${r.key}-${r.explanation?.at ?? ''}`} submit="Save explanation" onSubmit={async x => { await command('explanation', { month: v.month, line: r.line, department: r.department, text: x.text }); await refresh() }}>
+     <Form key={`${r.key}-${r.explanation?.at ?? ''}`} submit="Save explanation" onSubmit={async x => { await command('explanation', { scenario:forecast.id,month: v.month, line: r.line, department: r.department, text: x.text }); await refresh() }}>
       <Field label={`Explanation for ${r.lineName} · ${r.departmentName}`} name="text" type="textarea" defaultValue={r.explanation?.text ?? ''} />
      </Form>
-     {r.explanation && r.explanation.status !== 'confirmed' && <Action label="Confirm explanation" run={async () => { await command('explanation-confirm', { month: v.month, line: r.line, department: r.department }); await refresh() }} />}
+     {r.explanation && r.explanation.status !== 'confirmed' && <Action label="Confirm explanation" run={async () => { await command('explanation-confirm', { scenario:forecast.id,month: v.month, line: r.line, department: r.department }); await refresh() }} />}
     </>}
    </details>)}
   </section>}
@@ -90,8 +91,8 @@ export function Review({ state, refresh }: Shared) {
   {me.role === 'finance' && forecast?.actualsThrough && <ForecastLearning state={state} forecast={forecast} refresh={refresh} />}
   <section className="card">
    <h2>Review packs</h2>
-   {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month }); await refresh() }} />}
-   {me.role === 'finance' && month && <PackStart closedMonths={closedMonths} month={month} refresh={refresh} />}
+   {me.role === 'finance' && month && !packs.some((p: D) => p.status === 'draft') && <Action label={`Start the ${monthLabel(month)} pack`} run={async () => { await command('pack-create', { month,scenario:forecast.id }); await refresh() }} />}
+   {me.role === 'finance' && month && <PackStart scenario={forecast?.id} closedMonths={closedMonths} month={month} refresh={refresh} />}
    {me.role === 'finance' && <PackStores onChange={() => api('connections/pack-stores').then(setStores, () => {})} />}
    {packs.map((p: D) => <div key={p.id} className="pack">
     <Dots as="h3">{p.title}{p.status}</Dots>
@@ -108,7 +109,7 @@ export function Review({ state, refresh }: Shared) {
      </Form>
      <Action label="Publish pack" confirm="Publish this pack? Its numbers, explanations and decisions are fixed once published." run={async () => { await command('pack-publish', { pack: p.id, fingerprint: fingerprints[p.id] }); await refresh() }} />
     </>}
-    {p.status === 'published' && <Dots as="p" className="downloads"><>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span></><a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a><a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a><a href={`/api/easel/pack/${p.id}/document.xlsx`} download>Download pack (Excel)</a><a href={`/api/easel/pack/${p.id}/document.pdf`} download>Download pack (PDF)</a><a href={`/api/easel/pack/${p.id}/document.pptx`} download>Download pack (PowerPoint)</a><a href={`/api/easel/snapshot/${p.snapshot}`} download={`easel-${p.month}-evidence.json`}>Download source evidence (JSON)</a></Dots>}
+    {p.status === 'published' && <Dots as="p" className="downloads"><>Published by <Person state={state} email={p.publishedBy} /> at <span className="date-token">{displayDate(p.publishedAt)}</span></><a href={`/api/easel/pack/${p.id}/document.html`} download>Download pack (HTML)</a><a href={`/api/easel/pack/${p.id}/document.csv`} download>Download pack (CSV)</a><a href={`/api/easel/pack/${p.id}/document.xlsx?scenario=${encodeURIComponent(forecast.id)}`} download>Download pack (Excel)</a><a href={`/api/easel/pack/${p.id}/document.pdf`} download>Download pack (PDF)</a><a href={`/api/easel/pack/${p.id}/document.pptx`} download>Download pack (PowerPoint)</a><a href={`/api/easel/snapshot/${p.snapshot}`} download={`easel-${p.month}-evidence.json`}>Download source evidence (JSON)</a></Dots>}
     {p.status === 'published' && me.role === 'finance' && <PackSave pack={p} stores={stores} refresh={refresh} />}
    </div>)}
    {!packs.length && <p className="muted">No packs for this month yet.</p>}

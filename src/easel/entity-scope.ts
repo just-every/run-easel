@@ -1,4 +1,4 @@
-import { all, find, get, requireThat, type Data, type State } from './types'
+import { find, get, requireThat, type Data, type State } from './types'
 
 /** Derived versions retain the source entity boundary until finance binds a
  * separate official plan explicitly. Binding does not change other entities. */
@@ -16,12 +16,4 @@ export function entityDimensions(s: State, scenario: string, supplied: Record<st
  if (!entity) return supplied
  requireThat(supplied[entity.dimension] === undefined || supplied[entity.dimension] === entity.member, 'Inputs cannot move to another entity inside this plan', 409)
  return { ...supplied, [entity.dimension]: entity.member }
-}
-
-/** A connected entity's working forecast succeeds its frozen budget, retaining the same source binding. */
-export function entitySourcePlan(s:State,entity:Data) {
- const source=get(s,'scenario',entity.scenario)
- if(source.status==='frozen'&&all(s,'intacct-entity').some(r=>r.entity===entity.id))
-  return all(s,'scenario').find(sc=>sc.parent===source.id&&sc.kind==='forecast'&&sc.status==='working')??source
- return source
 }

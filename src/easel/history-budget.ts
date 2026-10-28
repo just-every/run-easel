@@ -1,3 +1,5 @@
+import { ledgerEntity } from './ledger-scope'
+import { scenarioAccess } from './scenario-access'
 import { requireFinance } from './access'
 import { actualCells } from './actuals-read'
 import type { Context } from './context'
@@ -12,9 +14,11 @@ import { all, put, requireThat, text, uid, type Data } from './types'
 export async function historyBudget(c: Context, op: string, b: Data): Promise<Data | undefined> {
  if (op !== 'budget-from-actuals') return undefined
  requireFinance(c.x)
- const w = workspace(c.s), months = range(w.planStart, w.horizon)
- await assertHistorySources(c, months.map(m => addMonths(m, -12)))
- const actuals = await actualCells(c.db, c.s)
+ const source=b.scenario?scenarioAccess(c.s,c.x,b.scenario):undefined
+ const entity=source?ledgerEntity(c.s,source.id):undefined
+ const w = {...workspace(c.s),...(entity?{currency:all(c.s,'entity').find(e=>e.id===entity)!.currency}:{})}, months = range(w.planStart, w.horizon)
+ await assertHistorySources(c, months.map(m => addMonths(m, -12)),source?.id)
+ const actuals = await actualCells(c.db,c.s,undefined,entity)
  const growth = b.growth ?? {}
  requireThat(growth && typeof growth === 'object' && !Array.isArray(growth), 'Enter growth percentages by line')
  requireThat(Object.keys(growth).every(id => lines(c.s).some(line => line.id === id)), 'Growth names an unknown planning line')
@@ -33,7 +37,7 @@ export async function historyBudget(c: Context, op: string, b: Data): Promise<Da
  requireThat(definitions.length, 'No mapped prior-year line and department history is available', 409)
  const id = uid(), name = text(b.name, 'Budget name')
  const original = all(c.s, 'scenario').find(sc => sc.kind === 'budget' && !sc.alternativeBudget)
- const budget = { name, kind: 'budget', alternativeBudget: true, status: 'working', revision: 1, horizon: w.horizon, createdBy: c.x.actor.email, createdAt: c.now, parent: null, actualsThrough: null,
+ const budget = { name, ...(entity?{entity,currency:w.currency}:{}), kind: 'budget', alternativeBudget: true, status: 'working', revision: 1, horizon: w.horizon, createdBy: c.x.actor.email, createdAt: c.now, parent: null, actualsThrough: null,
   cash: original?.cash ?? { openingCents: 0, basis: 'estimate', receivablesCents: 0, payablesCents: 0, collectionLag: 0, paymentLag: 0 }, seededFromActuals: { at: c.now, by: c.x.actor.email, months: months.map(m => addMonths(m, -12)), growth } }
  put(c.s, 'scenario', id, budget)
  for (const definition of definitions) put(c.s, 'schedule', uid(), { ...definition, scenario: id, originId: uid() })

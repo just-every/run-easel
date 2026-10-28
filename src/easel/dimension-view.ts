@@ -1,4 +1,6 @@
-import { boundEntity } from './entity-scope'
+import { entityAllowed } from './entity-access'
+import { all } from './types'
+import { ledgerEntity } from './ledger-scope'
 import { dimensionAllowed, seesDepartmentDetail } from './access'
 import { scopedReader } from './group-projections'
 import { requireMember } from './access'
@@ -12,17 +14,19 @@ import { scenarioView } from './views'
 import { get, requireThat, type Data } from './types'
 import { workbook, type Cell as XlsxCell } from './xlsx-write'
 
-export async function dimensionView(c: Context, scenario: string, dimension?: string, member?: string) {
+export async function dimensionView(c: Context, scenario: string, dimension?: string, member?: string,entity?:string) {
  requireMember(c.x)
  let structure = dimensionStructure(c.s), calc: Calculation, blocked: Data[] = []
  if (scenario === 'actuals') {
-  const actuals = await dimensionActuals(c.db, c.s); blocked = actuals.blocked
-  calc = { cells: actuals.cells, months: actuals.months, currency: get(c.s, 'workspace', 'main').currency } as Calculation
+  requireThat(entity||!all(c.s,'intacct-entity-map').length,'Choose an explicit entity for dimensional actuals',409)
+  if(entity)requireThat(entityAllowed(c.s,c.x,get(c.s,'entity',entity)),'Entity not found',404)
+  const actuals = await dimensionActuals(c.db,c.s,entity); blocked = actuals.blocked
+  calc = { cells: actuals.cells, months: actuals.months, currency: entity?get(c.s,'entity',entity).currency:get(c.s,'workspace','main').currency } as Calculation
  } else {
   const view = await scenarioView(c, scenario)
   calc = view.calculation
   const sc = get(c.s, 'scenario', scenario)
-  if (sc.status !== 'frozen' && sc.actualsThrough) blocked = (await dimensionActuals(c.db, c.s,boundEntity(c.s,sc)?.id)).blocked.filter(issue => issue.month <= sc.actualsThrough)
+  if (sc.status !== 'frozen' && sc.actualsThrough) blocked = (await dimensionActuals(c.db,c.s,ledgerEntity(c.s,scenario))).blocked.filter(issue => issue.month <= sc.actualsThrough)
   if (sc.status === 'frozen') {
    const frozen = await frozenModel(c, sc)
    structure = (frozen as Data).dimensionStructure ?? { dimension: [], 'dimension-member': [], 'line-group': [], line: frozen.lines }

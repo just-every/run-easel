@@ -1,58 +1,56 @@
 import type { Bindings } from '../auth.server'
-import { requireCapability, requireFinance } from './access'
-import { openConnection, sealConnection } from './connection-seal'
+import { requireCapability,requireFinance } from './access'
+import { sealConnection,openConnection } from './connection-seal'
 import type { Context } from './context'
+import { entityAllowed } from './entity-access'
+import { boundEntity } from './entity-scope'
 import { scopedReader } from './group-projections'
-import { INTACCT_PURPOSE, INTACCT_READS, intacctEntities, IntacctFailure, type IntacctCredentials } from './intacct-provider'
+import { intacctEntities,IntacctFailure,INTACCT_PURPOSE,INTACCT_READS,type IntacctCredentials } from './intacct-provider'
 import { readFence } from './store'
-import { all, find, get, put, requireThat, text, type Data } from './types'
-
-export function intacctAuthority(c:Context) {
- requireCapability(c.x,'connections');requireFinance(c.x)
- requireThat(!c.x.actor.token&&!c.x.actor.agent&&!c.x.actor.scheduler&&!scopedReader(c.x),'Use a company-wide native finance session for Intacct',403)
-}
-export async function intacctStatus(c:Context) {
- intacctAuthority(c)
- const row=find(c.s,'connection','intacct'),stored=await c.db.prepare("SELECT id FROM e_connection_secrets WHERE id='intacct'").first()
- return{...row,connected:!!(row?.connected&&stored),scope:INTACCT_READS,operations:INTACCT_READS,schedule:'Manual',months:all(c.s,'intacct-month').filter(m=>m.realmId.startsWith(row?.realmId+':')),bindings:all(c.s,'intacct-entity'),error:row?.connected&&!stored?'Reconnect Intacct after restore; credentials are excluded from archives':row?.error??null}
-}
-export async function intacctKey(c:Context,env:Bindings):Promise<IntacctCredentials> {
+import { all,find,get,put,requireThat,text,type Data } from './types'
+export function intacctAuthority(c:Context){requireCapability(c.x,'connections');requireFinance(c.x);requireThat(!c.x.actor.token&&!c.x.actor.agent&&!c.x.actor.scheduler&&!scopedReader(c.x),'Use a company-wide native finance session for Intacct',403)}
+export async function intacctKey(c:Context,env:Bindings):Promise<IntacctCredentials>{
  intacctAuthority(c);requireThat(find(c.s,'connection','intacct')?.connected,'Connect Intacct before pulling actuals',409)
- const stored=await c.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='intacct'").first<{sealed:string}>()
- requireThat(stored,'Reconnect Intacct after restore',409)
- return JSON.parse(await openConnection(env.SESSION_SECRET,stored.sealed,INTACCT_PURPOSE,'Intacct'))
+ const r=await c.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='intacct'").first<{sealed:string}>();requireThat(r,'Reconnect Intacct after restore; credentials are excluded from archives',409)
+ try{return JSON.parse(await openConnection(env.SESSION_SECRET,r.sealed,INTACCT_PURPOSE,'Intacct'))}catch{throw new IntacctFailure('Intacct credentials could not be opened; reconnect in Settings')}
 }
-export async function intacctConnection(c:Context,env:Bindings,op:string,b:Data) {
- intacctAuthority(c);await readFence(c.db,c.x.actor,(c as Context&{revision:number}).revision)
- requireThat(['connect','disconnect','check','entity-map'].includes(op),'Unknown Intacct action',404)
+export async function intacctStatus(c:Context){
+ intacctAuthority(c);const row=find(c.s,'connection','intacct'),secret=await c.db.prepare("SELECT id FROM e_connection_secrets WHERE id='intacct'").first()
+ return{...row,connected:!!(row?.connected&&secret),operations:INTACCT_READS,schedule:'Manual',book:'ACCRUAL',bindings:all(c.s,'intacct-entity-map'),months:all(c.s,'intacct-month').sort((a,b)=>a.sourceEntity.localeCompare(b.sourceEntity)||a.month.localeCompare(b.month)),error:row?.connected&&!secret?'Reconnect Intacct after restore; credentials are excluded from archives':row?.error??null}
+}
+const REVOCATION='Deactivate the dedicated Web Services user in Intacct and remove this sender ID from Company → Company → Security → Web Services authorizations. Easel cannot revoke these credentials remotely.'
+export async function intacctConnection(c:Context,env:Bindings,op:string,b:Data):Promise<{extra:D1PreparedStatement[]}>{
+ intacctAuthority(c);const revision=(c as Context&{revision:number}).revision;requireThat(Number.isSafeInteger(revision),'Reload the native finance session',409);await readFence(c.db,c.x.actor,revision)
+ requireThat(['connect','check','disconnect','bind'].includes(op),'Unknown Intacct connection action',404)
  const prior=find(c.s,'connection','intacct')
- if(op==='disconnect') {
-  const providerRevocation={status:'unsupported',httpStatus:null,at:c.now}
-  put(c.s,'connection','intacct',{...prior,connected:false,providerRevocation,error:'Local credentials deleted. Disable the Web Services user and revoke sender authorization in Sage Intacct Company → Web Services authorizations.'})
+ if(op==='disconnect'){
+  const providerRevocation={status:'unsupported',at:c.now,ownerStep:REVOCATION}
+  put(c.s,'connection','intacct',{...prior,connected:false,disconnectedAt:c.now,providerRevocation,error:REVOCATION})
   c.activity.push({action:'intacct-disconnected',record:'intacct',detail:{providerRevocation,localCredentialDeleted:true}})
-  return[c.db.prepare("DELETE FROM e_connection_secrets WHERE id='intacct'")]
+  return{extra:[c.db.prepare("DELETE FROM e_connection_secrets WHERE id='intacct'")]}
  }
- if(op==='entity-map') {
-  const key=await intacctKey(c,env),entities=await intacctEntities(key),source=text(b.source,'Intacct entity ID'),entity=get(c.s,'entity',b.entity),remote=entities.find(e=>e.id===source)
-  requireThat(remote&&remote.currency===entity.currency,'Source entity and plan currencies must agree; no rate is inferred',409)
-  const id=key.companyId+':'+source,existing=find(c.s,'intacct-entity',id)
-  requireThat(!existing||existing.entity===entity.id,'An imported source entity cannot move to another plan',409)
-  requireThat(!all(c.s,'intacct-entity').some(r=>r.id!==id&&r.entity===entity.id),'Each plan binds exactly one source entity',409)
-  put(c.s,'intacct-entity',id,{realmId:key.companyId,source,entity:entity.id,currency:remote.currency})
-  c.activity.push({action:'intacct-entity-mapped',record:id,detail:{entity:entity.id,source,currency:remote.currency}})
-  return[]
+ if(op==='check'){
+  const key=await intacctKey(c,env);let health:Data
+  try{const entities=await intacctEntities(key);health={entities,error:null,rateLimit:null}}catch(e){if(!(e instanceof IntacctFailure))throw e;health={error:e.message,rateLimit:e.rateLimit}}
+  put(c.s,'connection','intacct',{...prior,...health,lastCheck:c.now});c.activity.push({action:'intacct-checked',record:'intacct',detail:{error:health.error,rateLimit:health.rateLimit}});return{extra:[]}
  }
- if(op==='check') {
-  try { const entities=await intacctEntities(await intacctKey(c,env));put(c.s,'connection','intacct',{...prior,entities,lastCheck:c.now,error:null,rateLimit:null}) }
-  catch(e) { if(!(e instanceof IntacctFailure))throw e;put(c.s,'connection','intacct',{...prior,lastCheck:c.now,error:e.message,rateLimit:e.rateLimit}) }
-  c.activity.push({action:'intacct-checked',record:'intacct'});return[]
+ if(op==='bind'){
+  const key=await intacctKey(c,env),source=(await intacctEntities(key)).find(e=>e.id===b.sourceEntity);requireThat(source,'Choose a legal entity authorized by Intacct',403)
+  const entity=get(c.s,'entity',b.entity),scenario=get(c.s,'scenario',entity.scenario)
+  requireThat(entityAllowed(c.s,c.x,entity)&&boundEntity(c.s,scenario)?.id===entity.id,'The entity source plan is unavailable',403)
+  requireThat(source.currency===entity.currency,'The provider and Easel entity base currencies must agree',409)
+  const id=JSON.stringify([key.companyId,'ACCRUAL',source.id]),old=find(c.s,'intacct-entity-map',id)
+  requireThat(!old||old.entity===entity.id&&old.currency===entity.currency&&old.scenario===entity.scenario,'An accepted entity binding cannot silently change',409)
+  requireThat(!all(c.s,'intacct-entity-map').some(r=>r.id!==id&&r.entity===entity.id),'Each Easel entity needs one provider entity',409)
+  put(c.s,'intacct-entity-map',id,{company:key.companyId,book:'ACCRUAL',sourceEntity:source.id,entity:entity.id,scenario:entity.scenario,currency:source.currency,name:source.name})
+  c.activity.push({action:'intacct-entity-bound',record:id,scenario:entity.scenario,detail:{sourceEntity:source.id,entity:entity.id,currency:source.currency}});return{extra:[]}
  }
- requireThat(!prior?.connected,'Disconnect Intacct before replacing its credentials',409)
- requireThat(b.consent===true,'Approve read-only Intacct access with a read-only Web Services user')
- const key:IntacctCredentials={companyId:text(b.companyId,'Company ID',100),senderId:text(b.senderId,'Sender ID',100),senderPassword:text(b.senderPassword,'Sender password',1000),userId:text(b.userId,'Web Services user',100),password:text(b.password,'Web Services password',1000)}
- requireThat(!prior?.realmId||prior.realmId===key.companyId||!all(c.s,'intacct-month').length,'Accepted Intacct history belongs to another company; use a separate installation',409)
- const entities=await intacctEntities(key),sealed=await sealConnection(env.SESSION_SECRET,JSON.stringify(key),INTACCT_PURPOSE)
- put(c.s,'connection','intacct',{connected:true,realmId:key.companyId,suffix:key.password.slice(-4),entities,owner:c.x.actor.email,connectedAt:c.now,scope:INTACCT_READS,schedule:'Manual',lastRefresh:null,rowCount:0,error:null,rateLimit:null})
- c.activity.push({action:'intacct-connected',record:'intacct',detail:{companyId:key.companyId,consent:true,scope:INTACCT_READS}})
- return[c.db.prepare("INSERT INTO e_connection_secrets(id,sealed) VALUES('intacct',?) ON CONFLICT(id) DO UPDATE SET sealed=excluded.sealed").bind(sealed)]
+ requireThat(!prior?.connected,'Disconnect Intacct before replacing credentials',409);requireThat(b.consent===true,'Explicitly approve read-only Intacct Web Services access')
+ const key:IntacctCredentials={senderId:text(b.senderId,'Sender ID',200),senderPassword:text(b.senderPassword,'Sender password',1000),companyId:text(b.companyId,'Company ID',200),userId:text(b.userId,'Dedicated read-only Web Services user',200),userPassword:text(b.userPassword,'User password',1000)}
+ requireThat(key.senderPassword.length>=8&&key.userPassword.length>=8,'Use complete Web Services passwords of at least eight characters')
+ const entities=await intacctEntities(key);requireThat(entities.length>0,'Intacct returned no authorized legal entities',409)
+ const sealed=await sealConnection(env.SESSION_SECRET,JSON.stringify(key),INTACCT_PURPOSE)
+ put(c.s,'connection','intacct',{connected:true,company:key.companyId,user:key.userId,sender:key.senderId,suffix:key.userPassword.slice(-4),senderSuffix:key.senderPassword.slice(-4),entities,owner:c.x.actor.email,connectedAt:c.now,schedule:'Manual',operations:INTACCT_READS,lastRefresh:null,lastCheck:c.now,rowCount:0,error:null,rateLimit:null})
+ c.activity.push({action:'intacct-connected',record:'intacct',detail:{company:key.companyId,consent:true,operations:INTACCT_READS}})
+ return{extra:[c.db.prepare("INSERT INTO e_connection_secrets(id,sealed) VALUES('intacct',?) ON CONFLICT(id) DO UPDATE SET sealed=excluded.sealed").bind(sealed)]}
 }

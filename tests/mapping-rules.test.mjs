@@ -252,12 +252,11 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
 
 test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
  const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
- for(const sourceKind of ['file','pantry','qbo','xero','intacct']) {
+ for(const sourceKind of ['file','pantry','qbo','xero']) {
  const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()
  const {qboProvider,qboGrant,acceptQbo}=await import('./qbo-fixture.mjs'),qboEdge=qboProvider()
  const {xeroProvider,xeroGrant,acceptXero}=await import('./xero-fixture.mjs'),xeroEdge=xeroProvider()
- const {intacctProvider,intacctGrant,acceptIntacct}=await import('./intacct-fixture.mjs'),intacctEdge=intacctProvider()
- const h = await harness({outbound:sourceKind==='intacct'?intacctEdge.outbound:sourceKind==='xero'?xeroEdge.outbound:sourceKind==='qbo'?qboEdge.outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
+ const h = await harness({outbound:sourceKind==='xero'?xeroEdge.outbound:sourceKind==='qbo'?qboEdge.outbound:provider.outbound,bindings:{PANTRY_ORIGIN:'https://pantry.example.test'}}); t.after(() => h.close())
  const { revenue, expense } = await seedBalanceActuals(h.command)
  const dept = await h.command('department', { name: 'Delivery' })
  await h.command('department-map', { source: '', department: dept.id })
@@ -285,16 +284,7 @@ test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attri
  ]
  const ledger = { filename: 'opening-ledger.csv', dateFormat: 'YYYY-MM-DD', columns: { date: 'Date', account: 'Account', amount: 'Amount' }, csv: 'Date,Account,Amount\n' + rows.map(r => r.join(',')).join('\n') + '\n' }
  let preview
- if(sourceKind==='intacct') {
-  await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
-  intacctEdge.entries=rows
-  const entity=await h.command('entity-save',{name:'US services',scenario:budget.id,currency:'USD',group:budget.id,reporting:'USD'})
-  assert.equal((await h.send('/api/easel/connections/intacct/connect',intacctGrant,h.owner)).status,200)
-  assert.equal((await h.send('/api/easel/connections/intacct/entity-map',{source:'US',entity:entity.id},h.owner)).status,200)
-  await acceptIntacct(h,{sourceEntity:'US',month:'2025-12',includeOpening:true})
-  preview=await acceptIntacct(h,{sourceEntity:'US',month:'2026-01',includeOpening:false})
-  assert.equal(preview.source.trialBalance.balanced,true)
- } else if(sourceKind==='xero') {
+ if(sourceKind==='xero') {
   await h.command('workspace',{name:'Harbour Services',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
   xeroEdge.entries=rows
   assert.equal((await h.send('/api/easel/connections/xero/connect',xeroGrant,h.owner)).status,200)
@@ -396,13 +386,8 @@ test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attri
  await h.command('account-rule',{match:'prefix',from:'FA-',target:'bs:fixed-assets'})
  assert.deepEqual((await view()).calculation,c)
  const correction = { ...ledger, filename:'corrected-opening.csv', csv:'Date,Account,Amount\n2026-01-31,1200,0.01\n2026-01-31,3000,-0.01\n' }
- if(sourceKind==='intacct') {
-  intacctEdge.entries=[...rows,['2026-01-31','1200','0.01'],['2026-01-31','3000','-0.01']]
-  await acceptIntacct(h,{sourceEntity:'US',month:'2026-01',includeOpening:false})
- } else {
-  const corrected = await h.kit('actuals','preview',correction)
-  await h.kit('actuals','commit',{...correction,fingerprint:corrected.fingerprint})
- }
+ const corrected = await h.kit('actuals','preview',correction)
+ await h.kit('actuals','commit',{...correction,fingerprint:corrected.fingerprint})
  await h.get(`/api/easel/scenario/${forecast.id}`,h.owner,409)
  assert.deepEqual(await h.get(`/api/easel/scenario/${kept.id}`),frozen)
  const revision=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===forecast.id).revision

@@ -9,7 +9,7 @@ export type NativeBase={model:Model;cells:Cell[];headcount:Record<string,Record<
 export type FormulaValue={originId:string;name:string;unit:string;dimension?:string;member?:string;month:string;value:number;trace:string;department:string;line?:string;dependencies:Dependency[]}
 export type Dependency={department:string;payroll?:boolean;scenario?:string}
 export type NativeGraph={base:NativeBase;finish:(values:FormulaValue[])=>Calculation}
-export type NativeRuntime={graph:(scenario:string)=>NativeGraph|{frozen:Calculation};actual:(line:string,department:string,month:string,scenario?:string)=>ActualCell;resolve:(scenario:string)=>FormulaValue[]}
+export type NativeRuntime={graph:(scenario:string)=>NativeGraph|{frozen:Calculation};actual:(line:string,department:string,month:string,scenario:string)=>ActualCell;resolve:(scenario:string)=>FormulaValue[]}
 
 /** One memoized graph spans drivers, members, periods, final lines and versions. */
 export function nativeRuntime(graph:NativeRuntime['graph'],actual:NativeRuntime['actual']):NativeRuntime {

@@ -345,13 +345,15 @@
       ]
     },
     {
-      "id": "intacct-actuals",
-      "clauses": ["CONNECT-011"]
-    },
-    {
       "id": "quickbooks-actuals",
       "clauses": [
         "CONNECT-001"
+      ]
+    },
+    {
+      "id": "sage-intacct-actuals",
+      "clauses": [
+        "CONNECT-011"
       ]
     }
   ],
