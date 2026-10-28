@@ -1,7 +1,7 @@
 // One native journey. Product data travels through HTTP and the built UI;
 // only NetSuite and mail are replaced at their outbound network edges.
 import assert from 'node:assert/strict'
-import { mkdir } from 'node:fs/promises'
+import { mkdir,readFile } from 'node:fs/promises'
 import { join,resolve } from 'node:path'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { command as rerCommand } from './browser-runtime.mjs'
@@ -64,11 +64,27 @@ try{
   const link=rows.getByRole('link').first()
   for(const width of[1440,390]){await page.setViewportSize({width,height:1000});await settle(page);await noOverflow(page,'Entity variance');await link.scrollIntoViewIfNeeded();await link.focus();await sourceFrame.screenshot({path:join(evidence,`entity-${i+1}-variance-${width}.png`)});const popup=await Promise.all([context.waitForEvent('page'),link.click()]).then(([p])=>p);await popup.getByRole('heading',{name:'Recorded NetSuite transaction 1026',exact:true}).waitFor();await popup.close()}
   await page.setViewportSize({width:1440,height:1000})
+  await action(page,'/command/pack-create',()=>page.getByRole('button',{name:'Start the Jan 2026 pack',exact:true}).click())
+  await page.getByText('The numbers are current.',{exact:true}).waitFor()
+  const pack=await action(page,'/command/pack-publish',()=>page.getByRole('button',{name:'Publish pack',exact:true}).click())
+  const download=page.waitForEvent('download');await page.getByRole('link',{name:'Download pack (HTML)',exact:true}).click()
+  const path=join(evidence,`entity-${i+1}-pack.html`);await(await download).saveAs(path)
+  const html=await readFile(path,'utf8'),amount=f.entities[i].currency+' '+(i===0?'100.00':'80.00')
+  assert.ok(html.includes(amount));assert.ok(!html.includes('USD'))
+  const captureBody=await send('/api/easel/snapshot/'+pack.snapshot);assert.equal(captureBody.body.currency,f.entities[i].currency)
+  const exported=await context.newPage();track(exported);try{await exported.setContent(html);await exported.setViewportSize({width:1440,height:1000});assert.ok((await exported.locator('body').innerText()).includes(amount));await capture(exported,exported.locator('body'),`entity-${i+1}-published-pack`)}finally{await exported.close()}
  }
- await send('/api/easel/command/member',{email:'netsuite-viewer@example.test',name:'Board reader',role:'viewer',departments:[]});await send('/api/easel/invite',{email:'netsuite-viewer@example.test'})
+ await send('/api/easel/command/member',{email:'netsuite-viewer@example.test',name:'Canada board reader',role:'viewer',departments:[],dimensionMembers:{[f.entities[0].dimension]:[f.entities[0].member]}});await send('/api/easel/invite',{email:'netsuite-viewer@example.test'})
  const mail=messages.find(m=>m.to.includes('netsuite-viewer@example.test')),token=new URL(mail.text.match(/https?:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
  viewer=await browser.newContext({ignoreHTTPSErrors:true});const confirmation=await viewer.request.post(runtime.origin+'/auth/confirm',{headers:{origin:runtime.origin},data:{token},maxRedirects:0});assert.equal(confirmation.status(),303)
- const vp=await viewer.newPage();track(vp);vp.on('pageerror',e=>errors.push(e.message));await vp.goto(runtime.origin+'/app?tab=review');await vp.getByLabel('Review forecast',{exact:true}).selectOption(forecasts[0].id);await vp.getByRole('heading',{name:'Variances, Jan 2026',exact:true}).waitFor();assert.equal(await vp.getByRole('table',{name:'Accepted rows',exact:true}).count(),0);assert.match(await vp.locator('main.shell').innerText(),/100\.00/);await capture(vp,vp.locator('main.shell'),'viewer-amounts')
+ const vp=await viewer.newPage();track(vp);vp.on('pageerror',e=>errors.push(e.message));await vp.setViewportSize({width:1440,height:1000});await vp.goto(runtime.origin+'/app?tab=review');await vp.getByLabel('Review forecast',{exact:true}).selectOption(forecasts[0].id);await vp.getByRole('heading',{name:'Variances, Jan 2026',exact:true}).waitFor()
+ const visibleRow=vp.locator('summary.variance-summary').filter({hasText:f.line.name}).first();await visibleRow.click()
+ assert.match(await visibleRow.innerText(),/CAD 100\.00/);assert.equal(await vp.getByRole('table',{name:'Accepted rows',exact:true}).count(),0)
+ assert.ok(!(await vp.locator('main.shell').innerText()).includes('Recorded accounting observation'));assert.equal(await vp.getByLabel('Review forecast',{exact:true}).locator(`option[value="${forecasts[1].id}"]`).count(),0)
+ const forbidden=await viewer.request.get(runtime.origin+'/api/easel/variance/2026-01?forecast='+forecasts[1].id);assert.equal(forbidden.status(),404)
+ const permitted=await viewer.request.get(runtime.origin+'/api/easel/variance/2026-01?forecast='+forecasts[0].id),permittedRows=(await permitted.json()).rows
+ assert.equal(permittedRows.find(r=>r.line===f.line.id).actual,10000);assert.ok(permittedRows.every(r=>r.citations.length===0&&r.planSources.length===0&&r.hypotheses.length===0))
+ await capture(vp,card(vp,'Variances, Jan 2026'),'entity-viewer-amounts')
  // Continue the same entities into an explicitly reviewed provider-backed consolidation.
  const expense=await h.command('line',{name:'Intercompany service expense',type:'operating-expense'})
  for(const [account,target]of[['1100','bs:receivables'],['2000','bs:payables'],['5000',expense.id]])await h.command('account-map',{account,target})

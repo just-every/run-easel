@@ -62,7 +62,8 @@ export async function variance(c: Context, month: string,scenario?:string) {
  const rows = []
  for (const k of keys) {
   const [line, department] = k.split('|')
-  if(scopedReader(c.x)&&!seesDepartmentDetail(c.x,department))continue
+  // The calculations already contain only authorized slices. Department detail
+  // controls their evidence below; viewers still receive the permitted sums.
   const a = actual.get(k)?.amount ?? 0, bud = planned.get(k)?.amount ?? 0, f = kept.get(k)?.amount ?? 0
   const comparisons = comparison.comparisons(k, a)
   if (a === 0 && bud === 0 && f === 0 && comparisons.every(v => !v.amount)) continue
@@ -185,7 +186,7 @@ export async function review(c: Context, op: string, b: Data): Promise<Data | un
   const snapshotId = uid()
   c.snapshots.push({ id: snapshotId, kind: 'pack', scenario: pack.forecast, label: pack.title, body: {
    ...templateBody(numbers, sections),
-   title: pack.title, company: w.name, month: pack.month, period: pack.period ?? 'month', months: pack.months ?? [pack.month], label: pack.label ?? monthLabel(pack.month), currency: w.currency, status: 'published',
+   title: pack.title, company: w.name, month: pack.month, period: pack.period ?? 'month', months: pack.months ?? [pack.month], label: pack.label ?? monthLabel(pack.month), status: 'published',
    template: pack.template ?? 'default', sections, fingerprint,
    decisions: sections.includes('decisions') ? pack.decisions : [], publishedBy: { email: x.actor.email, name: x.actor.name }, publishedAt: c.now,
   } })
