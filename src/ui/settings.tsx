@@ -1,3 +1,4 @@
+import { IntacctConnection } from './intacct'
 import { SpendConnections } from './spend'
 import { useState } from 'react'
 import { BillingConnection } from './billing'
@@ -95,7 +96,7 @@ export function Settings({ state, refresh }: Shared) {
   <Dimensions state={state} refresh={refresh} />
   <AccountRules state={state} refresh={refresh} />
   {state.me.role === 'finance' && <><GaugeConnection /><SpendConnections /></>}
-  {state.me.role === 'finance' && <><BillingConnection /><QboConnection /><XeroConnection /><PantryConnection /><GustoConnection /><GreenhouseConnection /><PlaidConnection /></>}
+  {state.me.role === 'finance' && <><BillingConnection /><QboConnection /><XeroConnection /><IntacctConnection state={state} refresh={refresh}/><PantryConnection /><GustoConnection /><GreenhouseConnection /><PlaidConnection /></>}
   {state.me.role === 'finance' && <WarehouseInputs />}
   <SheetLinks state={state} refresh={refresh} />
   <section className="card">

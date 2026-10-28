@@ -1,3 +1,4 @@
+import { boundEntity } from './entity-scope'
 import { sourceGuardBlock } from './agents/source-guard'
 import { get, requireThat } from './types'
 import { activeCalculationJob } from './calculation-jobs'
@@ -22,9 +23,9 @@ export async function workingCalculation(c: Context, scenario: string, through?:
  const m = model(c.s, scenario)
  if (m.inputs.formula?.length) return calculateNativeContext(c,scenario,through)
  const consumed = historySourceMonths(m)
- await assertHistorySources(c, consumed)
+ await assertHistorySources(c, consumed, boundEntity(c.s,m.scenario)?.id)
  const close = through ?? m.scenario.actualsThrough ?? undefined
- const actuals = close || consumed.length ? await actualCells(c.db, c.s, close) : []
- const ledger = close ? await ledgerContext(c, close, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true) : undefined
+ const actuals = close || consumed.length ? await actualCells(c.db, c.s, close, boundEntity(c.s,m.scenario)?.id) : []
+ const ledger = close ? await ledgerContext(c, close, m.scenario.ledgerAllocations ?? [], m.scenario.balanceLedger === true, boundEntity(c.s,m.scenario)?.id) : undefined
  return calculate(m, actuals, ledger)
 }

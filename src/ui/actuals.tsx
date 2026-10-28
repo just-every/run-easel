@@ -1,3 +1,4 @@
+import { IntacctImport } from './intacct'
 import { PantryImport } from './pantry'
 import { XeroImport } from './xero'
 import { QboImport } from './qbo'
@@ -26,12 +27,14 @@ const fileBase64 = async (file: File) => { const bytes = new Uint8Array(await fi
 /** Actuals in, mapped, reconciled and reversible; plus the Excel planning workbook move-in. */
 export function Actuals({ state, refresh }: Shared) {
  const [reconciliation, setReconciliation] = useState<D | null>(null)
- useEffect(() => { api('actuals').then(setReconciliation) }, [state])
- const currency = state.workspace.currency
+ const [entity,setEntity]=useState(''),[entities,setEntities]=useState<D[]>([])
+ useEffect(()=>{api('entities').then(v=>setEntities(v.entities))},[state])
+ useEffect(() => { api('actuals'+(entity?'?entity='+entity:'')).then(setReconciliation) }, [state,entity])
+ const currency = entities.find(e=>e.id===entity)?.currency??state.workspace.currency
  return <>
   <SourceGuard state={state} refresh={refresh} />
   <PantryImport state={state} refresh={refresh} />
-  <QboImport refresh={refresh} state={state}/><XeroImport refresh={refresh} state={state}/>
+  <QboImport refresh={refresh} state={state}/><XeroImport refresh={refresh} state={state}/><IntacctImport refresh={refresh} state={state}/>
   <CsvImport state={state} refresh={refresh} />
   <section className="card">
    <h2>Imports</h2>
@@ -43,8 +46,8 @@ export function Actuals({ state, refresh }: Shared) {
    </Table>
   </section>
   {reconciliation && <section className="card">
-   <h2>Reconciliation</h2>
-   <p><a href="/api/easel/actuals.xlsx" download>Download reconciliation (Excel)</a></p>
+   <h2>Reconciliation</h2>{entities.length>0&&<label>Ledger entity<select aria-label="Ledger entity" value={entity} onChange={e=>setEntity(e.target.value)}><option value="">Installation ledger</option>{entities.map(e=><option key={e.id} value={e.id}>{e.name} · {e.currency}</option>)}</select></label>}
+   <p><a href={`/api/easel/actuals.xlsx${entity?'?entity='+entity:''}`} download>Download reconciliation (Excel)</a></p>
    <p className="muted">Every imported amount is mapped to a planning line, excluded, held as cash or another balance-sheet line, or shown here as unmapped. Amounts are debit-positive as imported.</p>
    <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Other balance sheet', 'Unmapped', 'Revenue', 'Costs', 'Balanced', 'Mapping status']}>
     {reconciliation.months.map((m: D) => <tr key={m.period}><td>{m.label}</td><td className="num">{m.rows}</td><td className="num">{money(m.imported, currency)}</td><td className="num">{money(m.mapped, currency)}</td><td className="num">{money(m.excluded, currency)}</td><td className="num">{money(m.cash, currency)}</td><td className="num">{money(m.balanceSheet, currency)}</td><td className="num">{money(m.unmapped, currency)}</td><td className="num">{money(m.revenue, currency)}</td><td className="num">{money(m.costs, currency)}</td><td>{m.balanced ? 'Yes' : 'No'}</td><td>{m.blocked ? `Blocked: ${[...m.unmappedAccounts, ...m.unmappedDepartments].join(', ')}` : 'Complete'}</td></tr>)}

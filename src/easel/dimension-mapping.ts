@@ -20,6 +20,8 @@ export function resolveDimensions(s: State, source: Record<string, string> = {})
   if (members.length === 1 && all(s, 'dimension-member').some(m => m.id === members[0] && m.dimension === dimension.id)) dimensions[dimension.id] = members[0]
   else unresolved.push({ dimension: dimension.id, name: dimension.name, sources: Object.fromEntries(applicable.map(r => [r.sourceKind, source[r.sourceKind]])), reason: members.length > 1 ? 'Conflicting dimension rules' : 'No dimension member mapping' })
  }
+ const entity=source['easel-entity'] ? all(s,'entity').find(e=>e.id===source['easel-entity']) : undefined
+ if(entity)dimensions[entity.dimension]=entity.member
  return { dimensions, unresolved }
 }
 export function dimensionMapping(c: Context, op: string, b: Data): Data | undefined {

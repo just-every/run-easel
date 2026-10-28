@@ -24,8 +24,10 @@ import { ConstantCurrency } from './translation'
 export function Review({ state, refresh }: Shared) {
  const displayDate = useDate()
  const me = state.me
- const currency = state.workspace.currency
- const forecast = state.scenarios.find((s: D) => s.kind === 'forecast' && !s.alternativeBudget)
+ const [selectedForecast,setSelectedForecast]=useState('')
+ const forecasts=state.scenarios.filter((s:D)=>s.kind==='forecast')
+ const forecast = forecasts.find((s:D)=>s.id===selectedForecast)??forecasts.find((s:D)=>!s.alternativeBudget)??forecasts[0]
+ const currency = forecast?.currency??state.workspace.currency
  const closedMonths: string[] = []
  if (forecast?.actualsThrough) for (let m = state.workspace.planStart; m <= forecast.actualsThrough; m = addMonths(m, 1)) closedMonths.push(m)
  const [month, setMonth] = useState(() => {
@@ -34,8 +36,8 @@ export function Review({ state, refresh }: Shared) {
  })
  const [v, setV] = useState<D | null>(null)
  const [error, setError] = useState('')
- useEffect(() => { let live = true; setV(null); setError(''); if (month) api(`variance/${month}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state])
- useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.actualsThrough])
+ useEffect(() => { let live = true; setV(null); setError(''); if (month) api(`variance/${month}?scenario=${forecast?.id??''}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state,forecast?.id])
+ useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.actualsThrough,forecast?.id,month])
  useEffect(() => { if (month) { const url = new URL(window.location.href); url.searchParams.set('reviewMonth', month); window.history.replaceState(window.history.state, '', url) } }, [month])
  const next = forecast ? (forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : state.workspace.planStart) : ''
  const reviewState = { ...state, actorNames: { ...state.actorNames, ...v?.actorNames } }
@@ -46,8 +48,8 @@ export function Review({ state, refresh }: Shared) {
   {me.role === 'finance' && <><AgentGovernance /><SpendReview state={state} refresh={refresh} /></>}
   <Analyst state={state} refresh={refresh} />
   <section className="card">
-   <h2>Monthly review</h2>
-   {v && <p><a href={`/api/easel/variance/${month}/document.xlsx`} download>Download variances (Excel)</a></p>}
+   <h2>Monthly review</h2>{forecasts.length>1&&<label>Review forecast<select aria-label="Review forecast" value={forecast?.id??''} onChange={e=>{setSelectedForecast(e.target.value);setMonth('')}}>{forecasts.map((s:D)=><option key={s.id} value={s.id}>{s.name} · {s.currency??state.workspace.currency}</option>)}</select></label>}
+   {v && <p><a href={`/api/easel/variance/${month}/document.xlsx?scenario=${forecast?.id??''}`} download>Download variances (Excel)</a></p>}
    {!forecast && <p>The forecast opens when the budget is approved.</p>}
    {forecast && <Dots as="p" className="muted">{glue(forecast.name)}{`revision ${forecast.revision}`}{`actuals through ${monthLabel(forecast.actualsThrough)}`}</Dots>}
    {forecast && <Dots as="p" className="muted">{`Forecast through ${monthLabel(addMonths(state.workspace.planStart, (forecast.horizon ?? state.workspace.horizon) - 1))}`}{`${forecast.rollingWindow ? `always ${forecast.rollingWindow} months ahead` : 'fixed horizon'}. Approved budgets keep their original months.`}</Dots>}

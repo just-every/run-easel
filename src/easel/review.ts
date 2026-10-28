@@ -1,3 +1,5 @@
+import { scenarioAccess } from './scenario-access'
+import { boundEntity } from './entity-scope'
 import { gaugeFreshness } from './gauge-freshness'
 import { workingCalculation } from './calculation'
 // Monthly review: actual against the approved budget and the forecast kept
@@ -31,11 +33,12 @@ export function forecastFor(s: State, month: string) {
 }
 
 /** Variance rows for a closed month. Detail the person may not see is removed here, on the server. */
-export async function variance(c: Context, month: string) {
+export async function variance(c: Context, month: string, scenario?:string) {
  requireMember(c.x)
  const { s } = c
  const w = workspace(s)
- const forecast = forecastFor(s, month)
+ const forecast = scenarioAccess(s,c.x,scenario??forecastFor(s,month).id)
+ requireThat(forecast.kind==='forecast'&&forecast.actualsThrough>=month,'Choose a closed forecast month',409)
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorBody = prior ? (await snapshot(c.db, prior.snapshot)).body : null
@@ -47,7 +50,7 @@ export async function variance(c: Context, month: string) {
  const kept = priorCalc ? cellMap(priorCalc, month) : new Map<string, Cell>()
  const next = cellMap(budget.body.calculation, addMonths(month, 1)), previous = cellMap(budget.body.calculation, addMonths(month, -1))
  const lineById = new Map<string, Data>([...comparison.lines, ...lines(s), ...budget.body.lines].map(l => [l.id, l])), deptById = new Map<string, Data>([...comparison.departments, ...departments(s), ...budget.body.departments].map(d => [d.id, d]))
- const money = (n: number) => formatMoney(n, w.currency)
+ const money = (n: number) => formatMoney(n, currentCalc.currency)
  const keys = [...new Set([...actual.keys(), ...planned.keys(), ...kept.keys(), ...comparison.keys])]
  const rows = []
  for (const k of keys) {
@@ -60,7 +63,7 @@ export async function variance(c: Context, month: string) {
   const revenue = l?.type === 'revenue'
   const payroll = l?.payroll === true || (planned.get(k)?.sources ?? []).some(source => source.kind === 'position')
   const detail = seesDepartmentDetail(c.x, department) && (!payroll || seesPayDetail(c.x, department))
-  const citations = detail ? (await rowsFor(c.db, s, month, line, department)) : []
+  const citations = detail ? (await rowsFor(c.db, s, month, line, department,boundEntity(s,forecast)?.id)) : []
   const planSources = detail ? (planned.get(k)?.sources ?? []).map(x => x.trace) : []
   // A budgeted item in the neighbouring month that matches the difference
   // suggests timing. It stays a hypothesis until the department confirms it.
@@ -80,7 +83,7 @@ export async function variance(c: Context, month: string) {
  }
  rows.sort((p, q) => Math.abs(q.variance) - Math.abs(p.variance) || p.key.localeCompare(q.key))
  const names = await actorNames(c.db, [budget.body.approvedBy?.email, ...rows.flatMap(row => [row.explanation?.writtenBy, row.explanation?.confirmedBy])])
- return { gaugeFreshness: [...(await gaugeFreshness(c, budget.body.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Approved budget' })), ...(await gaugeFreshness(c, priorBody?.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Prior forecast' }))], month, label: monthLabel(month), currency: w.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
+ return { gaugeFreshness: [...(await gaugeFreshness(c, budget.body.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Approved budget' })), ...(await gaugeFreshness(c, priorBody?.inputs?.revenue ?? [], { months: [month] })).map(row => ({ ...row, version: 'Prior forecast' }))], month, label: monthLabel(month), currency: currentCalc.currency, forecast: { id: forecast.id, revision: forecast.revision }, budget: { snapshot: budget.id, sha256: budget.sha256, approvedBy: budget.body.approvedBy, approvedAt: budget.body.approvedAt, revision: budget.body.revision }, priorForecast: prior ? prior.snapshot : null, rows, versions: comparison.versions, actorNames: names }
 }
 
 /** AGENT-007: citations bind accepted rows visible in this exact variance, never client-supplied evidence. */

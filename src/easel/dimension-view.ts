@@ -1,3 +1,4 @@
+import { boundEntity } from './entity-scope'
 import { dimensionAllowed, seesDepartmentDetail } from './access'
 import { scopedReader } from './group-projections'
 import { requireMember } from './access'
@@ -21,7 +22,7 @@ export async function dimensionView(c: Context, scenario: string, dimension?: st
   const view = await scenarioView(c, scenario)
   calc = view.calculation
   const sc = get(c.s, 'scenario', scenario)
-  if (sc.status !== 'frozen' && sc.actualsThrough) blocked = (await dimensionActuals(c.db, c.s)).blocked.filter(issue => issue.month <= sc.actualsThrough)
+  if (sc.status !== 'frozen' && sc.actualsThrough) blocked = (await dimensionActuals(c.db, c.s,boundEntity(c.s,sc)?.id)).blocked.filter(issue => issue.month <= sc.actualsThrough)
   if (sc.status === 'frozen') {
    const frozen = await frozenModel(c, sc)
    structure = (frozen as Data).dimensionStructure ?? { dimension: [], 'dimension-member': [], 'line-group': [], line: frozen.lines }

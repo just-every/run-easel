@@ -1,3 +1,4 @@
+import { boundEntity } from '../entity-scope'
 import { requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { requireCapability, requireFinance, requirePayDetail } from '../access'
@@ -47,7 +48,7 @@ export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null
- const guards=all(c.s,'source-guard').filter(g=>(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
+ const guards=all(c.s,'source-guard').filter(g=>g.entity===boundEntity(c.s,forecast)?.id && (g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
  return guards.length ? guards.map(guard=>`Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}`).join('; ') : null
 }
 /** Called after actuals journal completion, in the same fenced save as batch acceptance. */
@@ -58,7 +59,7 @@ export function completeSourceGuards(c:Context,batch:Data) {
   c.activity.push({action:'source-guard-completed',record:g.id})
  }
 }
-export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Data|undefined> {
+export async function sourceGuardCommands(c:Context,op:string,b:Data,provenance?:Record<number,Data>,sourceObservation?:{month:string;metadata:Data}):Promise<Data|undefined> {
  if (['source-guard-stage', 'source-guard-propose'].includes(op)) requireAgent(c, 'sources')
  if(!['source-guard-stage','source-guard-review'].includes(op))return
  authority(c)
@@ -70,18 +71,18 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
   requireThat(!prior || b.revision===prior.revision,'The source review changed; reload before staging again',409)
   requireThat(!prior || prior.status==='completed' || !unresolved(c,prior).filter((i:Data)=>i.kind!=='freshness').length,'Resolve the existing source issues before replacing its refresh',409)
   const payload=b.actuals ?? b
-  const step=await actualsCommand(c,'preview',payload), preview=step!.result
-  const raw=await readActuals({...payload,dateFormat:payload.dateFormat ?? workspace(c.s).dateFormat},workspace(c.s))
-  requireThat(raw.normal.some(r=>r.period===period),'The file has no rows in the declared coverage month')
+  const step=await actualsCommand(c,'preview',payload,provenance), preview=step!.result
+  const raw=await readActuals({...payload,dateFormat:payload.dateFormat ?? workspace(c.s).dateFormat},workspace(c.s),provenance)
+  requireThat(sourceObservation?.month===period || raw.normal.some(r=>r.period===period),'The file has no rows in the declared coverage month')
   requireThat(raw.normal.every(r=>r.period===period),'Stage one coverage month per source refresh')
   requireThat(Array.isArray(b.expectedPayroll) && b.expectedPayroll.length<=100,'Declare expected payroll runs (an empty list means no payroll dependency)')
   const expectedPayroll=b.expectedPayroll.map((r:Data)=>({provider:text(r.provider,'Payroll provider',100),payDate:isoDate(r.payDate,'Expected pay date'),rows:integer(r.rows,'Expected employee rows',1,5000)}))
   const observedAt=text(b.observedAt,'Source observation time',40), nextExpectedAt=text(b.nextExpectedAt,'Next expected source update',40)
   requireThat(Date.parse(observedAt)<=Date.parse(c.now) && Number.isFinite(Date.parse(observedAt)) && Number.isFinite(Date.parse(nextExpectedAt)) && Date.parse(nextExpectedAt)>Date.parse(observedAt),'Source freshness needs valid observation and later expected update times')
   requireThat(expectedPayroll.every((r:Data)=>datePeriod(workspace(c.s),r.payDate)===period),'Expected payroll dates must fall in the declared coverage month')
-  const metadata={headers:raw.headers,accounts:[...new Set(raw.normal.map(r=>r.account))].sort().map(account=>({account,name:raw.normal.find(r=>r.account===account)?.accountName ?? '',types:[...new Set(raw.normal.filter(r=>r.account===account).map(r=>r.accountType))].sort()})),dimensions:[...new Set(raw.normal.map(r=>canonicalJson(r.sourceDimensions)))].sort()}
+  const metadata=sourceObservation?.metadata??{headers:raw.headers,accounts:[...new Set(raw.normal.map(r=>r.account))].sort().map(account=>({account,name:raw.normal.find(r=>r.account===account)?.accountName ?? '',types:[...new Set(raw.normal.filter(r=>r.account===account).map(r=>r.accountType))].sort()})),dimensions:[...new Set(raw.normal.map(r=>canonicalJson(r.sourceDimensions)))].sort()}
   const issues=sourceChanges(c,preview,metadata,prior)
-  const guard:Data={id,label,source:id,scenario:scenario.id,month:period,sha256:preview.sha256,previewFingerprint:preview.fingerprint,metadata,expectedPayroll,observedAt,nextExpectedAt,issues,decisions:[],impacts:sourceImpacts(c,period),stagedAt:c.now,stagedBy:c.x.actor.email,revision:(prior?.revision ?? 0)+1,status:'review',history:prior?[...(prior.history ?? []),{...prior,history:undefined}]:[]}
+  const guard:Data={id,label,entity:boundEntity(c.s,scenario)?.id,source:id,scenario:scenario.id,month:period,sha256:preview.sha256,previewFingerprint:preview.fingerprint,metadata,expectedPayroll,observedAt,nextExpectedAt,issues,decisions:[],impacts:sourceImpacts(c,period),stagedAt:c.now,stagedBy:c.x.actor.email,revision:(prior?.revision ?? 0)+1,status:'review',history:prior?[...(prior.history ?? []),{...prior,history:undefined}]:[]}
   for(const expected of expectedPayroll)if(!payrollEvidence(c,guard,expected))issues.push({id:digest(['payroll',expected]).slice(0,20),kind:'payroll',expected,reason:`Missing payroll run ${expected.provider} on ${expected.payDate}: ${expected.rows} employee rows expected`})
   if(Date.parse(c.now)>Date.parse(nextExpectedAt))issues.push({id:'freshness',kind:'freshness',reason:`Source stopped updating: next update was expected ${nextExpectedAt}`})
   guard.fingerprint=digest({sha256:guard.sha256,metadata,expectedPayroll,observedAt,nextExpectedAt,issues,impacts:guard.impacts})
@@ -117,8 +118,8 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
 }
 
 /** Before creating/applying the GL journal: missing data cannot be accepted around the guard. */
-export function assertSourceGuardAcceptance(c:Context,sha256:string,periods:string[]) {
- const tracked=all(c.s,'source-guard').filter(g=>periods.includes(g.month))
+export function assertSourceGuardAcceptance(c:Context,sha256:string,periods:string[],entity?:string) {
+ const tracked=all(c.s,'source-guard').filter(g=>g.entity===entity&&periods.includes(g.month))
  requireThat(!tracked.length || tracked.some(g=>g.sha256===sha256), 'This period has a tracked source; stage the changed source file before accepting its refresh',409)
  for(const g of all(c.s,'source-guard').filter(g=>g.sha256===sha256 && g.status!=='completed')) requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
 }

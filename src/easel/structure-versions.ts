@@ -1,3 +1,4 @@
+import { boundEntity } from './entity-scope'
 import { DIMENSION_KINDS, dimensionStructure } from './dimensions'
 import { dimensionVersionCells } from './dimensions-report'
 import { nativeRevisions } from './native-revisions'
@@ -9,7 +10,7 @@ import { workingCalculation } from './calculation'
 import type { Context } from './context'
 import { INPUT_KINDS } from './model'
 import { semanticEqual } from './semantic'
-import { all, Fault, find, type Data, type State } from './types'
+import { all, Fault, get, find, type Data, type State } from './types'
 
 const GLOBAL_KINDS = ['workspace', 'line', 'department', 'account-map', 'account-rule', 'department-map', ...DIMENSION_KINDS]
 const kinds = new Set([...GLOBAL_KINDS, ...INPUT_KINDS, 'scenario'])
@@ -46,7 +47,7 @@ export async function versionStructure(c: Context, before: State, modelRevisionB
  for (const sn of c.snapshots) {
   sn.body.structure = capturedStructure(c.s)
   sn.body.dimensionStructure = dimensionStructure(c.s)
-  if (sn.body.calculation?.months) sn.body.actualsHistory = await historyOverlay(c, [...new Set<string>(sn.body.calculation.months.flatMap((m: string) => [m, addMonths(m, -12)]))])
+  if (sn.body.calculation?.months) sn.body.actualsHistory = await historyOverlay(c, [...new Set<string>(sn.body.calculation.months.flatMap((m: string) => [m, addMonths(m, -12)]))],sn.scenario?boundEntity(c.s,get(c.s,'scenario',sn.scenario))?.id:undefined)
   if (sn.kind === 'forecast') {
    sn.body.lines = all(c.s, 'line'); sn.body.departments = all(c.s, 'department')
   }

@@ -1,3 +1,5 @@
+import { intacctConnection, intacctStatus } from './intacct-connection'
+import { intacctImport } from './intacct-import'
 import { spendConnection, spendStatus, spendReview, spendReviews, spendSources, spendReadFailed } from './spend'
 import { xeroConnection, xeroStatus } from './xero-connection'
 import { xeroImport } from './xero-import'
@@ -221,6 +223,13 @@ api.post('/api/easel/connections/qbo/:op', async c => {
  const ctx=await open(c),result=await qboConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
  ctx.extra=result.extra;await commit(ctx)
  return c.json({...await qboStatus(ctx),...(result.authorizationUrl?{authorizationUrl:result.authorizationUrl}:{})})
+})
+api.get('/api/easel/connections/intacct', c => read(c,intacctStatus))
+api.post('/api/easel/connections/intacct/:op',async c=>{
+ const ctx=await open(c)
+ ctx.extra=await intacctConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))
+ await commit(ctx)
+ return c.json(await intacctStatus(ctx))
 })
 api.get('/api/easel/connections/xero', c => read(c, xeroStatus))
 api.get('/api/easel/connections/xero/callback', async c => {
@@ -587,8 +596,8 @@ api.get('/api/easel/translation/:scenario', c => read(c, ctx => translationView(
 api.get('/api/easel/translation-variance/:month', c => read(c, ctx => constantCurrencyVariance(ctx, c.req.param('month'))))
 api.get('/api/easel/compare', c => read(c, ctx => compareView(ctx, c.req.query('a') ?? '', c.req.query('b') ?? '')))
 api.get('/api/easel/snapshot/:id', c => read(c, ctx => snapshotView(ctx, c.req.param('id'))))
-api.get('/api/easel/actuals', c => read(c, actualsView))
-api.get('/api/easel/variance/:month', c => read(c, ctx => variance(ctx, c.req.param('month'))))
+api.get('/api/easel/actuals', c => read(c, ctx=>actualsView(ctx,c.req.query('entity'))))
+api.get('/api/easel/variance/:month', c => read(c, ctx => variance(ctx, c.req.param('month'),c.req.query('scenario'))))
 api.get('/api/easel/activity', c => read(c, ctx => filteredActivity(ctx, c.req.query())))
 api.get('/api/easel/activity.csv', async c => {
  const ctx = await open(c)
@@ -599,7 +608,7 @@ api.get('/api/easel/activity.csv', async c => {
 
 const spreadsheet = (bytes: Uint8Array, name: string) => new Response(bytes as BodyInit, { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'content-disposition': `attachment; filename="${name}.xlsx"` } })
 api.get('/api/easel/actuals.xlsx', async c => {
- const ctx = await open(c), bytes = actualsWorkbook(await actualsView(ctx), get(ctx.s, 'workspace', 'main').currency)
+ const ctx = await open(c), bytes = actualsWorkbook(await actualsView(ctx,c.req.query('entity')), c.req.query('entity')?get(ctx.s,'entity',c.req.query('entity')).currency:get(ctx.s, 'workspace', 'main').currency)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(bytes, 'easel-reconciliation')
 })
@@ -632,7 +641,7 @@ api.get('/api/easel/compare.xlsx', async c => {
  return spreadsheet(bytes, 'easel-comparison')
 })
 api.get('/api/easel/variance/:month/document.xlsx', async c => {
- const ctx = await open(c), bytes = varianceWorkbook(await variance(ctx, c.req.param('month')))
+ const ctx = await open(c), bytes = varianceWorkbook(await variance(ctx, c.req.param('month'),c.req.query('scenario')))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(bytes, 'easel-variance')
 })
@@ -722,7 +731,7 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
   const evaluation = await evaluateCashAlerts(ctx)
   if (op === 'cash-alert-check') result = { sent: evaluation.sent, blocked: evaluation.blocked }
  }
- const statementIds = op === 'close-month' && !result.alternativeBudget ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
+ const statementIds = op === 'close-month' && !result.alternativeBudget && !result.entity ? queueDepartmentStatements(ctx, b.month) : op === 'department-statement-retry' ? [result.id] : []
  await commit(ctx)
  for (const id of statementIds) await dispatchDepartmentStatement(id, c.env, () => open(c), commit)
  if (op === 'report-schedule-retry') await dispatchSavedReports(result.deliveryIds, c.env, () => open(c), commit)
@@ -733,11 +742,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo' || kit === 'xero', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo' || kit === 'xero' || kit === 'intacct', 'Unknown move-in kit', 404)
  const ctx = await open(c)
  if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = kit === 'xero' ? await xeroImport(ctx,c.env,c.req.param('op'),b) : kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = kit === 'intacct' ? await intacctImport(ctx,c.env,c.req.param('op'),b) : kit === 'xero' ? await xeroImport(ctx,c.env,c.req.param('op'),b) : kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
  const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value

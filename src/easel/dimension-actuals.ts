@@ -5,11 +5,16 @@ import { find, type Data, type State } from './types'
 import type { Cell } from './engine'
 
 /** Resolve source metadata before aggregation so two classes on one account never merge. */
-export async function dimensionActuals(db: D1Database, s: State) {
- const { results } = await db.prepare('SELECT value,amount FROM e_actuals ORDER BY period,id').all<{ value: string; amount: number }>()
+export async function dimensionActuals(db: D1Database, s: State,entity?:string) {
+ const { results } = await db.prepare("SELECT value,amount FROM e_actuals WHERE COALESCE(json_extract(value,'$.entity'),'')=? ORDER BY period,id").bind(entity??'').all<{ value: string; amount: number }>()
  const types = new Map(lines(s).map(l => [l.id, l.type]))
  const cells: Cell[] = [], blocked: Data[] = []
+ const reversed=new Set(results.filter(r=>JSON.parse(r.value).intacctReversal).map(r=>{const v=JSON.parse(r.value);return JSON.stringify([v.intacctRealm,v.intacctLine,v.account,v.accountType,v.department,v.sourceDimensions])}))
+ const totals=new Map<string,number>()
+ for(const row of results){const v=JSON.parse(row.value),k=JSON.stringify([v.intacctRealm,v.intacctLine,v.account,v.accountType,v.department,v.sourceDimensions]);totals.set(k,(totals.get(k)??0)+Number(row.amount))}
  for (const row of results) {
+  const provenance=JSON.parse(row.value),identity=JSON.stringify([provenance.intacctRealm,provenance.intacctLine,provenance.account,provenance.accountType,provenance.department,provenance.sourceDimensions])
+  if(provenance.intacctLine&&reversed.has(identity)&&totals.get(identity)===0)continue
   const value = JSON.parse(row.value), account = resolveAccount(s, value.account, value.accountType ?? '')
   const department = find(s, 'department-map', value.department)?.department
   const resolved = resolveDimensions(s, value.sourceDimensions ?? { department: value.department })

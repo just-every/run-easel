@@ -9,7 +9,7 @@ export type NativeBase={model:Model;cells:Cell[];headcount:Record<string,Record<
 export type FormulaValue={originId:string;name:string;unit:string;dimension?:string;member?:string;month:string;value:number;trace:string;department:string;line?:string;dependencies:Dependency[]}
 export type Dependency={department:string;payroll?:boolean;scenario?:string}
 export type NativeGraph={base:NativeBase;finish:(values:FormulaValue[])=>Calculation}
-export type NativeRuntime={graph:(scenario:string)=>NativeGraph|{frozen:Calculation};actual:(line:string,department:string,month:string)=>ActualCell;resolve:(scenario:string)=>FormulaValue[]}
+export type NativeRuntime={graph:(scenario:string)=>NativeGraph|{frozen:Calculation};actual:(line:string,department:string,month:string,scenario?:string)=>ActualCell;resolve:(scenario:string)=>FormulaValue[]}
 
 /** One memoized graph spans drivers, members, periods, final lines and versions. */
 export function nativeRuntime(graph:NativeRuntime['graph'],actual:NativeRuntime['actual']):NativeRuntime {
@@ -72,7 +72,7 @@ export function nativeRuntime(graph:NativeRuntime['graph'],actual:NativeRuntime[
      return read()
     }
     const sourceMonth=addMonths(month,offset(node.name==='VERSION'?3:2))
-    if(node.name==='ACTUAL'||b.scenario==='actuals'){const source=actual(b.line!,b.department!,sourceMonth);dependencies.push(dep(m,b.line!,b.department!));return {value:source.amount,trace:`Actuals ${m.lines.find(l=>l.id===b.line)?.name}, ${m.departments.find(d=>d.id===b.department)?.name}, ${sourceMonth}: ${formatHundredths(source.amount)} from ${source.rows} accepted rows (${source.batches.join(', ')})`}}
+    if(node.name==='ACTUAL'||b.scenario==='actuals'){const source=actual(b.line!,b.department!,sourceMonth,m.scenario.id);dependencies.push(dep(m,b.line!,b.department!));return {value:source.amount,trace:`Actuals ${m.lines.find(l=>l.id===b.line)?.name}, ${m.departments.find(d=>d.id===b.department)?.name}, ${sourceMonth}: ${formatHundredths(source.amount)} from ${source.rows} accepted rows (${source.batches.join(', ')})`}}
     if(b.scenario){const source=graph(b.scenario),currency='frozen'in source?source.frozen.currency:source.base.model.workspace.currency;requireThat(currency===m.workspace.currency,'Version formula references require the same currency',409)}
     return finalLine(b.scenario??m.scenario.id,b.line!,b.department!,sourceMonth,dependencies)
    }})
