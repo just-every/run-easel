@@ -1,4 +1,4 @@
-import { acceptedLedgerSql,entityReceipts,ledgerWhere } from './ledger-scope'
+import { acceptedLedgerFilter,entityReceipts,ledgerWhere } from './ledger-scope'
 import { resolveAccount } from './account-rules'
 import { resolveDimensions } from './dimension-mapping'
 import { lines } from './model'
@@ -7,8 +7,8 @@ import type { Cell } from './engine'
 
 /** Resolve source metadata before aggregation so two classes on one account never merge. */
 export async function dimensionActuals(db: D1Database, s: State, entity?:string) {
- const scope=ledgerWhere(entity)
- const { results } = await db.prepare(`SELECT value,amount FROM e_actuals WHERE ${scope.sql} AND ${acceptedLedgerSql} ORDER BY period,id`).bind(...scope.params).all<{ value: string; amount: number }>()
+ const scope=ledgerWhere(entity),accepted=acceptedLedgerFilter(s)
+ const { results } = await db.prepare(`SELECT value,amount FROM e_actuals WHERE ${scope.sql} AND ${accepted.sql} ORDER BY period,id`).bind(...scope.params,...accepted.params).all<{ value: string; amount: number }>()
  const types = new Map(lines(s).map(l => [l.id, l.type]))
  const cells: Cell[] = [], blocked: Data[] = all(s,'batch').filter(b=>b.entity===entity&&['importing','undoing','failed'].includes(b.status)).flatMap(b=>(b.periods??[]).map((month:string)=>({month,line:null,department:null,dimensions:[],reason:'Source journal is incomplete'})))
  for (const row of results) {

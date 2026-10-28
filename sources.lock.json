@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "3efd5af75fd96696a815a183e380f76d11fa4fec21434217fbc3617582ea0494",
+      "sha256": "1be1d2ad77831f0d4b6d63382b07f902f53fa620c612c0f1f9f736698919fb73",
       "executable": false
     },
     "base-copies.json": {
@@ -1071,7 +1071,7 @@
       "executable": false
     },
     "src/easel/actuals-read.ts": {
-      "sha256": "02f3d4ce8e659aafa05dd98a88224fa2ef5aa4cf770e02fbe5c49724ec99139d",
+      "sha256": "3330d871c31e304dc9301202a8ae776121d98147cf089133ea845f13089ff98f",
       "executable": false
     },
     "src/easel/actuals.ts": {
@@ -1407,7 +1407,7 @@
       "executable": false
     },
     "src/easel/dimension-actuals.ts": {
-      "sha256": "a082c14de1c82638958d04bdd64a015805423a71dfa0b20cf107268d9623dd78",
+      "sha256": "aa4040182a33024204c918be25435369b8d5f9c66aa32485696a05dd015c00b3",
       "executable": false
     },
     "src/easel/dimension-mapping.ts": {
@@ -1495,7 +1495,7 @@
       "executable": false
     },
     "src/easel/entity-ledger.ts": {
-      "sha256": "37ffc5eba00d9de9493f24adfd04a8719b8da125005bb0f0fd3a18cff5404501",
+      "sha256": "f9a4bbb55635e846723cc36bbe990d69d48f4d264454007365a9363fefb04e79",
       "executable": false
     },
     "src/easel/entity-rates.ts": {
@@ -1703,7 +1703,7 @@
       "executable": false
     },
     "src/easel/intacct-import.ts": {
-      "sha256": "c3332b1e393291db1342f2364e15f00b44238b7d3c59ccd7d34825223c271f7e",
+      "sha256": "2ba2aa5a911a4a41d0aa74d10ee4c224315024a83e539932269038fc78f2c917",
       "executable": false
     },
     "src/easel/intacct-links.ts": {
@@ -1743,7 +1743,7 @@
       "executable": false
     },
     "src/easel/ledger-scope.ts": {
-      "sha256": "a242b8d4d64927b6e0d22ceae097a2280c584338435dacc5c7495a637c86bebf",
+      "sha256": "da266b3d5c6272223d442fdbb3a088a1ac99479268be3deaf49a7956e12ea2b8",
       "executable": false
     },
     "src/easel/ledger-statements.ts": {
@@ -5023,11 +5023,11 @@
       "executable": false
     },
     "tests/intacct-fixture.mjs": {
-      "sha256": "37f1751a69a1dcbeee6c6fef4ec21263dff14e0127058c0a9c0e4e3a8aae5e2a",
+      "sha256": "120edac971d24aa12d40f2a1a824bb527f68c5ab94cfb95fa3807fcfd5bdd6b6",
       "executable": false
     },
     "tests/intacct.test.mjs": {
-      "sha256": "2cc3cfab3bd842295bcfab8c40ba20074d40a97ce9bf1f6a35487019a41ea6c9",
+      "sha256": "677d76ed570ce839855ec6adaeff9b9784ac9e3a7ccb6cb2c1b7c9d3b9b96b82",
       "executable": false
     },
     "tests/long-range-browser-journey.mjs": {

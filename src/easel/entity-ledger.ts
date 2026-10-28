@@ -1,11 +1,11 @@
 import { canonicalJson,sha256 } from '../modules/import-kit/src/d1/index'
 import { resolveAccount } from './account-rules'
 import type { Context } from './context'
-import { acceptedLedgerSql,ledgerWhere } from './ledger-scope'
+import { acceptedLedgerFilter,ledgerWhere } from './ledger-scope'
 import { find,requireThat,type Data } from './types'
 /** Logical source identities include every accepted correction, not sampled journal rows. */
 export async function entityLedger(c:Context,entity:string):Promise<Data[]>{
- const scope=ledgerWhere(entity),result=await c.db.prepare(`SELECT id,value,amount FROM e_actuals WHERE ${scope.sql} AND ${acceptedLedgerSql} ORDER BY id`).bind(...scope.params).all<{id:string;value:string;amount:number}>()
+ const scope=ledgerWhere(entity),accepted=acceptedLedgerFilter(c.s),result=await c.db.prepare(`SELECT id,value,amount FROM e_actuals WHERE ${scope.sql} AND ${accepted.sql} ORDER BY id`).bind(...scope.params,...accepted.params).all<{id:string;value:string;amount:number}>()
  const rows=new Map<string,Data>()
  for(const r of result.results){const v=JSON.parse(r.value);if(!v.intacctCompany)continue
   const id=JSON.stringify([v.intacctCompany,v.intacctBook,v.entity,v.intacctLine]),before=rows.get(id),target=resolveAccount(c.s,v.account,v.accountType).target

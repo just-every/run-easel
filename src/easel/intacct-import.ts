@@ -29,6 +29,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  requireThat(all(c.s,'entity').some(e=>e.id===binding.entity&&e.currency===source.currency),'The bound entity currency changed',409)
  requireThat(typeof b.includeOpening === 'boolean', 'Choose whether this is the first Intacct month')
  const old = await c.db.prepare("SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctCompany')=? AND json_extract(value,'$.intacctBook')='ACCRUAL' AND json_extract(value,'$.entity')=? AND json_extract(value,'$.intacctMonth')=?").bind(key.companyId,binding.entity,source.month).all<{value:string}>()
+ const priorFingerprint=sha256(canonicalJson(old.results.map(row=>canonicalJson(JSON.parse(row.value))).sort()))
  const history=all(c.s,'intacct-month').filter(row=>row.company===key.companyId&&row.entity===binding.entity&&row.book==='ACCRUAL')
  const months = history.filter(row=>row.status==='accepted').map(row=>row.month as string)
  const firstMonth = history.map(row=>row.month).filter((value): value is string => typeof value === 'string').sort()[0] ?? null
@@ -67,7 +68,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const push=(row:SourceRow,amount:number,first=false)=>{
   if(!amount&&!first)return
   deltas.push({...row,amount})
-  metadata[deltas.length+1]={intacctCompany:key.companyId,intacctBook:'ACCRUAL',intacctMonth:source.month,entity:binding.entity,intacctSourceEntity:binding.sourceEntity,intacctCurrency:source.currency,intacctLine:row.id,intacctOpening:row.opening===true,intacctTransactionId:row.transactionId,intacctAccountId:row.accountId,intacctAccountCategory:row.accountCategory??null,intacctNormalBalance:row.normalBalance??null,intacctEntryUrl:row.entryUrl??null,sourceDimensions:row.sourceDimensions,dimensionLabels:row.dimensionLabels}
+  metadata[deltas.length+1]={intacctPriorFingerprint:priorFingerprint,intacctObservation:source.digest,intacctCompany:key.companyId,intacctBook:'ACCRUAL',intacctMonth:source.month,entity:binding.entity,intacctSourceEntity:binding.sourceEntity,intacctCurrency:source.currency,intacctLine:row.id,intacctOpening:row.opening===true,intacctTransactionId:row.transactionId,intacctAccountId:row.accountId,intacctAccountCategory:row.accountCategory??null,intacctNormalBalance:row.normalBalance??null,intacctEntryUrl:row.entryUrl??null,sourceDimensions:row.sourceDimensions,dimensionLabels:row.dimensionLabels}
  }
  for(const row of desired){
   const before=prior.get(row.id)
@@ -103,8 +104,8 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
   if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:['intacct-normalized-ledger-v1'],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type],category:a.category,normalBalance:a.normalBalance,closingType:a.closingType,closingAccount:a.closingAccount})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
   return { result: { source: sourceSummary, sourceFingerprint: digest, changedRows: 0, changedTransactions:0, unchanged: true, accepted: op === 'commit' } }
  }
- const rows = [['Date', 'Account', 'Account name', 'Account type', 'Department', 'Amount', 'Description', 'Reference'],
-  ...deltas.map(r => [r.date, r.account, r.accountName, r.accountType, r.department, decimal(r.amount), r.description, r.opening ? `Intacct opening ${r.accountId}` : `Intacct ${r.transactionId} ${r.reference}`])]
+ const rows = [['Date', 'Account', 'Account name', 'Account type', 'Department', 'Amount', 'Description', 'Reference','Reviewed source'],
+  ...deltas.map(r => [r.date, r.account, r.accountName, r.accountType, r.department, decimal(r.amount), r.description, r.opening ? `Intacct opening ${r.accountId}` : `Intacct ${r.transactionId} ${r.reference}`,digest])]
  const input = {
   filename: `intacct-${binding.entity}-${source.month}-${digest.slice(0, 12)}.csv`,
   csv: rows.map(row => row.map(csv).join(',')).join('\n'),

@@ -15,5 +15,9 @@ export function requireIntacctHistory(s:State,through:string,entity?:string){
 }
 export function sameLedgerRow(row:Data,entity?:string){return entity?row.entity===entity:!row.entity}
 
-/** Partially applied or reversing journals never enter ordinary accepted reads. */
-export const acceptedLedgerSql="NOT EXISTS(SELECT 1 FROM e_records journal WHERE journal.kind='batch' AND journal.id=substr(e_actuals.destination,9) AND json_extract(journal.value,'$.status')<>'accepted')"
+/** Use the current fenced model, including a just-completed journal whose
+ * accepted receipt is being saved with alerts/tasks in this same command. */
+export function acceptedLedgerFilter(s:State){
+ const destinations=all(s,'batch').filter(batch=>['importing','undoing','failed'].includes(batch.status)).map(batch=>batch.destination)
+ return destinations.length?{sql:'destination NOT IN (SELECT value FROM json_each(?))',params:[JSON.stringify(destinations)]}:{sql:'1',params:[] as string[]}
+}

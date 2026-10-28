@@ -18,6 +18,7 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
   for(let i=0;i<24;i++){
    const month=`${2024+Math.floor(i/12)}-${String(i%12+1).padStart(2,'0')}`,p=await acceptIntacct(h,{sourceEntity,month,includeOpening:i===0})
    assert.equal(p.source.trialBalance.balanced,true,`${sourceEntity} ${month}`)
+   if(month==='2024-01')assert.equal(p.source.ledgerRows,0,'Both entities start with identical source opening amounts and no period movements')
    if(month==='2024-06')assert.equal(p.changedRows,0)
    if(month==='2025-01')assert.ok(Object.values(p.source.trialBalance.reportTransfers).some(v=>v!==0),'Documented fiscal closing transfers stay separate from posting rows')
   }
@@ -35,6 +36,11 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  const corrected=await acceptIntacct(h,input);assert.equal(corrected.changedRows,2);assert.equal(corrected.changedTransactions,1)
  assert.equal((await h.kit('intacct','preview',input)).unchanged,true)
  assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(r=>r.period==='2026-02').revenue,12500)
+ provider.extraAmount=2500
+ const anotherCorrection=await acceptIntacct(h,input);assert.equal(anotherCorrection.changedRows,2)
+ assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(r=>r.period==='2026-02').revenue,15000,'A repeated equal-sized correction has its own reviewed source identity')
+ provider.extraAmount=0;await acceptIntacct(h,input)
+
  assert.equal((await h.get('/api/easel/actuals?entity='+f.eu.id)).months.find(r=>r.period==='2026-02').costs,8000)
  provider.removed=true
  const removed=await acceptIntacct(h,input);assert.equal(removed.changedRows,2);assert.equal(removed.changedTransactions,1)
@@ -84,7 +90,8 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  await acceptIntacct(h,{sourceEntity:'CA',month:'2024-01',includeOpening:true})
  let root=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===f.first.id)
  const approved=await h.command('approve-budget',{scenario:root.id,revision:root.revision})
- await h.kit('actuals','undo',{id:firstBatch.id})
+ const currentFirstBatch=async()=>(await h.get('/api/easel/connections/intacct')).months.find(m=>m.entity===f.ca.id&&m.month==='2024-01').batch
+ await h.kit('actuals','undo',{id:await currentFirstBatch()})
  await h.command('close-month',{scenario:approved.forecast.id,month:'2026-01'},h.owner,409)
  await acceptIntacct(h,{sourceEntity:'CA',month:'2024-01',includeOpening:true})
  await h.command('close-month',{scenario:approved.forecast.id,month:'2026-01'})
@@ -97,7 +104,7 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  const euRoot=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===f.second.id),euApproved=await h.command('approve-budget',{scenario:euRoot.id,revision:euRoot.revision})
  await h.command('close-month',{scenario:euApproved.forecast.id,month:'2026-01'})
  assert.equal((await h.get('/api/easel/scenario/'+euApproved.forecast.id)).calculation.profit[0].operatingExpenses,8000)
- await h.kit('actuals','undo',{id:firstBatch.id},h.owner,409)
+ const closedUndo=await h.kit('actuals','undo',{id:await currentFirstBatch()},h.owner,409);assert.match(closedUndo.error,/closed/)
  const groupPath='/api/easel/consolidation/'+f.first.id
  assert.equal((await h.get(groupPath)).consolidated[0].profit,null,'Missing rates never add local currencies')
  for(const [entity,end,average]of [[f.ca,'0.9','0.8'],[f.eu,'1.125','1']]){
