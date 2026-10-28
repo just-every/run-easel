@@ -790,3 +790,7 @@ choices. Corrected or remapped source evidence invalidates the review; overlap i
 Qualification evidence in `tests/netsuite-suiteql-recording.json` is synthetic recorded-fake
 wire data. It is not a live sandbox recording. One recorded NetSuite sandbox-account run
 remains required before the connector ships; CONNECT-003's status and acceptance are unchanged.
+
+## Connected HRIS roster observations (PEOPLE-002)
+
+Native company-wide finance with Pay detail uses `GET /api/easel/connections/hris/{rippling|willow|bamboohr|adp}` and `POST` `/connect`, `/check`, `/disconnect`. The existing import kit exposes `POST /api/easel/import/{provider}/{preview|commit|status|resume|undo}`. Each dated complete roster has explicit employee → department/position/type/member mappings and a refetched fingerprint before acceptance. Unmapped custom fields are listed by name; their values never enter plan inputs. Acceptance records matches without editing the plan. `/payroll/:scenario` and `/headcount/:scenario` apply current Pay/scenario permissions and erasure. Payroll-run actuals use separately reviewed provider registers; absent cost remains unavailable. See [provider fields, credentials and integration](docs/hris-roster.md).

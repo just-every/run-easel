@@ -13,6 +13,8 @@ const theme = { href: '/rer-theme.css', productName: branding.name, accentColor:
 
 export interface Bindings {
  ASSETS?: Fetcher
+ /** Managed ADP client certificate; raw private key never enters app records or archives. */
+ HRIS_ADP_MTLS?: Fetcher
  GAUGE_ORIGIN?: string
  PANTRY_ORIGIN?: string
  PURSE_ORIGIN?: string
