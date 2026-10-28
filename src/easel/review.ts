@@ -46,13 +46,14 @@ export async function variance(c: Context, month: string,scenario?:string) {
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorBody = prior ? (await snapshot(c.db, prior.snapshot)).body : null
- const priorCalc: Calculation | null = priorBody?.calculation ?? null
+ const priorCalc: Calculation | null = priorBody?.calculation?filterCalculation(c.x,priorBody.calculation,lines(s).filter(l=>l.payroll).map(l=>l.id),s):null
  const currentCalc = filterCalculation(c.x,await workingCalculation(c,forecast.id,month),lines(s).filter(l=>l.payroll).map(l=>l.id),s)
  const actual = cellMap(currentCalc, month)
  const comparison = await versionComparison(c, forecast, budget, currentCalc, month)
- const planned = cellMap(budget.body.calculation, month)
+ const budgetCalc=filterCalculation(c.x,budget.body.calculation,lines(s).filter(l=>l.payroll).map(l=>l.id),s)
+ const planned = cellMap(budgetCalc, month)
  const kept = priorCalc ? cellMap(priorCalc, month) : new Map<string, Cell>()
- const next = cellMap(budget.body.calculation, addMonths(month, 1)), previous = cellMap(budget.body.calculation, addMonths(month, -1))
+ const next = cellMap(budgetCalc, addMonths(month, 1)), previous = cellMap(budgetCalc, addMonths(month, -1))
  const lineById = new Map<string, Data>([...comparison.lines, ...lines(s), ...budget.body.lines].map(l => [l.id, l])), deptById = new Map<string, Data>([...comparison.departments, ...departments(s), ...budget.body.departments].map(d => [d.id, d]))
  const money = (n: number) => formatMoney(n, currentCalc.currency)
  const keys = [...new Set([...actual.keys(), ...planned.keys(), ...kept.keys(), ...comparison.keys])]

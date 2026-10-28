@@ -53,7 +53,7 @@ async function readAll(key:IntacctCredentials,object:string,fields:string[],enti
   const attrs=data.$??{},count=Number(attrs.count),remaining=Number(attrs.numremaining),reported=Number(attrs.totalcount)
   requireThat([count,remaining,reported].every(n=>Number.isSafeInteger(n)&&n>=0)&&reported<=5000,'Intacct source counts are missing or exceed 5,000 rows',409)
   total??=reported;requireThat(total===reported,'Intacct source count changed during pagination',502)
-  const keys=Object.keys(data).filter(k=>k!=='$'),batch=keys.flatMap(k=>array(data[k]))
+  const keys=Object.keys(data).filter(k=>k!=='$');requireThat(keys.length<=1&&(!count||keys[0]===object.toLowerCase()),'Intacct returned an unexpected source object',502);const batch=keys.flatMap(k=>array(data[k]))
   requireThat(batch.length===count&&result.length+count+remaining===total&&(!remaining||count>0),'Intacct pagination is incomplete',502)
   for(const row of batch){const id=intacctId(row.RECORDNO??row.id);requireThat(!seen.has(id),'Intacct repeated a source record number',502);seen.add(id);result.push(row)}
   if(!remaining)return result
@@ -70,10 +70,11 @@ export async function readIntacctLedger(key:IntacctCredentials,entityId:string,m
  const entity=(await intacctEntities(key)).find(e=>e.id===entityId);requireThat(entity,'The Intacct user cannot read this legal entity',403)
  const from=month+'-01',to=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5)),0)).toISOString().slice(0,10)
  requireThat(to<=asOf,'Intacct acceptance requires a completed month',409)
- const sourceChart=await readAll(key,'GLACCOUNT',['RECORDNO','ACCOUNTNO','TITLE','ACCOUNTTYPE','NORMALBALANCE','CLOSINGTYPE'],entityId)
- const chart=sourceChart.map(a=>({id:intacctId(a.RECORDNO),code:intacctId(a.ACCOUNTNO),name:intacctText(a.TITLE),type:intacctText(a.ACCOUNTTYPE),normalBalance:intacctText(a.NORMALBALANCE),closingType:intacctText(a.CLOSINGTYPE)}))
+ const sourceChart=await readAll(key,'GLACCOUNT',['RECORDNO','ACCOUNTNO','TITLE','ACCOUNTTYPE','NORMALBALANCE','CLOSINGTYPE','CLOSINGACCOUNTNO'],entityId)
+ const chart=sourceChart.map(a=>({id:intacctId(a.RECORDNO),code:intacctId(a.ACCOUNTNO),name:intacctText(a.TITLE),type:intacctText(a.ACCOUNTTYPE),normalBalance:intacctText(a.NORMALBALANCE),closingType:intacctText(a.CLOSINGTYPE),closingAccount:intacctText(a.CLOSINGACCOUNTNO??'')}))
  requireThat(chart.length>0&&new Set(chart.map(a=>a.code)).size===chart.length,'Intacct chart is empty or ambiguous',502)
  const definitions=array((await intacctRequest(key,'getDimensions','',entityId)).dimensions?.dimension)
+ requireThat(definitions.length<=100,'Intacct dimension definitions exceed the read limit',409)
  const dimensions:Data={},udd:Data[]=[]
  for(const [object,field,kind]of STANDARD){
   requireThat(definitions.some(d=>d.objectName===object&&d.enabledInGL==='true'),'Intacct standard dimension definition is unavailable',502)
@@ -103,7 +104,7 @@ export async function readIntacctLedger(key:IntacctCredentials,entityId:string,m
   return{id:intacctId(r.RECORDNO),transactionId:intacctId(r.BATCHNO),date:iso,accountId:a.id,account:a.code,accountName:a.name,accountType:a.type,amount:dr-cr,department:sourceDimensions.department,description:intacctText(r.DESCRIPTION??''),reference:intacctId(r.BATCHNO),sourceDimensions,dimensionLabels:labels,entryUrl:url}
  })
  const report=await intacctRequest(key,'get_trialbalance',`<startdate>${datePart(from)}</startdate><enddate>${datePart(to)}</enddate><debitcreditbalance>true</debitcreditbalance><showzerobalances>true</showzerobalances><showdeptdetail>false</showdeptdetail><showlocdetail>false</showlocdetail><reportingbook>ACCRUAL</reportingbook><includereportingbook>true</includereportingbook><statistical>exclude</statistical><locationid>${xml(entityId)}</locationid>`,entityId)
- const trialBalance=reconcileIntacctTrial(chart,array(report.glaccountbalance),rows,entity.currency)
+ const trialBalance=reconcileIntacctTrial(chart,array(report.glaccountbalance),rows,entity.currency,from,entity.firstFiscalMonth)
  rows.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
  const source={entity,book:'ACCRUAL',currency:entity.currency,month,from,to,chart,dimensions:{...dimensions,udd},rows,trialBalance}
  return{...source,digest:sha256(canonicalJson(source))}

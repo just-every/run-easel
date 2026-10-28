@@ -1,4 +1,4 @@
-import { ledgerWhere } from './ledger-scope'
+import { entityReceipts,ledgerWhere } from './ledger-scope'
 import { resolveAccount } from './account-rules'
 import { resolveDimensions } from './dimension-mapping'
 import { lines } from './model'
@@ -24,5 +24,5 @@ export async function dimensionActuals(db: D1Database, s: State, entity?:string)
   const amount = Number(row.amount) * (types.get(account.target) === 'revenue' ? -1 : 1)
   cells.push({ line: account.target, department, month: value.period, amount, basis: 'actual', sources: [{ kind: 'actual', label: 'Accepted actuals', amount, trace: 'Accepted source rows mapped by live dimension rules', dimensions: resolved.dimensions }] })
  }
- return { cells, blocked, months: [...new Set(results.map(r => JSON.parse(r.value).period as string))].sort() }
+ return { cells, blocked, months: [...new Set([...results.map(r => JSON.parse(r.value).period as string),...entityReceipts(s,entity).map(r=>r.month as string)])].sort() }
 }

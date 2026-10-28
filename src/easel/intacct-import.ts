@@ -41,6 +41,13 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
   }
  }
 
+ const moved:Data[]=[]
+ for(let start=0;start<source.rows.length;start+=80){
+  const chunk=source.rows.slice(start,start+80)
+  const existing=await c.db.prepare(`SELECT value FROM e_actuals WHERE json_extract(value,'$.intacctCompany')=? AND json_extract(value,'$.entity')=? AND json_extract(value,'$.intacctLine') IN (${chunk.map(()=>'?').join(',')})`).bind(key.companyId,binding.entity,...chunk.map(r=>r.id)).all<{value:string}>()
+  for(const item of existing.results){const prior=JSON.parse(item.value),current=chunk.find(r=>r.id===prior.intacctLine)!;if(prior.intacctMonth!==source.month)moved.push({record:current.id,before:{month:prior.intacctMonth,date:prior.date,account:prior.account},after:{month:source.month,date:current.date,account:current.account}})}
+ }
+ requireThat(!moved.length,`Intacct moved accepted records across periods; review both periods in a correcting import before acceptance: ${JSON.stringify(moved.map(r=>({record:r.record,before:r.before.month,after:r.after.month})))}`,409)
  const desired: SourceRow[] = [...source.rows]
  if (b.includeOpening) for (const account of source.chart) {
   const amount = source.trialBalance.opening[account.id] ?? 0
@@ -81,7 +88,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const receipt={id:monthId,company:key.companyId,book:'ACCRUAL',sourceEntity:binding.sourceEntity,entity:binding.entity,currency:source.currency,month:source.month,through:source.to,sourceFingerprint:digest,sourceDigest:source.digest,trialBalance:source.trialBalance,ledgerRows:source.rows.length,changedRows:deltas.length,openingIncluded:b.includeOpening,inventory,binding}
 
  const recordMonth = (context: Context) => {
-  put(context.s,'intacct-month',monthId,{...receipt,status:'accepted',acceptedAt:context.now})
+  put(context.s,'intacct-month',monthId,{...find(context.s,'intacct-month',monthId),...receipt,status:'accepted',acceptedAt:context.now})
   context.activity.push({action:'intacct-month-accepted',record:monthId,detail:{entity:binding.entity,month:source.month,changedRows:deltas.length,reconciled:true}})
   put(context.s,'connection','intacct',{...find(context.s,'connection','intacct'),lastRefresh:context.now,rowCount:source.rows.length,error:null,rateLimit:null})
  }
@@ -92,7 +99,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
    recordMonth(c)
    completeSourceGuards(c,{sha256:digest})
   }
-  if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:[],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
+  if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:[],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
   return { result: { source: sourceSummary, sourceFingerprint: digest, changedRows: 0, changedTransactions:0, unchanged: true, accepted: op === 'commit' } }
  }
  const rows = [['Date', 'Account', 'Account name', 'Account type', 'Department', 'Amount', 'Description', 'Reference'],
@@ -107,7 +114,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const step = await actualsCommand(c,op==='stage'?'preview':op,input,metadata)
  requireThat(step, 'Unknown actuals step', 404)
  if (op === 'preview'||op==='stage') step.result = { ...step.result, source: sourceSummary, sourceFingerprint: digest, changedRows: deltas.length,changedTransactions }
- if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:binding.scenario,entity:binding.entity},step.result,{headers:Object.keys(metadata[2]??{}),accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
+ if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},step.result,{headers:Object.keys(metadata[2]??{}),accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
  if (op === 'commit' && step.record) {
   const batch=all(c.s,'batch').find(row=>row.file===input.filename&&row.status==='importing')
   requireThat(batch,'Intacct journal batch was not created',409)

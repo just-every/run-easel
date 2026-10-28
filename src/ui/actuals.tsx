@@ -1,3 +1,4 @@
+import { IntacctImport } from './intacct'
 import { PantryImport } from './pantry'
 import { XeroImport } from './xero'
 import { QboImport } from './qbo'
@@ -25,10 +26,13 @@ const fileBase64 = async (file: File) => { const bytes = new Uint8Array(await fi
 
 /** Actuals in, mapped, reconciled and reversible; plus the Excel planning workbook move-in. */
 export function Actuals({ state, refresh }: Shared) {
- const [reconciliation, setReconciliation] = useState<D | null>(null)
- useEffect(() => { api('actuals').then(setReconciliation) }, [state])
- const currency = state.workspace.currency
+ const [reconciliation, setReconciliation] = useState<D | null>(null),[entities,setEntities]=useState<D[]>([]),[entity,setEntity]=useState('')
+ useEffect(()=>{api('entities').then(v=>{setEntities(v.entities);setEntity(id=>v.entities.some((e:D)=>e.id===id)?id:v.entities[0]?.id??'')})},[state])
+ useEffect(()=>{api('actuals'+(entity?'?entity='+encodeURIComponent(entity):'')).then(setReconciliation,()=>setReconciliation(null))},[state,entity])
+ const currency = reconciliation?.currency??state.workspace.currency
  return <>
+  {entities.length>0&&<label>Reconciliation entity<select aria-label="Reconciliation entity" value={entity} onChange={e=>setEntity(e.target.value)}>{entities.map(e=><option key={e.id} value={e.id}>{e.name} · {e.currency}</option>)}</select></label>}
+  <IntacctImport state={state} refresh={refresh}/>
   <SourceGuard state={state} refresh={refresh} />
   <PantryImport state={state} refresh={refresh} />
   <QboImport refresh={refresh} state={state}/><XeroImport refresh={refresh} state={state}/>

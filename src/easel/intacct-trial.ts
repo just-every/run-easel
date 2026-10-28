@@ -6,7 +6,7 @@ export function intacctCents(value:unknown):number{
 }
 export const intacctExact=(n:number)=>{requireThat(Number.isSafeInteger(n),'Intacct exceeds exact cents',409);return n}
 /** No inferred fiscal rollover: any unexplained report transfer stays a difference. */
-export function reconcileIntacctTrial(chart:Data[],report:Data[],rows:Data[],currency:string){
+export function reconcileIntacctTrial(chart:Data[],report:Data[],rows:Data[],currency:string,from:string,firstFiscalMonth:string){
  const opening:Record<string,number>={},closing:Record<string,number>={},movement:Record<string,number>={},seen=new Set<string>()
  for(const r of report){
   const a=chart.find(a=>a.code===r.accountno)
@@ -18,7 +18,19 @@ export function reconcileIntacctTrial(chart:Data[],report:Data[],rows:Data[],cur
  }
  requireThat(seen.size===chart.length,'Intacct trial balance omitted accounts; request zero balances',502)
  for(const r of rows)movement[r.accountId]=intacctExact((movement[r.accountId]??0)+r.amount)
- const differences=chart.map(a=>({account:a.code,accountId:a.id,difference:intacctExact(opening[a.id]+(movement[a.id]??0)-closing[a.id])})).filter(r=>r.difference!==0)
+ const reportTransfers:Record<string,number>={}
+ if(Number(from.slice(5,7))===Number(firstFiscalMonth)){
+  for(const a of chart.filter(a=>a.closingType==='closing account')){
+   const target=chart.find(t=>t.code===a.closingAccount)
+   requireThat(target&&target.id!==a.id&&target.closingType==='non-closing account','Intacct closing account metadata is unavailable or cyclic',502)
+   const amount=opening[a.id]
+   reportTransfers[a.id]=intacctExact((reportTransfers[a.id]??0)-amount)
+   reportTransfers[target.id]=intacctExact((reportTransfers[target.id]??0)+amount)
+  }
+  // A transfer is recognized only when every documented closing pair explains the independent report.
+  if(!chart.every(a=>opening[a.id]+(movement[a.id]??0)+(reportTransfers[a.id]??0)===closing[a.id]))for(const key of Object.keys(reportTransfers))delete reportTransfers[key]
+ }
+ const differences=chart.map(a=>({account:a.code,accountId:a.id,difference:intacctExact(opening[a.id]+(movement[a.id]??0)+(reportTransfers[a.id]??0)-closing[a.id])})).filter(r=>r.difference!==0)
  const openingDifference=Object.values(opening).reduce((n,v)=>intacctExact(n+v),0),closingDifference=Object.values(closing).reduce((n,v)=>intacctExact(n+v),0)
- return{basis:'Entity-local ACCRUAL, nonstatistical; opening plus posted movement compared account by account to independent closing balances. Unexplained fiscal report transfers require correcting review.',opening,closing,movement,differences,openingDifference,closingDifference,balanced:!differences.length&&openingDifference===0&&closingDifference===0}
+ return{basis:'Entity-local ACCRUAL, nonstatistical; opening plus posted movement compared account by account to independent closing balances. Unexplained fiscal report transfers require correcting review.',opening,closing,movement,reportTransfers,differences,openingDifference,closingDifference,balanced:!differences.length&&openingDifference===0&&closingDifference===0}
 }

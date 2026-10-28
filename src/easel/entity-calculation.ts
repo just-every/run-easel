@@ -1,3 +1,4 @@
+import { entityLedger } from './entity-ledger'
 import { requireMember } from './access'
 import { hasFullScope } from './access-grants'
 import { workingCalculation } from './calculation'
@@ -21,7 +22,8 @@ export async function entityCalculation(c: Context, entity: Data) {
  const m = scenario.status === 'frozen' ? await frozenModel(c, scenario) : model(c.s, scenario.id)
  requireThat(m.workspace.currency === entity.currency, 'The source plan currency does not match this entity; review the entity plan currency', 409)
  const calculation = scenario.status === 'frozen' ? (m as Awaited<ReturnType<typeof frozenModel>>).calculation : await workingCalculation(c, scenario.id)
- return { model: m, calculation }
+ const ledger=await entityLedger(c,entity.id)
+ return { model: m, calculation:{...calculation,entityLedger:ledger} }
 }
 
 export function entityTranslated(c: Context, entity: Data, calc: Calculation, reporting: string) {

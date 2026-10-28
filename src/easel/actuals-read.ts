@@ -11,7 +11,7 @@ import { resolveAccount } from './account-rules'
 import type { ActualCell } from './engine'
 import { lines, workspace } from './model'
 import { monthLabel } from './months'
-import { find, get, requireThat, type Data, type State, type Access } from './types'
+import { all, find, get, requireThat, type Data, type State, type Access } from './types'
 
 async function grouped(db: D1Database, entity?:string) {
  const scope=ledgerWhere(entity)
@@ -44,6 +44,7 @@ export async function actualCells(db: D1Database, s: State, through?: string, en
   cell.rows += g.rows; cell.batches = [...new Set([...cell.batches, ...g.batches])]
   cells.set(k, cell)
  }
+ for(const receipt of entityReceipts(s,entity).filter(r=>r.ledgerRows===0)){const owner=get(s,'entity',entity!);for(const line of lines(s))for(const department of all(s,'department')){const key=`${line.id}|${department.id}|${receipt.month}`;if(!cells.has(key))cells.set(key,{line:line.id,department:department.id,month:receipt.month,amount:0,rows:0,batches:[],dimensions:{[owner.dimension]:owner.member}})}}
  return [...cells.values()]
 }
 

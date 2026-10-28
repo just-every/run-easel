@@ -1,3 +1,4 @@
+import { entityLedger } from './entity-ledger'
 import { boundEntity } from './entity-scope'
 import { INPUT_KINDS } from './model'
 import { requireFinance, requireMember, requirePayDetail } from './access'
@@ -66,7 +67,7 @@ export async function entityCommands(c: Context, op: string, b: Data): Promise<D
  return get(c.s, 'entity', id)
 }
 
-export function entitiesView(c: Context) {
+export async function entitiesView(c: Context) {
  requireMember(c.x)
  const entities = all(c.s, 'entity').filter(e => entityAllowed(c.s, c.x, e))
  const finance = c.x.role === 'finance' && !c.x.actor.token && ['owner', 'admin'].includes(c.x.actor.baseRole)
@@ -74,5 +75,6 @@ export function entitiesView(c: Context) {
   const line = find(c.s, 'line', input.line)
   return line && !line.payroll && !line.nonCash ? [{ entity: entity.id, origin: input.originId, name: input.name, type: line.type, line: line.name }] : []
  }))) : []
- return { entities, groups: all(c.s, 'entity-group').filter(g => entities.some(e => e.group === g.id)), rates: finance ? Object.fromEntries(entities.map(e => [e.id, find(c.s, 'entity-fx', e.id) ?? null])) : {}, rules: finance ? all(c.s, 'entity-elimination').filter(r => entities.some(e => e.group === r.group)) : [], origins, finance }
+ const ledgerSources=finance?Object.fromEntries(await Promise.all(entities.map(async e=>[e.id,(await entityLedger(c,e.id)).filter(r=>!find(c.s,'line',r.target)?.payroll).map(({rows,...r})=>r)]))):{}
+ return { ledgerSources, entities, groups: all(c.s, 'entity-group').filter(g => entities.some(e => e.group === g.id)), rates: finance ? Object.fromEntries(entities.map(e => [e.id, find(c.s, 'entity-fx', e.id) ?? null])) : {}, rules: finance ? all(c.s, 'entity-elimination').filter(r => entities.some(e => e.group === r.group)) : [], origins, finance }
 }

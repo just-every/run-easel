@@ -167,7 +167,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const current = access(state, a)
  if (a.token) requireMember(current)
  if (a.agent) requireAgent({ s: state }, 'mcp')
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|variance\/|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -562,11 +562,11 @@ api.get('/api/easel/dashboards/:id/document.xlsx', async c => {
 })
 
 api.get('/api/easel/dimension-report/:scenario/document.xlsx', async c => {
- const ctx = await open(c), view = await dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'))
+ const ctx = await open(c), view = await dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'),c.req.query('entity'))
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(dimensionWorkbook(view), 'easel-dimensions')
 })
-api.get('/api/easel/dimension-report/:scenario', c => read(c, ctx => dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'))))
+api.get('/api/easel/dimension-report/:scenario', c => read(c, ctx => dimensionView(ctx, c.req.param('scenario'), c.req.query('dimension'), c.req.query('member'),c.req.query('entity'))))
 
 api.get('/api/easel/entities', c => read(c, async ctx => entitiesView(ctx)))
 api.get('/api/easel/consolidation/:id', c => read(c, ctx => consolidationView(ctx, c.req.param('id'))))
@@ -606,7 +606,7 @@ api.get('/api/easel/activity.csv', async c => {
 
 const spreadsheet = (bytes: Uint8Array, name: string) => new Response(bytes as BodyInit, { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'content-disposition': `attachment; filename="${name}.xlsx"` } })
 api.get('/api/easel/actuals.xlsx', async c => {
- const ctx = await open(c), bytes = actualsWorkbook(await actualsView(ctx,c.req.query('entity')), get(ctx.s, 'workspace', 'main').currency)
+ const ctx=await open(c),view=await actualsView(ctx,c.req.query('entity')),bytes=actualsWorkbook(view,view.currency)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
  return spreadsheet(bytes, 'easel-reconciliation')
 })
