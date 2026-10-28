@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { contractPageHtml } from '../base/contract-page'
+import { hostingPageHtml } from '../base/hosting-page'
 import { runPageHtml, siteNotFoundHtml, type SiteBuild, type SiteContext } from '../base/run-site'
 import { identity } from '../identity'
 import { tokens } from '../ui/tokens'
@@ -11,6 +12,7 @@ import { Landing } from './landing/Landing'
 import { tie } from './landing/tie'
 import { run } from './run'
 import { breaks } from './shell/breaks'
+import { SiteHeader } from './shell/SiteHeader'
 import './shell/site.css'
 
 const description = 'Free, open source FP&A: Easel connects your ledger, payroll and CRM, forecasts P&L, balance sheet and cash, keeps Excel live and flags any month below your cash floor.'
@@ -20,7 +22,7 @@ const description = 'Free, open source FP&A: Easel connects your ledger, payroll
  * /run; the docs at /docs and /docs/<slug>, rendered from docs/site.json and docs/*.md; and the not-found page. Every page
  * is static, needs no script and links to no instance-only route.
  */
-export function sitePages({ styles, contract }: SiteContext): SiteBuild {
+export function sitePages({ styles, contract, hosting }: SiteContext): SiteBuild {
  const document = (title: string, summary: string, body: ReactElement, bodyClass?: string) => '<!doctype html>' + renderToStaticMarkup(
   <html lang="en">
    <head>
@@ -41,10 +43,12 @@ export function sitePages({ styles, contract }: SiteContext): SiteBuild {
    <body className={bodyClass}>{body}</body>
   </html>,
  )
+ const homepageHeader = { html: renderToStaticMarkup(<SiteHeader />), styles }
  return {
   pages: [
    { path: '/', html: tie(document('Easel · Plan the year. Protect the cash.', description, <Landing />, 'landing-body')) },
-   { path: '/run', html: breaks(tie(runPageHtml(identity, run, contract))) },
+   { path: '/run', html: runPageHtml(identity, run, contract, homepageHeader) },
+   { path: '/docs/hosting', html: hostingPageHtml(identity, run, hosting, contract, homepageHeader) },
    ...(contract ? [{ path: '/contract', html: contractPageHtml(identity, run, contract) }] : []),
    { path: '/docs', html: breaks(tie(document('Docs · Easel', docsLead, <DocsIndex />))) },
    ...docsPages.map(page => ({ path: `/docs/${page.slug}`, html: breaks(tie(document(`${page.title} · Easel docs`, page.summary, <DocsArticle slug={page.slug} />))) })),
