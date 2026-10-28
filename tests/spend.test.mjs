@@ -285,6 +285,7 @@ test('Reviewed Brex settlements and exact recurring allocations replace all sele
  await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
  await post('accept',{...input,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision,fingerprint:preview.fingerprint},409)
  assert.deepEqual((await h.get('/api/easel/scenario/'+f.budget.id)).calculation.cells.filter(r=>r.line===f.line.id&&['2026-01','2026-02'].includes(r.month)).map(r=>r.amount),[100000,100000],'The approved recurring budget remains immutable')
+ await multiExpenseAllocation(t)
 })
 
 
@@ -356,7 +357,7 @@ test('Explicit cross-provider payment parts conserve residual actuals and refuse
  assert.equal((await h.get('/api/easel/scenario/'+f.budget.id)).calculation.cells.find(r=>r.line===f.line.id&&r.month==='2026-01').amount,100000)
 })
 
-test('One reviewed source allocation updates several departments and lines atomically without losing commitments, ledger matches or frozen budgets', async t => {
+async function multiExpenseAllocation(t) {
  const provider = spendProvider(), h = await harness({ bindings: { PURSE_ORIGIN: 'https://purse.example.test' }, outbound: provider.outbound, now: () => '2026-02-15T12:00:00Z' }); t.after(() => h.close())
  const f = await spendFixture(h, { recurring: true, split: true })
  const post = async (op, body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/spend/' + op, body, cookie); assert.equal(r.status, status, r.text); return r.value }
@@ -428,4 +429,4 @@ test('One reviewed source allocation updates several departments and lines atomi
  await h.command('close-month',{scenario:f.forecast.id,month:'2026-01'})
  await post('preview',{...input,revision:(await h.get('/api/easel/scenario/'+f.forecast.id)).scenario.revision},409)
  assert.deepEqual(await h.get('/api/easel/scenario/'+f.budget.id),frozen)
-})
+}
