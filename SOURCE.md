@@ -51,3 +51,13 @@ header contracts while avoiding overlapping regex scans, and carry Base
 `rer-v0.2.30`'s own changes to them (message keys and relay list headers). These two files are
 outside the byte-equal Base inventory; `edition.json` records their public Easel
 baseline and mappings. The remaining mail files retain their recorded Base pin.
+
+The shared agent door and Business settings runtime adopt Base commit
+`d555e789cffb744a9f83d76ebe42a2e3bdd7a055`. Operator-auth adopts that same
+revision for its durable Business team binding. The Business theme dependency
+lives at `src/foundation/runtime`; all three modules and the two theme files
+are recorded in `base-copies.json`. Base module tests and signing fixtures are
+not part of the application copy. Migrations 0024–0026 add Business settings,
+durable Business person IDs and agent-door storage without changing applied
+migration history. The installed CLI remains independently pinned in
+`package.json`; the runtime pin does not imply a published CLI release.
