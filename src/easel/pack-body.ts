@@ -82,6 +82,7 @@ export async function packNumbers(c: Context, pack: Data) {
  const revenueIds = reportLines.filter(l => l.type === 'revenue').map(l => l.id)
  const chartMonths = ytd
  const numbers = {
+  currency: forecastCalc.currency,
   presentation: { locale: w.locale, timeZone: w.timeZone, dateFormat: w.dateFormat },
   versionComparison: { currency: forecastCalc.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
   budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
@@ -113,7 +114,7 @@ export async function packNumbers(c: Context, pack: Data) {
    evidence: [...allLines(s), ...budget.body.lines].some(l => l.id === r.line && l.payroll) ? [] : r.citations.map((x: Data) => `${x.file} line ${x.line}`) })),
   sources: batches,
  }
- const figures = { lines: numbers.lines, profit: numbers.profit, cash: numbers.cash, kpis: numbers.kpis, charts: numbers.charts, versions: numbers.versionComparison, variances: numbers.variances.map(r => [r.line, r.department, r.actual, r.budget, r.priorForecast]), balanceSheet: numbers.balanceSheet ?? null, cashFlow: numbers.cashFlow ?? null, contracts: numbers.contracts?.months ?? null, sources: batches.map(b => [b.file, b.sha256]) }
+ const figures = { currency: numbers.currency, lines: numbers.lines, profit: numbers.profit, cash: numbers.cash, kpis: numbers.kpis, charts: numbers.charts, versions: numbers.versionComparison, variances: numbers.variances.map(r => [r.line, r.department, r.actual, r.budget, r.priorForecast]), balanceSheet: numbers.balanceSheet ?? null, cashFlow: numbers.cashFlow ?? null, contracts: numbers.contracts?.months ?? null, sources: batches.map(b => [b.file, b.sha256]) }
  return { numbers, fingerprint: await sha256(JSON.stringify([months, pack.template ?? 'default', figures])), departments: allDepartments(s).length }
 }
 

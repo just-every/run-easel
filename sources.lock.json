@@ -1899,7 +1899,7 @@
       "executable": false
     },
     "src/easel/pack-body.ts": {
-      "sha256": "ac02d14abada4ad4f6327ac0e82751688693bb0440a98a997f3c8c44fc4967a2",
+      "sha256": "8834674e1c8fafe6ec12c493868cdd6f825a26c7f7a840e7a642b04980caeb99",
       "executable": false
     },
     "src/easel/pack-documents.ts": {
@@ -2059,7 +2059,7 @@
       "executable": false
     },
     "src/easel/review.ts": {
-      "sha256": "17009c1bf4597b135cfde4487fa3b259fa3d79138e213f669f1fd9ff274124c5",
+      "sha256": "df355731cdec191d341be03ea3fa072207a79f3adf677ad61850278e1093f11a",
       "executable": false
     },
     "src/easel/sandboxes.ts": {
@@ -5095,7 +5095,7 @@
       "executable": false
     },
     "tests/netsuite-browser.mjs": {
-      "sha256": "b5f5d2ab825ed6e29be9521aa9138dc68ee4b8ffd1f35d764c0a070936a08e4e",
+      "sha256": "c357147f7115bc3a28c89b482af757e910ce5ef63d433a08aa337b32b80285e0",
       "executable": false
     },
     "tests/netsuite-fixture.mjs": {
@@ -5107,7 +5107,7 @@
       "executable": false
     },
     "tests/netsuite.test.mjs": {
-      "sha256": "35a838434ae4005d9655320255ae973fba78f80a7c31edc10cef9cff3683cd40",
+      "sha256": "abdb874047bf0a8e9fbc99b51ed6be2558a395ea4af28b92c677cac6312fe883",
       "executable": false
     },
     "tests/notifications.test.mjs": {

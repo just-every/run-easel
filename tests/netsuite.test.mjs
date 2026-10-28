@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import JSZip from 'jszip'
+import ExcelJS from 'exceljs'
 import { createPortability } from '@runeditrun/rer/modules/portability'
 import { createEaselExportService } from '../scripts/installer/erasure-export.mjs'
 import { easelPolicy } from '../src/easel/erasure-archive/policy.mjs'
@@ -54,9 +55,35 @@ test('NetSuite native finance journey partitions two subsidiary books, reconcile
   const v=await h.get('/api/easel/variance/2026-01?forecast='+forecasts[i].id),row=v.rows.find(r=>r.line===f.line.id&&r.department===f.department.id)
   assert.equal(v.currency,f.entities[i].currency);assert.equal(row.actual,i===0?10000:8000);assert.ok(row.citations.length);assert.ok(row.citations.every(c=>c.providerUrl==='https://1234567-sb1.app.netsuite.com/app/accounting/transactions/journal.nl?id=1026'))
   const viewer=await h.get('/api/easel/variance/2026-01?forecast='+forecasts[i].id,board);assert.equal(viewer.rows.find(r=>r.key===row.key).actual,row.actual);assert.deepEqual(viewer.rows.find(r=>r.key===row.key).citations,[])
+  // Continue finance's local-currency review through publication and downloads.
+  const pack=await h.command('pack-create',{forecast:forecasts[i].id,month:'2026-01'})
+  const preview=await h.get('/api/easel/pack/'+pack.id+'/preview')
+  assert.equal(preview.body.currency,v.currency)
+  const published=await h.command('pack-publish',{pack:pack.id,fingerprint:preview.fingerprint})
+  const capture=await h.get('/api/easel/snapshot/'+published.snapshot)
+  assert.equal(capture.body.currency,v.currency);assert.equal(capture.body.variances.find(r=>r.line===f.line.name).actual,row.actual)
+  const csv=await h.get('/api/easel/pack/'+pack.id+'/document.csv'),records=csv.trim().split('\r\n').map(r=>r.split(','))
+  const actual=records.find(r=>r[0]==='variance'&&r[1]===f.line.name)
+  assert.equal(actual[3],i===0?'100.00':'80.00');assert.equal(actual[12],v.currency)
+  const html=await h.get('/api/easel/pack/'+pack.id+'/document.html')
+  assert.ok(html.includes(v.currency+' '+(i===0?'100.00':'80.00')));assert.ok(!html.includes('USD'))
+  const download=await h.mf.dispatchFetch(h.origin+'/api/easel/pack/'+pack.id+'/document.xlsx',{headers:{cookie:h.owner}}),book=new ExcelJS.Workbook()
+  assert.equal(download.status,200);await book.xlsx.load(await download.arrayBuffer())
+  const metadata=book.getWorksheet('Metadata');let currency
+  metadata.eachRow(r=>{if(r.getCell(1).value==='Currency')currency=r.getCell(2).value})
+  assert.equal(currency,v.currency)
  }
  const descendant=await h.command('branch',{from:forecasts[1].id,name:'European actuals descendant'})
  await h.command('member',{email:'netsuite-board@example.test',name:'Canada board',role:'viewer',dimensionMembers:{[f.entities[0].dimension]:[f.entities[0].member]}})
+ const permitted=await h.get('/api/easel/scenario/'+forecasts[0].id,board),scoped=await h.get('/api/easel/variance/2026-01?forecast='+forecasts[0].id,board)
+ const permittedRow=scoped.rows.find(r=>r.line===f.line.id&&r.department===f.department.id)
+ assert.equal(scoped.currency,'CAD');assert.equal(permittedRow.actual,10000);assert.equal(permittedRow.actual,permitted.calculation.lineTotals[f.line.id]['2026-01'])
+ assert.equal(permittedRow.budget,10000);assert.ok(permittedRow.comparisons.every(c=>c.amount===10000))
+ assert.deepEqual(permittedRow.citations,[]);assert.deepEqual(permittedRow.planSources,[]);assert.deepEqual(permittedRow.hypotheses,[])
+ assert.ok(!JSON.stringify(scoped).includes('Recorded accounting observation'))
+ const scopedDownload=await h.mf.dispatchFetch(h.origin+'/api/easel/variance/2026-01/document.xlsx?forecast='+forecasts[0].id,{headers:{cookie:board}}),scopedBook=new ExcelJS.Workbook()
+ assert.equal(scopedDownload.status,200);await scopedBook.xlsx.load(await scopedDownload.arrayBuffer())
+ assert.ok(JSON.stringify(scopedBook.model).includes(f.line.name));assert.ok(!JSON.stringify(scopedBook.model).includes('Recorded accounting observation'))
  await h.get('/api/easel/scenario/'+forecasts[1].id,board,404);await h.get('/api/easel/scenario/'+descendant.id,board,404)
  await h.get('/api/easel/variance/2026-01?forecast='+forecasts[1].id,board,404)
  assert.equal((await h.get('/api/easel/consolidation/'+f.root.id,board)).consolidated[0].profit,null)
