@@ -30,7 +30,8 @@ export async function netsuiteConnection(c:Context,env:Bindings,op:string,b:Data
  }
  requireThat(['connect','check','map-subsidiary','map-period'].includes(op),'Unknown NetSuite connection action',404)
  if(op==='connect'){
-  requireThat(!prior?.connected,'Disconnect NetSuite before replacing the token',409);requireThat(b.consent===true,'Explicitly approve read-only NetSuite accounting access')
+  const stored=await c.db.prepare("SELECT id FROM e_connection_secrets WHERE id='netsuite'").first()
+  requireThat(!prior?.connected||!stored,'Disconnect NetSuite before replacing the token',409);requireThat(b.consent===true,'Explicitly approve read-only NetSuite accounting access')
   const key:NetSuiteCredentials={realm:text(b.realm,'Account realm',100),role:text(b.role,'Declared read-only role',200),consumerKey:text(b.consumerKey,'Consumer key',1000),consumerSecret:text(b.consumerSecret,'Consumer secret',1000),tokenId:text(b.tokenId,'Token ID',1000),tokenSecret:text(b.tokenSecret,'Token secret',1000)}
   netsuiteHost(key.realm);const inventory=await netsuiteMetadata(key),sealed=await sealConnection(env.SESSION_SECRET,JSON.stringify(key),NETSUITE_PURPOSE)
   put(c.s,'connection','netsuite',{account:key.realm,role:key.role,connected:true,suffix:key.tokenId.slice(-4),owner:c.x.actor.email,connectedAt:c.now,lastRefresh:null,lastCheck:c.now,rowCount:0,error:null,rateLimit:null,inventory})

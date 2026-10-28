@@ -295,5 +295,97 @@
       "cadCashClosing": "3200.00",
       "eurCashClosing": "2560.00"
     }
-  ]
+  ],
+  "intercompany": {
+    "evidence": "Synthetic February intercompany charge and settlement; cumulative trial adjustments are independently specified.",
+    "accounts": [
+      {
+        "id": "110",
+        "code": "1100",
+        "name": "Intercompany receivable",
+        "type": "AcctRec",
+        "isinactive": "F"
+      },
+      {
+        "id": "200",
+        "code": "2000",
+        "name": "Intercompany payable",
+        "type": "AcctPay",
+        "isinactive": "F"
+      },
+      {
+        "id": "500",
+        "code": "5000",
+        "name": "Intercompany expense",
+        "type": "Expense",
+        "isinactive": "F"
+      }
+    ],
+    "postings": {
+      "1": [
+        [
+          6001,
+          1,
+          "110",
+          10000
+        ],
+        [
+          6001,
+          2,
+          "400",
+          -10000
+        ],
+        [
+          6003,
+          1,
+          "100",
+          2500
+        ],
+        [
+          6003,
+          2,
+          "110",
+          -2500
+        ]
+      ],
+      "2": [
+        [
+          6002,
+          1,
+          "500",
+          10000
+        ],
+        [
+          6002,
+          2,
+          "200",
+          -10000
+        ],
+        [
+          6004,
+          1,
+          "200",
+          2500
+        ],
+        [
+          6004,
+          2,
+          "100",
+          -2500
+        ]
+      ]
+    },
+    "trialAdjustments": {
+      "1": {
+        "100": 2500,
+        "110": 7500,
+        "400": -10000
+      },
+      "2": {
+        "100": -2500,
+        "200": -7500,
+        "500": 10000
+      }
+    }
+  }
 }

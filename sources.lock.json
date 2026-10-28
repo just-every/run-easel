@@ -1239,7 +1239,7 @@
       "executable": false
     },
     "src/easel/balance-actuals.ts": {
-      "sha256": "2e0c61f80e4c4b42b36e5a63a0987125f6bff4d71b339ddceb6af60a832e0921",
+      "sha256": "6716654e0a992db30213e5b72f396a00673a7e4eb2e5808596a9771452bb4514",
       "executable": false
     },
     "src/easel/balance-targets.ts": {
@@ -1875,7 +1875,7 @@
       "executable": false
     },
     "src/easel/netsuite-connection.ts": {
-      "sha256": "26499e881492bf942800fb3b6f8637a4852739c9556063d94b9390c9a16daa71",
+      "sha256": "5676c540aeb445933820184c2f09a8f93eda93d8cd741246306c8d80539caff4",
       "executable": false
     },
     "src/easel/netsuite-import.ts": {
@@ -4511,7 +4511,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "a0ec4caef5cd03a86f2c62a089265616f404c1947d704e86812994d92ff42aec",
+      "sha256": "3c483a8a439fe40076935a9890ec7bc4b513246b96316ca601157a40377e75d8",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {
@@ -5155,19 +5155,19 @@
       "executable": false
     },
     "tests/netsuite-browser.mjs": {
-      "sha256": "f68147fdc13763878105620fe421e87b57ce234476bc320991a185b099bf5f99",
+      "sha256": "b5f5d2ab825ed6e29be9521aa9138dc68ee4b8ffd1f35d764c0a070936a08e4e",
       "executable": false
     },
     "tests/netsuite-fixture.mjs": {
-      "sha256": "86ee2c770a16a7568f6648628bee52a9002fe2d5e8e3c356e3886e979ee499e6",
+      "sha256": "6d581d0640e095b60033c67999013f9225b7a87e94d61bfdc0635b7734cd674b",
       "executable": false
     },
     "tests/netsuite-suiteql-recording.json": {
-      "sha256": "a7fe366c6d8b543ee3326cdcc30787605a3830f7144cf8d93fb993f62864009a",
+      "sha256": "360a5439680e7b129dceb9daddd0f4231d376868f33ecdfbda62d14d988980cd",
       "executable": false
     },
     "tests/netsuite.test.mjs": {
-      "sha256": "73046937cace8a3baa3b055e28a545f68d03b3ce996f287f7f01c33e09412aba",
+      "sha256": "35a838434ae4005d9655320255ae973fba78f80a7c31edc10cef9cff3683cd40",
       "executable": false
     },
     "tests/notifications.test.mjs": {

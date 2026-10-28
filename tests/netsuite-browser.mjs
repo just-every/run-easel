@@ -69,7 +69,33 @@ try{
  const mail=messages.find(m=>m.to.includes('netsuite-viewer@example.test')),token=new URL(mail.text.match(/https?:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
  viewer=await browser.newContext({ignoreHTTPSErrors:true});const confirmation=await viewer.request.post(runtime.origin+'/auth/confirm',{headers:{origin:runtime.origin},data:{token},maxRedirects:0});assert.equal(confirmation.status(),303)
  const vp=await viewer.newPage();track(vp);vp.on('pageerror',e=>errors.push(e.message));await vp.goto(runtime.origin+'/app?tab=review');await vp.getByLabel('Review forecast',{exact:true}).selectOption(forecasts[0].id);await vp.getByRole('heading',{name:'Variances, Jan 2026',exact:true}).waitFor();assert.equal(await vp.getByRole('table',{name:'Accepted rows',exact:true}).count(),0);assert.match(await vp.locator('main.shell').innerText(),/100\.00/);await capture(vp,vp.locator('main.shell'),'viewer-amounts')
- await page.goto(runtime.origin+'/app?tab=settings');await connection.getByText('Accepted NetSuite source periods',{exact:true}).click();await capture(page,connection,'accepted-source-status')
+ // Continue the same entities into an explicitly reviewed provider-backed consolidation.
+ const expense=await h.command('line',{name:'Intercompany service expense',type:'operating-expense'})
+ for(const [account,target]of[['1100','bs:receivables'],['2000','bs:payables'],['5000',expense.id]])await h.command('account-map',{account,target})
+ provider.intercompany=true
+ for(let i=0;i<2;i++){
+  await acceptNetSuite(h,{binding:status.bindings.find(b=>b.entity===f.entities[i].id).id,month:'2026-02',includeOpening:false})
+  await h.command('close-month',{scenario:forecasts[i].id,month:'2026-02'})
+  await h.command('entity-rate',{entity:f.entities[i].id,month:'2025-12',monthEnd:'1'})
+  for(const month of['2026-01','2026-02'])await h.command('entity-rate',{entity:f.entities[i].id,month,average:'1',budget:'1',monthEnd:'1'})
+ }
+ await page.goto(runtime.origin+'/app?tab=settings')
+ const entities=card(page,'Entities'),ledger=entities.locator('details').filter({has:page.getByText('Review elimination from accepted entity ledger evidence',{exact:true})})
+ await ledger.locator('summary').click()
+ await ledger.getByLabel('Ledger revenue entity',{exact:true}).selectOption(f.entities[0].id);await ledger.getByLabel('Ledger expense entity',{exact:true}).selectOption(f.entities[1].id)
+ await ledger.getByLabel('Ledger evidence month',{exact:true}).fill('2026-02');await ledger.getByLabel('Ledger revenue line',{exact:true}).selectOption(f.line.id);await ledger.getByLabel('Ledger expense line',{exact:true}).selectOption(expense.id)
+ await ledger.getByLabel('Ledger elimination name',{exact:true}).fill('Recorded management service and settlement')
+ for(const [label,transaction,amount]of[['Revenue charge','6001','100'],['Expense charge','6002','100'],['Receivable balance','6001','75'],['Payable balance','6002','75'],['Cash received','6003','25'],['Cash paid','6004','25']]){
+  await ledger.getByRole('group',{name:label,exact:true}).getByRole('checkbox',{name:new RegExp('transaction '+transaction+'$')}).check()
+  await ledger.getByLabel('Eliminate local '+label.toLowerCase(),{exact:true}).fill(amount)
+ }
+ await ledger.getByLabel('I reviewed the selected actual ledger evidence',{exact:true}).check();await capture(page,ledger,'review-ledger-elimination')
+ await action(page,'/command/entity-elimination-save',()=>ledger.getByRole('button',{name:'Save reviewed ledger elimination',exact:true}).click())
+ const consolidation=page.getByRole('region',{name:'Management consolidation',exact:true}),revenue=consolidation.getByRole('table',{name:'Profit and loss in USD',exact:true}).getByRole('row').filter({hasText:'Feb 2026'}).filter({has:page.getByRole('cell',{name:'Revenue',exact:true})})
+ assert.match(await revenue.getByRole('cell').last().innerText(),/180\.00/)
+ const result=(await h.get('/api/easel/consolidation/'+f.root.id)).consolidated.find(m=>m.month==='2026-02');assert.equal(result.profit.revenue,18000);assert.equal(result.profit.operatingExpenses,0);assert.equal(result.balanceSheet.receivables,0);assert.equal(result.balanceSheet.payables,0);assert.equal(result.cash.difference,0)
+ await capture(page,consolidation,'provider-consolidation')
+ await connection.getByText('Accepted NetSuite source periods',{exact:true}).click();await capture(page,connection,'accepted-source-status')
  provider.revocation=503;await action(page,'/connections/netsuite/disconnect',()=>connection.getByRole('button',{name:'Disconnect NetSuite',exact:true}).click());await connection.getByRole('alert').filter({hasText:'Access Tokens'}).waitFor();await capture(page,connection,'unconfirmed-revocation')
  assert.deepEqual(errors,[],'No browser application failures')
  console.log('NetSuite native journey passed; browser evidence: '+evidence)

@@ -37,7 +37,7 @@ export function Review({ state, refresh }: Shared) {
  const [v, setV] = useState<D | null>(null)
  const [error, setError] = useState('')
  useEffect(() => { let live = true; setV(null); setError(''); if (month&&forecast) api(`variance/${month}?scenario=${encodeURIComponent(forecast.id)}`).then(v => { if (live) setV(v) }, e => setError(e.message)); return () => { live = false } }, [month, state,forecast?.id])
- useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [forecast?.id,forecast?.actualsThrough])
+ useEffect(() => { if (!month && closedMonths.length) setMonth(closedMonths[closedMonths.length - 1]) }, [month,forecast?.id,forecast?.actualsThrough])
  useEffect(() => { if (forecast) { const url = new URL(window.location.href); url.searchParams.set('reviewScenario',forecast.id);if(month)url.searchParams.set('reviewMonth', month); window.history.replaceState(window.history.state, '', url) } }, [month,forecast?.id])
  const next = forecast ? (forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : state.workspace.planStart) : ''
  const reviewState = { ...state, actorNames: { ...state.actorNames, ...v?.actorNames } }
