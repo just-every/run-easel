@@ -46,7 +46,8 @@ export async function actualCells(db: D1Database, s: State, through?: string, en
   cell.rows += g.rows; cell.batches = [...new Set([...cell.batches, ...g.batches])]
   cells.set(k, cell)
  }
- for(const receipt of entityReceipts(s,entity).filter(r=>r.ledgerRows===0)){const owner=get(s,'entity',entity!);for(const line of lines(s))for(const department of all(s,'department')){const key=`${line.id}|${department.id}|${receipt.month}`;if(!cells.has(key))cells.set(key,{line:line.id,department:department.id,month:receipt.month,amount:0,rows:0,batches:[],dimensions:{[owner.dimension]:owner.member}})}}
+ // A reviewed NetSuite trial covers zero P&L cells too, even in a balance-only month.
+ for(const receipt of entityReceipts(s,entity).filter(r=>r.ledgerRows===0||r.subsidiary!==undefined)){const owner=get(s,'entity',entity!);for(const line of lines(s))for(const department of all(s,'department')){const key=`${line.id}|${department.id}|${receipt.month}`;if(!cells.has(key))cells.set(key,{line:line.id,department:department.id,month:receipt.month,amount:0,rows:0,batches:[],dimensions:{[owner.dimension]:owner.member}})}}
  return [...cells.values()]
 }
 
@@ -74,6 +75,7 @@ export async function reconciliation(db: D1Database, s: State, entity?:string) {
   else if (target && lineType.has(target)) { m.mapped += g.amount; if (lineType.get(target) === 'revenue') m.revenue -= g.amount; else m.costs += g.amount }
   months.set(g.period, m)
  }
+ // A reviewed NetSuite trial covers zero P&L cells too, even in a balance-only month.
  for(const receipt of entityReceipts(s,entity))if(!months.has(receipt.month))months.set(receipt.month,{period:receipt.month,label:monthLabel(receipt.month),rows:0,imported:0,mapped:0,excluded:0,cash:0,unmapped:0,balanceSheet:0,revenue:0,costs:0,blocked:false,unmappedAccounts:[],unmappedDepartments:[],receipt:receipt.id})
  for(const month of months.values())if(pending.includes(month.period))month.blocked=true
  const list: Data[] = [...months.values()].sort((a, b) => a.period.localeCompare(b.period)).map(m => ({ ...m, revenue: m.blocked ? null : m.revenue, costs: m.blocked ? null : m.costs, balanced: m.mapped + m.excluded + m.cash + m.balanceSheet + m.unmapped === m.imported }))
