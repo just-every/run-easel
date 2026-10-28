@@ -42,13 +42,26 @@ const confirmExplanation = async details => {
  await details.getByText('explanation confirmed', { exact: true }).waitFor()
 }
 /** Waits until the page has no Easel API request in flight for a moment. */
-export const settle = async page => { for (let quiet = 0; quiet < 3;) { await page.waitForTimeout(100); quiet = page.inflight() === 0 ? quiet + 1 : 0 } }
+export const settle = async page => {
+ const deadline = Date.now() + 30000
+ for (let quiet = 0; quiet < 3;) {
+  assert.ok(Date.now() < deadline, `Page did not settle; ${page.inflight()} Easel requests remain`)
+  await page.waitForTimeout(100)
+  quiet = page.inflight() === 0 ? quiet + 1 : 0
+ }
+}
 export function track(page) {
- let n = 0
+ const pending = new Set()
  const mine = r => r.url().includes('/api/easel/')
- page.on('request', r => { if (mine(r)) n++ })
- for (const event of ['requestfinished', 'requestfailed']) page.on(event, r => { if (mine(r)) n-- })
- page.inflight = () => n
+ page.on('request', r => { if (mine(r)) pending.add(r) })
+ for (const event of ['requestfinished', 'requestfailed']) page.on(event, r => pending.delete(r))
+ // Download requests may have no requestfinished event. They leave the pending
+ // set only after the browser reports their completed or failed transfer.
+ page.on('download', async download => {
+  await download.failure().catch(() => null)
+  for (const request of pending) if (request.url() === download.url()) pending.delete(request)
+ })
+ page.inflight = () => pending.size
 }
 
 /** No page may scroll sideways at this width; tables scroll inside their own box. */
