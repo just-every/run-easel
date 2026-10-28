@@ -2,7 +2,7 @@ import { canonicalJson, sha256 } from '../modules/import-kit/src/d1/index'
 import { Fault, requireThat, type Data } from './types'
 
 export type NetsuiteCredentials = { realmId:string; environment:string; consumerKey:string; consumerSecret:string; tokenId:string; tokenSecret:string; roleId:string }
-export type NetsuiteLedgerRow = { id:string; transactionId:string; transactionType:string; date:string; accountId:string; account:string; accountName:string; accountType:string; amount:number; class_name:string; location_name:string; department_name:string; subsidiaryId:string; sourceDate:string; customer_name:string; vendor_name:string; description:string; reference:string }
+export type NetsuiteLedgerRow = { id:string; transactionId:string; transactionType:string; date:string; accountId:string; account:string; accountName:string; accountType:string; amount:number; class_name:string; location_name:string; department_name:string; subsidiaryId:string; sourceDate:string; postingPeriod:string; customer_name:string; vendor_name:string; description:string; reference:string }
 export const NETSUITE_PURPOSE='easel:netsuite:suiteql:tba:v1'
 export const NETSUITE_READS='SuiteQL SELECT: primary accounting book, accounts, subsidiaries, departments, classes, locations, accounting periods and posted accounting lines'
 export class NetsuiteFailure extends Fault { constructor(message:string,public httpStatus:number|null=null,public rateLimit:string|null=null){super(502,message)} }
@@ -76,7 +76,7 @@ export async function readNetsuiteLedger(key:NetsuiteCredentials,month:string,su
  const joins='FROM transactionaccountingline tal JOIN transaction t ON t.id=tal.transaction JOIN transactionline tl ON tl.transaction=tal.transaction AND tl.id=tal.transactionline JOIN accountingperiod ap ON ap.id=t.postingperiod'
  const where=`tal.posting='T' AND t.posting='T' AND tal.accountingbook=${inventory.book} AND tl.subsidiary=${subsidiaryId}`
  const amount='NVL(tal.debit,0)-NVL(tal.credit,0)'
- const raw=await query(key,`SELECT t.id AS transaction_id, t.type AS transaction_type, tl.id AS line_id, tal.account AS account_id, TO_CHAR(t.trandate,'YYYY-MM-DD') AS source_date, tl.department AS department_id, tl.class AS class_id, tl.location AS location_id, SUM(${amount}) AS amount ${joins} WHERE ${where} AND t.postingperiod=${periodId} AND t.trandate<=TO_DATE('${to}','YYYY-MM-DD') GROUP BY t.id,t.type,tl.id,tal.account,t.trandate,tl.department,tl.class,tl.location ORDER BY t.id,tl.id,tal.account`,5000)
+ const raw=await query(key,`SELECT t.id AS transaction_id, t.type AS transaction_type, t.postingperiod AS posting_period_id, tl.id AS line_id, tal.account AS account_id, TO_CHAR(t.trandate,'YYYY-MM-DD') AS source_date, tl.department AS department_id, tl.class AS class_id, tl.location AS location_id, SUM(${amount}) AS amount ${joins} WHERE ${where} AND ap.startdate>=TO_DATE('${from}','YYYY-MM-DD') AND ap.startdate<=TO_DATE('${end}','YYYY-MM-DD') GROUP BY t.id,t.type,t.postingperiod,tl.id,tal.account,t.trandate,tl.department,tl.class,tl.location ORDER BY t.id,tl.id,tal.account`,5000)
  const seen=new Set<string>()
  const dimension=(kind:string,id:unknown)=>{if(id===null||id===undefined||id==='')return '';const value=inventory.dimensions[kind].find(d=>d.id===sourceId(id));requireThat(value,`NetSuite line has an unknown ${kind} member`,502);return value.name as string}
  const rows:NetsuiteLedgerRow[]=raw.map(r=>{
@@ -84,7 +84,7 @@ export async function readNetsuiteLedger(key:NetsuiteCredentials,month:string,su
   requireThat(account&&/^\d{1,15}$/.test(line),'NetSuite line has an unknown account or invalid line ID',502)
   const id=`${transactionId}:${line}:${accountId}`,sourceDate=date(r.source_date)
   requireThat(!seen.has(id),'NetSuite repeated a posting identity',502);seen.add(id)
-  return{id,transactionId,transactionType:str(r.transaction_type,80),date:sourceDate<from?from:sourceDate>to?to:sourceDate,sourceDate,accountId,account:account.code,accountName:account.name,accountType:account.type,amount:cents(r.amount),department_name:dimension('departments',r.department_id),class_name:dimension('classes',r.class_id),location_name:dimension('locations',r.location_id),subsidiaryId,customer_name:'',vendor_name:'',description:'Posted NetSuite accounting line',reference:transactionId}
+  return{id,transactionId,transactionType:str(r.transaction_type,80),date:sourceDate<from?from:sourceDate>to?to:sourceDate,sourceDate,accountId,account:account.code,accountName:account.name,accountType:account.type,amount:cents(r.amount),department_name:dimension('departments',r.department_id),class_name:dimension('classes',r.class_id),location_name:dimension('locations',r.location_id),subsidiaryId,postingPeriod:sourceId(r.posting_period_id),customer_name:'',vendor_name:'',description:'Posted NetSuite accounting line',reference:transactionId}
  })
  async function trial(boundary:string){
   const raw=await query(key,`SELECT tal.account AS account_id, SUM(${amount}) AS amount ${joins} WHERE ${where} AND ${boundary} GROUP BY tal.account ORDER BY tal.account`)
@@ -94,10 +94,10 @@ export async function readNetsuiteLedger(key:NetsuiteCredentials,month:string,su
   return balances
  }
  const opening=await trial(`ap.startdate<TO_DATE('${from}','YYYY-MM-DD')`)
- const closing=await trial(`ap.startdate<=TO_DATE('${from}','YYYY-MM-DD') AND (t.postingperiod<>${periodId} OR t.trandate<=TO_DATE('${to}','YYYY-MM-DD'))`)
+ const closing=await trial(`ap.startdate<=TO_DATE('${end}','YYYY-MM-DD')`)
  const movement:Record<string,number>={};for(const r of rows)movement[r.accountId]=exact((movement[r.accountId]??0)+r.amount)
  const differences=inventory.chart.map(a=>({account:a.id,code:a.code,difference:exact((opening[a.id]??0)+(movement[a.id]??0)-(closing[a.id]??0))})).filter(a=>a.difference!==0)
- const trialBalance={opening,movement,closing,automaticClose:{},differences,balanced:!differences.length,basis:'Primary-book posted accounting lines by posting period, debit-positive; source opening plus reviewed movement equals source closing for this subsidiary.'}
+ const trialBalance={opening,movement,closing,automaticClose:{},differences,balanced:!differences.length,basis:'Primary-book posted accounting lines by posting period, including adjustment periods in the selected month, debit-positive; source opening plus reviewed movement equals source closing for this subsidiary.'}
  rows.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id))
  return{month,from,to,currency:subsidiary.currency,subsidiary,periodId,rows,nonPostingRows:[],chart:inventory.chart,dimensions:{departments:inventory.dimensions.departments,classes:inventory.dimensions.classes,locations:inventory.dimensions.locations,customers:[],vendors:[],categories:[]},inventory,trialBalance,digest:sha256(canonicalJson({rows,inventory,periodId,trialBalance}))}
 }

@@ -227,7 +227,7 @@
       "executable": false
     },
     "docs/netsuite.md": {
-      "sha256": "067a12aa505336fe57ee89f5714219f20ec3afed8d3faceb11e563009c5ac0e5",
+      "sha256": "c29d54e65e581bac88e95fcd75ff0a7d4d0163da26e610b83a8e4c5e2d2fe827",
       "executable": false
     },
     "docs/office-reporting.md": {
@@ -355,7 +355,7 @@
       "executable": false
     },
     "fixtures/netsuite/suiteql.json": {
-      "sha256": "7649baa8790618dddf92f0b4f4b4f08427d31c1d31de8623c7c32452db39feea",
+      "sha256": "da118c58bf808eef4855cd1ca340cc18b692cbb1f182e25c0edf58d93c0e2dad",
       "executable": false
     },
     "fixtures/pigment/Accounts.csv": {
@@ -1843,7 +1843,7 @@
       "executable": false
     },
     "src/easel/netsuite-import.ts": {
-      "sha256": "d1c38fc300b5f61836e9b6d0789e7d5ae3783aa908c3cdc2ca6b9c7f300bd35d",
+      "sha256": "fa09744137eebe39ff63aa6c81c151fc9471b416561e36bface2c17d886dc1fd",
       "executable": false
     },
     "src/easel/netsuite-links.ts": {
@@ -1855,7 +1855,7 @@
       "executable": false
     },
     "src/easel/netsuite-provider.ts": {
-      "sha256": "c5492ce88879a7b55c629872172279832ff4337cef1109ef99d9ab6f59a9844b",
+      "sha256": "3f723a724a8138ea6df7fe06ea4cb02cbf5aca7e804aa26f070c5389b01a99eb",
       "executable": false
     },
     "src/easel/netsuite-source.ts": {
@@ -4379,7 +4379,7 @@
       "executable": false
     },
     "src/ui/netsuite.tsx": {
-      "sha256": "5045c796a5a5dd6ef9184c9296896965652d168f92b4e77930b7afd7c986d96c",
+      "sha256": "e82bae05f1305c2aa0212b20cfe068e04344121e52b33d9ae0cdb86652faca62",
       "executable": false
     },
     "src/ui/notifications.tsx": {
@@ -5095,11 +5095,11 @@
       "executable": false
     },
     "tests/netsuite-fixture.mjs": {
-      "sha256": "4c738b75061167cce449d8bead85ddcb84c16f874ac2048d85e1a729fe6cd14f",
+      "sha256": "e63ac787bfc6293b1775378ab4b313b642a4569bf9dcc6c0dbc20eded720d427",
       "executable": false
     },
     "tests/netsuite.test.mjs": {
-      "sha256": "50e1a36556241d6494b9a34ad9ebc5a073550fd18c712134d3d2a214d06a0128",
+      "sha256": "490c1b6de889d1f9ca173112cb8b744ffa9dc470c57b8abc40b37e1edc0ed617",
       "executable": false
     },
     "tests/notifications.test.mjs": {

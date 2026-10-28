@@ -62,7 +62,7 @@ export async function netsuiteImport(c: Context, env: Bindings, op: string, b: D
  if (b.includeOpening) for (const account of source.chart) {
   const amount = source.trialBalance.opening[account.id] ?? 0
   if (!amount) continue
-  desired.push({ id: `opening:${account.id}:${source.from}`, transactionId: '', transactionType: 'Opening', date: new Date(Date.parse(`${source.from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10), accountId: account.id, account: account.code, accountName: account.name, accountType: account.type, amount, subsidiaryId:b.subsidiaryId,sourceDate:'',department_name:'',class_name: '', location_name: '', customer_name: '', vendor_name: '', description: 'Source trial balance opening', reference: '', opening: true })
+  desired.push({ id: `opening:${account.id}:${source.from}`, transactionId: '', transactionType: 'Opening', date: new Date(Date.parse(`${source.from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10), accountId: account.id, account: account.code, accountName: account.name, accountType: account.type, amount, subsidiaryId:b.subsidiaryId,sourceDate:'',postingPeriod:source.periodId,department_name:'',class_name: '', location_name: '', customer_name: '', vendor_name: '', description: 'Source trial balance opening', reference: '', opening: true })
  }
  const prior = new Map<string, Data>()
  for (const item of old.results) {
@@ -77,7 +77,7 @@ export async function netsuiteImport(c: Context, env: Bindings, op: string, b: D
   if (!amount && !firstObservation) return
   deltas.push({ ...row, amount })
   metadata[deltas.length + 1] = {
-   netsuiteEntity:entity.id,netsuiteSubsidiary:b.subsidiaryId,netsuiteSourceDate:row.sourceDate,netsuiteRealm: key.realmId, netsuiteEnvironment: key.environment, netsuiteMonth: source.month,
+   netsuiteEntity:entity.id,netsuiteSubsidiary:b.subsidiaryId,netsuiteSourceDate:row.sourceDate,netsuitePostingPeriod:row.postingPeriod,netsuiteRealm: key.realmId, netsuiteEnvironment: key.environment, netsuiteMonth: source.month,
    netsuiteLine: row.id,netsuiteIdentity:row.identity, netsuiteOpening: row.opening === true,
    netsuiteTransactionId: row.transactionId, netsuiteTransactionType: row.transactionType, netsuiteAccountId: row.accountId,
    sourceDimensions:{subsidiary:`${key.realmId}:${b.subsidiaryId}`,...(row.opening?{}:{department:row.department_name,class:row.class_name,location:row.location_name,'tracking-option':row.location_name})},
@@ -86,13 +86,13 @@ export async function netsuiteImport(c: Context, env: Bindings, op: string, b: D
  // Identity includes the immutable posting shape, but never its amount. A
  // moved/reclassified line reverses its old shape and accepts the new one.
  for (const row of desired) {
-  row.identity=sha256(canonicalJson([row.id,row.account,row.accountType,row.date,row.department_name,row.class_name,row.location_name]))
+  row.identity=sha256(canonicalJson([row.id,row.account,row.accountType,row.date,row.sourceDate,row.postingPeriod,row.department_name,row.class_name,row.location_name]))
   const before=prior.get(row.identity)
   push(row,safe(row.amount-(before?.amount??0)),!before)
   prior.delete(row.identity)
  }
  // Removed provider lines are journaled as visible reversals.
- for (const before of prior.values()) push({ id: before.netsuiteLine,identity:before.netsuiteIdentity,transactionId: before.netsuiteTransactionId, transactionType: before.netsuiteTransactionType, date: before.date, accountId: before.netsuiteAccountId ?? '', account: before.account, accountName: before.accountName, accountType: before.accountType, amount: 0, subsidiaryId:b.subsidiaryId,sourceDate:before.netsuiteSourceDate??'',department_name:before.department === '(blank)' ? '' : before.department,class_name:before.sourceDimensions?.class??'', location_name: before.sourceDimensions?.location ?? '', customer_name: before.sourceDimensions?.customer ?? '', vendor_name: before.sourceDimensions?.vendor ?? '', description: before.description ?? '', reference: before.reference ?? '', opening: before.netsuiteOpening }, safe(-before.amount))
+ for (const before of prior.values()) push({ id: before.netsuiteLine,identity:before.netsuiteIdentity,transactionId: before.netsuiteTransactionId, transactionType: before.netsuiteTransactionType, date: before.date, accountId: before.netsuiteAccountId ?? '', account: before.account, accountName: before.accountName, accountType: before.accountType, amount: 0, subsidiaryId:b.subsidiaryId,sourceDate:before.netsuiteSourceDate??'',postingPeriod:before.netsuitePostingPeriod??source.periodId,department_name:before.department === '(blank)' ? '' : before.department,class_name:before.sourceDimensions?.class??'', location_name: before.sourceDimensions?.location ?? '', customer_name: before.sourceDimensions?.customer ?? '', vendor_name: before.sourceDimensions?.vendor ?? '', description: before.description ?? '', reference: before.reference ?? '', opening: before.netsuiteOpening }, safe(-before.amount))
  const digest = sha256(canonicalJson({ source: source.digest, deltas, metadata }))
  const inventory=source.inventory
  const priorInventory=find(c.s,'connection','netsuite')?.inventory

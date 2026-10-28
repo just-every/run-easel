@@ -93,7 +93,6 @@ export function NetsuiteImport({refresh,state}:{refresh:()=>Promise<void>;state:
     </Table>
     {preview.source.trialBalance.balanced&&!preview.source.unsupportedTransactions.length&&!(preview.unmappedAccounts?.length||preview.unmappedDepartments?.length||preview.dimensionExceptions?.length)&&(!preview.source.nonPostingRows.length||acknowledged)&&<Action label="Accept reviewed NetSuite month" run={async()=>{let result=await api(['import','netsuite','commit'].join('/'),{...draft,fingerprint:preview.fingerprint,sourceFingerprint:preview.sourceFingerprint,acknowledgeNonPosting:preview.source.nonPostingRows.length});while(result.batch?.status==='importing')result=await api('import/actuals/resume',{id:result.batch.id});setPreview(null);await refresh()}}/>}
    </>}
-   {!!queue.length&&<Action label="Review next history month" run={async()=>{const [next,...remaining]=queue;setQueue(remaining);await pull({month:next,includeOpening:false,subsidiaryId:draft?.subsidiaryId})}}/>}
   </>}
   {!preview&&queue.length>0&&<Action label="Review next history month" run={async()=>{const [next,...remaining]=queue;setQueue(remaining);await pull({month:next,includeOpening:false,subsidiaryId:draft?.subsidiaryId})}}/>}
  </section>

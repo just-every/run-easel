@@ -29,7 +29,9 @@ month includes the preceding posted-ledger opening once. The source trial balanc
 is computed independently from primary-book accounting lines, by posting period;
 its opening plus the detailed movement must equal its closing for every account.
 Both source trials must sum to zero. No fiscal report closing transfer or balancing
-plug is invented. Ordinary monthly periods are required. The source transaction
+plug is invented. Ordinary monthly periods are required; posted adjustment periods within the
+selected month are included. Selection uses the accounting period, independently
+of the transaction date. The source transaction
 date is retained; a transaction dated outside its posting month is assigned to
 that reviewed posting month's boundary for actuals classification.
 

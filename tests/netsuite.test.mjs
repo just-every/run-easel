@@ -12,7 +12,7 @@ test('CONNECT-003 NetSuite SuiteQL backfills separate reconciled months and impo
  await call('connections/netsuite/connect',netsuiteGrant)
  for(const[sub,entity]of[['1',f.entities.first],['2',f.entities.second]])await call('connections/netsuite/map',{subsidiaryId:sub,entity:entity.id})
  const status=await h.get('/api/easel/connections/netsuite');assert.equal(status.connected,true);assert.ok(!JSON.stringify(status).includes(netsuiteGrant.tokenSecret))
- provider.initial=true;provider.denseMonth='2026-02'
+ provider.initial=true;provider.denseMonth='2026-02';provider.displaced=true
  const beforeInitial=await h.get('/api/easel/actuals')
  const initial=await h.kit('netsuite','preview',{month:'2024-01',subsidiaryId:'1',includeOpening:true})
  assert.equal(initial.accounts.find(a=>a.account==='4002').target,f.line.id)
@@ -39,6 +39,10 @@ test('CONNECT-003 NetSuite SuiteQL backfills separate reconciled months and impo
  const incomplete=await h.command('close-month',{scenario:approval.forecast.id,month:'2026-01'},h.owner,409);assert.match(incomplete.error,/NetSuite history is incomplete/)
  await acceptNetsuite(h,{month:'2024-01',includeOpening:true,subsidiaryId:'1'})
  await h.command('close-month',{scenario:approval.forecast.id,month:'2026-01'})
+ const postedMonth=await h.db.prepare("SELECT value FROM e_actuals WHERE json_extract(value,'$.netsuiteTransactionId')='100025' AND json_extract(value,'$.netsuiteAccountId')='400'").first()
+ assert.equal(JSON.parse(postedMonth.value).date,'2026-01-31')
+ assert.equal(JSON.parse(postedMonth.value).netsuiteSourceDate,'2026-02-01')
+ assert.equal(JSON.parse(postedMonth.value).netsuitePostingPeriod,'999999')
  const variance=await h.get('/api/easel/variance/2026-01'),detail=variance.rows.find(r=>r.line===f.line.id&&r.department===f.department.id)
  assert.equal(detail.actual,10000);assert.equal(detail.citations.length,1);assert.match(detail.citations[0].providerUrl,/1234567-sb1\.app\.netsuite\.com\/app\/accounting\/transactions\/transaction\.nl\?id=100025/)
  await h.command('close-month',{scenario:approval.forecast.id,month:'2026-02'})

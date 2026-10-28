@@ -7,11 +7,11 @@ export const netsuiteGrant={realmId:'1234567_SB1',roleId:'1001',consumerKey:'syn
 const enc=s=>encodeURIComponent(s).replace(/[!'()*]/g,c=>'%'+c.charCodeAt(0).toString(16).toUpperCase())
 const money=n=>(n/100).toFixed(2)
 export function netsuiteProvider(){
- const state={status:200,change:false,extra:'',entries:null,badTrial:false,reads:[],nonces:new Set(),initial:false,denseMonth:null,duplicate:false,pages:0}
+ const state={status:200,change:false,extra:'',entries:null,badTrial:false,reads:[],nonces:new Set(),initial:false,denseMonth:null,displaced:false,duplicate:false,pages:0}
  const chart=()=>state.entries?[...new Set(state.entries.map(r=>r[1]))].map((code,i)=>({id:String(100+i),code,name:code,type:code.startsWith('4')?'Income':code==='3000'?'Equity':code==='1200'?'Prepaid':'Asset'})):[...recording.accounts,...(state.initial?[{id:'403',code:'4002',name:'New initial revenue',type:'Income'},{id:'404',code:'9998',name:'Subscription revenue',type:'Income'}]:[]),...(['mapped','both'].includes(state.extra)?[{id:'401',code:'4001',name:'New subscription revenue',type:'Income'}]:[]),...(['unmapped','both'].includes(state.extra)?[{id:'402',code:'9999',name:'Subscription revenue',type:'Income'}]:[])]
  function entries(sub){
   const rows=[]
-  if(state.entries){for(const [i,r]of state.entries.entries())rows.push({transaction_id:String(2000+[...new Set(state.entries.map(r=>r[0]))].indexOf(r[0])),transaction_type:'Journal',line_id:String(i+1),account_id:chart().find(a=>a.code===r[1]).id,source_date:r[0],department_id:null,class_id:null,location_id:null,amount:r[2]});return sub==='1'?rows:[]}
+  if(state.entries){for(const [i,r]of state.entries.entries())rows.push({transaction_id:String(2000+[...new Set(state.entries.map(r=>r[0]))].indexOf(r[0])),transaction_type:'Journal',line_id:String(i+1),account_id:chart().find(a=>a.code===r[1]).id,source_date:r[0],department_id:null,class_id:null,location_id:null,amount:r[2],posting_month:r[0].slice(0,7),posting_period_id:String(Number(r[0].slice(0,4))*12+Number(r[0].slice(5,7)))});return sub==='1'?rows:[]}
   for(let i=0;i<28;i++){
    const month=`${2024+Math.floor(i/12)}-${String(i%12+1).padStart(2,'0')}`
    if(month==='2024-06')continue
@@ -25,6 +25,15 @@ export function netsuiteProvider(){
   }
   if(state.initial&&sub==='1')for(const[i,account]of['403','404'].entries())for(const[line,a,n]of[['1','100',1500],['2',account,-1500]])rows.push({...recording.page.items[0],transaction_id:String(400000+i),line_id:line,account_id:a,source_date:'2024-01-15',amount:money(n)})
   if(sub==='1')for(const [i,a]of chart().filter(a=>['4001','9999'].includes(a.code)).entries())for(const [line,account,n]of[['1','100',2500],['2',a.id,-2500]])rows.push({...recording.page.items[0],transaction_id:String(300000+i),line_id:line,account_id:account,source_date:'2026-03-15',amount:money(n)})
+  for(const r of rows){
+   r.posting_month=r.source_date.slice(0,7)
+   r.posting_period_id=String(Number(r.posting_month.slice(0,4))*12+Number(r.posting_month.slice(5)))
+   if(state.displaced&&r.posting_month==='2026-01'){
+    r.source_date='2026-02-01'
+    // A posted adjustment in the same month must be selected by the period range too.
+    r.posting_period_id='999999'
+   }
+  }
   return rows
  }
  state.outbound=async request=>{
@@ -49,15 +58,15 @@ export function netsuiteProvider(){
    assert.match(q,/tal\.posting='T' AND t\.posting='T' AND tal\.accountingbook=1/)
    const sub=/tl\.subsidiary=(\d+)/.exec(q)[1],all=entries(sub)
    if(q.includes('AS transaction_id')){
-    const period=Number(/t\.postingperiod=(\d+)/.exec(q)[1]),month=`${Math.floor((period-1)/12)}-${String((period-1)%12+1).padStart(2,'0')}`
-    const to=[...q.matchAll(/TO_DATE\('([^']+)'/g)].at(-1)[1]
-    items=all.filter(r=>r.source_date.slice(0,7)===month&&r.source_date<=to)
+    assert.match(q,/ap\.startdate>=TO_DATE/)
+    const dates=[...q.matchAll(/TO_DATE\('([^']+)'/g)].map(m=>m[1]),month=dates[0].slice(0,7)
+    items=all.filter(r=>r.posting_month===month)
     if(state.duplicate&&items.length)items.push({...items[0]})
    }else{
     const boundary=/ap\.startdate(<=?)TO_DATE\('([^']+)'/.exec(q);assert.ok(boundary)
     const month=boundary[2].slice(0,7),values=new Map()
     if(!state.entries){values.set('100',sub==='1'?50000:30000);values.set('300',sub==='1'?-50000:-30000)}
-    for(const r of all)if(boundary[1]==='<'?r.source_date.slice(0,7)<month:r.source_date.slice(0,7)<=month)values.set(r.account_id,(values.get(r.account_id)??0)+Math.round(Number(r.amount)*100))
+    for(const r of all)if(boundary[1]==='<'?r.posting_month<month:r.posting_month<=month)values.set(r.account_id,(values.get(r.account_id)??0)+Math.round(Number(r.amount)*100))
     if(state.badTrial&&boundary[1]==='<='){values.set('100',(values.get('100')??0)+1);values.set('300',(values.get('300')??0)-1)}
     items=[...values].map(([account_id,n])=>({account_id,amount:money(n)}))
    }
