@@ -1,6 +1,6 @@
 import './hris.css'
 import { useEffect, useState } from 'react'
-import { Action, api, Field, Form, money, options, Table, type D } from './shared'
+import { Action, api, command, Field, Form, money, options, Table, type D } from './shared'
 
 const providers=[{value:'rippling',label:'Rippling'},{value:'willow',label:'Willow'},{value:'bamboohr',label:'BambooHR'},{value:'adp',label:'ADP Workforce Now'}]
 export function HrisConnections(){
@@ -14,13 +14,13 @@ export function HrisConnections(){
 }
 function HrisConnection({provider,name}:{provider:string;name:string}){
  const [connection,setConnection]=useState<D|null>(null),[state,setState]=useState<D|null>(null),[error,setError]=useState('')
- const [draft,setDraft]=useState<D|null>(null),[preview,setPreview]=useState<D|null>(null),[reviewed,setReviewed]=useState(false)
+ const [draft,setDraft]=useState<D|null>(null),[preview,setPreview]=useState<D|null>(null),[reviewed,setReviewed]=useState(false),[sourceGuard,setSourceGuard]=useState<D|null>(null)
  const status=`connections/hris/${provider}`,kit=`import/${provider}`
  const load=async()=>{setError('');try{const [c,s]=await Promise.all([api(status),api('state')]);setConnection(c);setState(s)}catch(e){setError((e as Error).message)}}
  useEffect(()=>{void load()},[provider])
- const pull=async(input:D)=>{const result=await api(`${kit}/preview`,input);setDraft({...input,employeeMap:result.employeeMap});setPreview(result);setReviewed(result.unmapped.length===0)}
+ const pull=async(input:D)=>{setSourceGuard(null);const result=await api(`${kit}/preview`,input);setDraft({...input,employeeMap:result.employeeMap});setPreview(result);setReviewed(result.unmapped.length===0)}
  const change=(id:string,field:string,value:string)=>{
-  setDraft(current=>({...current!,employeeMap:{...current!.employeeMap,[id]:{...current!.employeeMap[id],[field]:value,...(field==='department'?{positionOrigin:'',unplanned:false}:{}),...(field==='positionOrigin'?{unplanned:value==='__unplanned',positionOrigin:value==='__unplanned'?'':value}:{})}}}));setReviewed(false)
+  setDraft(current=>({...current!,employeeMap:{...current!.employeeMap,[id]:{...current!.employeeMap[id],[field]:value,...(field==='department'?{positionOrigin:'',unplanned:false}:{}),...(field==='positionOrigin'?{unplanned:value==='__unplanned',positionOrigin:value==='__unplanned'?'':value}:{})}}}));setReviewed(false);setSourceGuard(null)
  }
  return <section aria-label={`${name} roster connection`}>
   <h3>{name}</h3>
@@ -63,8 +63,8 @@ function HrisConnection({provider,name}:{provider:string;name:string}){
      {preview.completeness.unmappedFields.map((field:string)=><tr key={field}><td>{field}</td><td>Listed for review; value excluded from the plan and retained files</td></tr>)}
      {!preview.completeness.unmappedFields.length&&<tr><td colSpan={2}>No additional fields returned</td></tr>}
     </Table>
-    <p>Choose each employee’s department, planned position (or unplanned hire), and US employment type. Associate their Easel person when applicable so erasure follows the provider identity.</p>
-    <Table caption={`${name} employee mapping`} heads={['Employee and source','Compensation','Department','Planned position','Employment type','Easel person']}>
+    <p>Choose each employee’s department, planned position (or unplanned hire), and US employment type. Review the responsible provider person and bind their native owner to enable sourced hire-date questions. Associate their Easel person when applicable so erasure follows the provider identity.</p>
+    <Table caption={`${name} employee mapping`} heads={['Employee and source','Compensation','Department','Planned position','Employment type','Easel person','Responsible provider person','Native hire owner']}>
      {preview.roster.map((row:D)=>{const id=row.employeeId,map=draft.employeeMap[id]??{};return <tr key={id}>
       <td>{row.name}<small>{row.title} · {row.sourceDepartment} · {row.sourceEmploymentType}</small><small>{row.start}{row.termination?` → ${row.termination}`:''}</small></td>
       <td>{row.salaryCents!==null?`${money(row.salaryCents)} / year`:`${money(row.hourlyRateCents)} / hour`}</td>
@@ -72,6 +72,8 @@ function HrisConnection({provider,name}:{provider:string;name:string}){
       <td><select aria-label={`${name} position ${id}`} value={map.unplanned?'__unplanned':map.positionOrigin??''} onChange={e=>change(id,'positionOrigin',e.target.value)}><option value="">Choose…</option><option value="__unplanned">Unplanned hire</option>{preview.positions.filter((p:D)=>p.department===map.department).map((p:D)=><option key={p.originId} value={p.originId}>{p.title}</option>)}</select></td>
       <td><select aria-label={`${name} employment type ${id}`} value={map.employmentType??row.employmentType??''} onChange={e=>change(id,'employmentType',e.target.value)}><option value="">Choose…</option><option value="W-2">W-2 employee</option><option value="1099">1099 contractor</option></select></td>
       <td><select aria-label={`${name} person ${id}`} value={map.memberEmail??''} onChange={e=>change(id,'memberEmail',e.target.value)}><option value="">No Easel person</option>{state.members.map((m:D)=><option key={m.email} value={m.email}>{m.name}</option>)}</select></td>
+      <td><select aria-label={`${name} responsible provider person ${id}`} value={map.ownerEmployeeId??''} onChange={e=>change(id,'ownerEmployeeId',e.target.value)}><option value="">No reviewed owner</option>{preview.roster.map((r:D)=><option key={r.employeeId} value={r.employeeId}>{r.name}</option>)}</select></td>
+      <td><select aria-label={`${name} hire owner ${id}`} value={map.ownerEmail??''} onChange={e=>change(id,'ownerEmail',e.target.value)}><option value="">No native owner binding</option>{preview.owners.map((m:D)=><option key={m.email} value={m.email}>{m.name}</option>)}</select></td>
      </tr>})}
     </Table>
     <Action label={`Review ${name} mapping`} run={()=>pull(draft)}/>
@@ -79,7 +81,12 @@ function HrisConnection({provider,name}:{provider:string;name:string}){
      {Object.entries(preview.reconciliation).map(([bucket,rows])=><tr key={bucket}><td>{{matched:'Matched',unplanned:'Unplanned hires',plannedNotHired:'Planned but not hired',changedSalary:'Changed salaries'}[bucket]??bucket}</td><td>{(rows as D[]).map(r=>r.name??r.title).join(', ')||'None'}</td></tr>)}
     </Table>
     {preview.unmapped.length>0&&<p role="status">{preview.unmapped.length} people need a complete mapping before acceptance.</p>}
-    {reviewed&&preview.unmapped.length===0&&<Action label={`Accept reviewed ${name} matches`} run={async()=>{await api(`${kit}/commit`,{...draft,fingerprint:preview.fingerprint});setPreview(null);setDraft(null);setReviewed(false);await load()}}/>}
+    {reviewed&&preview.unmapped.length===0&&<Action label={`Stage ${name} source review`} run={async()=>setSourceGuard(await api(`${kit}/stage`,{...draft,fingerprint:preview.fingerprint,sourceRevision:preview.sourceReview.revision}))}/>}
+    {sourceGuard&&<div aria-label={`${name} source review`}><h4>Source coverage and impacts</h4><p>{sourceGuard.unresolved.length?`${sourceGuard.unresolved.length} source issues hold dependent conclusions`:'Source decisions complete; accept the exact reviewed roster.'}</p><p>Next update expected: {sourceGuard.nextExpectedAt}. Missing or stale evidence holds dependent conclusions and alerts.</p>
+     {Object.entries(sourceGuard.impacts).map(([kind,rows])=><p key={kind}>{kind}: {(rows as D[]).map(r=>`${r.name} (${r.status})`).join('; ')||'None'}</p>)}
+     {sourceGuard.unresolved.map((issue:D)=><Form key={issue.id} submit={`Review ${name} source change`} onSubmit={async v=>setSourceGuard(await command('source-guard-review',{id:sourceGuard.id,revision:sourceGuard.revision,fingerprint:sourceGuard.fingerprint,decisions:[{issue:issue.id,action:'exclude',reason:v.reason}]}))}><p>{issue.person?.name&&<strong>{issue.person.name}: </strong>}{issue.reason}</p>{issue.beforeDepartment&&<p>Source department: {issue.beforeDepartment} → {issue.afterDepartment}. Reviewed planning department: {preview.departments.find((d:D)=>d.id===issue.targetDepartment)?.name??'Unmapped'}.</p>}{issue.proposals?.map((p:D)=><p key={p.target}>Proposed mapping: {p.name}. {p.reason}</p>)}<Field label={`${name} source review reason`} name="reason" hint="Record why the reviewed mapping is appropriate, or why the missing coverage is explicitly excluded."/></Form>)}
+    </div>}
+    {reviewed&&preview.unmapped.length===0&&sourceGuard&&sourceGuard.unresolved.length===0&&sourceGuard.previewFingerprint===preview.fingerprint&&<Action label={`Accept reviewed ${name} matches`} run={async()=>{await api(`${kit}/commit`,{...draft,fingerprint:preview.fingerprint});setPreview(null);setDraft(null);setReviewed(false);await load()}}/>}
    </>}
    {connection.imports.length>0&&<Table caption={`${name} accepted history`} heads={['Observed','Employees','Status','Actions']}>
     {connection.imports.map((imp:D)=><tr key={imp.id}><td>{imp.asOf}</td><td>{imp.rows}</td><td>{imp.status}</td><td>

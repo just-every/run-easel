@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "c344600240c182a94b03d9b7319775ca0921f87ebb91450346b2c1bf05ccc3e8",
+      "sha256": "78fd5e5ceaf3c7f006b7c48d72760e71e6eef0e881c9ecea887a44765553e55f",
       "executable": false
     },
     "base-copies.json": {
@@ -207,7 +207,7 @@
       "executable": false
     },
     "docs/hris-roster.md": {
-      "sha256": "19550b8d5414c3495c341ad7bc0a59ab117f0e1d0b69eb8af0f8e85e6ba522a6",
+      "sha256": "1cb8cd3930c65e7d1cd176be8cf61940740417dd63b6aaa2f24068b4e478a638",
       "executable": false
     },
     "docs/mcp.md": {
@@ -1183,7 +1183,7 @@
       "executable": false
     },
     "src/easel/agents/owner-questions.ts": {
-      "sha256": "8a266ccece82984735d24dc565a9adfbb7aabe7933d58bad62240907ef99cfaa",
+      "sha256": "8551c1d03086513ed9db35de60d5171d8921827427acd906567349d0493eb662",
       "executable": false
     },
     "src/easel/agents/private-slack-binding.ts": {
@@ -1207,7 +1207,7 @@
       "executable": false
     },
     "src/easel/agents/source-guard.ts": {
-      "sha256": "49b1a0d22e293329fd23ef8de3eab347fea9dde2055b7d42976de4314a8df737",
+      "sha256": "3c6c367ee2a9c4a372c5de4a11dc7084b3bb576b9ed6f29daf2158816878339a",
       "executable": false
     },
     "src/easel/api.ts": {
@@ -1571,7 +1571,7 @@
       "executable": false
     },
     "src/easel/erasure-map.mjs": {
-      "sha256": "bc46b67168faabd057c9ce6af1de35d3a3330c3574ab677031b4a23c63b06663",
+      "sha256": "bcf0dd51fa7b9885f440c8e723d4d5c13ec45110a7e1820cf0682d3b23fef17a",
       "executable": false
     },
     "src/easel/erasure.ts": {
@@ -1687,7 +1687,7 @@
       "executable": false
     },
     "src/easel/headcount.ts": {
-      "sha256": "8c7957da218a3e31bb524b33d22dbb996c8b4b9e503d4cb7974b9970a37b92bb",
+      "sha256": "37c8ae32429788f39ca0f927217599f1e93495418eac4b00b0561094d09fe064",
       "executable": false
     },
     "src/easel/history-budget.ts": {
@@ -1715,11 +1715,15 @@
       "executable": false
     },
     "src/easel/hris-import.ts": {
-      "sha256": "c08c0d512bf3730aa1b8f4f0b3ef6b374267b2b217bb81f66184e50d980568cf",
+      "sha256": "476000a3abf7bca71173f86300673a6ae633573d1398f6af66338617ec9f5f37",
       "executable": false
     },
     "src/easel/hris-provider.ts": {
-      "sha256": "49bf1533ac8d5483a663a6a76a1bbb6557026920ea018b5a0e25950ad1d7df06",
+      "sha256": "1f463a29fe4d89c20c864c55d59bebd7891817e992e4e1b615e7d10e193634cf",
+      "executable": false
+    },
+    "src/easel/hris-source.ts": {
+      "sha256": "23d7c42dfd0974fcd6c6351579c6d19c023e7408e9cae10765b8f28f9a207993",
       "executable": false
     },
     "src/easel/intacct-connection.ts": {
@@ -2015,7 +2019,7 @@
       "executable": false
     },
     "src/easel/payroll-erasure.mjs": {
-      "sha256": "1d08241b52af04394951ae3f6eb325a38b67553e97d44cdf9959bc9a162d086f",
+      "sha256": "cdc54fb9da898401ca7588dec84f8462e210d2589cdd0bfe14ecf2c48a84e83b",
       "executable": false
     },
     "src/easel/payroll-export-access.ts": {
@@ -2035,7 +2039,7 @@
       "executable": false
     },
     "src/easel/payroll-reconciliation.ts": {
-      "sha256": "7212f8a5bdc1a8588e3bfbe8c2533c111ad69bb6798f97cae402c0b3ff597ff9",
+      "sha256": "f0d28f2367ca750c2f3890e099adf3168534a47454df4686315eb0bf386272a8",
       "executable": false
     },
     "src/easel/payroll-taxes.ts": {
@@ -4411,7 +4415,7 @@
       "executable": false
     },
     "src/ui/hris.tsx": {
-      "sha256": "fb30b1a8883acd462a11b95f8a00b710c0ac2763857850bc5ed6a490f0c95e04",
+      "sha256": "e6483b64d80f6de058975ab8559f627ed15f7eebf055665c8cc4b73e97484c80",
       "executable": false
     },
     "src/ui/intacct.tsx": {
@@ -4466,8 +4470,12 @@
       "sha256": "b1a8db77cdbca6e0cd8217c32412568eb3dfb5665b7cee58d68894a51bae2688",
       "executable": false
     },
+    "src/ui/owner-questions.css": {
+      "sha256": "b24a7bace77e6a8b9b5af591d663d93f35aa567117a60942e1e310b398ca7a95",
+      "executable": false
+    },
     "src/ui/owner-questions.tsx": {
-      "sha256": "0e8b5924085b5230fd2f8056a5fd9f148b90709932d1aa685f834048190640d1",
+      "sha256": "8c3982878966458fcb180ccff0b1c05bba03e77c5e8ca1b9f1e49d4d882fa4be",
       "executable": false
     },
     "src/ui/pack-action-departments.tsx": {
@@ -5083,15 +5091,15 @@
       "executable": false
     },
     "tests/hris-browser.mjs": {
-      "sha256": "8566e40434c20ab0fb5ceeeced104650d2d1ae1ab7c5662dbc5126308a0e53f8",
+      "sha256": "ad1737afaac24434222fdbe0444e6339917eccf3500d237b3076ba45a12e0262",
       "executable": false
     },
     "tests/hris-fixture.mjs": {
-      "sha256": "af142942679da43cf994fdcf744e7aa3fc26e16de5428308b7c56493f2d11fac",
+      "sha256": "692d4c2bbaf2f589738c6d4d00f2c1fd29b9f27377aed2362705a20d8e056d80",
       "executable": false
     },
     "tests/hris.test.mjs": {
-      "sha256": "35c63f3cdcda27a2ff843f40d7c8cfec6f0f45f7ba34f117abe50d7677acafab",
+      "sha256": "501177a0689ce70ef50ecb5446a2bf2840cd52631f1f833168434b70283f4ebd",
       "executable": false
     },
     "tests/intacct-browser.mjs": {

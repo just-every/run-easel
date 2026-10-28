@@ -1,3 +1,4 @@
+import { hrisOwnerEvidence } from '../hris-source'
 import { agentEnabled, requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 // Deterministic owner questions: an authenticated answer is evidence, never
@@ -42,7 +43,7 @@ export async function ownerQuestionView(c: Context) {
  const fullFinance = c.x.role === 'finance' && !c.x.dimensionLimited
  const forecast = all(c.s, 'scenario').find(s => s.kind === 'forecast' && s.status === 'working' && !s.alternativeBudget && !s.entity)
  const owners = fullFinance ? (await c.db.prepare("SELECT email,display_name AS name FROM oa_operators WHERE status='active' ORDER BY display_name").all<any>()).results : []
- return { enabled: questionsEnabled(c), questions, inputs: fullFinance && forecast ? datedInputs(c, forecast.id).map(({input, ...row}) => row) : [], owners }
+ return { enabled: questionsEnabled(c), questions, inputs: fullFinance && forecast ? datedInputs(c, forecast.id).map(({input, ...row}) => { const imports=all(c.s,'payroll-import').filter(i=>i.scenario===forecast.id&&i.status==='imported'&&i.source?.startsWith('hris:')).sort((a,b)=>b.asOf.localeCompare(a.asOf));const observation=all(c.s,'roster-actual').find(r=>row.kind==='position'&&r.positionOrigin===row.originId&&r.ownerBinding&&imports.some(i=>i.destination===r.batch)&&imports.find(i=>i.provider===r.provider)?.destination===r.batch);return {...row,providerEvidence:observation?{observation:observation.id,provider:observation.provider,asOf:observation.asOf,...observation.ownerBinding}:null} }) : [], owners }
 }
 export async function escalateQuestions(c: Context) {
  if (!agentEnabled(c.s, 'questions')) return []
@@ -80,7 +81,10 @@ export async function ownerQuestions(c: Context, op: string, b: Data): Promise<D
   const due = Date.parse(b.dueAt)
   requireThat(Number.isFinite(due) && due > Date.parse(c.now), 'Choose a future escalation time')
   const id = uid(), owner = text(b.owner, 'Input owner', 254).toLowerCase()
-  const q = { id, revision: 1, scenario: forecast.id, scenarioRevision: forecast.revision, inputKind: row.kind, originId: row.originId, field: row.field, inputName: row.name, department: row.department, owner, source: text(b.source, 'Reviewed ownership source', 1000), question: text(b.question, 'Structured question', 1000), expectedDate: row.value, dueAt: new Date(due).toISOString(), status: 'open', askedBy: c.x.actor.email, askedAt: c.now, inputFingerprint: sha256(canonicalJson(row.input)), history: [] }
+  const providerEvidence=b.hrisObservation?hrisOwnerEvidence(c,b.hrisObservation,forecast.id,row.originId):null
+  requireThat(!providerEvidence||row.kind==='position'&&owner===providerEvidence.ownerEmail,'Use the reviewed provider owner for this hire question',409)
+  const source=providerEvidence?`${providerEvidence.provider} roster ${providerEvidence.asOf}; reviewed native owner ${providerEvidence.ownerEmail}`:text(b.source,'Reviewed ownership source',1000)
+  const q = { providerEvidence, id, revision: 1, scenario: forecast.id, scenarioRevision: forecast.revision, inputKind: row.kind, originId: row.originId, field: row.field, inputName: row.name, department: row.department, owner, source, question: text(b.question, 'Structured question', 1000), expectedDate: row.value, dueAt: new Date(due).toISOString(), status: 'open', askedBy: c.x.actor.email, askedAt: c.now, inputFingerprint: sha256(canonicalJson(row.input)), history: [] }
   requireThat(await questionOwner(c, owner, q), 'The named owner must be active and permitted to read this input', 403)
   requireThat(!all(c.s, 'owner-question').some(v => v.scenario === q.scenario && v.originId === q.originId && v.field === q.field && v.status === 'open'), 'This input already has an unanswered question', 409)
   changedDate(c, q, row.input, row.value)
@@ -100,14 +104,16 @@ export async function ownerQuestions(c: Context, op: string, b: Data): Promise<D
   finance(c)
   requireThat(q.answer && ['yes', 'new-date'].includes(q.answer.choice), 'A negative or missing answer never becomes a date')
   requireThat(!q.answer.proposal, 'This answer already has a proposal', 409)
+  if(q.providerEvidence)requireThat(canonicalJson(hrisOwnerEvidence(c,q.providerEvidence.observation,q.scenario,q.originId))===canonicalJson(q.providerEvidence),'Provider ownership evidence changed; ask and review a new question',409)
   const forecast = get(c.s, 'scenario', q.scenario), row = linkedInput(c, q)
   requireThat(forecast.revision === q.scenarioRevision && sha256(canonicalJson(row.input)) === q.inputFingerprint, 'The forecast or source input changed; ask and review a new question', 409)
   const next = changedDate(c, q, row.input, q.answer.date)
   const p = (await plan(c, 'proposal-create', { from: forecast.id, name: `Owner assumption: ${q.inputName}`.slice(0, 200), request: `${q.question}\n${q.answer.by} answered ${q.answer.choice}: ${q.answer.date} at ${q.answer.at}. Source: ${q.source}${q.answer.note ? `\nFinance override: ${q.answer.note}` : ''}`.slice(0, 2000) }))!
   const copy = scenarioInputs(c.s, p.id, q.inputKind).find(i => i.originId === q.originId)!
-  const evidence = { question: q.id, source: q.source, owner: q.owner, answeredBy: q.answer.by, answeredAt: q.answer.at, choice: q.answer.choice, date: q.answer.date, note: q.answer.note ?? '', expectedDate: q.expectedDate }
+  const evidence = { question: q.id, source: q.source, owner: q.owner, answeredBy: q.answer.by, answeredAt: q.answer.at, choice: q.answer.choice, date: q.answer.date, note: q.answer.note ?? '', expectedDate: q.expectedDate, providerEvidence:q.providerEvidence??null }
   put(c.s, q.inputKind, copy.id, { ...next, id: copy.id, scenario: p.id, ownerAssumption: evidence })
-  put(c.s, 'scenario', p.id, { ...get(c.s, 'scenario', p.id), ownerAssumption: evidence })
+  const {providerEvidence:_providerEvidence,...sharedEvidence}=evidence
+  put(c.s, 'scenario', p.id, { ...get(c.s, 'scenario', p.id), ownerAssumption: sharedEvidence })
   bump(c, get(c.s, 'scenario', p.id), 'owner-assumption-proposed', p.id, { question: q.id })
   await workingCalculation(c, p.id)
   keep(c, q, { answer: { ...q.answer, proposal: p.id } }, 'owner-question-proposed', { proposal: p.id })

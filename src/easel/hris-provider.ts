@@ -71,9 +71,17 @@ const fieldName=(value:unknown)=>text(value,'Unmapped provider field name',160)
 function adpCustom(group:Data|undefined,prefix:string){
  return Object.entries(group??{}).flatMap(([kind,fields])=>Array.isArray(fields)?fields.map(f=>`${prefix}.${kind}.${fieldName(f.nameCode?.codeValue??f.nameCode?.shortName??f.itemID)}`):[`${prefix}.${kind}`])
 }
+function indexedUnmapped(value:unknown,known:string[],prefix=''):string[]{
+ if(known.includes(prefix))return []
+ if(value&&typeof value==='object'&&!Object.keys(value).length)return prefix?[prefix]:[]
+ if(value&&typeof value==='object')return Object.entries(value).flatMap(([key,child])=>indexedUnmapped(child,known,prefix?prefix+'.'+key:key))
+ return prefix?[prefix]:[]
+}
 function unmappedPaths(value:unknown,known:string[],prefix=''):string[]{
  if(known.includes(prefix))return []
+ if(Array.isArray(value)&&!value.length)return prefix?[prefix]:[]
  if(Array.isArray(value))return [...new Set(value.flatMap(item=>unmappedPaths(item,known,prefix+'[]')))]
+ if(value&&typeof value==='object'&&!Object.keys(value).length)return prefix?[prefix]:[]
  if(value&&typeof value==='object')return Object.entries(value).flatMap(([key,child])=>unmappedPaths(child,known,prefix?prefix+'.'+key:key))
  return prefix?[prefix]:[]
 }
@@ -101,8 +109,10 @@ export async function readHris(id:Hris,stored:HrisKey,env:Bindings,asOf:string){
     requireThat(!row.withheld?.length,'Willow withheld required employment or compensation fields',409)
     const employments=list(row.employment,'Willow employment').filter(e=>e.startDate<=asOf).sort((a,b)=>b.startDate.localeCompare(a.startDate))
     const current=employments[0];requireThat(current&&employments.filter(e=>e.startDate===current.startDate).length===1,'Willow employment is missing or ambiguous',409)
-    const terms=list(current.terms,'Willow terms').filter(t=>t.inForce===true&&t.effectiveFrom<=asOf)
-    requireThat(terms.length===1&&terms[0].pay,'Willow needs one readable in-force compensation record',409)
+    const ended=!!current.endDate&&current.endDate<=asOf
+    const effectiveAt=ended?current.endDate:asOf
+    const terms=list(current.terms,'Willow terms').filter(t=>t.status==='approved'&&t.effectiveFrom<=effectiveAt&&(ended||t.inForce===true)).sort((a,b)=>b.effectiveFrom.localeCompare(a.effectiveFrom))
+    requireThat(terms[0]?.pay&&terms.filter(t=>t.effectiveFrom===terms[0].effectiveFrom).length===1&& (ended||terms.length===1),'Willow needs one readable applicable approved compensation record',409)
     const term=terms[0],termination=current.endDate?new Date(Date.parse(gustoDate(current.endDate))+86400000).toISOString().slice(0,10):''
     add(row,{employeeId:row.id,name:row.name,title:term.jobTitle,sourceDepartment:term.department?.name,sourceEmploymentType:current.employmentType,start:current.startDate,termination,pay:pay(exact(term.pay.amountCents),term.pay.basis,term.pay.currency)},[...unknownKeys(row,['id','name','employment','customFields','withheld']),...list(row.customFields?.fields,'Willow custom fields').map(f=>`customFields.${f.key}`),...unmappedPaths(row.employment,['[].startDate','[].endDate','[].employmentType','[].terms[].jobTitle','[].terms[].department.name','[].terms[].pay.amountCents','[].terms[].pay.basis','[].terms[].pay.currency'])])
    }
@@ -125,7 +135,7 @@ export async function readHris(id:Hris,stored:HrisKey,env:Bindings,asOf:string){
    requireThat(row.status==='Active'||row.status==='Inactive'&&row.terminationDate,'BambooHR inactive employment needs its termination date; no departure date is guessed',409)
    const match=String(row.payRate??'').match(/^(\d+(?:\.\d{1,2})?)(?: (USD))?$/)
    requireThat(match,'BambooHR compensation is unavailable or ambiguous',409)
-   add(row,{employeeId:String(row.id),name:`${text(row.firstName,'BambooHR first name')} ${text(row.lastName,'BambooHR last name')}`,title:row.jobTitle,sourceDepartment:row.department,sourceEmploymentType:row.employmentHistoryStatus,start:row.hireDate,termination:row.terminationDate,pay:pay(amount(match[1]),row.payPer??row.payType,row.payRateCurrency??match[2])},unknownKeys(row,fields))
+   add(row,{employeeId:String(row.id),name:`${text(row.firstName,'BambooHR first name')} ${text(row.lastName,'BambooHR last name')}`,title:row.jobTitle,sourceDepartment:row.department,sourceEmploymentType:row.employmentHistoryStatus,start:row.hireDate,termination:row.terminationDate,pay:pay(amount(match[1]),row.payPer??row.payType,row.payRateCurrency??match[2])},unmappedPaths(row,fields))
   }
  }else if(id==='rippling'){
   const expanded='user,employment_type,compensation,department,custom_fields,legal_entity'
@@ -142,7 +152,7 @@ export async function readHris(id:Hris,stored:HrisKey,env:Bindings,asOf:string){
     requireThat(['HOURLY','SALARIED'].includes(type?.compensation_time_period),'Rippling compensation basis is unavailable',409)
     const hourly=type.compensation_time_period==='HOURLY',rate=hourly?comp.hourly_wage:comp.annual_compensation
     add(row,{employeeId:row.id,name:row.user?.name?.formatted,title:row.title,sourceDepartment:row.department?.name,sourceEmploymentType:type.type,start:row.start_date,termination:row.end_date,pay:pay(amount(rate?.value),hourly?'hour':'year',rate?.currency_type)},[
-     ...unmappedPaths(row,['id','user.name.formatted','title','department.name','employment_type.type','employment_type.compensation_time_period','start_date','end_date','compensation.salary_effective_date','compensation.annual_compensation','compensation.hourly_wage','legal_entity.company_id','custom_fields']),
+     ...unmappedPaths(row,['id','user.name.formatted','title','department.name','employment_type.type','employment_type.compensation_time_period','start_date','end_date','compensation.salary_effective_date',`compensation.${hourly?'hourly_wage':'annual_compensation'}.value`,`compensation.${hourly?'hourly_wage':'annual_compensation'}.currency_type`,'legal_entity.company_id','custom_fields']),
      ...list(row.custom_fields,'Rippling custom fields').map((f:Data)=>`custom_fields.${fieldName(f.name??f.custom_field?.name??f.custom_field_id??f.id)}`),
     ])
    }
@@ -170,7 +180,7 @@ export async function readHris(id:Hris,stored:HrisKey,env:Bindings,asOf:string){
     requireThat(Boolean(salary)!==Boolean(hourly),'ADP compensation is missing or ambiguous',409)
     const dept=list(job.homeOrganizationalUnits,'ADP organizational units').filter(d=>d.typeCode?.codeValue==='Department')
     requireThat(dept.length===1,'ADP department is missing or ambiguous',409)
-    add(row,{employeeId:row.associateOID,name:row.person?.legalName?.formattedName??[row.person?.legalName?.givenName1,row.person?.legalName?.middleName,row.person?.legalName?.familyName1,row.person?.legalName?.familyName2].filter(Boolean).join(' '),title:job.jobTitle,sourceDepartment:dept[0].nameCode?.longName,sourceEmploymentType:job.workerTypeCode?.codeValue,start:row.workerDates?.rehireDate||row.workerDates?.originalHireDate,termination:row.workerDates?.terminationDate,pay:pay(amount((salary??hourly).amountValue),salary?'annual':'hourly',(salary??hourly).currencyCode)},[...unknownKeys(row,['associateOID','person','workerDates','workAssignments','customFieldGroup']),...adpCustom(row.customFieldGroup,'customFieldGroup'),...adpCustom(row.person?.customFieldGroup,'person.customFieldGroup'),...adpCustom(job.customFieldGroup,'workAssignment.customFieldGroup'),...unmappedPaths(row.person,['person.legalName.formattedName'],'person'),...unmappedPaths(job,['primaryIndicator','jobTitle','workerTypeCode.codeValue','homeOrganizationalUnits','baseRemuneration'])])
+    add(row,{employeeId:row.associateOID,name:row.person?.legalName?.formattedName??[row.person?.legalName?.givenName1,row.person?.legalName?.middleName,row.person?.legalName?.familyName1,row.person?.legalName?.familyName2].filter(Boolean).join(' '),title:job.jobTitle,sourceDepartment:dept[0].nameCode?.longName,sourceEmploymentType:job.workerTypeCode?.codeValue,start:row.workerDates?.rehireDate||row.workerDates?.originalHireDate,termination:row.workerDates?.terminationDate,pay:pay(amount((salary??hourly).amountValue),salary?'annual':'hourly',(salary??hourly).currencyCode)},[...job.homeOrganizationalUnits.filter((unit:Data)=>unit!==dept[0]).map((unit:Data)=>`workAssignments.${assignments.indexOf(job)}.homeOrganizationalUnits.${fieldName(unit.typeCode?.codeValue??'untyped')}`),...adpCustom(row.customFieldGroup,'customFieldGroup'),...adpCustom(row.person?.customFieldGroup,'person.customFieldGroup'),...adpCustom(job.customFieldGroup,'workAssignment.customFieldGroup'),...indexedUnmapped(row,['associateOID','workerStatus.statusCode.codeValue',`workerDates.${row.workerDates?.rehireDate?'rehireDate':'originalHireDate'}`,'workerDates.terminationDate',...(row.person?.legalName?.formattedName?['person.legalName.formattedName']:['givenName1','middleName','familyName1','familyName2'].map(k=>'person.legalName.'+k)),...['primaryIndicator','jobTitle','workerTypeCode.codeValue',`homeOrganizationalUnits.${job.homeOrganizationalUnits.indexOf(dept[0])}.typeCode.codeValue`,`homeOrganizationalUnits.${job.homeOrganizationalUnits.indexOf(dept[0])}.nameCode.longName`,`baseRemuneration.${salary?'annualRateAmount':'hourlyRateAmount'}.amountValue`,`baseRemuneration.${salary?'annualRateAmount':'hourlyRateAmount'}.currencyCode`].map(path=>`workAssignments.${assignments.indexOf(job)}.${path}`)])])
    }
    if(skip+rows.length===total)break
   }
