@@ -1207,7 +1207,7 @@
       "executable": false
     },
     "src/easel/agents/source-guard.ts": {
-      "sha256": "aa4dd26b0e1415deaf3d716f8949cb19b0918faa98819b35efda7d137cef59f6",
+      "sha256": "655509d5f827335f85e1f2e3b1cbf6b2ecad64a7d5e107096d2468a2448f8f2f",
       "executable": false
     },
     "src/easel/api.ts": {
@@ -1283,7 +1283,7 @@
       "executable": false
     },
     "src/easel/calculation.ts": {
-      "sha256": "2daaf9252b482f3fbc97b8a2d8f616603d8c736c00254c05237d14cacdb60853",
+      "sha256": "7f03ae570f1aa43a97bedd8853bcebf2111ee2706aeb1f577c773619daf3c8d8",
       "executable": false
     },
     "src/easel/calendar-channels.ts": {
@@ -1839,7 +1839,7 @@
       "executable": false
     },
     "src/easel/netsuite-connection.ts": {
-      "sha256": "de44b13a6bc025b7534fc1330e088c3432017351fe88d8ac192fa4d13e72183a",
+      "sha256": "da31f82dc3a0376a345f147cbfc9af10a71a610f6601d50766b75ca7b1bad3e3",
       "executable": false
     },
     "src/easel/netsuite-import.ts": {
@@ -1859,7 +1859,7 @@
       "executable": false
     },
     "src/easel/netsuite-source.ts": {
-      "sha256": "1330c7e75a21d96c640c39713ebbf67b92ab3315f28f448a6d835a08eb5844d5",
+      "sha256": "8cff3d0a4b818e77c99f527b4e85cc47413721f0f32810ce6a48f8695f5552e7",
       "executable": false
     },
     "src/easel/notify-dispatch.ts": {
@@ -5099,7 +5099,7 @@
       "executable": false
     },
     "tests/netsuite.test.mjs": {
-      "sha256": "490c1b6de889d1f9ca173112cb8b744ffa9dc470c57b8abc40b37e1edc0ed617",
+      "sha256": "93667f374b38caa5453d409e36a3b9f036e5cb8d1e81aaab824b993e4ba08a32",
       "executable": false
     },
     "tests/notifications.test.mjs": {

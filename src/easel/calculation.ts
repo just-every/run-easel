@@ -16,7 +16,7 @@ import { model } from './model'
  * Frozen models continue to read their immutable captured arithmetic. */
 export async function workingCalculation(c: Context, scenario: string, through?: string) {
  const source=get(c.s,'scenario',scenario)
- const blocked=sourceGuardBlock(c,through?{...source,actualsThrough:through}:source)
+ const blocked=sourceGuardBlock(c,source,undefined,through)
  requireThat(!blocked, blocked ?? '', 409)
  const pending = await activeCalculationJob(c, scenario, c.calculationJob)
  if (pending) throw new CalculationPending([scenario], pending)
