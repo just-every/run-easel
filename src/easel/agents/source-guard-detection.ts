@@ -18,7 +18,7 @@ export function sourceChanges(c: Context, preview: Data, metadata: Data, prior?:
  for (const d of preview.departments.filter((d:Data)=>d.department === null)) add('department',d.source,'No reviewed department mapping',{source:d.source})
  for (const d of preview.dimensionExceptions) add('dimension',`${d.dimension}:${d.line}`,d.reason,{dimension:d.dimension,sources:d.sources})
  if (prior) {
-  for (const a of metadata.accounts) { const old=prior.metadata.accounts.find((r:Data)=>r.account===a.account); if(old && canonicalJson([old.name,old.types])!==canonicalJson([a.name,a.types])) add('metadata',a.account,`Account ${a.account} changed name or type`,{before:old,after:a}) }
+  for (const a of metadata.accounts) { const old=prior.metadata.accounts.find((r:Data)=>r.account===a.account); if(old && canonicalJson([old.name,old.types,old.category??null,old.normalBalance??null,old.closingType??null,old.closingAccount??null])!==canonicalJson([a.name,a.types,a.category??null,a.normalBalance??null,a.closingType??null,a.closingAccount??null])) add('metadata',a.account,`Account ${a.account} changed name or type`,{before:old,after:a}) }
   if(canonicalJson(prior.metadata.headers)!==canonicalJson(metadata.headers)) add('shape','headers','Source column names or order changed',{before:prior.metadata.headers,after:metadata.headers})
   if(canonicalJson(prior.metadata.dimensions)!==canonicalJson(metadata.dimensions)) add('dimensions','members','Source departments, classes or tracking options changed',{before:prior.metadata.dimensions,after:metadata.dimensions})
  }

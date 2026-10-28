@@ -48,7 +48,7 @@ export function Actuals({ state, refresh }: Shared) {
   </section>
   {reconciliation && <section className="card">
    <h2>Reconciliation</h2>
-   <p><a href="/api/easel/actuals.xlsx" download>Download reconciliation (Excel)</a></p>
+   <p><a href={`/api/easel/actuals.xlsx${entity?'?entity='+encodeURIComponent(entity):''}`} download>Download reconciliation (Excel)</a></p>
    <p className="muted">Every imported amount is mapped to a planning line, excluded, held as cash or another balance-sheet line, or shown here as unmapped. Amounts are debit-positive as imported.</p>
    <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Other balance sheet', 'Unmapped', 'Revenue', 'Costs', 'Balanced', 'Mapping status']}>
     {reconciliation.months.map((m: D) => <tr key={m.period}><td>{m.label}</td><td className="num">{m.rows}</td><td className="num">{money(m.imported, currency)}</td><td className="num">{money(m.mapped, currency)}</td><td className="num">{money(m.excluded, currency)}</td><td className="num">{money(m.cash, currency)}</td><td className="num">{money(m.balanceSheet, currency)}</td><td className="num">{money(m.unmapped, currency)}</td><td className="num">{money(m.revenue, currency)}</td><td className="num">{money(m.costs, currency)}</td><td>{m.balanced ? 'Yes' : 'No'}</td><td>{m.blocked ? `Blocked: ${[...m.unmappedAccounts, ...m.unmappedDepartments].join(', ')}` : 'Complete'}</td></tr>)}

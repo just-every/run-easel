@@ -4,15 +4,16 @@ import { nativeBindings, nativeExpressions } from './native-input'
 import { visitExpression } from './native-expression'
 import { workingCalculation } from './calculation'
 import { semanticEqual } from './semantic'
-import { all, find, put, type State } from './types'
+import { all, find, put, Fault, type State } from './types'
 
 /** A source edit changes every working consumer's reviewed arithmetic revision. */
 export async function nativeRevisions(c:Context,before:State):Promise<Set<string>> {
- const changed=new Set<string>();let global=false,actuals=false
+ const changed=new Set<string>();let global=false,actuals=false,journal=false
  for(const key of new Set([...before.keys(),...c.s.keys()])){
   const a=before.get(key),b=c.s.get(key),r=b??a!
   if(semanticEqual(a?.value,b?.value))continue
   if(['workspace','line','department','account-map','account-rule','department-map'].includes(r.kind))global=true
+  if(['batch','intacct-month'].includes(r.kind)){actuals=true;journal=true}
   if(['batch','account-map','account-rule','department-map'].includes(r.kind))actuals=true
   if((INPUT_KINDS as readonly string[]).includes(r.kind)){if(a?.value.scenario)changed.add(a.value.scenario);if(b?.value.scenario)changed.add(b.value.scenario)}
   if(r.kind==='scenario'&&(!a||!b||['cash','horizon','actualsThrough','ledgerAllocations','balanceLedger'].some(field=>!semanticEqual(a?.value[field],b?.value[field]))))changed.add(r.id)
@@ -23,7 +24,10 @@ export async function nativeRevisions(c:Context,before:State):Promise<Set<string
  for(let more=true;more;){more=false;for(const f of formulas)if(!affected.has(f.scenario)&&nativeBindings(f).some(b=>b.scenario&&affected.has(b.scenario))){affected.add(f.scenario);more=true}}
  for(const id of affected){
   const sc=find(c.s,'scenario',id);if(!sc||sc.status!=='working'||!formulas.some(f=>f.scenario===id))continue
-  await workingCalculation(c,id)
+  try{await workingCalculation(c,id)}catch(error){
+   if(!journal||!(error instanceof Fault)||error.status!==409)throw error
+   c.activity.push({action:'formula-source-unavailable',record:id,scenario:id,detail:{reason:error.message}})
+  }
   const prior=find(before,'scenario',id)
   if(prior&&sc.revision===prior.revision){
    put(c.s,'scenario',id,{...sc,revision:sc.revision+1})

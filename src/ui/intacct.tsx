@@ -13,7 +13,7 @@ export function IntacctConnection(){
   {status&&<>
    <Table caption="Intacct connection status" heads={['Setting','Value']}>
     <tr><td>Status</td><td>{status.connected?`Connected · user credential ending ${status.suffix}`:'Disconnected'}</td></tr>
-    <tr><td>Company</td><td>{status.company??'—'}</td></tr><tr><td>Sender credential</td><td>{status.senderSuffix?`Ending ${status.senderSuffix}`:'—'}</td></tr>
+    <tr><td>Company</td><td>{status.company??'—'}</td></tr><tr><td>Dedicated Web Services user</td><td>{status.user??'—'}</td></tr><tr><td>Authorized sender ID</td><td>{status.sender??'—'}</td></tr><tr><td>Sender credential</td><td>{status.senderSuffix?`Ending ${status.senderSuffix}`:'—'}</td></tr>
     <tr><td>Owner</td><td>{status.owner??'—'}</td></tr><tr><td>Permitted reads</td><td>{status.operations?.join(', ')}</td></tr><tr><td>Cadence</td><td>{status.schedule}</td></tr>
     <tr><td>Last accepted pull</td><td>{status.lastRefresh??'—'}</td></tr><tr><td>Last check</td><td>{status.lastCheck??'—'}</td></tr><tr><td>Rows</td><td>{status.rowCount??0}</td></tr><tr><td>Rate limit</td><td>{status.rateLimit??'None reported'}</td></tr>
    </Table>
@@ -32,7 +32,7 @@ export function IntacctConnection(){
     </Form>
    </>}
    <Table caption="Intacct entity bindings" heads={['Source entity','Easel entity','Currency','Book']}>{status.bindings.map((b:D)=><tr key={b.id}><td>{b.name} · {b.sourceEntity}</td><td>{entities.find(e=>e.id===b.entity)?.name??b.entity}</td><td>{b.currency}</td><td>{b.book}</td></tr>)}</Table>
-   {status.providerRevocation&&<p role="status">Provider revocation: {status.providerRevocation.status}. {status.providerRevocation.ownerStep}</p>}
+   {status.providerRevocation&&<p role="status">Provider revocation: {status.providerRevocation.status}. Dedicated user: {status.user}; sender: {status.sender}. {status.providerRevocation.ownerStep}</p>}
   </>}
  </section>
 }

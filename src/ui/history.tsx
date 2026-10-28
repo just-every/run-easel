@@ -90,9 +90,10 @@ export function HistoryInputs({ state, view, save, refresh }: HistoryProps) {
   {state.me.role === 'finance' && <section className="card"><h2>Budget from actuals</h2>
    <p className="muted">Create a new budget using each plan month’s accepted actuals from the same month in the prior year. Apply growth by planning line. Every required source month must be complete; missing or in-progress actuals prevent creation.</p>
    <Form key={`seed-${view.scenario.id}`} submit="Create budget from actuals" onSubmit={async values => {
-    await command('budget-from-actuals', { name: values.name, growth: Object.fromEntries(lines.map(line => [line.id, values[`growth-${line.id}`]])) })
+    await command('budget-from-actuals', { name: values.name,scenario:values.sourceScenario||undefined, growth: Object.fromEntries(lines.map(line => [line.id, values[`growth-${line.id}`]])) })
     await refresh()
    }}>
+    <Field label="Source entity plan (optional for legacy actuals)" name="sourceScenario" required={false} options={state.scenarios.map((s:D)=>({value:s.id,label:s.name}))}/>
     <Field label="New budget name" name="name" />
     {lines.map(line => <Field key={line.id} label={`${line.name} growth %`} name={`growth-${line.id}`} defaultValue="0" />)}
    </Form>

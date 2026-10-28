@@ -4,14 +4,16 @@ import { Builder,parseStringPromise } from 'xml2js'
 const builder=new Builder({headless:true,renderOpts:{pretty:false}})
 const encode=o=>builder.buildObject(o)
 const entities=(await parseStringPromise(await readFile(new URL('./fixtures/intacct/entities.xml',import.meta.url),'utf8'),{explicitArray:false})).data.entity
+const detailRecording=(await parseStringPromise(await readFile(new URL('./fixtures/intacct/gl-detail.xml',import.meta.url),'utf8'),{explicitArray:false})).data.gldetail
+const trialRecording=(await parseStringPromise(await readFile(new URL('./fixtures/intacct/trial-balance.xml',import.meta.url),'utf8'),{explicitArray:false})).data.glaccountbalance
 export const intacctGrant={senderId:'synthetic-sender',senderPassword:'synthetic-sender-password-1234',companyId:'synthetic-company',userId:'readonly-easel',userPassword:'synthetic-user-password-5678',consent:true}
 const standard=[['LOCATION','LOCATIONID','location'],['DEPARTMENT','DEPARTMENTID','department'],['CLASS','CLASSID','class'],['PROJECT','PROJECTID','project'],['CUSTOMER','CUSTOMERID','customer'],['VENDOR','VENDORID','vendor']]
 const money=n=>`${n<0?'-':''}${Math.floor(Math.abs(n)/100)}.${String(Math.abs(n)%100).padStart(2,'0')}`
 const prev=m=>{const d=new Date(m+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7)}
 export function intacctProvider(){
- const state={status:200,change:false,extra:'',badTrial:false,badScope:false,badCurrency:false,badBook:false,duplicate:false,malformed:false,dtd:false,unreachable:false,unsafeUrl:false,removed:false,memberChange:false,reads:[],entries:null}
- const chart=()=>state.entries?[...new Set(state.entries.map(r=>r[1]))].map(ACCOUNTNO=>({RECORDNO:ACCOUNTNO,ACCOUNTNO,TITLE:ACCOUNTNO,ACCOUNTTYPE:ACCOUNTNO.startsWith('4')?'Income':'Asset',NORMALBALANCE:ACCOUNTNO.startsWith('4')?'credit':'debit',CLOSINGTYPE:'non-closing account',CLOSINGACCOUNTNO:''})):[['1000','Bank','Asset'],['1100','Receivables','Asset'],['1200','Prepaid','Asset'],['1500','Fixed assets','Asset'],['2000','Payables','Liability'],['2100','Accrued liabilities','Liability'],['2200','Deferred revenue','Liability'],['2300','Debt','Liability'],['3000','Equity','Equity'],['4000','Management revenue','Income'],['6000','Management expense','Expense'],...(['mapped','both'].includes(state.extra)?[['4001','New revenue','Income']]:[]),...(state.extra==='both'?[['9999','Uncovered','Income']]:[])].map(([ACCOUNTNO,TITLE,ACCOUNTTYPE])=>({RECORDNO:ACCOUNTNO,ACCOUNTNO,TITLE,ACCOUNTTYPE,NORMALBALANCE:ACCOUNTTYPE==='Income'||ACCOUNTTYPE==='Liability'||ACCOUNTTYPE==='Equity'?'credit':'debit',CLOSINGTYPE:'non-closing account',CLOSINGACCOUNTNO:''}))
- const movement=(entity,m)=>m==='2024-06'||m<'2024-01'?0:(entity==='CA'?10000:8000)+(state.change&&m==='2026-02'?(entity==='CA'?2500:2000):0)
+ const state={status:200,change:false,extra:'',badTrial:false,badScope:false,badCurrency:false,badBook:false,duplicate:false,malformed:false,dtd:false,unreachable:false,unsafeUrl:false,removed:false,memberChange:false,reads:[],entries:null,editMonth:'',fiscalClose:true,largeApril:false}
+ const chart=()=>state.entries?[...new Set(state.entries.map(r=>r[1]))].map(ACCOUNTNO=>({RECORDNO:ACCOUNTNO,ACCOUNTNO,TITLE:ACCOUNTNO,CATEGORY:'Synthetic source account',ACCOUNTTYPE:ACCOUNTNO.startsWith('4')?'Income':'Asset',NORMALBALANCE:ACCOUNTNO.startsWith('4')?'credit':'debit',CLOSINGTYPE:'non-closing account',CLOSINGACCOUNTNO:''})):[['1000','Bank','Asset'],['1100','Receivables','Asset'],['1200','Prepaid','Asset'],['1500','Fixed assets','Asset'],['2000','Payables','Liability'],['2100','Accrued liabilities','Liability'],['2200','Deferred revenue','Liability'],['2300','Debt','Liability'],['3000','Equity','Equity'],['4000','Management revenue','Income'],['6000','Management expense','Expense'],...(['mapped','both'].includes(state.extra)?[['4001','New revenue','Income']]:[]),...(state.extra==='both'?[['9999','Uncovered','Income']]:[])].map(([ACCOUNTNO,TITLE,ACCOUNTTYPE])=>({RECORDNO:ACCOUNTNO,ACCOUNTNO,TITLE,ACCOUNTTYPE,CATEGORY:ACCOUNTTYPE,NORMALBALANCE:ACCOUNTTYPE==='Income'||ACCOUNTTYPE==='Liability'||ACCOUNTTYPE==='Equity'?'credit':'debit',CLOSINGTYPE:state.fiscalClose&&['4000','6000'].includes(ACCOUNTNO)?'closing account':'non-closing account',CLOSINGACCOUNTNO:state.fiscalClose&&['4000','6000'].includes(ACCOUNTNO)?'3000':''}))
+ const movement=(entity,m)=>m==='2024-06'||m<'2024-01'?0:(entity==='CA'?10000:8000)+(state.change&&m==='2026-02'?(entity==='CA'?2500:2000):0)+(state.editMonth===m?(entity==='CA'?100:80):0)+(state.largeApril&&m==='2026-04'?200:0)
  const totals=(entity,m)=>{
   if(state.entries)return new Map(chart().map(a=>[a.ACCOUNTNO,state.entries.filter(r=>r[0].slice(0,7)<=m&&r[1]===a.ACCOUNTNO).reduce((n,r)=>n+Math.round(Number(r[2])*100),0)]))
   let sum=0;for(let y=2024;y<=Number(m.slice(0,4));y++)for(let k=1;k<=12;k++){const month=`${y}-${String(k).padStart(2,'0')}`;if(month<=m)sum+=movement(entity,month)}
@@ -20,6 +22,7 @@ export function intacctProvider(){
   values.set('1000',50000+(entity==='CA'?sum:-sum));values.set(entity==='CA'?'4000':'6000',entity==='CA'?-sum:sum)
   if(state.extra&&m>='2026-03')for(const a of chart().filter(a=>['4001','9999'].includes(a.ACCOUNTNO))){values.set(a.ACCOUNTNO,-2500);values.set('1000',values.get('1000')+2500)}
   if(state.removed&&m>='2026-02'){values.set('1000',values.get('1000')-movement(entity,'2026-02')*(entity==='CA'?1:-1));values.set(entity==='CA'?'4000':'6000',values.get(entity==='CA'?'4000':'6000')+movement(entity,'2026-02')*(entity==='CA'?1:-1))}
+  if(state.fiscalClose){let prior=0;for(let year=2024;year<Number(m.slice(0,4));year++)for(let k=1;k<=12;k++)prior+=movement(entity,`${year}-${String(k).padStart(2,'0')}`);const direction=entity==='CA'?-1:1;values.set(entity==='CA'?'4000':'6000',values.get(entity==='CA'?'4000':'6000')-direction*prior);values.set('3000',values.get('3000')+direction*prior)}
   return values
  }
  const pages=new Map()
@@ -54,13 +57,14 @@ export function intacctProvider(){
      else if(object==='GLDETAIL'){
       assert.match(body.query,/BOOKID = 'ACCRUAL' AND STATE = 'Posted'/)
       const dates=[...body.query.matchAll(/'(\d{2})\/(\d{2})\/(\d{4})'/g)].map(m=>`${m[3]}-${m[1]}-${m[2]}`);assert.equal(dates.length,2)
-      const m=dates[0].slice(0,7),amount=movement(entity,m),entries=state.entries?state.entries.filter(r=>r[0].slice(0,7)===m).map(r=>[r[1],Math.round(Number(r[2])*100)]):amount&&!(state.removed&&m==='2026-02')?[['1000',entity==='CA'?amount:-amount],[entity==='CA'?'4000':'6000',entity==='CA'?-amount:amount]]:[]
+      const m=dates[0].slice(0,7),amount=movement(entity,m)-(state.largeApril&&m==='2026-04'?200:0),entries=state.entries?state.entries.filter(r=>r[0].slice(0,7)===m).map(r=>[r[1],Math.round(Number(r[2])*100)]):amount&&!(state.removed&&m==='2026-02')?[['1000',entity==='CA'?amount:-amount],[entity==='CA'?'4000':'6000',entity==='CA'?-amount:amount]]:[]
       if(state.extra&&m==='2026-03')for(const a of chart().filter(a=>['4001','9999'].includes(a.ACCOUNTNO)))entries.push(['1000',2500],[a.ACCOUNTNO,-2500])
-      rows=entries.map(([ACCOUNTNO,n],i)=>({RECORDNO:`${entity}-${m}-${i}`,BATCHNO:`${entity}-entry-${m}${i>=2?'-'+Math.floor(i/2):''}`,BATCH_DATE:state.entries?(()=>{const date=state.entries.filter(r=>r[0].slice(0,7)===m)[i][0];return date.slice(5,7)+'/'+date.slice(8)+'/'+date.slice(0,4)})():m.slice(5)+'/15/'+m.slice(0,4),ACCOUNTNO,DEBITAMOUNT:money(Math.max(n,0)),CREDITAMOUNT:money(Math.max(-n,0)),BASECURR:state.badCurrency?'USD':entities.find(e=>e.id===entity).currency,BOOKID:state.badBook?'CASH':'ACCRUAL',STATE:'Posted',DESCRIPTION:'Recorded management services',RECORD_URL:state.unsafeUrl?'https://www.intacct.com/ia/acct/entry?sessionid=private':`https://www.intacct.com/ia/acct/gl/view?recordno=${entity}-entry-${m}`,LOCATIONID:entity==='CA'?'L1':'L2',DEPARTMENTID:state.entries?'':'D1',CLASSID:'C1',PROJECTID:'P1',CUSTOMERID:'CU1',VENDORID:'V1',GLDIMLINE_OF_BUSINESS:'B2B'}))
+      if(state.largeApril&&m==='2026-04')for(let i=0;i<200;i++)entries.push(['1000',entity==='CA'?1:-1],[entity==='CA'?'4000':'6000',entity==='CA'?-1:1])
+      rows=entries.map(([ACCOUNTNO,n],i)=>({...detailRecording,RECORDNO:`${entity}-${m}-${i}`,BATCHNO:`${entity}-entry-${m}${i>=2?'-'+Math.floor(i/2):''}`,BATCH_DATE:state.entries?(()=>{const date=state.entries.filter(r=>r[0].slice(0,7)===m)[i][0];return date.slice(5,7)+'/'+date.slice(8)+'/'+date.slice(0,4)})():m.slice(5)+'/15/'+m.slice(0,4),ACCOUNTNO,DEBITAMOUNT:money(Math.max(n,0)),CREDITAMOUNT:money(Math.max(-n,0)),BASECURR:state.badCurrency?'USD':entities.find(e=>e.id===entity).currency,BOOKID:state.badBook?'CASH':'ACCRUAL',STATE:'Posted',DESCRIPTION:'Recorded management services',RECORD_URL:state.unsafeUrl?'https://www.intacct.com/ia/acct/entry?sessionid=private':`https://www.intacct.com/ia/acct/gl/view?recordno=${entity}-entry-${m}`,LOCATIONID:entity==='CA'?'L1':'L2',DEPARTMENTID:state.entries?'':'D1',CLASSID:'C1',PROJECTID:'P1',CUSTOMERID:'CU1',VENDORID:'V1',GLDIMLINE_OF_BUSINESS:'B2B'}))
      }else{const field=standard.find(s=>s[0]===object)?.[1];assert.ok(field);const values=object==='LOCATION'?[['L1','Toronto'],['L2','Berlin']]:object==='DEPARTMENT'?[['D1','Services'],['D2','Engineering'],['D3','Finance']]:[[{CLASS:'C1',PROJECT:'P1',CUSTOMER:'CU1',VENDOR:'V1'}[object],object]];rows=values.map(([id,NAME],i)=>({RECORDNO:String(i+1),[field]:id,NAME:NAME+(state.memberChange?' updated':'')}))}
      const fields=body.fields.split(',');assert.ok(rows.every(row=>fields.every(f=>Object.hasOwn(row,f))))
     }
-    const page=rows.slice(offset,offset+2),remaining=rows.length-offset-page.length,cursor=`${entity}:${object}:${control}`
+    const page=rows.slice(offset,offset+(rows.length>100?100:2)),remaining=rows.length-offset-page.length,cursor=`${entity}:${object}:${control}`
     if(remaining)pages.set(cursor,{rows,object,offset:offset+page.length})
     data={$:{count:String(page.length),numremaining:String(remaining),totalcount:String(rows.length),resultId:cursor},[object.toLowerCase()]:state.duplicate&&offset?page.map(()=>rows[0]):page}
    }
@@ -68,7 +72,7 @@ export function intacctProvider(){
     assert.equal(body.reportingbook,'ACCRUAL');assert.equal(body.statistical,'exclude');assert.equal(body.debitcreditbalance,'true');assert.equal(body.locationid,entity);assert.equal(body.showzerobalances,'true')
     const m=body.startdate.year+'-'+body.startdate.month,opening=totals(entity,prev(m)),closing=totals(entity,m)
     if(state.badTrial)closing.set('1000',closing.get('1000')+1)
-    data={glaccountbalance:chart().map(a=>({accountno:a.ACCOUNTNO,currency:entities.find(e=>e.id===entity).currency,reportingbook:'ACCRUAL',startbalancedebit:money(Math.max(opening.get(a.ACCOUNTNO)??0,0)),startbalancecredit:money(Math.max(-(opening.get(a.ACCOUNTNO)??0),0)),endbalancedebit:money(Math.max(closing.get(a.ACCOUNTNO)??0,0)),endbalancecredit:money(Math.max(-(closing.get(a.ACCOUNTNO)??0),0))}))}
+    data={glaccountbalance:chart().map(a=>({...trialRecording,accountno:a.ACCOUNTNO,currency:entities.find(e=>e.id===entity).currency,reportingbook:'ACCRUAL',startbalancedebit:money(Math.max(opening.get(a.ACCOUNTNO)??0,0)),startbalancecredit:money(Math.max(-(opening.get(a.ACCOUNTNO)??0),0)),endbalancedebit:money(Math.max(closing.get(a.ACCOUNTNO)??0,0)),endbalancecredit:money(Math.max(-(closing.get(a.ACCOUNTNO)??0),0))}))}
    }
   }
   assert.ok(data,operation)
@@ -97,6 +101,7 @@ export async function intacctFixture(h,{connect=true}={}){
 export async function acceptIntacct(h,input){
  const p=await h.kit('intacct','preview',input)
  let r=await h.kit('intacct','commit',{...input,fingerprint:p.fingerprint,sourceFingerprint:p.sourceFingerprint})
- for(let n=0;r.batch?.status==='importing'&&n<50;n++)r=await h.kit('actuals','resume',{id:r.batch.id})
+ p.continuations=0
+ for(let n=0;r.batch?.status==='importing'&&n<50;n++){p.continuations++;r=await h.kit('actuals','resume',{id:r.batch.id})}
  assert.ok(r.accepted||r.batch?.status==='accepted',JSON.stringify(r));return p
 }

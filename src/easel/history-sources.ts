@@ -1,4 +1,4 @@
-import { ledgerEntity } from './ledger-scope'
+import { requireIntacctHistory,ledgerEntity } from './ledger-scope'
 import { actualCells, reconciliation } from './actuals-read'
 import type { Context } from './context'
 import type { ActualCell, Model } from './engine'
@@ -27,6 +27,7 @@ async function sourceStatus(c: Context, requested: string[],scenario?:string) {
 /** Reconcile consumed historical periods too, rather than only plan months. */
 export async function assertHistorySources(c: Context, months: string[],scenario?:string): Promise<void> {
  if (!months.length) return
+ requireIntacctHistory(c.s,[...months].sort().at(-1)!,ledgerEntity(c.s,scenario))
  const status = await sourceStatus(c, months,scenario)
  requireThat(!status.blockedMonths.length, `Actuals history reconciliation blocked for ${status.blockedMonths.join(', ')}; finish the import or resolve its account and department mappings`, 409)
  requireThat(!status.missingMonths.length, `Missing accepted actuals for ${status.missingMonths.join(', ')}`, 409)

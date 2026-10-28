@@ -1,5 +1,5 @@
 import { dimensionAllowed } from './access'
-import { entityReceipts,ledgerWhere } from './ledger-scope'
+import { acceptedLedgerSql,entityReceipts,ledgerWhere } from './ledger-scope'
 import { intacctEntryUrl } from './intacct-links'
 import { resolveDimensions } from './dimension-mapping'
 import { xeroTransactionUrl } from './xero-links'
@@ -15,7 +15,7 @@ import { all, find, get, requireThat, type Data, type State, type Access } from 
 
 async function grouped(db: D1Database, entity?:string) {
  const scope=ledgerWhere(entity)
- const { results } = await db.prepare(`SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, COALESCE(json_extract(value,'$.sourceDimensions'),'{}') AS sourceDimensions, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals WHERE ${scope.sql} GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),''), COALESCE(json_extract(value,'$.sourceDimensions'),'{}')`).bind(...scope.params).all<any>()
+ const { results } = await db.prepare(`SELECT period, account, department, COALESCE(json_extract(value,'$.accountType'),'') AS accountType, COALESCE(json_extract(value,'$.sourceDimensions'),'{}') AS sourceDimensions, SUM(amount) AS amount, SUM(MAX(amount,0)) AS debits, SUM(MAX(-amount,0)) AS credits, COUNT(*) AS rows, GROUP_CONCAT(DISTINCT destination) AS batches FROM e_actuals WHERE ${scope.sql} AND ${acceptedLedgerSql} GROUP BY period, account, department, COALESCE(json_extract(value,'$.accountType'),''), COALESCE(json_extract(value,'$.sourceDimensions'),'{}')`).bind(...scope.params).all<any>()
  return results.map(r => ({ ...r, amount: Number(r.amount), rows: Number(r.rows), batches: String(r.batches).split(',') }))
 }
 const resolved = (s: State, g: Data) => {
@@ -52,10 +52,13 @@ export async function reconciliation(db: D1Database, s: State, entity?:string) {
  const lineType = new Map(lines(s).map(l => [l.id, l.type]))
  const months = new Map<string, Data>(), unmapped = new Map<string, Data>()
  const groups = await grouped(db,entity)
+ const pending=all(s,'batch').filter(b=>b.entity===entity&&['importing','undoing','failed'].includes(b.status)).flatMap(b=>b.periods??[])
+ for(const g of groups)if(pending.includes(g.period))g.pending=true
  for (const g of groups) {
   const m = months.get(g.period) ?? { period: g.period, label: monthLabel(g.period), rows: 0, imported: 0, mapped: 0, excluded: 0, cash: 0, unmapped: 0, balanceSheet: 0, revenue: 0, costs: 0, blocked: false, unmappedAccounts: [] as string[], unmappedDepartments: [] as string[] }
   m.rows += g.rows; m.imported += g.amount
   const r = resolved(s, g), target = r.target
+  if(g.pending)m.blocked=true
   if (r.blocked) {
    m.blocked = true; m.unmapped += g.amount
    if (!target && !m.unmappedAccounts.includes(g.account)) m.unmappedAccounts.push(g.account)
@@ -70,8 +73,9 @@ export async function reconciliation(db: D1Database, s: State, entity?:string) {
   months.set(g.period, m)
  }
  for(const receipt of entityReceipts(s,entity))if(!months.has(receipt.month))months.set(receipt.month,{period:receipt.month,label:monthLabel(receipt.month),rows:0,imported:0,mapped:0,excluded:0,cash:0,unmapped:0,balanceSheet:0,revenue:0,costs:0,blocked:false,unmappedAccounts:[],unmappedDepartments:[],receipt:receipt.id})
+ for(const month of months.values())if(pending.includes(month.period))month.blocked=true
  const list: Data[] = [...months.values()].sort((a, b) => a.period.localeCompare(b.period)).map(m => ({ ...m, revenue: m.blocked ? null : m.revenue, costs: m.blocked ? null : m.costs, balanced: m.mapped + m.excluded + m.cash + m.balanceSheet + m.unmapped === m.imported }))
- return { months: list, unmapped: [...unmapped.values()], trialBalances: balanceActuals(groups.map(g => ({ ...g, ...resolved(s, g), department: g.department })), list.map(m => m.period)) }
+ return { months: list, unmapped: [...unmapped.values()], trialBalances: balanceActuals(groups.map(g => ({ ...g, ...resolved(s, g),blocked:resolved(s,g).blocked||g.pending===true, department: g.department })), list.map(m => m.period)) }
 }
 
 export async function cashBalance(db: D1Database, s: State, before: string, entity?:string) {
@@ -89,7 +93,7 @@ export async function cashBalance(db: D1Database, s: State, before: string, enti
 
 export async function rowsFor(db: D1Database, s: State, month: string, line: string, department: string, entity?:string,x?:Access) {
  const scope=ledgerWhere(entity)
- const { results } = await db.prepare(`SELECT id, value, amount FROM e_actuals WHERE period=? AND ${scope.sql} ORDER BY ABS(amount) DESC, id`).bind(month,...scope.params).all<any>()
+ const { results } = await db.prepare(`SELECT id, value, amount FROM e_actuals WHERE period=? AND ${scope.sql} AND ${acceptedLedgerSql} ORDER BY ABS(amount) DESC, id`).bind(month,...scope.params).all<any>()
  const type = lines(s).find(l => l.id === line)?.type
  return results.flatMap(r => {
   const v = JSON.parse(r.value), mapping = resolved(s, { ...v, accountType: v.accountType ?? '' })

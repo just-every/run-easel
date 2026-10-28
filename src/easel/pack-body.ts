@@ -7,7 +7,7 @@ import { workingCalculation } from './calculation'
 import { fiscalSummary } from './fiscal-summary'
 import { aggregateFinancing } from './financing-view'
 import type { Context } from './context'
-import { departments as allDepartments, lines as allLines, workspace } from './model'
+import { departments as allDepartments, lines as allLines, model, workspace } from './model'
 import { addMonths, monthLabel, monthsBetween, range } from './months'
 import { sha256, snapshot } from './store'
 import { variance } from './review'
@@ -57,7 +57,7 @@ function periodRows(parts: Rows[], months: string[]): Rows {
 
 /** Everything a pack states about its numbers; decisions and publication details are added at publication. */
 export async function packNumbers(c: Context, pack: Data) {
- const s = c.s, w = workspace(s), months: string[] = pack.months ?? [pack.month], last = months.at(-1)!
+ const s = c.s, w:Data = {...workspace(s),currency:model(s,pack.forecast).workspace.currency}, months: string[] = pack.months ?? [pack.month], last = months.at(-1)!
  const parts = await monthRows(c,months,pack.forecast), v = periodRows(parts, months)
  for (const mv of parts) {
   for (const row of mv.rows) {

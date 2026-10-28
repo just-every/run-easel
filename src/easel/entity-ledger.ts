@@ -1,11 +1,11 @@
 import { canonicalJson,sha256 } from '../modules/import-kit/src/d1/index'
 import { resolveAccount } from './account-rules'
 import type { Context } from './context'
-import { ledgerWhere } from './ledger-scope'
+import { acceptedLedgerSql,ledgerWhere } from './ledger-scope'
 import { find,requireThat,type Data } from './types'
 /** Logical source identities include every accepted correction, not sampled journal rows. */
 export async function entityLedger(c:Context,entity:string):Promise<Data[]>{
- const scope=ledgerWhere(entity),result=await c.db.prepare(`SELECT id,value,amount FROM e_actuals WHERE ${scope.sql} ORDER BY id`).bind(...scope.params).all<{id:string;value:string;amount:number}>()
+ const scope=ledgerWhere(entity),result=await c.db.prepare(`SELECT id,value,amount FROM e_actuals WHERE ${scope.sql} AND ${acceptedLedgerSql} ORDER BY id`).bind(...scope.params).all<{id:string;value:string;amount:number}>()
  const rows=new Map<string,Data>()
  for(const r of result.results){const v=JSON.parse(r.value);if(!v.intacctCompany)continue
   const id=JSON.stringify([v.intacctCompany,v.intacctBook,v.entity,v.intacctLine]),before=rows.get(id),target=resolveAccount(c.s,v.account,v.accountType).target
@@ -14,7 +14,7 @@ export async function entityLedger(c:Context,entity:string):Promise<Data[]>{
   row.amount+=r.amount;requireThat(Number.isSafeInteger(row.amount),'Entity ledger exceeds exact cents',409)
   row.rows.push({id:r.id,value:v,amount:r.amount});rows.set(id,row)
  }
- return[...rows.values()].map(row=>({...row,digest:sha256(canonicalJson(row)),name:`${row.period} · ${row.account} · ${row.transaction||'Source opening'}`,line:find(c.s,'line',row.target)?.name??row.target}))
+ return[...rows.values()].map(row=>({...row,digest:sha256(canonicalJson(row)),name:`${row.period} · ${row.account} · ${row.transaction||'Source opening'}`,lineType:find(c.s,'line',row.target)?.type??null,line:find(c.s,'line',row.target)?.name??row.target}))
 }
 export function ledgerEliminationSources(rows:Data[],selection:Data,month:string,side:'from'|'to'){
  requireThat(selection&&typeof selection==='object','Choose explicit accepted ledger source selections')

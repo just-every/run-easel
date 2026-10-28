@@ -70,8 +70,8 @@ export async function readIntacctLedger(key:IntacctCredentials,entityId:string,m
  const entity=(await intacctEntities(key)).find(e=>e.id===entityId);requireThat(entity,'The Intacct user cannot read this legal entity',403)
  const from=month+'-01',to=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5)),0)).toISOString().slice(0,10)
  requireThat(to<=asOf,'Intacct acceptance requires a completed month',409)
- const sourceChart=await readAll(key,'GLACCOUNT',['RECORDNO','ACCOUNTNO','TITLE','ACCOUNTTYPE','NORMALBALANCE','CLOSINGTYPE','CLOSINGACCOUNTNO'],entityId)
- const chart=sourceChart.map(a=>({id:intacctId(a.RECORDNO),code:intacctId(a.ACCOUNTNO),name:intacctText(a.TITLE),type:intacctText(a.ACCOUNTTYPE),normalBalance:intacctText(a.NORMALBALANCE),closingType:intacctText(a.CLOSINGTYPE),closingAccount:intacctText(a.CLOSINGACCOUNTNO??'')}))
+ const sourceChart=await readAll(key,'GLACCOUNT',['RECORDNO','ACCOUNTNO','TITLE','ACCOUNTTYPE','CATEGORY','NORMALBALANCE','CLOSINGTYPE','CLOSINGACCOUNTNO'],entityId)
+ const chart=sourceChart.map(a=>({id:intacctId(a.RECORDNO),code:intacctId(a.ACCOUNTNO),name:intacctText(a.TITLE),type:intacctText(a.ACCOUNTTYPE),category:intacctText(a.CATEGORY??''),normalBalance:intacctText(a.NORMALBALANCE),closingType:intacctText(a.CLOSINGTYPE),closingAccount:intacctText(a.CLOSINGACCOUNTNO??'')}))
  requireThat(chart.length>0&&new Set(chart.map(a=>a.code)).size===chart.length,'Intacct chart is empty or ambiguous',502)
  const definitions=array((await intacctRequest(key,'getDimensions','',entityId)).dimensions?.dimension)
  requireThat(definitions.length<=100,'Intacct dimension definitions exceed the read limit',409)
@@ -101,7 +101,7 @@ export async function readIntacctLedger(key:IntacctCredentials,entityId:string,m
   for(const [,field,kind]of STANDARD){const value=r[field]??'';requireThat(typeof value==='string','Intacct dimension identity is invalid',502);if(value){const member=dimensions[kind].find((m:Data)=>m.id===value);requireThat(member,'Intacct posting dimension is missing from metadata',502);labels[kind]=member.name}sourceDimensions[kind]=value}
   for(const u of udd){const value=r[u.field]??'';requireThat(typeof value==='string'&&(!value||u.members.some((m:Data)=>m.id===value)),'Intacct UDD member is unavailable',502);sourceDimensions[u.kind]=value}
   const url=intacctEntryUrl(r.RECORD_URL);requireThat(url,'Intacct entry destination is missing or unsafe; no rows accepted',409)
-  return{id:intacctId(r.RECORDNO),transactionId:intacctId(r.BATCHNO),date:iso,accountId:a.id,account:a.code,accountName:a.name,accountType:a.type,amount:dr-cr,department:sourceDimensions.department,description:intacctText(r.DESCRIPTION??''),reference:intacctId(r.BATCHNO),sourceDimensions,dimensionLabels:labels,entryUrl:url}
+  return{id:intacctId(r.RECORDNO),transactionId:intacctId(r.BATCHNO),date:iso,accountId:a.id,account:a.code,accountName:a.name,accountType:a.type,accountCategory:a.category,normalBalance:a.normalBalance,amount:dr-cr,department:sourceDimensions.department,description:intacctText(r.DESCRIPTION??''),reference:intacctId(r.BATCHNO),sourceDimensions,dimensionLabels:labels,entryUrl:url}
  })
  const report=await intacctRequest(key,'get_trialbalance',`<startdate>${datePart(from)}</startdate><enddate>${datePart(to)}</enddate><debitcreditbalance>true</debitcreditbalance><showzerobalances>true</showzerobalances><showdeptdetail>false</showdeptdetail><showlocdetail>false</showlocdetail><reportingbook>ACCRUAL</reportingbook><includereportingbook>true</includereportingbook><statistical>exclude</statistical><locationid>${xml(entityId)}</locationid>`,entityId)
  const trialBalance=reconcileIntacctTrial(chart,array(report.glaccountbalance),rows,entity.currency,from,entity.firstFiscalMonth)

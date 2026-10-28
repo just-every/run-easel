@@ -1,4 +1,4 @@
-import { ledgerEntity } from './ledger-scope'
+import { requireIntacctHistory,ledgerEntity } from './ledger-scope'
 import { actualCells } from './actuals-read'
 import type { Context } from './context'
 import { prepareCalculation, type Calculation, type Model } from './engine'
@@ -36,11 +36,12 @@ export async function calculateNativeContext(c:Context,scenario:string,through?:
   const saved=frozen.get(id);if(saved)return {frozen:saved}
   let g=graphs.get(id);if(!g){const m=models.get(id);requireThat(m,`Missing version '${id}'`,409);g=prepareCalculation(m,actualsByScenario.get(id)??[],ledgers.get(id));graphs.set(id,g)}return g
  },(line,department,month,id)=>{
+  requireIntacctHistory(c.s,month,ledgerEntity(c.s,id))
   const overlay=overlays.get(id),actuals=actualsByScenario.get(id)??[]
   requireThat(!overlay?.blockedMonths.includes(month),`Actuals history reconciliation blocked for ${month}`,409)
   const cell=actuals.find(a=>a.line===line&&a.department===department&&a.month===month)
   requireThat(cell,`Missing accepted actuals for ${month}, line ${line}, department ${department}`,409)
-  if(!sourceDefinitions.actuals.some((a:Data)=>a.line===line&&a.department===department&&a.month===month))sourceDefinitions.actuals.push(cell)
+  if(!sourceDefinitions.actuals.some((a:Data)=>a.scenario===id&&a.line===line&&a.department===department&&a.month===month))sourceDefinitions.actuals.push({...cell,scenario:id,entity:ledgerEntity(c.s,id)??null})
   return cell
  })
  const resultGraph=runtime.graph(scenario);requireThat(!('frozen'in resultGraph),'Use captured arithmetic for a frozen scenario',409)

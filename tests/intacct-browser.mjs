@@ -1,6 +1,9 @@
 // Built application and native authentication; only provider and mail HTTP are replaced.
 import assert from 'node:assert/strict'
-import { mkdir } from 'node:fs/promises'
+import { mkdir,mkdtemp,cp,symlink,writeFile,readFile,rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { spawn } from 'node:child_process'
+import { freePort } from './browser-runtime.mjs'
 import { join,resolve } from 'node:path'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { settle,noOverflow,track } from './browser-journey.mjs'
@@ -8,13 +11,22 @@ import { intacctProvider,intacctGrant,intacctFixture,acceptIntacct } from './int
 const {chromium}=await import(process.env.EASEL_PLAYWRIGHT_MODULE??'@playwright/test')
 assert.ok(process.argv.includes('--existing-build'),'Use the current working build')
 const evidence=resolve(process.env.EASEL_EVIDENCE??'.cache/intacct-browser');await mkdir(evidence,{recursive:true})
-const browser=await chromium.launch({headless:true,executablePath:process.env.EASEL_CHROMIUM_PATH??'/usr/bin/chromium',args:['--no-sandbox']})
+const browser=await chromium.launch({headless:true,...(process.env.EASEL_CHROMIUM_PATH?{executablePath:process.env.EASEL_CHROMIUM_PATH}:{}),args:['--no-sandbox']})
 const provider=intacctProvider(),messages=[]
-let runtime,context,reader
+let runtime,context,reader,portableRoot,runtimeOptions
 const card=(page,name)=>page.locator('section.card').filter({has:page.getByRole('heading',{name,exact:true})})
 async function capture(page,scope,name){for(const width of [1440,390]){await page.setViewportSize({width,height:1000});await settle(page);await noOverflow(page,`${name} ${width}`);await scope.screenshot({path:join(evidence,`${name}-${width}.png`)})}await page.setViewportSize({width:1440,height:1000})}
 try{
- runtime=await builtBrowserRuntime({https:true,now:()=> '2026-05-15T12:00:00.000Z',bindings:{AUTH_LOCAL:'false',MAIL_PROVIDER:'resend',MAIL_API_KEY:'synthetic-mail-boundary'},outbound:async request=>{if(new URL(request.url).hostname==='api.resend.com'){messages.push(await request.json());return Response.json({id:crypto.randomUUID()})}return provider.outbound(request)}})
+ portableRoot=await mkdtemp(join(tmpdir(),'easel-intacct-cli-'))
+ const checkout=process.cwd(),excluded=new Set(['.git','node_modules','.wrangler','.rer','.seed','.tanstack','.output','test-results','.cache','.dev.vars','exports','dist'])
+ await cp(checkout,portableRoot,{recursive:true,filter:source=>{const part=source.slice(checkout.length+1).split('/')[0];return !excluded.has(part)&&!part.startsWith('.env')&&!part.startsWith('.dev.vars')}})
+ await symlink(join(checkout,'node_modules'),join(portableRoot,'node_modules'),'dir')
+ const cli=async(args)=>{const child=spawn('pnpm',args,{cwd:portableRoot,env:{...process.env,WRANGLER_SEND_METRICS:'false'},stdio:['ignore','pipe','pipe']});let output='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>output+=d);const status=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',resolve)});if(status!==0)throw Error(`CLI ${args.join(' ')} exited ${status}: ${output}`);return output}
+ await cli(['exec','wrangler','d1','migrations','apply','easel','--local','--persist-to','.wrangler/state','--config','wrangler.jsonc'])
+ const port=await freePort()
+ runtimeOptions={https:true,port,persistencePath:join(portableRoot,'.wrangler/state/v3'),databaseId:'local-easel-only',skipMigrations:true,now:()=> '2026-05-15T12:00:00.000Z',bindings:{AUTH_LOCAL:'false',MAIL_PROVIDER:'resend',MAIL_API_KEY:'synthetic-mail-boundary'},outbound:async request=>{if(new URL(request.url).hostname==='api.resend.com'){messages.push(await request.json());return Response.json({id:crypto.randomUUID()})}return provider.outbound(request)}}
+ runtime=await builtBrowserRuntime(runtimeOptions)
+ await writeFile(join(portableRoot,'.dev.vars'),`OWNER_EMAIL=owner@example.test\nSESSION_SECRET=synthetic-easel-session-secret-01234567890123456789\nSETUP_TOKEN=${runtime.bootstrap}\nAUTH_ORIGIN=${runtime.origin}\nAUTH_LOCAL=false\nMAIL_PROVIDER=development\nMAIL_FROM=Easel <easel@example.test>\n`)
  context=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}})
  const send=async(path,body,status=200)=>{const r=await context.request[body===undefined?'get':'post'](runtime.origin+path,{headers:{origin:runtime.origin},...(body===undefined?{}:{data:body}),maxRedirects:0});assert.equal(r.status(),status,await r.text());return status===200?r.json():null}
  const h={get:path=>send(path),command:(op,b)=>send('/api/easel/command/'+op,b),kit:(kit,op,b)=>send(`/api/easel/import/${kit}/${op}`,b)}
@@ -32,6 +44,14 @@ try{
  for(const [source,entity]of [['CA',f.ca],['EU',f.eu]]){await connection.getByLabel('Intacct legal entity',{exact:true}).selectOption(source);await connection.getByLabel('Easel entity source plan',{exact:true}).selectOption(entity.id);await connection.getByRole('button',{name:'Bind Intacct entity',exact:true}).click();await settle(page)}
  assert.equal((await h.get('/api/easel/connections/intacct')).bindings.length,2)
  await capture(page,connection,'intacct-connected')
+ const location=f.dimensions.find(d=>d.source==='L2'),oldRule=(await h.get('/api/easel/state')).dimensionMaps.find(r=>r.sourceKind==='location'&&r.source==='L2')
+ await h.command('dimension-map-delete',{id:oldRule.id});await page.reload()
+ const dimensions=card(page,'Dimensions and account hierarchy');await dimensions.getByLabel('Manage dimension').selectOption(location.dimension.id)
+ await dimensions.getByLabel('Source dimension kind',{exact:true}).fill('location');await dimensions.getByLabel('Source member value',{exact:true}).fill('L2');await dimensions.getByLabel('Mapped member',{exact:true}).selectOption(location.member.id)
+ await dimensions.getByRole('button',{name:'Save source dimension rule',exact:true}).click();await settle(page)
+ assert.ok((await h.get('/api/easel/state')).dimensionMaps.some(r=>r.sourceKind==='location'&&r.source==='L2'))
+ await capture(page,dimensions,'intacct-native-mapping')
+
  await page.goto(runtime.origin+'/app?tab=actuals');const actuals=card(page,'Sage Intacct actuals');await actuals.getByLabel('Intacct review entity').waitFor();await actuals.getByLabel('Intacct review entity').selectOption('CA')
  await actuals.getByText('Backfill Intacct history',{exact:true}).click();assert.equal(await actuals.getByLabel('Intacct history months',{exact:true}).inputValue(),'24')
  await actuals.getByLabel('Intacct history months',{exact:true}).fill('11');await actuals.getByLabel('Intacct last closed month',{exact:true}).fill('2025-12');await actuals.getByRole('button',{name:'Review Intacct history',exact:true}).click();await actuals.getByText('Choose 12–36 completed months',{exact:true}).waitFor()
@@ -45,6 +65,16 @@ try{
  await actuals.getByRole('button',{name:'Accept reviewed Intacct month',exact:true}).click();await settle(page)
  await actuals.getByLabel('Intacct review entity').selectOption('EU');await actuals.getByLabel('Intacct month',{exact:true}).fill('2026-02');await actuals.getByRole('button',{name:'Preview Intacct month',exact:true}).click();await actuals.getByRole('table',{name:'Intacct source trial balance'}).waitFor();assert.match(await actuals.innerText(),/European Services.*2026-02.*EUR/)
  await capture(page,actuals,'intacct-entity-trial')
+ const storedSecret=await runtime.db.prepare("SELECT sealed FROM e_connection_secrets WHERE id='intacct'").first()
+ await runtime.close();runtime=undefined
+ await cli(['exec','rer','export','--output','exports/intacct-custody.rer'])
+ const archive=await readFile(join(portableRoot,'exports/intacct-custody.rer'),'utf8'),manifest=JSON.parse(archive.split('\n')[0])
+ assert.ok(!manifest.tables.some(t=>t.name==='e_connection_secrets'))
+ for(const value of [intacctGrant.senderPassword,intacctGrant.userPassword,storedSecret.sealed])assert.ok(!archive.includes(value),'Actual rer export excludes provider plaintext and ciphertext')
+ await cp(join(portableRoot,'exports/intacct-custody.rer'),join(evidence,'intacct-custody.rer'))
+ runtime=await builtBrowserRuntime(runtimeOptions)
+ assert.equal((await h.get('/api/easel/connections/intacct')).connected,true,'Restart opens the same installation and sealed credential')
+
  const root=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===f.first.id),approved=await h.command('approve-budget',{scenario:root.id,revision:root.revision});await h.command('close-month',{scenario:approved.forecast.id,month:'2026-01'})
  await page.goto(runtime.origin+'/app?tab=review&reviewMonth=2026-01');await page.getByRole('heading',{name:/Variances,/}).waitFor()
  const source=page.locator('details.card-row').filter({has:page.getByText('Management revenue',{exact:true})}).first();await source.locator('summary').click();await source.getByRole('table',{name:'Accepted rows'}).waitFor()
@@ -53,6 +83,20 @@ try{
  const url=rows[0].providerUrl;await context.route(url,route=>route.fulfill({contentType:'text/html',body:'<h1>Recorded Intacct entry</h1>'}))
  for(const width of [1440,390]){await page.setViewportSize({width,height:1000});const popup=page.waitForEvent('popup');await source.getByRole('link').first().click();const entry=await popup;await entry.getByRole('heading',{name:'Recorded Intacct entry'}).waitFor();assert.equal(entry.url(),url);await entry.screenshot({path:join(evidence,`intacct-entry-${width}.png`)});await entry.close()}
  await capture(page,source,'intacct-variance-source')
+ const euRoot=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===f.second.id),euApproved=await h.command('approve-budget',{scenario:euRoot.id,revision:euRoot.revision})
+ await h.command('close-month',{scenario:euApproved.forecast.id,month:'2026-01'})
+ for(const [entity,average,end]of [[f.ca,'0.8','0.9'],[f.eu,'1','1.125']]){await h.command('entity-rate',{entity:entity.id,month:'2025-12',monthEnd:average});await h.command('entity-rate',{entity:entity.id,month:'2026-01',average,monthEnd:end,budget:average})}
+ const ledger=(await h.get('/api/easel/entities')).ledgerSources
+ const pick=(entity,target,period,opening=false)=>ledger[entity.id].filter(r=>r.target===target&&r.period===period&&r.opening===opening).map(r=>r.id)
+ await page.goto(runtime.origin+'/app?tab=settings');const entities=card(page,'Entities');await entities.getByText('Eliminate accepted ledger sources',{exact:true}).click()
+ await entities.getByLabel('Accepted-ledger elimination name',{exact:true}).fill('Recorded provider fee and balance')
+ await entities.getByLabel('Accepted-ledger elimination month',{exact:true}).fill('2026-01')
+ for(const [label,ids]of [['Accepted revenue charges',pick(f.ca,f.revenue.id,'2026-01')],['Accepted expense charges',pick(f.eu,f.expense.id,'2026-01')],['Accepted receivable balances',pick(f.ca,'bs:receivables','2023-12',true)],['Accepted payable balances',pick(f.eu,'bs:payables','2023-12',true)],['Accepted cash receipts',pick(f.ca,'cash','2026-01')],['Accepted cash payments',pick(f.eu,'cash','2026-01')]])await entities.getByLabel(label,{exact:true}).selectOption(ids)
+ for(const [label,value]of [['Revenue','100'],['Expense','80'],['Receivable','100'],['Payable','80'],['Received','100'],['Paid','80']])await entities.getByLabel(label+' local amount to eliminate',{exact:true}).fill(value)
+ await entities.getByLabel('I reviewed the selected accepted ledger sources',{exact:true}).check();await entities.getByRole('button',{name:'Save accepted-ledger elimination',exact:true}).click();await settle(page)
+ const consolidated=(await h.get('/api/easel/consolidation/'+f.first.id)).consolidated[0];assert.deepEqual(consolidated.unavailable,[]);assert.equal(consolidated.before.profit.revenue-consolidated.profit.revenue,8000)
+ await capture(page,card(page,'Management consolidation · USD'),'intacct-consolidation')
+
  await h.command('member',{email:'board-intacct@example.test',name:'Board reader',role:'viewer',departments:[]});await send('/api/easel/invite',{email:'board-intacct@example.test'})
  const message=messages.find(m=>m.to.includes('board-intacct@example.test')),token=new URL(message.text.match(/https?:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
  reader=await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}});assert.equal((await reader.request.post(runtime.origin+'/auth/confirm',{headers:{origin:runtime.origin},data:{token},maxRedirects:0})).status(),303)
@@ -64,4 +108,4 @@ try{
  await page.goto(runtime.origin+'/app?tab=settings');await connection.getByRole('button',{name:'Disconnect Intacct',exact:true}).waitFor();await connection.getByRole('button',{name:'Disconnect Intacct',exact:true}).click();await connection.getByText(/Provider revocation: unsupported/).waitFor()
  assert.equal((await h.get('/api/easel/connections/intacct')).connected,false);await capture(page,connection,'intacct-disconnected')
  console.log('Intacct native browser journey passed; 1440 assertions and 1440/390 screen evidence at '+evidence)
-}finally{await reader?.close();await context?.close();await runtime?.close();await browser.close()}
+}finally{await reader?.close();await context?.close();await runtime?.close();await browser.close();if(portableRoot)await rm(portableRoot,{recursive:true,force:true})}

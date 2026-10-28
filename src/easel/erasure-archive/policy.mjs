@@ -16,6 +16,15 @@ export async function validateEaselStaged(staged) {
  const mappedRecords = rawRecords.map(r => transformErased({ ...r, value: parse(r.value) }, maps));
  const records = new Map(mappedRecords.map(r => [`${r.kind}:${r.id}`, { ...r.value, id: r.id }]));
  const activity = rawActivity.map(r => transformErased({ ...r, detail: parse(r.detail) }, maps));
+ const actuals=await staged.read('e_actuals');
+ for(const row of actuals){
+  const value=transformErased(parse(row.value),maps);
+  if(!value.intacctCompany)continue;
+  const binding=[...records].find(([key,r])=>key.startsWith('intacct-entity-map:')&&r.company===value.intacctCompany&&r.sourceEntity===value.intacctSourceEntity&&r.book===value.intacctBook)?.[1];
+  requireValid(binding && binding.entity===value.entity && binding.currency===value.intacctCurrency && value.intacctBook==='ACCRUAL','intacct_actual_boundary');
+  requireValid(text(value.intacctLine) && typeof value.intacctOpening==='boolean' && Number.isSafeInteger(value.amount) && value.amount===row.amount && value.period===row.period,'intacct_actual_provenance');
+ }
+
  const snapshots = new Map();
  for (const row of rawSnapshots) {
   requireValid(typeof row.body === 'string' && await sha256(row.body) === row.sha256, 'snapshot_digest');

@@ -1,3 +1,4 @@
+import { scopedReader } from './group-projections'
 import { filterCalculation } from './views'
 import { ledgerEntity } from './ledger-scope'
 import { scenarioAccess } from './scenario-access'
@@ -38,6 +39,7 @@ export function forecastFor(s: State, month: string,scenario?:string) {
 /** Variance rows for a closed month. Detail the person may not see is removed here, on the server. */
 export async function variance(c: Context, month: string,scenario?:string) {
  requireMember(c.x)
+ requireThat(!scopedReader(c.x)||!!(scenario&&ledgerEntity(c.s,scenario)),'This view is unavailable for dimension-scoped access without an explicit entity forecast',403)
  const { s } = c
  const w = workspace(s)
  const forecast = forecastFor(s, month,scenario)

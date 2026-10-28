@@ -73,7 +73,7 @@ export function Consolidation({ state, scenario }: Pick<Shared, 'state'> & { sce
 function AcceptedLedgerElimination({settings,refresh}:{settings:D;refresh:()=>Promise<void>}){
  const rows=Object.values(settings.ledgerSources??{}).flat() as D[]
  if(!rows.length)return null
- const choices=(target:string)=>rows.filter(r=>target==='revenue'||target==='expense'?settings.entities.some((e:D)=>e.id===r.entity)&&r.target&&r.target!=='cash'&&!r.target.startsWith('bs:')&&r.target!=='excluded':r.target===target).map(r=>({value:r.id,label:`${settings.entities.find((e:D)=>e.id===r.entity)?.name} · ${r.name} · ${r.amount} local cents`}))
+ const choices=(target:string)=>rows.filter(r=>target==='revenue'||target==='expense'?(target==='revenue'?r.lineType==='revenue':['cost-of-sales','operating-expense'].includes(r.lineType)):r.target===target).map(r=>({value:r.id,label:`${settings.entities.find((e:D)=>e.id===r.entity)?.name} · ${r.name} · ${r.amount} local cents`}))
  return <details><summary>Eliminate accepted ledger sources</summary><p>Choose exact accepted charges, balances and settlements from both entities. Amounts are local currency; the server validates translated reciprocity, current source digests and overlap.</p>
  <Form submit="Save accepted-ledger elimination" onSubmit={async v=>{
   const first=rows.find(r=>r.id===v.fromCharge[0]),second=rows.find(r=>r.id===v.toCharge[0])

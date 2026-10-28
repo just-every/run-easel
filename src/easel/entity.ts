@@ -75,6 +75,6 @@ export async function entitiesView(c: Context) {
   const line = find(c.s, 'line', input.line)
   return line && !line.payroll && !line.nonCash ? [{ entity: entity.id, origin: input.originId, name: input.name, type: line.type, line: line.name }] : []
  }))) : []
- const ledgerSources=finance?Object.fromEntries(await Promise.all(entities.map(async e=>[e.id,(await entityLedger(c,e.id)).filter(r=>!find(c.s,'line',r.target)?.payroll).map(({rows,...r})=>r)]))):{}
+ const ledgerSources=finance&&c.x.payDetail?Object.fromEntries(await Promise.all(entities.map(async e=>[e.id,(await entityLedger(c,e.id)).filter(r=>!find(c.s,'line',r.target)?.payroll).map(({rows,...r})=>r)]))):{}
  return { ledgerSources, entities, groups: all(c.s, 'entity-group').filter(g => entities.some(e => e.group === g.id)), rates: finance ? Object.fromEntries(entities.map(e => [e.id, find(c.s, 'entity-fx', e.id) ?? null])) : {}, rules: finance ? all(c.s, 'entity-elimination').filter(r => entities.some(e => e.group === r.group)) : [], origins, finance }
 }

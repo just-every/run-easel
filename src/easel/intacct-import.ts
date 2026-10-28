@@ -21,6 +21,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const key = await intacctKey(c, env)
  const binding=all(c.s,'intacct-entity-map').find(r=>r.company===key.companyId&&r.sourceEntity===b.sourceEntity&&r.book==='ACCRUAL')
  requireThat(binding,'Bind the Intacct legal entity to its Easel source plan first',409)
+ requireThat(!all(c.s,'batch').some(r=>r.intacctSource?.entity===binding.entity&&r.intacctSource?.month===b.month&&['importing','undoing'].includes(r.status)),'Inspect and continue or undo the active Intacct month journal before pulling it again',409)
  const source = await readIntacctLedger(key, binding.sourceEntity, b.month, c.now.slice(0, 10))
  requireThat(source.currency===binding.currency,'The bound entity base currency changed',409)
  if(op==='commit')requireThat(source.trialBalance.balanced,'Intacct ledger and independent trial balance differ; review account differences before acceptance',409)
@@ -52,7 +53,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  if (b.includeOpening) for (const account of source.chart) {
   const amount = source.trialBalance.opening[account.id] ?? 0
   if (!amount) continue
-  desired.push({ id: `opening:${account.id}:${source.from}`, transactionId: '',  date: new Date(Date.parse(`${source.from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10), accountId: account.id, account: account.code, accountName: account.name, accountType: account.type, amount, department:'', sourceDimensions:{}, dimensionLabels:{},entryUrl:null, description: 'Source trial balance opening', reference: '', opening: true })
+  desired.push({ id: `opening:${account.id}:${source.from}`, transactionId: '',  date: new Date(Date.parse(`${source.from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10), accountId: account.id, account: account.code, accountName: account.name, accountType: account.type,accountCategory:account.category,normalBalance:account.normalBalance, amount, department:'', sourceDimensions:{}, dimensionLabels:{},entryUrl:null, description: 'Source trial balance opening', reference: '', opening: true })
  }
  const prior = new Map<string,Data>()
  for(const item of old.results){
@@ -66,7 +67,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const push=(row:SourceRow,amount:number,first=false)=>{
   if(!amount&&!first)return
   deltas.push({...row,amount})
-  metadata[deltas.length+1]={intacctCompany:key.companyId,intacctBook:'ACCRUAL',intacctMonth:source.month,entity:binding.entity,intacctSourceEntity:binding.sourceEntity,intacctCurrency:source.currency,intacctLine:row.id,intacctOpening:row.opening===true,intacctTransactionId:row.transactionId,intacctAccountId:row.accountId,intacctEntryUrl:row.entryUrl??null,sourceDimensions:row.sourceDimensions,dimensionLabels:row.dimensionLabels}
+  metadata[deltas.length+1]={intacctCompany:key.companyId,intacctBook:'ACCRUAL',intacctMonth:source.month,entity:binding.entity,intacctSourceEntity:binding.sourceEntity,intacctCurrency:source.currency,intacctLine:row.id,intacctOpening:row.opening===true,intacctTransactionId:row.transactionId,intacctAccountId:row.accountId,intacctAccountCategory:row.accountCategory??null,intacctNormalBalance:row.normalBalance??null,intacctEntryUrl:row.entryUrl??null,sourceDimensions:row.sourceDimensions,dimensionLabels:row.dimensionLabels}
  }
  for(const row of desired){
   const before=prior.get(row.id)
@@ -75,7 +76,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
   prior.delete(row.id)
  }
  // Removed provider lines are journaled as visible reversals.
- for(const before of prior.values())push({id:before.intacctLine,transactionId:before.intacctTransactionId,date:before.date,accountId:before.intacctAccountId,account:before.account,accountName:before.accountName,accountType:before.accountType,department:before.department==='(blank)'?'':before.department,sourceDimensions:before.sourceDimensions,dimensionLabels:before.dimensionLabels,entryUrl:before.intacctEntryUrl,description:before.description,reference:before.reference,opening:before.intacctOpening},safe(-before.amount))
+ for(const before of prior.values())push({id:before.intacctLine,transactionId:before.intacctTransactionId,date:before.date,accountId:before.intacctAccountId,account:before.account,accountName:before.accountName,accountType:before.accountType,accountCategory:before.intacctAccountCategory,normalBalance:before.intacctNormalBalance,department:before.department==='(blank)'?'':before.department,sourceDimensions:before.sourceDimensions,dimensionLabels:before.dimensionLabels,entryUrl:before.intacctEntryUrl,description:before.description,reference:before.reference,opening:before.intacctOpening},safe(-before.amount))
  requireThat(deltas.length<=5000,'Intacct journal exceeds 5,000 rows; no partial source accepted',409)
  const digest = sha256(canonicalJson({ source: source.digest, binding, includeOpening:b.includeOpening, deltas, metadata }))
  const inventory={chart:source.chart,dimensions:source.dimensions}
@@ -99,7 +100,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
    recordMonth(c)
    completeSourceGuards(c,{sha256:digest})
   }
-  if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:[],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
+  if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:['intacct-normalized-ledger-v1'],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type],category:a.category,normalBalance:a.normalBalance,closingType:a.closingType,closingAccount:a.closingAccount})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
   return { result: { source: sourceSummary, sourceFingerprint: digest, changedRows: 0, changedTransactions:0, unchanged: true, accepted: op === 'commit' } }
  }
  const rows = [['Date', 'Account', 'Account name', 'Account type', 'Department', 'Amount', 'Description', 'Reference'],
@@ -114,7 +115,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
  const step = await actualsCommand(c,op==='stage'?'preview':op,input,metadata)
  requireThat(step, 'Unknown actuals step', 404)
  if (op === 'preview'||op==='stage') step.result = { ...step.result, source: sourceSummary, sourceFingerprint: digest, changedRows: deltas.length,changedTransactions }
- if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},step.result,{headers:Object.keys(metadata[2]??{}),accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type]})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
+ if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},step.result,{headers:['intacct-normalized-ledger-v1'],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type],category:a.category,normalBalance:a.normalBalance,closingType:a.closingType,closingAccount:a.closingAccount})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
  if (op === 'commit' && step.record) {
   const batch=all(c.s,'batch').find(row=>row.file===input.filename&&row.status==='importing')
   requireThat(batch,'Intacct journal batch was not created',409)

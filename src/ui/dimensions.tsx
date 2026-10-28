@@ -42,7 +42,7 @@ export function DimensionPlan({ state, view, refresh }: Pick<Shared, 'state' | '
  const [dimension, setDimension] = useState(''), [member, setMember] = useState(''), [actuals, setActuals] = useState(false)
  const [report, setReport] = useState<D | null>(null), [error, setError] = useState('')
  const structure = view.dimensionStructure ?? { dimension: [], 'dimension-member': [] }
- const path = `dimension-report/${actuals ? 'actuals' : view.scenario.id}?${new URLSearchParams({ ...(dimension ? { dimension } : {}), ...(member ? { member } : {}) })}`
+ const path = `dimension-report/${actuals ? 'actuals' : view.scenario.id}?${new URLSearchParams({ ...(dimension ? { dimension } : {}), ...(member ? { member } : {}),...(actuals&&view.entity?{entity:view.entity}:{}) })}`
  useEffect(() => { let live = true; setReport(null); setError(''); api(path).then(r => { if (live) setReport(r) }).catch(e => { if (live) setError(e.message) }); return () => { live = false } }, [path, view])
  const inputOptions = Object.entries(view.inputs).flatMap(([kind, rows]) => (rows as D[]).map(row => ({ value: `${kind}|${row.id}`, label: row.name ?? row.title ?? kind })))
  return <section className="card" aria-label="Dimension planning and reports">

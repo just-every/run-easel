@@ -1,3 +1,4 @@
+import { requirePayDetail } from './access'
 import { canonicalJson } from '../modules/import-kit/src/d1/index'
 import { ledgerEliminationSources } from './entity-ledger'
 import type { Context } from './context'
@@ -77,6 +78,7 @@ export async function entityEliminations(c: Context, op: string, b: Data) {
  const from = get(c.s, 'entity', b.fromEntity), to = get(c.s, 'entity', b.toEntity)
  const [{ model: leftModel, calculation: left }, { model: rightModel, calculation: right }] = await Promise.all([entityCalculation(c, from), entityCalculation(c, to)])
  const selection=b.ledgerSources
+ if(selection)requirePayDetail(c.x)
  const ledger=selection?{from:ledgerEliminationSources(left.entityLedger,selection.from,month(b.month),'from'),to:ledgerEliminationSources(right.entityLedger,selection.to,month(b.month),'to')}:undefined
  const fromInput = selection?{line:ledger!.from.charge[0]?.target,originId:'accepted-ledger'}:Object.values(leftModel.inputs).flat().find(i=>i.originId===b.fromOrigin)
  const toInput = selection?{line:ledger!.to.charge[0]?.target,originId:'accepted-ledger'}:Object.values(rightModel.inputs).flat().find(i=>i.originId===b.toOrigin)

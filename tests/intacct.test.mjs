@@ -19,6 +19,7 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
    const month=`${2024+Math.floor(i/12)}-${String(i%12+1).padStart(2,'0')}`,p=await acceptIntacct(h,{sourceEntity,month,includeOpening:i===0})
    assert.equal(p.source.trialBalance.balanced,true,`${sourceEntity} ${month}`)
    if(month==='2024-06')assert.equal(p.changedRows,0)
+   if(month==='2025-01')assert.ok(Object.values(p.source.trialBalance.reportTransfers).some(v=>v!==0),'Documented fiscal closing transfers stay separate from posting rows')
   }
   for(const month of ['2026-01','2026-02'])await acceptIntacct(h,{sourceEntity,month,includeOpening:false})
   const actuals=await h.get('/api/easel/actuals?entity='+entity.id)
@@ -35,9 +36,21 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  assert.equal((await h.kit('intacct','preview',input)).unchanged,true)
  assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(r=>r.period==='2026-02').revenue,12500)
  assert.equal((await h.get('/api/easel/actuals?entity='+f.eu.id)).months.find(r=>r.period==='2026-02').costs,8000)
+ provider.removed=true
+ const removed=await acceptIntacct(h,input);assert.equal(removed.changedRows,2);assert.equal(removed.changedTransactions,1)
+ assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(r=>r.period==='2026-02').revenue,0)
+ assert.equal((await h.kit('intacct','preview',input)).unchanged,true)
+ provider.removed=false;await acceptIntacct(h,input)
+
  const previews=await h.kit('intacct','preview',{sourceEntity:'CA',month:'2026-03',includeOpening:false})
  provider.extra='mapped'
  await h.kit('intacct','commit',{sourceEntity:'CA',month:'2026-03',includeOpening:false,fingerprint:previews.fingerprint,sourceFingerprint:previews.sourceFingerprint},h.owner,409)
+ const conflict=await h.command('account-rule',{match:'prefix',from:'4001',target:f.expense.id})
+ const ambiguous=await h.kit('intacct','preview',{sourceEntity:'CA',month:'2026-03',includeOpening:false})
+ assert.equal(ambiguous.accounts.find(a=>a.account==='4001').mappingStatus,'ambiguous')
+ await h.kit('intacct','commit',{sourceEntity:'CA',month:'2026-03',includeOpening:false,fingerprint:ambiguous.fingerprint,sourceFingerprint:ambiguous.sourceFingerprint},h.owner,409)
+ assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(r=>r.period==='2026-02').revenue,12500)
+ await h.command('account-rule-delete',{id:conflict.id})
  const automatic=await acceptIntacct(h,{sourceEntity:'CA',month:'2026-03',includeOpening:false});assert.equal(automatic.accounts.find(a=>a.account==='4001').target,f.revenue.id)
  assert.ok(automatic.source.dimensions.udd[0].members.some(m=>m.id==='B2B'));assert.equal(automatic.source.dimensions.department.length,3);assert.equal(automatic.source.dimensions.location.length,2)
  provider.extra='both'
@@ -52,10 +65,26 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  provider.badTrial=true
  const mismatch=await h.kit('intacct','preview',{sourceEntity:'CA',month:'2026-03',includeOpening:false});assert.equal(mismatch.source.trialBalance.balanced,false);assert.ok(mismatch.source.trialBalance.differences.length)
  await h.kit('intacct','commit',{sourceEntity:'CA',month:'2026-03',includeOpening:false,fingerprint:mismatch.fingerprint,sourceFingerprint:mismatch.sourceFingerprint},h.owner,409);provider.badTrial=false
+ for(const [plan,line,amount]of [[f.first,f.revenue,10000],[f.second,f.expense,8000]]){
+  const current=await h.get('/api/easel/scenario/'+plan.id)
+  await h.command('formula',{scenario:plan.id,revision:current.scenario.revision,department:f.department.id,name:'Entity prior-year source',unit:'money',formula:`ACTUAL("${line.name}", "Services", -12)`,start:'2026-01'})
+  const calculated=await h.get('/api/easel/scenario/'+plan.id)
+  assert.equal(calculated.calculation.formulaValues.find(v=>v.name==='Entity prior-year source'&&v.month==='2026-01').value,amount)
+ }
+ const caPlan=await h.get('/api/easel/scenario/'+f.first.id)
+ await h.command('formula',{scenario:f.first.id,revision:caPlan.scenario.revision,department:f.department.id,name:'Explicit empty source month',unit:'money',formula:'IF(PERIOD() = 6, ACTUAL("Management revenue", "Services", -24), 0)',start:'2026-01'})
+ assert.equal((await h.get('/api/easel/scenario/'+f.first.id)).calculation.formulaValues.find(v=>v.name==='Explicit empty source month'&&v.month==='2026-06').value,0)
+ for(const e of [f.ca,f.eu])for(const dimension of f.dimensions.filter(d=>d.dimension.name==='Posting location').map(d=>d.dimension).slice(0,1)){
+  const report=await h.get(`/api/easel/dimension-report/actuals?entity=${e.id}&dimension=${dimension.id}`)
+  assert.equal(report.currency,e.currency)
+ }
  const firstBatch=(await h.get('/api/easel/state')).batches.find(b=>b.intacctSource?.sourceEntity==='CA'&&b.intacctSource?.month==='2024-01')
  await h.kit('actuals','undo',{id:firstBatch.id})
+ await h.get('/api/easel/scenario/'+f.first.id,h.owner,409)
+ await acceptIntacct(h,{sourceEntity:'CA',month:'2024-01',includeOpening:true})
  let root=(await h.get('/api/easel/state')).scenarios.find(s=>s.id===f.first.id)
  const approved=await h.command('approve-budget',{scenario:root.id,revision:root.revision})
+ await h.kit('actuals','undo',{id:firstBatch.id})
  await h.command('close-month',{scenario:approved.forecast.id,month:'2026-01'},h.owner,409)
  await acceptIntacct(h,{sourceEntity:'CA',month:'2024-01',includeOpening:true})
  await h.command('close-month',{scenario:approved.forecast.id,month:'2026-01'})
@@ -109,9 +138,36 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  await h.kit('intacct','commit',{...stageInput,fingerprint:stagedPreview.fingerprint,sourceFingerprint:stagedPreview.sourceFingerprint},h.owner,409)
  const decisions=staged.unresolved.map(issue=>({issue:issue.id,action:'exclude',reason:'Reviewed label-only member metadata; stable IDs and mappings remain unchanged'}))
  staged=await h.command('source-guard-review',{id:staged.id,revision:staged.revision,fingerprint:staged.fingerprint,decisions})
+ assert.deepEqual(staged.unresolved,[],JSON.stringify(staged.unresolved))
  await acceptIntacct(h,stageInput)
  assert.equal((await h.get('/api/easel/source-guard')).guards.find(g=>g.id===staged.id).status,'completed')
 
+ provider.largeApril=true
+ const previousGuard=(await h.get('/api/easel/source-guard')).guards.find(g=>g.id===staged.id)
+ await h.kit('intacct','stage',{...stageInput,revision:previousGuard.revision})
+ const continued=await h.kit('intacct','preview',stageInput)
+ let continuing=await h.kit('intacct','commit',{...stageInput,fingerprint:continued.fingerprint,sourceFingerprint:continued.sourceFingerprint})
+ assert.equal(continuing.batch.status,'importing')
+ assert.equal((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.find(m=>m.period==='2026-04').revenue,null,'Partial journal amounts remain unavailable')
+ await h.kit('intacct','preview',stageInput,h.owner,409)
+ let continuations=0
+ while(continuing.batch.status==='importing'&&continuations++<20)continuing=await h.kit('actuals','resume',{id:continuing.batch.id})
+ assert.equal(continuing.batch.status,'accepted');assert.ok(continuations>0)
+ assert.equal((await h.get('/api/easel/connections/intacct')).months.find(m=>m.entity===f.ca.id&&m.month==='2026-04').ledgerRows,402)
+
+ const beforeCorrection=await h.get('/api/easel/scenario/'+approved.forecast.id)
+ const kept=await h.command('reforecast-save',{from:approved.forecast.id,revision:beforeCorrection.scenario.revision,name:'Provider accepted January capture'})
+ const frozen=await h.get('/api/easel/scenario/'+kept.id)
+ const pack=await h.command('pack-create',{month:'2026-01',scenario:approved.forecast.id}),published=await h.command('pack-publish',{pack:pack.id})
+ const packSnapshot=await h.get('/api/easel/snapshot/'+published.snapshot)
+ provider.editMonth='2026-01'
+ await acceptIntacct(h,{sourceEntity:'CA',month:'2026-01',includeOpening:false})
+ assert.ok((await h.get(groupPath)).consolidated[0].unavailable.some(reason=>/source rows or mappings changed/.test(reason)))
+ assert.deepEqual(await h.get('/api/easel/scenario/'+kept.id),frozen)
+ assert.deepEqual(await h.get('/api/easel/snapshot/'+published.snapshot),packSnapshot)
+ await h.command('entity-elimination-save',{...elimination,id:savedElimination.id})
+ assert.deepEqual((await h.get(groupPath)).consolidated[0].unavailable,[])
+ const historyBeforeDisconnect=await h.get('/api/easel/actuals?entity='+f.ca.id)
  await h.stepUp();const tokenResponse=await h.send('/api/easel/tokens/issue',{label:'Intacct native boundary',kind:'personal',scope:'write'},h.owner);assert.equal(tokenResponse.status,200)
  assert.equal((await h.mf.dispatchFetch(h.origin+'/api/easel/connections/intacct',{headers:{authorization:'Bearer '+tokenResponse.value.token}})).status,403)
  const archive=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}}),zip=await JSZip.loadAsync(await archive.arrayBuffer())
@@ -120,7 +176,7 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  await call('check',{});assert.equal((await h.get('/api/easel/connections/intacct')).error,null)
  const disconnected=await call('disconnect',{});assert.equal(disconnected.connected,false);assert.equal(disconnected.providerRevocation.status,'unsupported');assert.match(disconnected.providerRevocation.ownerStep,/Deactivate/)
  assert.equal(await h.db.prepare("SELECT id FROM e_connection_secrets WHERE id='intacct'").first(),null)
- assert.deepEqual((await h.get('/api/easel/actuals?entity='+f.ca.id)).months.filter(m=>m.period<='2026-03'),retained.months)
+ assert.deepEqual(await h.get('/api/easel/actuals?entity='+f.ca.id),historyBeforeDisconnect)
  const activity=await h.get('/api/easel/activity');for(const action of ['intacct-connected','intacct-checked','intacct-disconnected','intacct-entity-bound'])assert.ok((await h.get('/api/easel/activity?action='+action)).some(e=>e.action===action))
  assert.ok(!JSON.stringify(activity).includes(intacctGrant.userPassword))
  await allocationJourney(t)

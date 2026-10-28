@@ -47,6 +47,7 @@ export async function intacctConnection(c:Context,env:Bindings,op:string,b:Data)
  }
  requireThat(!prior?.connected,'Disconnect Intacct before replacing credentials',409);requireThat(b.consent===true,'Explicitly approve read-only Intacct Web Services access')
  const key:IntacctCredentials={senderId:text(b.senderId,'Sender ID',200),senderPassword:text(b.senderPassword,'Sender password',1000),companyId:text(b.companyId,'Company ID',200),userId:text(b.userId,'Dedicated read-only Web Services user',200),userPassword:text(b.userPassword,'User password',1000)}
+ requireThat(key.senderPassword.length>=8&&key.userPassword.length>=8,'Use complete Web Services passwords of at least eight characters')
  const entities=await intacctEntities(key);requireThat(entities.length>0,'Intacct returned no authorized legal entities',409)
  const sealed=await sealConnection(env.SESSION_SECRET,JSON.stringify(key),INTACCT_PURPOSE)
  put(c.s,'connection','intacct',{connected:true,company:key.companyId,user:key.userId,sender:key.senderId,suffix:key.userPassword.slice(-4),senderSuffix:key.senderPassword.slice(-4),entities,owner:c.x.actor.email,connectedAt:c.now,schedule:'Manual',operations:INTACCT_READS,lastRefresh:null,lastCheck:c.now,rowCount:0,error:null,rateLimit:null})

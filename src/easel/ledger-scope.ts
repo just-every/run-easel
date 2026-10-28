@@ -14,3 +14,6 @@ export function requireIntacctHistory(s:State,through:string,entity?:string){
  for(let m=history[0].month;m<=through;){requireThat(accepted.has(m),`Intacct history is incomplete for ${m}; accept this entity month before consuming later balances`,409);const d=new Date(m+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);m=d.toISOString().slice(0,7)}
 }
 export function sameLedgerRow(row:Data,entity?:string){return entity?row.entity===entity:!row.entity}
+
+/** Partially applied or reversing journals never enter ordinary accepted reads. */
+export const acceptedLedgerSql="NOT EXISTS(SELECT 1 FROM e_records journal WHERE journal.kind='batch' AND journal.id=substr(e_actuals.destination,9) AND json_extract(journal.value,'$.status')<>'accepted')"
