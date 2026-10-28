@@ -31,16 +31,12 @@ Standing observation consent approved by ct 23 October 20:50 UTC.
 ### RL-3 — Bank balances for current cash
 
 **Date:** 2026-10-28  
-**Ruled by:** ct (as recorded in the prior contract)  
+**Ruled by:** ct, through RL-102  
 **Governs:** CONNECT-009
 
-Conservative default ADOPTED pending ct approval: company-wide finance (owner/admin authority and its existing scoped finance read tokens) alone reads aggregate bank observations, weekly bank basis and bank alerts; credential administration stays native finance-only.
+The bank audience is adopted with RL-102's rider. Bank observations, bank-basis cash and bank alerts use current company-wide finance authority and its explicit scoped reads; other readers retain planned cash only.
 
-Sealed manual Plaid item, current balance and posted movement, explicit weekly bank basis, bank alert thresholds and truthful revocation ship; conservative company-wide finance bank-data audience awaits ct approval
-
-Original decision date was not stated in the source; the date above is the recording date.
-
-
+This retained id records the earlier proposal/dependency, which was pending rather than ruled in the prior contract. RL-102 is the canonical adopted decision; its text below is unchanged. Historical proposal and execution notes remain in CHANGELOG.md.
 
 ### RL-4 — Connection custody and status
 
@@ -95,18 +91,12 @@ Finance alone creates, edits, removes and exports instrument terms and input rec
 ### RL-9 — 13-week cash forecast
 
 **Date:** 2026-10-28  
-**Ruled by:** ct (as recorded in the prior contract)  
+**Ruled by:** ct, through RL-102  
 **Governs:** FIN-007
 
-CONNECT-009 now supplies an explicitly selected finance-only bank basis with source labels, observed-balance boundary and visible monthly differences, proved by `tests/plaid-cash.test.mjs` and `tests/plaid-cash-browser.mjs`; its conservative bank-data audience awaits ct approval.
+The weekly bank basis inherits CONNECT-009's audience under RL-102. This resolves the former policy question without promoting FIN-007 or waiving its remaining proof.
 
-Gap: ct endorsement of the existing CONNECT-009 bank-data audience default remains.
-
-Ct endorsement of the CONNECT-009 bank-data audience default remains.
-
-Original decision date was not stated in the source; the date above is the recording date.
-
-
+This retained id records the earlier proposal/dependency, which was pending rather than ruled in the prior contract. RL-102 is the canonical adopted decision; its text below is unchanged. Historical proposal and execution notes remain in CHANGELOG.md.
 
 ### RL-10 — US compensation assumptions
 
@@ -229,18 +219,12 @@ Current owners are all active contributors assigned to that department (ct, 19 O
 ### RL-21 — Scheduled cash alerts
 
 **Date:** 2026-10-28  
-**Ruled by:** ct (as recorded in the prior contract)  
+**Ruled by:** ct, through RL-102  
 **Governs:** REPORT-006
 
-Bank-balance rules now use CONNECT-009's fresh aggregate and its conservative finance audience pending ct approval.
+Bank alerts inherit CONNECT-009's audience under RL-102. This resolves the former policy question without promoting REPORT-006 or waiving source and egress proof.
 
-Ct approval of that private identity/consent/custody default is pending; shared channels receive no financial detail.
-
-Floor, bank/ledger shortfall, runway, deduplication/re-alert, DST, acknowledgment and private financial Slack proven; ct private identity/consent/custody approval and qualified Base egress for owner-entered shared webhooks remain
-
-Original decision date was not stated in the source; the date above is the recording date.
-
-
+This retained id records the earlier proposal/dependency, which was pending rather than ruled in the prior contract. RL-102 is the canonical adopted decision; its text below is unchanged. Historical proposal and execution notes remain in CHANGELOG.md.
 
 ### RL-22 — BI and warehouse feeds
 
@@ -269,18 +253,12 @@ None; ct batch-8 ruling E approved per-grant composition, native administration 
 ### RL-24 — SSO and SCIM
 
 **Date:** 2026-10-28  
-**Ruled by:** ct (as recorded in the prior contract)  
+**Ruled by:** ct, through RL-101  
 **Governs:** ACCESS-002
 
-Adopted conservative implementation default, pending ct approval: enterprise identity is off without explicit installation configuration.
+The explicit identity association, ordinary SCIM membership, native privilege and revocation/history boundary is adopted with the rider in RL-101. No status changes.
 
-Gap: ct approval of the explicit association, provisioning, custody and deprovisioning default is required before DONE.
-
-All requested fake-provider sign-in/provision/group-add/remove/deprovision/history points pass; ct approval of explicit association/provisioning/custody/deprovisioning defaults remains
-
-Original decision date was not stated in the source; the date above is the recording date.
-
-
+This retained id records the earlier proposal/dependency, which was pending rather than ruled in the prior contract. RL-101 is the canonical adopted decision; its text below is unchanged. Historical proposal and execution notes remain in CHANGELOG.md.
 
 ### RL-25 — Person erasure
 
@@ -329,14 +307,12 @@ Finance alone creates, reads, classifies and signs these comparison records (ct,
 ### RL-29 — Native iOS and Android apps
 
 **Date:** 2026-10-28  
-**Ruled by:** ct (as recorded in the prior contract)  
+**Ruled by:** ct, through RL-103  
 **Governs:** MOBILE-002
 
-Gap: the iOS client is held outside this candidate pending its required 1440-point native proof; the single permitted resumed run stopped before sign-in at a 750-point floating window, and the prepared fullscreen correction needs another authorized native run; ct approval of the adopted mobile policy: explicit audited opt-in, exact native-session binding, current record authority, generic notices without financial data, zero provider offline retention, sealed archive-excluded device custody, and unconditional local erasure on sign-out. the iOS client is held outside this candidate pending its required 1440-point native proof; the single permitted resumed run stopped before sign-in at a 750-point floating window, and the prepared fullscreen correction needs another authorized native run; ct approval of the adopted mobile policy: explicit audited opt-in, exact native-session binding, current record authority, generic notices without financial data, zero provider offline retention, sealed archive-excluded device custody, and unconditional local erasure on sign-out.
+Device opt-in, exact session/record authority, generic notices, archive-excluded custody and local sign-out erasure follow RL-103. The outstanding iOS run remains engineering proof.
 
-Original decision date was not stated in the source; the date above is the recording date.
-
-
+This retained id records the earlier proposal/dependency, which was pending rather than ruled in the prior contract. RL-103 is the canonical adopted decision; its text below is unchanged. Historical proposal and execution notes remain in CHANGELOG.md.
 
 ### RL-30 — Asking owners for uncertain assumptions
 
