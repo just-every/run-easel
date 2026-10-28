@@ -1,3 +1,4 @@
+import { ledgerScope } from '../ledger-scope'
 import { requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
 import { requireCapability, requireFinance, requirePayDetail } from '../access'
@@ -47,12 +48,12 @@ export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null
- const guards=all(c.s,'source-guard').filter(g=>(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
+ const guards=all(c.s,'source-guard').filter(g=>(g.entity??'')===ledgerScope(c.s,forecast) && (g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
  return guards.length ? guards.map(guard=>`Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}`).join('; ') : null
 }
 /** Called after actuals journal completion, in the same fenced save as batch acceptance. */
 export function completeSourceGuards(c:Context,batch:Data) {
- for(const g of all(c.s,'source-guard').filter(g=>g.sha256===batch.sha256 && g.status!=='completed')) {
+ for(const g of all(c.s,'source-guard').filter(g=>g.sha256===batch.sha256 && (g.entity??'')===(batch.netsuiteSource?.entity??'') && g.status!=='completed')) {
   requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
   put(c.s,'source-guard',g.id,{...g,status:'completed',completedAt:c.now,revision:g.revision+1})
   c.activity.push({action:'source-guard-completed',record:g.id})
@@ -117,8 +118,23 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
 }
 
 /** Before creating/applying the GL journal: missing data cannot be accepted around the guard. */
-export function assertSourceGuardAcceptance(c:Context,sha256:string,periods:string[]) {
- const tracked=all(c.s,'source-guard').filter(g=>periods.includes(g.month))
+export function assertSourceGuardAcceptance(c:Context,sha256:string,periods:string[],entity = '') {
+ const tracked=all(c.s,'source-guard').filter(g=>(g.entity??'')===entity&&periods.includes(g.month))
  requireThat(!tracked.length || tracked.some(g=>g.sha256===sha256), 'This period has a tracked source; stage the changed source file before accepting its refresh',409)
- for(const g of all(c.s,'source-guard').filter(g=>g.sha256===sha256 && g.status!=='completed')) requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
+ for(const g of all(c.s,'source-guard').filter(g=>g.sha256===sha256 && (g.entity??'')===entity && g.status!=='completed')) requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
+}
+
+/** Native provider staging reuses source proposals, explicit finance decisions and stale holds. */
+export function stageProviderSource(c:Context,input:Data){
+ authority(c)
+ const prior=find(c.s,'source-guard',input.source)
+ requireThat(!prior||prior.status==='completed'||!unresolved(c,prior).length,'Resolve the existing source review before replacing its observation',409)
+ const issues=sourceChanges(c,input.preview,input.metadata,prior)
+ const impacts=sourceImpacts(c,input.month)
+ impacts.scenarios=impacts.scenarios.filter(sc=>ledgerScope(c.s,sc.id)===input.entity)
+ const guard={...input,id:input.source,issues,decisions:[],impacts,observedAt:c.now,nextExpectedAt:new Date(Date.parse(c.now)+86400000).toISOString(),stagedAt:c.now,stagedBy:c.x.actor.email,revision:(prior?.revision??0)+1,status:issues.length?'review':'ready',history:prior?[...(prior.history??[]),{...prior,history:undefined}]:[]}
+ const fingerprint=digest(JSON.parse(JSON.stringify(guard)))
+ put(c.s,'source-guard',input.source,{...guard,fingerprint})
+ c.activity.push({action:'netsuite-source-staged',record:input.source,scenario:input.scenario,detail:{month:input.month,entity:input.entity,issues:issues.length}})
+ return {...guard,fingerprint,unresolved:unresolved(c,guard)}
 }

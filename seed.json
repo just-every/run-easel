@@ -333,6 +333,10 @@
       ]
     },
     {
+      "id": "netsuite-actuals",
+      "clauses": ["CONNECT-003"]
+    },
+    {
       "id": "pantry-actuals",
       "clauses": [
         "CONNECT-004"

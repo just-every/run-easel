@@ -1,3 +1,5 @@
+import { ledgerScope } from './ledger-scope'
+import { hasFullScope } from './access-grants'
 import { gaugeFreshness } from './gauge-freshness'
 import { managesChains } from './approval-chains'
 import { scopedCalculation, scopedReader } from './group-projections'
@@ -113,7 +115,7 @@ export async function scenarioView(c: Context, id: string) {
  const frozen = sc.status === 'frozen' ? await frozenModel(c, sc) : null
  const m = frozen ?? model(c.s, id)
  const calc = frozen ? frozen.calculation : await workingCalculation(c, id)
- const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))])
+ const actualsHistory = frozen ? (frozen.actualsHistory ?? { status: 'not-captured', cells: [], months: [], blockedMonths: [], missingMonths: [] }) : await historyOverlay(c, [...new Set(calc.months.flatMap(m => [m, addMonths(m, -12)]))],ledgerScope(c.s,sc))
  return { gaugeFreshness: await gaugeFreshness(c, m.inputs.revenue ?? [], { months: calc.months.filter(month => !calc.actualsThrough || month > calc.actualsThrough) }), dimensionStructure: (m as Data).dimensionStructure ?? dimensionStructure(c.s), fiscal: fiscalSummary(m.workspace, scopedCalculation(c.s, c.x, calc, m.lines), m.lines), actualsHistory: filterHistory(c.x, actualsHistory), cashHealth: scopedReader(c.x) ? null : cashHealth(calc.cash, calc.actualsThrough, calc.currency, workspace(c.s).cashAgreement), scenario: { ...m.scenario, ledgerAllocations: undefined, ...(find(c.s, 'scenario-designation', sc.id) ? { official: find(c.s, 'scenario-designation', sc.id)!.official } : {}) } as Data, workspace: m.workspace, lines: m.lines, departments: m.departments, inputs: filterInputs(c.x, m.inputs, m.lines.filter(l => l.payroll).map(l => l.id), c.s), calculation: filterCalculation(c.x, calc, m.lines.filter(l => l.payroll).map(l => l.id), c.s) }
 }
 
@@ -157,9 +159,10 @@ export async function snapshotView(c: Context, id: string) {
  return { ...sn, body }
 }
 
-export async function actualsView(c: Context) {
+export async function actualsView(c: Context, entity = '') {
  requireFinance(c.x)
- return reconciliation(c.db, c.s)
+ if(entity){const e=get(c.s,'entity',entity);scenarioAccess(c.s,c.x,e.forecast??e.scenario);requireThat(hasFullScope(c.s,c.x,{[e.dimension]:e.member}),'Whole-entity actuals require every department and dimension',403)}
+ return {...await reconciliation(c.db, c.s,entity),entity,currency:entity?get(c.s,'entity',entity).currency:workspace(c.s).currency}
 }
 
 export { activityView } from './audit'

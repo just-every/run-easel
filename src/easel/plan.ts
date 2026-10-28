@@ -1,3 +1,4 @@
+import { ledgerScope } from './ledger-scope'
 import { entityDimensions, boundEntity } from './entity-scope'
 import { requireModelerPromotion } from './agents/modeler-settings'
 import { requireDimensionAccess, validateDimensions } from './dimensions'
@@ -112,8 +113,8 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if (kind === 'schedule' && value.history) {
    requireDepartment(x, value.history.sourceDepartment)
    const months = range(workspace(s).planStart, scenario.horizon ?? workspace(s).horizon).filter(m => !scenario.actualsThrough || m > scenario.actualsThrough)
-   await assertHistorySources(c, months.flatMap(m => referenceMonths(value.history, m)))
-   historySchedule(value, await actualCells(c.db, s), months, workspace(s).currency)
+   await assertHistorySources(c, months.flatMap(m => referenceMonths(value.history, m)),ledgerScope(s,scenario))
+   historySchedule(value, await actualCells(c.db, s,undefined,ledgerScope(s,scenario)), months, workspace(s).currency)
   }
   if(kind==='position' && prior?.ats) value.ats=prior.ats
   const id = prior?.id ?? uid()
@@ -154,7 +155,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const scenario = scenarioAccess(s, x, b.scenario)
   requireEditable(s, x, scenario, null)
   const basis = choice(b.basis, ['estimate', 'imported'] as const, 'whether opening cash is an estimate or imported')
-  const imported = basis === 'imported' ? await cashBalance(c.db, s, workspace(s).planStart) : undefined
+  const imported = basis === 'imported' ? await cashBalance(c.db, s, workspace(s).planStart,ledgerScope(s,scenario)) : undefined
   requireThat(!imported || imported.rows > 0, 'No accepted actuals rows are mapped to the cash balance before the first plan month', 409)
   const cash = {
    openingCents: imported ? imported.cents : cents(b.opening, 'Opening cash', { negative: true }),

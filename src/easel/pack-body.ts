@@ -1,3 +1,4 @@
+import { ledgerScope } from './ledger-scope'
 // REPORT-003: the numbers of a board pack for a closed month or quarter, built
 // from the working forecast, the approved budget and the kept forecasts. A
 // draft shows them live and records their fingerprint; publication freezes
@@ -29,9 +30,9 @@ export async function packPeriod(c: Context, forecast: Data, b: Data) {
 }
 
 type Rows = Awaited<ReturnType<typeof variance>>
-async function monthRows(c: Context, months: string[]): Promise<Rows[]> {
+async function monthRows(c: Context, months: string[],forecast?:string): Promise<Rows[]> {
  const parts: Rows[] = []
- for (const m of months) parts.push(await variance(c, m))
+ for (const m of months) parts.push(await variance(c, m,forecast))
  return parts
 }
 
@@ -57,7 +58,7 @@ function periodRows(parts: Rows[], months: string[]): Rows {
 /** Everything a pack states about its numbers; decisions and publication details are added at publication. */
 export async function packNumbers(c: Context, pack: Data) {
  const s = c.s, w = workspace(s), months: string[] = pack.months ?? [pack.month], last = months.at(-1)!
- const parts = await monthRows(c, months), v = periodRows(parts, months)
+ const parts = await monthRows(c, months,pack.forecast), v = periodRows(parts, months)
  for (const mv of parts) {
   for (const row of mv.rows) {
    if (row.payroll || row.explanation?.status !== 'confirmed') continue
@@ -74,7 +75,7 @@ export async function packNumbers(c: Context, pack: Data) {
  const total = (calc: Data, id: string, ms: string[]) => sum(ms.map(m => calc.lineTotals[id]?.[m] ?? 0))
  const lineRows = reportLines.map(l => ({ line: l.name, type: l.type, actual: total(forecastCalc, l.id, months), budget: total(budget.body.calculation, l.id, months), ytdActual: total(forecastCalc, l.id, ytd), ytdBudget: total(budget.body.calculation, l.id, ytd) }))
  const profitOf = (calc: Data) => { const rows = calc.profit.filter((p: Data) => months.includes(p.month)); return rows.length === 1 ? rows[0] : { month: last, ...Object.fromEntries(['revenue', 'costOfSales', 'operatingExpenses', 'grossMargin', 'profit'].map(k => [k, sum(rows.map((r: Data) => r[k]))])) } }
- const batches = all(s, 'batch').filter(x => x.status === 'accepted' && x.periods.some((p: string) => months.includes(p))).map(x => ({ file: x.file, sha256: x.sha256, rows: x.accepted, acceptedBy: x.acceptedBy, acceptedAt: x.acceptedAt }))
+ const batches = all(s, 'batch').filter(x => x.status === 'accepted' && (x.netsuiteSource?.entity??'')===ledgerScope(s,pack.forecast) && x.periods.some((p: string) => months.includes(p))).map(x => ({ file: x.file, sha256: x.sha256, rows: x.accepted, acceptedBy: x.acceptedBy, acceptedAt: x.acceptedAt }))
  const cashRow = (m: string) => forecastCalc.cash.find(x => x.month === m)
  const budgetCash = (m: string) => budget.body.calculation.cash.find((b: Data) => b.month === m)?.closing ?? null
  const headcount = (calc: Data, m: string) => sum(Object.values(calc.headcount as Record<string, Record<string, number>>).map(byMonth => byMonth[m] ?? 0))
@@ -82,7 +83,7 @@ export async function packNumbers(c: Context, pack: Data) {
  const chartMonths = ytd
  const numbers = {
   presentation: { locale: w.locale, timeZone: w.timeZone, dateFormat: w.dateFormat },
-  versionComparison: { currency: w.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
+  versionComparison: { currency: forecastCalc.currency, versions: v.versions, rows: v.rows.map(r => ({ key: r.key, lineName: r.lineName, departmentName: r.departmentName, actual: r.actual, comparisons: r.comparisons })) },
   budget: v.budget, forecast: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, priorForecast: v.priorForecast,
   lines: lineRows, profit: { month: profitOf(forecastCalc), budget: profitOf(budget.body.calculation) },
   kpis: [

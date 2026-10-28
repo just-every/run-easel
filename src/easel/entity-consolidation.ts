@@ -27,7 +27,7 @@ export async function consolidationView(c: Context, groupId: string) {
  const rules = all(c.s, 'entity-elimination').filter(r => r.group === groupId)
  const accessible = visible.length === allEntities.length && allEntities.length > 0
  const eliminations: Data[] = []
- const consolidated = months.map(month => {
+ const consolidated = await Promise.all(months.map(async month => {
   const selected = loaded.map(e => ({ ...e, translatedMonth: e.translated.months.find(m => m.month === month) }))
   const unavailable: string[] = accessible ? [] : ['Full consolidation requires access to every entity']
   for (const entity of selected) {
@@ -41,7 +41,7 @@ export async function consolidationView(c: Context, groupId: string) {
    const from = loaded.find(e => e.entity.id === rule.fromEntity), to = loaded.find(e => e.entity.id === rule.toEntity)
    if (!from || !to) continue
    try {
-    const values = validateElimination(c, rule, from.entity, to.entity, from.calculation, to.calculation, rules)
+    const values = await validateElimination(c, rule, from.entity, to.entity, from.calculation, to.calculation, rules)
     const effect = { ...rule, reportingCurrency: group.reporting, ...values }
     applied.push(effect)
     eliminations.push(c.x.role === 'finance' ? effect : { id: rule.id, name: rule.name, month, charge: values.charge, receivable: values.receivable, payable: values.payable, cashReceived: values.cashReceived, cashPaid: values.cashPaid })
@@ -67,6 +67,6 @@ export async function consolidationView(c: Context, groupId: string) {
   const balanceDifference = balanceSheet.assets - balanceSheet.liabilities - balanceSheet.equity - balanceSheet.translationAdjustment
   const cashDifference = cash.opening + cash.collections - cash.payments + cash.translationEffect - cash.closing
   return { month, before, profit, balanceSheet: { ...balanceSheet, balanceDifference }, cash: { ...cash, difference: cashDifference }, eliminations: applied.map(r => r.id), unavailable: [] }
- })
+ }))
  return { group, currency: group.reporting, months, entities: loaded.map(e => ({ ...e.entity, local: entityLocal(e.calculation), translated: e.translated })), eliminations, consolidated, scope: accessible ? 'complete' : 'restricted', cashBasis: 'Local cash-flow statements remain in each local currency. The consolidated cash bridge translates opening cash at the prior month-end rate, receipts and payments at the average rate, and closing cash at the month-end rate; the cash translation effect is shown separately.' }
 }

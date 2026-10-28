@@ -712,3 +712,64 @@ The native history form defaults to 24 closed months and allows 12 to 36. Each m
 QuickBooks reports use accrual accounting and their declared currency. Source fiscal-year transfers into retained earnings appear separately in trial reconciliation; they do not become posted revenue. Zero-value observations without a posting account are visible exclusions requiring confirmation. Unknown transaction destinations block acceptance. Current-month reports stop at the observed date. The accounting OAuth grant includes provider write permissions; Easel issues only the allowlisted accounting reads, plus OAuth renewal and explicit revocation.
 
 Stripe run rates use recurring invoice periods and actual subscription end dates. Customer-level movements and cohorts aggregate subscriptions; retention measures the opening active customer base. Invoice service-period allocation, deferred balance, refunds and tax remain separate from ledger revenue. Finance explains any residual difference before acceptance. One driver receives the account's complete monthly totals in each scenario; later customer or seat projections start from those accepted observations. Dashboards and aggregate formula Excel use the same imported ARR and current audience checks. Frozen plans retain their captured observations.
+
+
+### NetSuite actuals (manual, read-only TBA)
+
+Native company-wide finance with Connections authority connects a token for a declared
+read-only NetSuite role in Settings → NetSuite connection. Create the integration and
+access token in NetSuite, restricting the role to the intended subsidiaries, accounting
+book and read-only SuiteAnalytics/REST access. Easel reports that declared role and its
+requested operations; a successful read does not certify the provider role's completeness.
+Credentials are sealed under a provider-specific purpose and excluded from both portable
+archive formats. After restore, reconnect with a new grant; bindings and accepted evidence remain.
+
+- `GET /api/easel/connections/netsuite`: masked status, owner, declared role, permitted
+  operations, Manual schedule, check/pull times, counts, sanitized error/rate limit,
+  metadata, immutable subsidiary bindings, source-period mappings and accepted months.
+- `POST /api/easel/connections/netsuite/connect`: `realm`, `consumerKey`,
+  `consumerSecret`, `tokenId`, `tokenSecret`, `role`, `consent: true`.
+  Account IDs derive fixed account-specific hosts. No arbitrary origin or redirect is accepted.
+- `POST /api/easel/connections/netsuite/check`: check the source without importing.
+- `POST /api/easel/connections/netsuite/map-subsidiary`: `book`, `subsidiary`, `entity`.
+  One subsidiary/book binds to one stable entity source-plan root in its own currency.
+  Accepted sources cannot be moved to another entity, duplicated across books or inferred as FX.
+- `POST /api/easel/connections/netsuite/map-period`: `book`, `period`, `month`.
+  Explicitly map every preceding leaf source period and every adjustment period.
+  Parent year/quarter periods are excluded; the original transaction date stays in evidence.
+- `POST /api/easel/import/netsuite/preview`: `binding`, `month`, `includeOpening`.
+  Preview is write-free. It reads fixed SuiteQL SELECTs with signed TBA requests and
+  reconciles separate cumulative source aggregates account by account with the posted movement.
+  Reads refuse incomplete pagination, changing metadata/balances, unsafe cents, unknown
+  accounts/dimensions, unsupported transaction destinations and byte/row/time overflows.
+- `POST /api/easel/import/netsuite/stage`: the same selection plus the reviewed
+  `sourceFingerprint`. Stages metadata/mapping findings, reasoned proposals and dependent
+  conclusion holds through source-guard. Resolve findings with `source-guard-review`.
+- `POST /api/easel/import/netsuite/commit`: same selection, `sourceFingerprint` and
+  preview `fingerprint`. Re-read and review the exact source/mapping before journal acceptance.
+  Use `import/actuals/resume|status|undo` with the resulting batch ID. Continuations and
+  undo require current native company-wide finance; undo refuses closed entity periods.
+  Empty/unchanged acceptance records coverage without inventing rows. Changed attribution
+  reverses the old classification and adds the new one; removals reverse accepted amounts.
+- `POST /api/easel/connections/netsuite/disconnect`: signed self-revocation at the
+  account's RESTlet `/rest/revoketoken` endpoint, without redirects or retries. Local secrets
+  are deleted on confirmed, refused, unreachable and unreadable outcomes. An unconfirmed
+  result names the owner action: NetSuite Setup → Users/Roles → User Management →
+  Access Tokens → Edit Easel’s token → Revoke. No provider URL, token parameters,
+  response body or authorization header is retained in audit or errors.
+
+History review defaults to 24 closed months (12–36 selectable), with a separate reviewed
+batch for every subsidiary/month and the preceding opening exactly once per binding.
+`budget-from-actuals` accepts an explicit `entity`; approval designates the descendant
+forecast while preserving the source-plan root. `GET actuals?entity=ID` and its Excel
+export select an authorized entity and its currency. Legacy doors retain the legacy
+installation ledger. Variance and variance Excel accept `?forecast=ID`; explanations
+and packs accept `forecast`, retaining separate entity evidence and immutable captures.
+Entity ledger elimination reviews use `evidence: "ledger"`, `revenueLine`, `expenseLine`
+and explicit `ledgerEvidence` posting IDs for `fromAmount`, `toAmount`, `receivable`,
+`payable`, `cashReceived` and `cashPaid`. GET `entities` supplies authorized net posting
+choices. Corrected or remapped source evidence invalidates the review; overlap is refused.
+
+Qualification evidence in `tests/netsuite-suiteql-recording.json` is synthetic recorded-fake
+wire data. It is not a live sandbox recording. One recorded NetSuite sandbox-account run
+remains required before the connector ships; CONNECT-003's status and acceptance are unchanged.

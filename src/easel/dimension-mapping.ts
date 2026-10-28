@@ -3,7 +3,7 @@ import type { Context } from './context'
 import { validateDimensions, type DimensionTags } from './dimensions'
 import { all, get, put, remove, requireThat, text, uid, type Data, type State } from './types'
 
-export const SOURCE_DIMENSIONS = ['department', 'class', 'tracking-option'] as const
+export const SOURCE_DIMENSIONS = ['department', 'class', 'tracking-option', 'location'] as const
 /** Rules resolve live, exactly like account mappings. Conflicting rules never pick a winner. */
 export function resolveDimensions(s: State, source: Record<string, string> = {}) {
  const dimensions: DimensionTags = {}, unresolved: Data[] = []
@@ -31,7 +31,7 @@ export function dimensionMapping(c: Context, op: string, b: Data): Data | undefi
  }
  const dimension = get(c.s, 'dimension', b.dimension).id
  const member = validateDimensions(c.s, { [dimension]: b.member })[dimension]
- requireThat(SOURCE_DIMENSIONS.includes(b.sourceKind), 'Choose source department, class or tracking-option')
+ requireThat(SOURCE_DIMENSIONS.includes(b.sourceKind), 'Choose source department, class, location or tracking-option')
  requireThat(!b.match || ['exact', 'prefix'].includes(b.match), 'Choose exact or prefix matching')
  const id = b.id ? get(c.s, 'dimension-map', b.id).id : uid()
  put(c.s, 'dimension-map', id, { dimension, member, sourceKind: b.sourceKind, source: text(b.source, 'Source value', 200), match: b.match ?? 'exact' })

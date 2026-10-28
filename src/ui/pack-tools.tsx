@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { Action, api, command, Field, Form, monthLabel, useDate, type D } from './shared'
 
 /** Finance chooses a template and starts a month or whole-quarter pack. */
-export function PackStart({ closedMonths, month, refresh }: { closedMonths: string[]; month: string; refresh: () => Promise<unknown> }) {
+export function PackStart({ closedMonths, month, refresh,forecast }: { closedMonths: string[]; month: string; forecast?:string; refresh: () => Promise<unknown> }) {
  const [templates, setTemplates] = useState<D[]>([]), [sections, setSections] = useState<D>({})
  const load = () => api('pack-templates').then(r => { setTemplates(r.templates); setSections(r.sections) })
  useEffect(() => { load() }, [])
  return <details className="pack-tools">
   <summary>Quarter packs and templates</summary>
-  <Form key={`start-${templates.length}`} submit="Start the quarter pack" onSubmit={async v => { await command('pack-create', { period: 'quarter', month: v.month, template: v.template }); await refresh() }}>
+  <Form key={`start-${templates.length}`} submit="Start the quarter pack" onSubmit={async v => { await command('pack-create', { forecast, period: 'quarter', month: v.month, template: v.template }); await refresh() }}>
    <Field label="Month in the quarter" name="month" defaultValue={month} options={closedMonths.map(m => ({ value: m, label: monthLabel(m) }))} />
    <Field label="Template" name="template" defaultValue="default" options={templates.map(t => ({ value: t.id, label: t.name }))} />
   </Form>

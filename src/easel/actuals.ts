@@ -1,3 +1,6 @@
+import { netsuiteAuthority } from './netsuite-connection'
+import { finishNetSuiteMonth } from './netsuite-month'
+import { ledgerScope } from './ledger-scope'
 import { assertSourceGuardAcceptance, completeSourceGuards } from './agents/source-guard'
 import { finishXeroMonth } from './xero-month'
 import { xeroAuthority } from './xero-connection'
@@ -23,7 +26,7 @@ import { cents } from './units'
 import { all, choice, find, get, put, requireThat, type Data, type State } from './types'
 
 export function closedImportPeriods(s: State, batch: Data): string[] {
- const closedThrough = all(s, 'scenario').filter(sc => sc.kind === 'forecast' && sc.status === 'working' && sc.actualsThrough).map(sc => sc.actualsThrough as string)
+ const closedThrough = all(s, 'scenario').filter(sc => sc.kind === 'forecast' && sc.status === 'working' && sc.actualsThrough && ledgerScope(s,sc)===(batch.netsuiteSource?.entity??'')).map(sc => sc.actualsThrough as string)
  return batch.periods.filter((period: string) => closedThrough.some(through => period <= through))
 }
 
@@ -89,7 +92,7 @@ export async function readActuals(b: Data, calendar?: CalendarWorkspace, provena
    } else amount = money(at(cells, cols.amount), 'Amount') * (amountMode === 'credit-positive' ? -1 : 1)
    const sourceDimensions = { ...(cols.department ? { department: at(cells, cols.department) } : {}), ...(cols.class ? { class: at(cells, cols.class) } : {}), ...(cols.trackingOption ? { 'tracking-option': at(cells, cols.trackingOption) } : {}) }
    const extra = provenance?.[line] ?? {}
-   const row = { ...extra, sourceDimensions: extra.sourceDimensions ?? sourceDimensions, date: when.date, period: calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period, account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
+   const row = { ...extra, sourceDimensions: extra.sourceDimensions ?? sourceDimensions, date: when.date, period: extra.netsuitePeriodOverride ?? (calendar && when.date.length === 10 ? datePeriod(calendar, when.date) : when.period), account, accountName: at(cells, cols.accountName), accountType: at(cells, cols.accountType), department: departmentKey(at(cells, cols.department)), amount, description: at(cells, cols.description).slice(0, 500), reference: at(cells, cols.reference).slice(0, 200) }
    const fingerprint = kitSha(canonicalJson([row.date, row.account, row.department, row.amount, row.description, row.reference, ...(Object.keys(sourceDimensions).some(k => k !== 'department') ? [sourceDimensions] : []), ...(provenance ? [extra] : [])]))
    const earlier = seen.get(fingerprint) ?? []
    if (earlier.length && !allowRepeats) { rejected.push({ line, reason: `repeats line ${earlier[0]} exactly` }); continue }
@@ -153,7 +156,7 @@ export async function previewActuals(c: Context, b: Data, provenance?: Record<nu
  const departmentRows: Summary[] = [...departments.values()].sort((a, b) => a.source.localeCompare(b.source)).map(d => ({ ...d, department: find(s, 'department-map', d.source)?.department ?? null }))
  const unmappedAccounts = accountRows.filter(a => a.target === null).map(a => a.account)
  const unmappedDepartments = departmentRows.filter(d => d.department === null).map(d => d.source)
- const destination = `actuals:${read.sha.slice(0, 20)}`
+ const destination = `actuals:${(provenance?kitSha(canonicalJson([read.sha,provenance])):read.sha).slice(0, 20)}`
  const dimensionExceptions = accepted.flatMap(r => resolveDimensions(s, r.sourceDimensions).unresolved.map(issue => ({ ...issue, line: r.line, period: r.period })))
  const reviewed = { dimensionRules: all(s, 'dimension-map'), dimensionMembers: all(s, 'dimension-member'), config: read.config, workspace: workspace(s),
   accounts: accountRows.map(a => ({ account: a.account, resolutions: a.accountTypes.map((t: string) => resolveAccount(s, a.account, t)), line: find(s, 'line', a.target) ?? null })),
@@ -191,7 +194,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
  if (op === 'preview') return { result: publicPreview(await previewActuals(c, b, provenance)) }
  if (op === 'commit') {
   const p = await previewActuals(c, b, provenance)
-  assertSourceGuardAcceptance(c, p.sha256, p.periods.map((r:Data)=>r.period))
+  assertSourceGuardAcceptance(c, p.sha256, p.periods.map((r:Data)=>r.period),Object.values(provenance??{})[0]?.entity??'')
   requireThat(p.accepted > 0, 'Nothing in this file can be accepted', 409)
   requireThat(!p.unmappedAccounts.length, `Map these accounts first: ${p.unmappedAccounts.join(', ')}`, 409)
   requireThat(!p.unmappedDepartments.length, `Map these departments first: ${p.unmappedDepartments.join(', ')}`, 409)
@@ -219,6 +222,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
  if (op === 'resume' || op === 'undo' || op === 'status') {
   requireFinance(c.x)
   const batch = get(c.s, 'batch', b.id, 'import')
+  if(batch.netsuiteSource)netsuiteAuthority(c)
   if(batch.xeroSource)xeroAuthority(c)
   if(batch.qboSource)qboAuthority(c)
   const job = await jobFor(c.db, batch.destination)
@@ -238,7 +242,7 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
    const done = undone.state === 'undone'
    const current = get(c2.s, 'batch', batch.id)
    put(c2.s, 'batch', batch.id, { ...current, status: done ? 'undone' : 'undoing', undoneBy: c2.x.actor.email, undoneAt: c2.now })
-   if (done) { finishQboMonth(c2, current, true); finishXeroMonth(c2, current, true) }
+   if (done) { finishQboMonth(c2, current, true); finishXeroMonth(c2, current, true); finishNetSuiteMonth(c2, current, true) }
    c2.activity.push({ action: done ? 'actuals-undone' : 'actuals-undo-partial', record: batch.id, detail: { file: batch.file, state: undone.state } })
    return { batch: get(c2.s, 'batch', batch.id), job: undone, undo: report }
   } }
@@ -248,10 +252,11 @@ export async function actualsCommand(c: Context, op: string, b: Data, provenance
 
 function finishBatch(c: Context, id: string, job: Data) {
  const batch = get(c.s, 'batch', id)
+ if(batch.netsuiteSource)netsuiteAuthority(c)
  const done = job.state === 'completed'
  put(c.s, 'batch', id, { ...batch, status: done ? 'accepted' : 'importing', jobState: job.state, ...(done ? { acceptedBy: c.x.actor.email, acceptedAt: c.now } : {}) })
  if (done) completeSourceGuards(c, batch)
- if (done) { finishQboMonth(c, batch); finishXeroMonth(c, batch) }
+ if (done) { finishQboMonth(c, batch); finishXeroMonth(c, batch); finishNetSuiteMonth(c, batch) }
  if (done) c.activity.push({ action: 'actuals-accepted', record: id, detail: { file: batch.file, rows: batch.accepted } })
  return { batch: get(c.s, 'batch', id), job: { id: job.id, state: job.state, checkpoint: job.checkpoint, total: job.total } }
 }

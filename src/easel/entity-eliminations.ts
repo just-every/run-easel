@@ -1,3 +1,4 @@
+import { entityLedgerEvidence,validateLedgerElimination } from './entity-ledger-evidence'
 import type { Context } from './context'
 import type { RateKind } from './currency-rates'
 import { entityCalculation } from './entity-calculation'
@@ -17,7 +18,7 @@ export function entityMove(c: Context, entity: Data, reporting: string, amount: 
 const sourceAmount = (calc: Calculation, origin: string, period: string, line: string) => calc.cells.filter(c => c.month === period && c.line === line).flatMap(c => c.sources).filter(s => s.id === origin).reduce((sum, s) => sum + s.amount, 0)
 const sourceCash = (calc: Calculation, origin: string, period: string, received: boolean) => (calc.cashDrivers ?? []).filter(d => d.source === origin && d.month === period && (received ? d.amount > 0 : d.amount < 0)).reduce((sum, d) => sum + (received ? d.amount : -d.amount), 0)
 
-export function validateElimination(c: Context, rule: Data, from: Data, to: Data, left: Calculation, right: Calculation, peers: Data[]) {
+export async function validateElimination(c: Context, rule: Data, from: Data, to: Data, left: Calculation, right: Calculation, peers: Data[]) {
  const group = get(c.s, 'entity-group', rule.group)
  const expense = find(c.s, 'line', rule.expenseLine)
  requireThat(find(c.s, 'line', rule.revenueLine)?.type === 'revenue' && expense?.type === rule.expenseType && !expense?.payroll && !expense?.nonCash, 'The source line changed; review this elimination again', 409)
@@ -33,6 +34,8 @@ export function validateElimination(c: Context, rule: Data, from: Data, to: Data
  requireThat(receivable === payable, 'The intercompany receivable and payable must match in the reporting currency', 409)
  requireThat(cashReceived === cashPaid, 'Intercompany cash received and paid must match in the reporting currency', 409)
  const rules = [...peers.filter(r => r.id !== rule.id && r.month === rule.month), rule]
+ if(rule.ledgerEvidence)await validateLedgerElimination(c,rule,from,to,peers)
+ else {
  const used = (entity: Data, origin: string, field: string, sender: boolean) => rules.filter(r => (sender ? r.fromEntity : r.toEntity) === entity.id && (sender ? r.fromOrigin : r.toOrigin) === origin).reduce((sum, r) => sum + r[field], 0)
  requireThat(used(from, rule.fromOrigin, 'fromAmount', true) <= sourceAmount(left, rule.fromOrigin, rule.month, rule.revenueLine), 'Eliminated revenue exceeds the selected source charge', 409)
  requireThat(used(to, rule.toOrigin, 'toAmount', false) <= sourceAmount(right, rule.toOrigin, rule.month, rule.expenseLine), 'Eliminated expense exceeds the selected source charge', 409)
@@ -41,6 +44,8 @@ export function validateElimination(c: Context, rule: Data, from: Data, to: Data
  const outstanding = (calc: Calculation, origin: string, received: boolean, line: string) => calc.months.filter(m => m <= rule.month).reduce((sum, m) => sum + sourceAmount(calc, origin, m, line) - sourceCash(calc, origin, m, received), 0)
  requireThat(used(from, rule.fromOrigin, 'receivable', true) <= outstanding(left, rule.fromOrigin, true, rule.revenueLine), 'Eliminated receivable exceeds the selected source outstanding balance', 409)
  requireThat(used(to, rule.toOrigin, 'payable', false) <= outstanding(right, rule.toOrigin, false, rule.expenseLine), 'Eliminated payable exceeds the selected source outstanding balance', 409)
+
+ }
  const leftBalance = left.balanceSheet?.find(b => b.month === rule.month), rightBalance = right.balanceSheet?.find(b => b.month === rule.month)
  requireThat(leftBalance && rightBalance, 'Both entity balance sheets must be available', 409)
  requireThat(!leftBalance.incompleteReasons?.length && !rightBalance.incompleteReasons?.length && !leftBalance.balanceDifference && !rightBalance.balanceDifference, 'Review entity statement differences before eliminating balances', 409)
@@ -61,15 +66,18 @@ export async function entityEliminations(c: Context, op: string, b: Data) {
  requireThat(b.reviewed === true, 'Review both source charges, balances and settlements before saving this rule')
  const from = get(c.s, 'entity', b.fromEntity), to = get(c.s, 'entity', b.toEntity)
  const [{ model: leftModel, calculation: left }, { model: rightModel, calculation: right }] = await Promise.all([entityCalculation(c, from), entityCalculation(c, to)])
+ const ledger=b.evidence==='ledger'
+ requireThat(!ledger||left.actualsThrough&&left.actualsThrough>=b.month&&right.actualsThrough&&right.actualsThrough>=b.month,'Ledger eliminations require both entity months closed',409)
  const fromInput = Object.values(leftModel.inputs).flat().find(i => i.originId === b.fromOrigin)
  const toInput = Object.values(rightModel.inputs).flat().find(i => i.originId === b.toOrigin)
- requireThat(fromInput?.line && toInput?.line, 'Choose the two source input origins')
- const revenueLine = leftModel.lines.find(l => l.id === fromInput.line), expenseLine = rightModel.lines.find(l => l.id === toInput.line)
+ requireThat(ledger||fromInput?.line && toInput?.line, 'Choose the two source input origins')
+ const revenueLine = leftModel.lines.find(l => l.id === (ledger?b.revenueLine:fromInput!.line)), expenseLine = rightModel.lines.find(l => l.id === (ledger?b.expenseLine:toInput!.line))
  requireThat(revenueLine?.type === 'revenue' && expenseLine && ['cost-of-sales', 'operating-expense'].includes(expenseLine.type) && !expenseLine.payroll && !expenseLine.nonCash, 'Eliminations need a revenue source and a cash, non-payroll expense source')
- const rule = { id: prior?.id ?? uid(), name: text(b.name, 'Elimination name'), group: text(b.group ?? from.group, 'Consolidation scenario'), month: month(b.month), fromEntity: from.id, toEntity: to.id, fromOrigin: fromInput.originId, toOrigin: toInput.originId, revenueLine: revenueLine.id, expenseLine: expenseLine.id, expenseType: expenseLine.type,
+ const rule = { id: prior?.id ?? uid(), name: text(b.name, 'Elimination name'), group: text(b.group ?? from.group, 'Consolidation scenario'), month: month(b.month), fromEntity: from.id, toEntity: to.id, fromOrigin: ledger?'ledger':fromInput!.originId, toOrigin: ledger?'ledger':toInput!.originId, revenueLine: revenueLine.id, expenseLine: expenseLine.id, expenseType: expenseLine.type,
   fromAmount: cents(b.fromAmount, 'Local revenue to eliminate'), toAmount: cents(b.toAmount, 'Local expense to eliminate'), receivable: cents(b.receivable, 'Local intercompany receivable'), payable: cents(b.payable, 'Local intercompany payable'), cashReceived: cents(b.cashReceived, 'Local intercompany cash received'), cashPaid: cents(b.cashPaid, 'Local intercompany cash paid'), by: c.x.actor.email, at: c.now }
  requireThat([rule.fromAmount, rule.toAmount, rule.receivable, rule.payable, rule.cashReceived, rule.cashPaid].some(amount => amount > 0), 'Enter a charge, outstanding balance or cash settlement to eliminate')
- validateElimination(c, rule, from, to, left, right, all(c.s, 'entity-elimination'))
+ if(ledger){const [l,r]=await Promise.all([entityLedgerEvidence(c,from,rule.month),entityLedgerEvidence(c,to,rule.month)]);Object.assign(rule,{ledgerEvidence:{fromFingerprint:l.fingerprint,toFingerprint:r.fingerprint,...Object.fromEntries(['fromAmount','toAmount','receivable','payable','cashReceived','cashPaid'].map(field=>[field,b.ledgerEvidence?.[field]??[]]))}})}
+ await validateElimination(c, rule, from, to, left, right, all(c.s, 'entity-elimination'))
  put(c.s, 'entity-elimination', rule.id, rule)
  c.activity.push({ action: op, record: rule.id, scenario: rule.group, detail: { before: prior ?? null, after: rule } })
  return rule

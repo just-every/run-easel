@@ -1,3 +1,4 @@
+import { ledgerScope,ledgerPredicate } from './ledger-scope'
 import { beginDepartmentReview, mayReturn, returnedReview, requireCompletedChains } from './approval-chains'
 import { boundEntity } from './entity-scope'
 import { ledgerContext, requireBalancedClose } from './ledger-context'
@@ -91,6 +92,7 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
   const forecastId = uid()
   put(s, 'scenario', forecastId, { name: `${fiscalYearLabel(w.planStart)}${budget.alternativeBudget ? ` ${budget.name}` : ''} forecast`, kind: 'forecast', ...(budget.alternativeBudget ? { alternativeBudget: true } : {}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now, horizon: m.workspace.horizon, ...(budget.currency ? { currency: budget.currency } : {}), parent: budget.id, branchedFrom: { scenario: budget.id, revision: budget.revision, name: budget.name }, budgetSnapshot: snapshotId, actualsThrough: null, cash: budget.cash })
   copyInputs(s, budget.id, forecastId)
+  const entity=boundEntity(s,budget);if(entity){put(s,'scenario',forecastId,{...get(s,'scenario',forecastId),entity:entity.id,currency:entity.currency});put(s,'entity',entity.id,{...entity,forecast:forecastId})}
   c.activity.push({ action: 'forecast-opened', record: forecastId, scenario: forecastId, after: 1, detail: { from: budget.id } })
   return { budget: get(s, 'scenario', budget.id), forecast: get(s, 'scenario', forecastId), snapshot: snapshotId }
  }
@@ -110,17 +112,17 @@ export async function cycle(c: Context, op: string, b: Data): Promise<Data | und
  if (op === 'close-month') {
   requireCapability(x, 'approvals', s)
   const forecast = scenarioAccess(s, x, b.scenario)
-  requireThat(!boundEntity(s, forecast), 'Entity actuals require an entity-scoped ledger connection', 409)
+  const scope=ledgerScope(s,forecast)
   requireThat(forecast.kind === 'forecast' && forecast.status === 'working', 'Months close on the working forecast', 409)
   const w = workspace(s)
   const next = forecast.actualsThrough ? addMonths(forecast.actualsThrough, 1) : w.planStart
   requireThat(b.month === next, `The next month to close is ${monthLabel(next)}`, 409)
   requireThat(next <= addMonths(w.planStart, (forecast.horizon ?? w.horizon) - 1), 'Every plan month is already closed', 409)
-  const covered = await c.db.prepare('SELECT COUNT(*) AS n FROM e_actuals WHERE period=?').bind(next).first<{ n: number }>()
-  requireThat(Number(covered?.n) > 0, `No accepted actuals cover ${monthLabel(next)} yet`, 409)
-  const pending = all(s, 'batch').filter(x => x.status === 'importing' || x.status === 'undoing')
+  const covered = await c.db.prepare(`SELECT COUNT(*) AS n FROM e_actuals WHERE period=? AND ${ledgerPredicate}`).bind(next,scope).first<{ n: number }>()
+  requireThat(Number(covered?.n) > 0 || all(s,'netsuite-month').some(m=>m.entity===scope&&m.month===next&&m.status==='accepted'), `No accepted actuals cover ${monthLabel(next)} yet`, 409)
+  const pending = all(s, 'batch').filter(x => (x.status === 'importing' || x.status === 'undoing') && (x.netsuiteSource?.entity??'')===scope)
   requireThat(!pending.length, 'Finish or undo the import in progress first', 409)
-  const ledger = await ledgerContext(c, next, [], forecast.balanceLedger === true)
+  const ledger = await ledgerContext(c, next, [], forecast.balanceLedger === true, scope)
   requireBalancedClose(ledger, next)
   const priorCalc = await workingCalculation(c, forecast.id, next)
   const snapshotId = uid()

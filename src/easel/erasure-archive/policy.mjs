@@ -81,6 +81,21 @@ export async function validateEaselStaged(staged) {
    }
   }
   if (key.startsWith('pack:') && r.status === 'published') reference(r.snapshot, 'pack', r.forecast);
+  if(key.startsWith('entity:')){
+   requireValid(records.has(`scenario:${r.scenario}`)&&records.has(`entity-group:${r.group}`)&&records.has(`dimension-member:${r.member}`)&&/^[A-Z]{3}$/.test(r.currency),'entity_source');
+   if(r.forecast)requireValid(records.get(`scenario:${r.forecast}`)?.entity===r.id&&records.get(`scenario:${r.forecast}`)?.kind==='forecast','entity_forecast');
+  }
+  if(key.startsWith('netsuite-subsidiary:')){
+   const entity=records.get(`entity:${r.entity}`);
+   requireValid(entity&&entity.scenario===r.scenario&&entity.currency===r.currency&&text(r.account)&&/^\d+$/.test(r.book)&&/^\d+$/.test(r.subsidiary),'netsuite_binding');
+  }
+  if(key.startsWith('netsuite-month:'))requireValid(records.get(`netsuite-subsidiary:${r.binding}`)?.entity===r.entity&&['accepted','undone'].includes(r.status)&&r.trialBalance?.balanced===true,'netsuite_month');
+
+ }
+ const actuals=await staged.read('e_actuals');
+ for(const row of actuals){const value=parse(row.value);if(!value.netsuiteAccount)continue;
+  const binding=records.get(`netsuite-subsidiary:${value.netsuiteAccount}:${value.netsuiteBook}:${value.netsuiteSubsidiary}`);
+  requireValid(binding&&binding.entity===value.entity&&binding.currency===value.currency&&text(value.netsuiteLine)&&text(value.netsuiteAttribution)&&value.period===value.netsuitePeriodOverride,'netsuite_actual');
  }
 }
 
