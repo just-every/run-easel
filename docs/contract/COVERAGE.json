@@ -761,6 +761,14 @@
       "to": "base",
       "ids": [
         "BASE-INSTALL-001"
+      ],
+      "also": [
+        {
+          "to": "clause",
+          "ids": [
+            "EASEL-017"
+          ]
+        }
       ]
     },
     {
@@ -12551,6 +12559,14 @@
       "to": "base",
       "ids": [
         "BASE-AUDIT-001"
+      ],
+      "also": [
+        {
+          "to": "clause",
+          "ids": [
+            "AUDIT-001"
+          ]
+        }
       ]
     },
     {
@@ -12560,6 +12576,14 @@
       "to": "base",
       "ids": [
         "BASE-AUDIT-001"
+      ],
+      "also": [
+        {
+          "to": "clause",
+          "ids": [
+            "AUDIT-001"
+          ]
+        }
       ]
     },
     {
@@ -12611,6 +12635,14 @@
       "to": "base",
       "ids": [
         "BASE-DATA-003"
+      ],
+      "also": [
+        {
+          "to": "clause",
+          "ids": [
+            "ERASE-001"
+          ]
+        }
       ]
     },
     {
