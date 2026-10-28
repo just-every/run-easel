@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "b68cc38abb5aef8dee4aecee27c3f14f2e72ec017bdcfa4026f7845bc035682a",
+      "sha256": "cbf9a6388effbb08b229d539e0c9396738c0e61418664ddbb3047a5e48859cc4",
       "executable": false
     },
     "base-copies.json": {
@@ -2043,7 +2043,7 @@
       "executable": false
     },
     "src/easel/pipeline.ts": {
-      "sha256": "dae335004d8d7e02fc99f06d13230e332da421012d62cf10b43d705d62edd517",
+      "sha256": "ba1bcd4baabf240cff411c292757026530ebc4d91a8fddc604f24d96630bc1fe",
       "executable": false
     },
     "src/easel/plaid-connection.ts": {
@@ -4487,7 +4487,7 @@
       "executable": false
     },
     "src/ui/pipeline.tsx": {
-      "sha256": "f9668536da6a06894ec50503bd99ab997b32061fd32c96c7396b9832d69613b5",
+      "sha256": "295594584b62d0e15e7ba452e7b8a1732e6ee54f578175168025dc611875680f",
       "executable": false
     },
     "src/ui/plaid-connection.tsx": {
@@ -5275,15 +5275,15 @@
       "executable": false
     },
     "tests/pipeline-browser.mjs": {
-      "sha256": "a3dc9a7ddac6a7f4c22c9ee1f6ebd59e9ef0e51213e87aeec36ddf4e0037176b",
+      "sha256": "263530bd5ef2947a140a0dc11463979e692608f78c48d1d5f7217011fb8bb0f7",
       "executable": false
     },
     "tests/pipeline-fixture.mjs": {
-      "sha256": "6658d98ea9e11364a13164a1e0bda8d68fa8e3dd5412231b86349343168be8f6",
+      "sha256": "4a12768a45fd54b620f7fdb00ad9979c38b5e01f83f82bf94aec45949ada4a8d",
       "executable": false
     },
     "tests/pipeline.test.mjs": {
-      "sha256": "49a2264761ab39614fda751cf53533dcbf771161c43776cf3022308d9e9492f0",
+      "sha256": "52c41e47d1729f3bdc09af334d4b7cafeb5e0c04f3821d7cfd253d29a59da9f8",
       "executable": false
     },
     "tests/plaid-cash-browser.mjs": {
