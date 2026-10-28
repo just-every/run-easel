@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "aa7d269a49407acc6414bea787c3bfcd11aa0f46188193b158ea55b0e5ea4365",
+      "sha256": "999e2059d8f2618fbd3e7d17b0cf217063bf08014699363b756fb6bb2f060827",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -151,7 +151,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "6d6e16a61163621498b9b19e0c60669967eb832beb9fc59a9a20bd0dd8b82554",
+      "sha256": "937084f1b346db83a0cfd5cc7c62351541abcccd28638cda2d78c6cc0b9d9b0e",
       "executable": false
     },
     "DEMO.md": {
@@ -191,11 +191,11 @@
       "executable": false
     },
     "docs/contract/COVERAGE.json": {
-      "sha256": "1dc6a3af6a337cb8320b831996d7647028ec251e6c5dc6f89c598a28450a20ff",
+      "sha256": "82a777850f151e0a26fd46d2f2ba877bad4cc91d6e295daccdd08d54dc0a407e",
       "executable": false
     },
     "docs/contract/DONE-AUDIT.md": {
-      "sha256": "3df9bdd88a1189fcdac13bc51ed3f459e957be0ca8a4d699c96bfb9dfa45ff75",
+      "sha256": "167d5fb64787a7aedf560f13b783ba9ace77d226c915e14ccb2091d36b617c06",
       "executable": false
     },
     "docs/contract/ID-MAP.json": {
@@ -255,7 +255,7 @@
       "executable": false
     },
     "docs/planning-semantics.md": {
-      "sha256": "f348539d108432588287b11be7233b913e2073b4307b7ef6e4dd4534d9226d66",
+      "sha256": "d95da18f164e1a64f78fcaad6b67d4cd37fc3f952c339183cdb6348e877959ee",
       "executable": false
     },
     "docs/product-scope.md": {
@@ -3959,7 +3959,7 @@
       "executable": false
     },
     "src/site/docs/build/manifest.ts": {
-      "sha256": "462175b5b4696334fbea6a425af87598157f0890aec0fd34e0b27442475f11a8",
+      "sha256": "58b395e1b485ffee2641e1958bc74ce635711420f752069cf5240baa05a037fd",
       "executable": false
     },
     "src/site/docs/build/plugin.ts": {
@@ -3967,7 +3967,7 @@
       "executable": false
     },
     "src/site/docs/build/render.ts": {
-      "sha256": "8325349ebc2d095bd624541a32cc70c1fe4fbff5bbde916af011973ea3996429",
+      "sha256": "3a55250848fa66635ddcbf00d4b57df0cc8818cf9c9e1a74a21785f99fc9787a",
       "executable": false
     },
     "src/site/docs/build/site.ts": {

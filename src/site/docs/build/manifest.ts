@@ -32,7 +32,7 @@ export function readManifest(root: string): DocsSection[] {
         if (!pageTitle) problems.push(`${where}: no title`);
         if (!summary) problems.push(`${where}: no summary`);
         const path = join(root, docsDirectory, file);
-        if (!file.endsWith('.md') || file.includes('/') || file.includes('\\')) problems.push(`${where}: file "${file}" must be a Markdown file in ${docsDirectory}/`);
+        if (!file.endsWith('.md') || file.includes('\\') || file.split('/').some(part => !part || part === '.' || part === '..')) problems.push(`${where}: file "${file}" must be a Markdown file in ${docsDirectory}/`);
         else if (!existsSync(path) || !statSync(path).isFile()) problems.push(`${where}: ${docsDirectory}/${file} does not exist`);
         if (files.has(file)) problems.push(`${where}: ${docsDirectory}/${file} is listed twice`);
         files.add(file);

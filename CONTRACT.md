@@ -101,7 +101,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-001 — Setup, roles and membership
 
-**Requirement.** Finance configures the planning company, its calendar, departments and planning membership. [Detailed semantics](docs/planning-semantics.md#easel-001).
+**Requirement.** Finance configures the planning company, its calendar, departments and planning membership. [Detailed semantics](docs/planning-semantics.md#easel-001--setup-roles-and-membership).
 
 **Acceptance.**
 1. Finance saves and reads back the company name, reporting currency, fiscal-year start and first plan month for a twelve-month plan.
@@ -111,7 +111,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-002 — Actuals preview that writes nothing
 
-**Requirement.** Finance previews an actuals CSV with explicit column, sign and date choices before accepting it. [Detailed semantics](docs/planning-semantics.md#easel-002).
+**Requirement.** Finance previews an actuals CSV with explicit column, sign and date choices before accepting it. [Detailed semantics](docs/planning-semantics.md#easel-002--actuals-preview-that-writes-nothing).
 
 **Acceptance.**
 1. The preview shows covered months, per-account totals and sign checks, and department totals.
@@ -120,7 +120,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-003 — Mapped, reconciled actuals acceptance
 
-**Requirement.** Finance accepts only the reviewed, fully mapped actuals file and reads its complete monthly classification reconciliation. [Detailed semantics](docs/planning-semantics.md#easel-003).
+**Requirement.** Finance accepts only the reviewed, fully mapped actuals file and reads its complete monthly classification reconciliation. [Detailed semantics](docs/planning-semantics.md#easel-003--mapped-reconciled-actuals-acceptance).
 
 **Acceptance.**
 1. Acceptance requires every account to map to a planning line, cash or an explicit exclusion, every department to map, and the reviewed fingerprint still to match.
@@ -131,7 +131,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-004 — Exact undo of an actuals import
 
-**Requirement.** Finance reverses an accepted actuals import without removing unrelated actuals. [Detailed semantics](docs/planning-semantics.md#easel-004).
+**Requirement.** Finance reverses an accepted actuals import without removing unrelated actuals. [Detailed semantics](docs/planning-semantics.md#easel-004--exact-undo-of-an-actuals-import).
 
 **Acceptance.**
 1. Undo removes exactly the rows written by the selected import and keeps unrelated rows.
@@ -140,7 +140,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-005 — Labeled opening cash and explicit cash timing
 
-**Requirement.** Each scenario's opening cash is either an estimate the person enters or the balance imported from accepted rows mapped to the cash balance before the first plan month, and every cash figure says which. Collections and payments follow explicit lags (months) plus opening receivables and payables; payroll is paid in its month. Each month's cash shows its arithmetic. [Detailed semantics](docs/planning-semantics.md#easel-005).
+**Requirement.** Each scenario's opening cash is either an estimate the person enters or the balance imported from accepted rows mapped to the cash balance before the first plan month, and every cash figure says which. Collections and payments follow explicit lags (months) plus opening receivables and payables; payroll is paid in its month. Each month's cash shows its arithmetic. [Detailed semantics](docs/planning-semantics.md#easel-005--labeled-opening-cash-and-explicit-cash-timing).
 
 **Acceptance.**
 1. Each scenario's opening cash is either an estimate the person enters or the balance imported from accepted rows mapped to the cash balance before the first plan month, and every cash figure says which.
@@ -149,7 +149,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-006 — Exact revenue drivers with traces
 
-**Requirement.** Volume and customer drivers produce reproducible revenue cells with their arithmetic. [Detailed semantics](docs/planning-semantics.md#easel-006).
+**Requirement.** Volume and customer drivers produce reproducible revenue cells with their arithmetic. [Detailed semantics](docs/planning-semantics.md#easel-006--exact-revenue-drivers-with-traces).
 
 **Acceptance.**
 1. Volume times rate includes monthly growth.
@@ -159,7 +159,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-007 — Position costs and restricted pay detail
 
-**Requirement.** Named and planned positions contribute the salary schedule while the separate Pay detail grant controls position visibility. [Detailed semantics](docs/planning-semantics.md#easel-007).
+**Requirement.** Named and planned positions contribute the salary schedule while the separate Pay detail grant controls position visibility. [Detailed semantics](docs/planning-semantics.md#easel-007--position-costs-and-restricted-pay-detail).
 
 **Acceptance.**
 1. From the entered start through end month, salary divided by twelve plus entered on-costs equals each position's monthly cost.
@@ -169,7 +169,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-008 — Expenses, schedules and visible allocations
 
-**Requirement.** Expenses and imported schedules feed department totals, with source-preserving shared-cost allocations. [Detailed semantics](docs/planning-semantics.md#easel-008).
+**Requirement.** Expenses and imported schedules feed department totals, with source-preserving shared-cost allocations. [Detailed semantics](docs/planning-semantics.md#easel-008--expenses-schedules-and-visible-allocations).
 
 **Acceptance.**
 1. Recurring expenses, one-off expenses and monthly schedules post to their entered line and department.
@@ -180,7 +180,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-009 — Department submissions
 
-**Requirement.** Finance requests submissions from departments. A contributor revises only their own department's budget inputs while its submission is requested or returned, comments on their own department, and submits; a submitted department is locked until finance returns it with a reason. The full request/submit/return history is kept. [Detailed semantics](docs/planning-semantics.md#easel-009).
+**Requirement.** Finance requests submissions from departments. A contributor revises only their own department's budget inputs while its submission is requested or returned, comments on their own department, and submits; a submitted department is locked until finance returns it with a reason. The full request/submit/return history is kept. [Detailed semantics](docs/planning-semantics.md#easel-009--department-submissions).
 
 **Acceptance.**
 1. Finance requests submissions from departments.
@@ -190,7 +190,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-010 — Exact-revision budget approval
 
-**Requirement.** The reviewed budget becomes a frozen planning decision from which the forecast opens. [Detailed semantics](docs/planning-semantics.md#easel-010).
+**Requirement.** The reviewed budget becomes a frozen planning decision from which the forecast opens. [Detailed semantics](docs/planning-semantics.md#easel-010--exact-revision-budget-approval).
 
 **Acceptance.**
 1. Budget approval requires the exact reviewed revision and every requested department to be submitted.
@@ -200,7 +200,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-011 — Scenario branch and comparison
 
-**Requirement.** Finance branches plans and compares their assumptions and results. [Detailed semantics](docs/planning-semantics.md#easel-011).
+**Requirement.** Finance branches plans and compares their assumptions and results. [Detailed semantics](docs/planning-semantics.md#easel-011--scenario-branch-and-comparison).
 
 **Acceptance.**
 1. A downside branch can delay hiring or change churn without changing its source.
@@ -209,7 +209,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-012 — Proposals promoted at exact revisions
 
-**Requirement.** A proposal carries a working plan's reviewed revision into exact-revision promotion. [Detailed semantics](docs/planning-semantics.md#easel-012).
+**Requirement.** A proposal carries a working plan's reviewed revision into exact-revision promotion. [Detailed semantics](docs/planning-semantics.md#easel-012--proposals-promoted-at-exact-revisions).
 
 **Acceptance.**
 1. A new proposal copies its source and binds that source revision.
@@ -220,7 +220,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-013 — Month close and source-backed variance
 
-**Requirement.** Finance closes the next month on the forecast once accepted actuals cover it. The forecast as it stood is kept as an immutable snapshot first; closed months then use actuals. For a closed month, each line and department shows actual against the approved budget and the kept forecast, with the accepted rows behind it, the budget sources, and a draft that marks any timing explanation as an unconfirmed hypothesis. Finance or the department's contributor writes and confirms the business explanation. [Detailed semantics](docs/planning-semantics.md#easel-013).
+**Requirement.** Finance closes the next month on the forecast once accepted actuals cover it. The forecast as it stood is kept as an immutable snapshot first; closed months then use actuals. For a closed month, each line and department shows actual against the approved budget and the kept forecast, with the accepted rows behind it, the budget sources, and a draft that marks any timing explanation as an unconfirmed hypothesis. Finance or the department's contributor writes and confirms the business explanation. [Detailed semantics](docs/planning-semantics.md#easel-013--month-close-and-source-backed-variance).
 
 **Acceptance.**
 1. Finance closes the next month on the forecast once accepted actuals cover it.
@@ -230,7 +230,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-014 — Published review pack with decisions
 
-**Requirement.** Finance publishes a closed-month review pack binding numbers, explanations and decisions. [Detailed semantics](docs/planning-semantics.md#easel-014).
+**Requirement.** Finance publishes a closed-month review pack binding numbers, explanations and decisions. [Detailed semantics](docs/planning-semantics.md#easel-014--published-review-pack-with-decisions).
 
 **Acceptance.**
 1. Publication captures numbers, budget and forecast revisions, source files and their digests, explanations, decisions and actions.
@@ -240,7 +240,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-015 — Excel workbook move-in with provenance
 
-**Requirement.** Finance imports cached Excel planning cells as a separate scenario with cell provenance. [Detailed semantics](docs/planning-semantics.md#easel-015).
+**Requirement.** Finance imports cached Excel planning cells as a separate scenario with cell provenance. [Detailed semantics](docs/planning-semantics.md#easel-015--excel-workbook-move-in-with-provenance).
 
 **Acceptance.**
 1. Line, Department and month columns are read from an Excel worksheet, using cached values and visibly rounded cents.
@@ -253,7 +253,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-016 — Complete export and clean restore
 
-**Requirement.** The Base export and restore journey preserves Easel's complete planning loop. [Detailed semantics](docs/planning-semantics.md#easel-016).
+**Requirement.** The Base export and restore journey preserves Easel's complete planning loop. [Detailed semantics](docs/planning-semantics.md#easel-016--complete-export-and-clean-restore).
 
 **Acceptance.**
 1. After export and clean restore, the same model, actuals, journal originals, approvals, kept forecasts, packs and activity are present.
@@ -262,7 +262,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 #### EASEL-017 — Owned runtime on Base
 
-**Requirement.** Easel's Base runtime presents its own theme, self-hosted IBM Plex Sans and planning personas. [Detailed semantics](docs/planning-semantics.md#easel-017).
+**Requirement.** Easel's Base runtime presents its own theme, self-hosted IBM Plex Sans and planning personas. [Detailed semantics](docs/planning-semantics.md#easel-017--owned-runtime-on-base).
 
 **Acceptance.**
 1. The installer and sign-in pages use the Easel theme and self-hosted IBM Plex Sans.
@@ -277,7 +277,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. The first connection backfills history: finance chooses 12 to 36 closed months (24 by default), and each backfilled month lands as its own reviewed batch with its own trial-balance reconciliation, so prior-year actuals are there to plan from and to report against. Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-001).
+**Requirement.** Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. The first connection backfills history: finance chooses 12 to 36 closed months (24 by default), and each backfilled month lands as its own reviewed batch with its own trial-balance reconciliation, so prior-year actuals are there to plan from and to report against. Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007, CONNECT-012 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-001--quickbooks-online-actuals-connector).
 
 **Acceptance.**
 1. Through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance
@@ -293,7 +293,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · *Register:* R-5
 
-**Requirement.** Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-002).
+**Requirement.** Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003, MODEL-011`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007, CONNECT-012 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-002--xero-actuals-connector).
 
 **Acceptance.**
 1. The `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions
@@ -307,7 +307,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. Its provider entity mapping satisfies ENTITY-001, including source partitions, currencies and current entity/department grants. [Detailed semantics](docs/planning-semantics.md#connect-003).
+**Requirement.** Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007, CONNECT-012 on its own source data. Its provider entity mapping satisfies ENTITY-001, including source partitions, currencies and current entity/department grants. [Detailed semantics](docs/planning-semantics.md#connect-003--netsuite-actuals-connector).
 
 **Acceptance.**
 1. The `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries
@@ -322,7 +322,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-004).
+**Requirement.** A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007, CONNECT-012 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-004--pantry-actuals-connector).
 
 **Acceptance.**
 1. Two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree.
@@ -336,7 +336,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance connects Sage Intacct with a Web Services sender ID and a read-only web-services user, or through the Sage Intacct REST API with OAuth 2.0. Easel pulls the chart of accounts, entities (a multi-entity shared company maps its entities under `ENTITY-001`), the standard dimensions (location, department, class, project, customer and vendor), any user-defined dimensions, and general-ledger detail by period. Location and department map to Easel dimension members under `CONNECT-006` and `MODEL-003`. It has the same history backfill, preview, idempotent re-pull by the provider's record number, change detection and trial-balance reconciliation as `CONNECT-001`, and drill-through links to the Intacct entry. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. Its provider entity mapping satisfies ENTITY-001, including source partitions, currencies and current entity/department grants. [Detailed semantics](docs/planning-semantics.md#connect-011).
+**Requirement.** Finance connects Sage Intacct with a Web Services sender ID and a read-only web-services user, or through the Sage Intacct REST API with OAuth 2.0. Easel pulls the chart of accounts, entities (a multi-entity shared company maps its entities under `ENTITY-001`), the standard dimensions (location, department, class, project, customer and vendor), any user-defined dimensions, and general-ledger detail by period. Location and department map to Easel dimension members under `CONNECT-006` and `MODEL-003, MODEL-011`. It has the same history backfill, preview, idempotent re-pull by the provider's record number, change detection and trial-balance reconciliation as `CONNECT-001`, and drill-through links to the Intacct entry. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007, CONNECT-012 on its own source data. Its provider entity mapping satisfies ENTITY-001, including source partitions, currencies and current entity/department grants. [Detailed semantics](docs/planning-semantics.md#connect-011--sage-intacct-actuals-connector).
 
 **Acceptance.**
 1. The `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles
@@ -352,7 +352,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · *Rules:* D-2
 
-**Requirement.** Finance schedules source refreshes and sees freshness and errors wherever those sources inform a planning conclusion; closed figures change only through an explicit restatement decision. [Detailed semantics](docs/planning-semantics.md#connect-005).
+**Requirement.** Finance schedules source refreshes and sees freshness and errors wherever those sources inform a planning conclusion; closed figures change only through an explicit restatement decision. [Detailed semantics](docs/planning-semantics.md#connect-005--scheduled-refresh-with-visible-freshness).
 
 **Acceptance.**
 1. Hourly, nightly and weekly schedules and on-demand refresh read data and metadata together in the saved company time zone.
@@ -366,7 +366,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · *Rules:* D-2
 
-**Requirement.** Account and dimension rules survive refresh and resolve only the conclusions their inputs support. [Detailed semantics](docs/planning-semantics.md#connect-006).
+**Requirement.** Account and dimension rules survive refresh and resolve only the conclusions their inputs support. [Detailed semantics](docs/planning-semantics.md#connect-006--mapping-rules-that-survive-refresh).
 
 **Acceptance.**
 1. Single-account, numeric-range, prefix and source-account-type rules map to a planning line, cash, a balance-sheet line or exclusion.
@@ -379,7 +379,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Accepted ledger balances open the forecast from the last closed month, with complete mapping and visible reconciliation. [Detailed semantics](docs/planning-semantics.md#connect-007).
+**Requirement.** Accepted ledger balances open the forecast from the last closed month, with complete mapping and visible reconciliation. [Detailed semantics](docs/planning-semantics.md#connect-007-connect-012--balance-sheet-actuals-and-the-trial-balance).
 
 **Acceptance.**
 1. Accepted cash, receivables, prepaid, fixed assets, payables, accrued liabilities, deferred revenue, debt and equity contribute to a zero-sum month-end trial balance.
@@ -391,7 +391,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* CONNECT-007 · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · *Rules:* D-1, D-2
 
-**Requirement.** Finance attributes imported opening balances to the operating and asset schedules that consume them. [Detailed semantics](docs/planning-semantics.md#connect-007).
+**Requirement.** Finance attributes imported opening balances to the operating and asset schedules that consume them. [Detailed semantics](docs/planning-semantics.md#connect-007-connect-012--balance-sheet-actuals-and-the-trial-balance).
 
 **Acceptance.**
 1. Explicit prepaid, accrued payroll/bonus and deferred-revenue origin allocations replace estimated amortization, settlement and recognition with source attribution.
@@ -404,7 +404,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Actual cells expose every accepted source row the reader is entitled to inspect, including a connected provider's transaction link. [Detailed semantics](docs/planning-semantics.md#connect-008).
+**Requirement.** Actual cells expose every accepted source row the reader is entitled to inspect, including a connected provider's transaction link. [Detailed semantics](docs/planning-semantics.md#connect-008--drill-through-to-the-ledger-transaction).
 
 **Acceptance.**
 1. At desktop and phone widths, a variance cell lists all accepted rows behind it without an evidence sample cap.
@@ -415,7 +415,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance can connect bank accounts read-only through Plaid (balances and transactions). Current cash position and daily balance movement then feed the cash alerts and the 13-week view between ledger closes, labeled as bank balances rather than ledger actuals. Easel never initiates a payment or transfer. Under RL-102, only current company-wide finance authority and its explicit scoped finance reads see bank observations, bank-basis cash and bank alerts; other readers receive planned cash without bank data. Credential administration remains native finance-only, and bank outputs remain aggregate-only. [Detailed semantics](docs/planning-semantics.md#connect-009).
+**Requirement.** Finance can connect bank accounts read-only through Plaid (balances and transactions). Current cash position and daily balance movement then feed the cash alerts and the 13-week view between ledger closes, labeled as bank balances rather than ledger actuals. Easel never initiates a payment or transfer. Under RL-102, only current company-wide finance authority and its explicit scoped finance reads see bank observations, bank-basis cash and bank alerts; other readers receive planned cash without bank data. Credential administration remains native finance-only, and bank outputs remain aggregate-only. [Detailed semantics](docs/planning-semantics.md#connect-009--bank-balances-for-current-cash).
 
 **Acceptance.**
 1. A Plaid sandbox fake supplies two accounts
@@ -427,7 +427,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-SECRET-001, BASE-AUDIT-001, BASE-INPUT-001, BASE-DATA-004 · *Rules:* D-2
 
-**Requirement.** Connections retain sealed provider custody and an honest source-status and disconnect outcome; finance administers the credential. [Detailed semantics](docs/planning-semantics.md#connect-010).
+**Requirement.** Connections retain sealed provider custody and an honest source-status and disconnect outcome; finance administers the credential. [Detailed semantics](docs/planning-semantics.md#connect-010--connection-custody-and-status).
 
 **Acceptance.**
 1. Credentials are encrypted at rest, excluded from installation archives, masked by suffix and deleted locally on disconnect.
@@ -445,7 +445,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance chooses the fiscal start and twelve-to-sixty-period planning horizon, with monthly, quarterly and annual views. [Detailed semantics](docs/planning-semantics.md#model-001).
+**Requirement.** Finance chooses the fiscal start and twelve-to-sixty-period planning horizon, with monthly, quarterly and annual views. [Detailed semantics](docs/planning-semantics.md#model-001-model-010--configurable-horizon-and-multi-year-plans).
 
 **Acceptance.**
 1. A thirty-six-month plan beginning in October has monthly, quarterly and annual totals agreeing to the cent.
@@ -456,7 +456,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* MODEL-001 · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Finance can choose a 4-4-5 or 5-4-4 calendar instead of calendar months. [Detailed semantics](docs/planning-semantics.md#model-001).
+**Requirement.** Finance can choose a 4-4-5 or 5-4-4 calendar instead of calendar months. [Detailed semantics](docs/planning-semantics.md#model-001-model-010--configurable-horizon-and-multi-year-plans).
 
 **Acceptance.**
 1. Each quarter follows the selected four/four/five or five/four/four-week pattern, with consecutive accounting-period boundaries.
@@ -467,7 +467,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-2
 
-**Requirement.** Finance sets a rolling window (for example always 18 months ahead). Closing a month extends the forecast by one month and seeds the new month from its drivers, with the kept forecast snapshot taken first. Budgets keep their fixed fiscal horizon. [Detailed semantics](docs/planning-semantics.md#model-002).
+**Requirement.** Finance sets a rolling window (for example always 18 months ahead). Closing a month extends the forecast by one month and seeds the new month from its drivers, with the kept forecast snapshot taken first. Budgets keep their fixed fiscal horizon. [Detailed semantics](docs/planning-semantics.md#model-002--a-rolling-forecast-that-extends-itself).
 
 **Acceptance.**
 1. With an 18-month window, close two months in the API journey and see the forecast end move by two months, the new months calculated from drivers, and both kept forecasts unchanged.
@@ -476,7 +476,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** Finance defines hierarchical dimensions such as entity, region, product, customer segment, project, class and location, and cuts inputs, actuals and reports by them. [Detailed semantics](docs/planning-semantics.md#model-003).
+**Requirement.** Finance defines hierarchical dimensions such as entity, region, product, customer segment, project, class and location, and cuts inputs, actuals and reports by them. [Detailed semantics](docs/planning-semantics.md#model-003-model-011--custom-dimensions-and-hierarchies).
 
 **Acceptance.**
 1. A two-level Region hierarchy rolls entered regional inputs into an unchanged line total.
@@ -489,7 +489,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* MODEL-003 · *Cites:* BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance reads account subtotals and exact structure histories for dimension and hierarchy changes. [Detailed semantics](docs/planning-semantics.md#model-003).
+**Requirement.** Finance reads account subtotals and exact structure histories for dimension and hierarchy changes. [Detailed semantics](docs/planning-semantics.md#model-003-model-011--custom-dimensions-and-hierarchies).
 
 **Acceptance.**
 1. An Operating expense hierarchy containing Sales and marketing, Advertising and Events has monthly subtotals equal to its component lines.
@@ -500,7 +500,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance defines driver formulas over named drivers, lines, dimensions, versions and time, with growth, lookups, conditions, arithmetic and dimension sums. [Detailed semantics](docs/planning-semantics.md#model-004).
+**Requirement.** Finance defines driver formulas over named drivers, lines, dimensions, versions and time, with growth, lookups, conditions, arithmetic and dimension sums. [Detailed semantics](docs/planning-semantics.md#model-004--user-defined-formulas-and-driver-lines).
 
 **Acceptance.**
 1. A tickets-per-customer times cost-per-ticket support formula with a regional lookup produces exact cells and traces.
@@ -514,7 +514,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-2
 
-**Requirement.** A structure revision explains the definitions and cells changed while preserving the structure captured by approved and kept versions. [Detailed semantics](docs/planning-semantics.md#model-005).
+**Requirement.** A structure revision explains the definitions and cells changed while preserving the structure captured by approved and kept versions. [Detailed semantics](docs/planning-semantics.md#model-005--versioned-model-structure).
 
 **Acceptance.**
 1. Changing rate or growth parameters, dimensions, lines, mappings and rules records exact definitions, field differences and every moved cell.
@@ -528,7 +528,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Setup offers starter models that a buyer edits rather than builds from nothing: SaaS (ARR, churn, CAC, seats), professional services (billable headcount, utilization, rate), project or backlog businesses, and wholesale or ecommerce (units, price, COGS, inventory days). Each comes with its drivers, lines, dimensions, dashboards and cash timing, in USD. [Detailed semantics](docs/planning-semantics.md#model-006).
+**Requirement.** Setup offers starter models that a buyer edits rather than builds from nothing: SaaS (ARR, churn, CAC, seats), professional services (billable headcount, utilization, rate), project or backlog businesses, and wholesale or ecommerce (units, price, COGS, inventory days). Each comes with its drivers, lines, dimensions, dashboards and cash timing, in USD. [Detailed semantics](docs/planning-semantics.md#model-006--starter-models-for-us-small-businesses).
 
 **Acceptance.**
 1. In the browser at 1440, create a company from each starter (SaaS, professional services, project or backlog, and wholesale or ecommerce) and, for each, see a three-statement forecast, a dashboard and a cash view without entering a formula
@@ -538,7 +538,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** A model with 2,000 input rows, five dimensions and a thirty-six-month horizon recalculates after an input edit in under two seconds at p95. [Detailed semantics](docs/planning-semantics.md#model-007).
+**Requirement.** A model with 2,000 input rows, five dimensions and a thirty-six-month horizon recalculates after an input edit in under two seconds at p95. [Detailed semantics](docs/planning-semantics.md#model-007-model-012--recalculation-at-small-business-scale).
 
 **Acceptance.**
 1. Fifty API edits at the declared fixture size meet the under-two-second p95 bar, including the save and fresh filtered recalculation.
@@ -548,7 +548,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* MODEL-007 · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Larger changes expose a background calculation instead of presenting stale cells as final. [Detailed semantics](docs/planning-semantics.md#model-007).
+**Requirement.** Larger changes expose a background calculation instead of presenting stale cells as final. [Detailed semantics](docs/planning-semantics.md#model-007-model-012--recalculation-at-small-business-scale).
 
 **Acceptance.**
 1. A larger bulk import shows calculation state in the browser.
@@ -559,7 +559,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Finance and contributors enter authorized scenario cells by typing or pasting with an explicit preview. [Detailed semantics](docs/planning-semantics.md#model-008).
+**Requirement.** Finance and contributors enter authorized scenario cells by typing or pasting with an explicit preview. [Detailed semantics](docs/planning-semantics.md#model-008-model-013--planning-grid-entry).
 
 **Acceptance.**
 1. At desktop and phone widths, a contributor in a requested budget submission pastes a three-by-twelve spreadsheet block and reads the entered values through the API.
@@ -572,7 +572,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* MODEL-008 · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Grid sub-rows and notes retain their source cell's visibility and revision while conflict handling and undo preserve exact edits. [Detailed semantics](docs/planning-semantics.md#model-008).
+**Requirement.** Grid sub-rows and notes retain their source cell's visibility and revision while conflict handling and undo preserve exact edits. [Detailed semantics](docs/planning-semantics.md#model-008-model-013--planning-grid-entry).
 
 **Acceptance.**
 1. Two named vendor sub-rows sum to their parent cell; a note is read back from the cell's revision and trace.
@@ -585,14 +585,14 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Accepted actuals (from connectors or files) form an Actuals version that every plan can read. A plan line or driver can be defined from it at a time offset, for example the same month last year × 1.05 or the trailing three-month average, under the `MODEL-004` arithmetic and trace rules; each cell's trace names the actual cells it read. Finance can seed a new budget scenario from prior-year actuals by line and department in one step, with a growth percent per line, and the seeded inputs stay editable in the grid. Plan views and the grid can overlay actuals for closed and prior-year months beside the plan. A month with no accepted actuals is reported as missing, never read as zero. [Detailed semantics](docs/planning-semantics.md#model-009).
+**Requirement.** Accepted actuals (from connectors or files) form an Actuals version that every plan can read. A plan line or driver can be defined from it at a time offset, for example the same month last year × 1.05 or the trailing three-month average, under the `MODEL-004` arithmetic and trace rules; each cell's trace names the actual cells it read. Finance can seed a new budget scenario from prior-year actuals by line and department in one step, with a growth percent per line, and the seeded inputs stay editable in the grid. Plan views and the grid can overlay actuals for closed and prior-year months beside the plan. A month with no accepted actuals is reported as missing, never read as zero. [Detailed semantics](docs/planning-semantics.md#model-009--plans-built-from-actuals-history).
 
 **Acceptance.**
 1. accept 24 posted months and assert every same-month prior-year × 1.05 cell, every trailing-three average, one half-away division and every source citation; seed a genuine budget with per-line growth, read/edit its monthly inputs, refuse a stale save atomically, and name missing months rather than zero.
 2. Accepted zero, consumed historical mapping/import blocking, existing target/source authority, unchanged source budgets and captured overlays/arithmetic after later historical corrections.
 3. At 1440/390 create the forms, seed/edit/reload the grid, compare its current/prior actuals with the API and Overview, and select the alternative in Budget cycle.
 4. Independently evaluate actual-history Excel formulas.
-5. MODEL-004/MODEL-008 keep the further formula/grid obligations named above.
+5. MODEL-004/MODEL-008, MODEL-013 keep the further formula/grid obligations named above.
 
 ### Three statements and cash
 
@@ -600,7 +600,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** The forecast links profit and loss, balance sheet and direct and indirect cash through visible opening balances and movements. [Detailed semantics](docs/planning-semantics.md#fin-001).
+**Requirement.** The forecast links profit and loss, balance sheet and direct and indirect cash through visible opening balances and movements. [Detailed semantics](docs/planning-semantics.md#fin-001--linked-pl-balance-sheet-and-cash-flow).
 
 **Acceptance.**
 1. Across twenty-four months, assets equal liabilities plus equity in every month.
@@ -611,7 +611,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** Finance plans receivable collections and deferred recognition with explicit days and curves. [Detailed semantics](docs/planning-semantics.md#fin-002).
+**Requirement.** Finance plans receivable collections and deferred recognition with explicit days and curves. [Detailed semantics](docs/planning-semantics.md#fin-002-fin-008-fin-009--working-capital-timing).
 
 **Acceptance.**
 1. Forty-five-day DSO and collection curves date customer collections exactly.
@@ -623,7 +623,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* FIN-002 · *Cites:* BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance plans operating payables and prepaid amortization as distinct recognition and settlement schedules. [Detailed semantics](docs/planning-semantics.md#fin-002).
+**Requirement.** Finance plans operating payables and prepaid amortization as distinct recognition and settlement schedules. [Detailed semantics](docs/planning-semantics.md#fin-002-fin-008-fin-009--working-capital-timing).
 
 **Acceptance.**
 1. Thirty-day vendor terms date payments and operating payable balances exactly.
@@ -635,7 +635,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* FIN-002 · *Cites:* BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Earned payroll and bonuses settle on their entered pay dates rather than being confused with recognition. [Detailed semantics](docs/planning-semantics.md#fin-002).
+**Requirement.** Earned payroll and bonuses settle on their entered pay dates rather than being confused with recognition. [Detailed semantics](docs/planning-semantics.md#fin-002-fin-008-fin-009--working-capital-timing).
 
 **Acceptance.**
 1. Earned payroll paid on next-month day five leaves an accrual until settlement.
@@ -647,7 +647,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance plans fixed or variable term and venture debt, amortization, early repayment and explicit cash/liquidity/leverage covenants. [Detailed semantics](docs/planning-semantics.md#fin-003).
+**Requirement.** Finance plans fixed or variable term and venture debt, amortization, early repayment and explicit cash/liquidity/leverage covenants. [Detailed semantics](docs/planning-semantics.md#fin-003-fin-010--debt-and-financing).
 
 **Acceptance.**
 1. Fixed-term and variable venture schedules have exact principal, interest and cent remainders, including early repayment.
@@ -659,7 +659,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* FIN-003 · *Cites:* BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Finance models credit draws and equity raises without treating financing proceeds as operating revenue. [Detailed semantics](docs/planning-semantics.md#fin-003).
+**Requirement.** Finance models credit draws and equity raises without treating financing proceeds as operating revenue. [Detailed semantics](docs/planning-semantics.md#fin-003-fin-010--debt-and-financing).
 
 **Acceptance.**
 1. A downside credit line draws only the required amount and reports exact draw, interest, principal and covenant breach.
@@ -670,7 +670,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** Finance plans asset purchases, straight-line depreciation, disposals and imported remaining book value. [Detailed semantics](docs/planning-semantics.md#fin-004).
+**Requirement.** Finance plans asset purchases, straight-line depreciation, disposals and imported remaining book value. [Detailed semantics](docs/planning-semantics.md#fin-004--capex-and-depreciation).
 
 **Acceptance.**
 1. A $120,000 equipment purchase over five years produces $2,000 monthly depreciation, the corresponding net book value and the purchase cash outflow.
@@ -681,7 +681,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** Finance agrees a cash floor and reads gross burn, net burn, runway and the first breach from the forecast. [Detailed semantics](docs/planning-semantics.md#fin-005).
+**Requirement.** Finance agrees a cash floor and reads gross burn, net burn, runway and the first breach from the forecast. [Detailed semantics](docs/planning-semantics.md#fin-005--runway-burn-and-an-agreed-cash-floor).
 
 **Acceptance.**
 1. A downside crossing a $500,000 floor shows the crossing month and runway in the scenario, comparison and dashboard.
@@ -692,7 +692,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labeled as such, and never filings. [Detailed semantics](docs/planning-semantics.md#fin-006).
+**Requirement.** Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labeled as such, and never filings. [Detailed semantics](docs/planning-semantics.md#fin-006--us-tax-estimates-in-the-forecast).
 
 **Acceptance.**
 1. Plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, SUTA at an entered 2.7% state rate stopping at an entered state wage base, and an income-tax line on a profitable month
@@ -703,7 +703,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001
 
-**Requirement.** A weekly direct cash view for the next 13 weeks is built from open receivables by due date and expected payment behavior (each customer's average days late from its paid-invoice history, or a collection curve finance sets), open payables and bills by due date, payroll on its run dates (from the payroll connection or file, `PEOPLE-001` and `PEOPLE-007`, or a pay schedule finance sets), debt service on its schedule and planned spend in its planned week. Finance can override any week with a note, and the view reconciles to the monthly forecast at month ends. [Detailed semantics](docs/planning-semantics.md#fin-007).
+**Requirement.** A weekly direct cash view for the next 13 weeks is built from open receivables by due date and expected payment behavior (each customer's average days late from its paid-invoice history, or a collection curve finance sets), open payables and bills by due date, payroll on its run dates (from the payroll connection or file, `PEOPLE-001` and `PEOPLE-007`, or a pay schedule finance sets), debt service on its schedule and planned spend in its planned week. Finance can override any week with a note, and the view reconciles to the monthly forecast at month ends. [Detailed semantics](docs/planning-semantics.md#fin-007--13-week-cash-forecast).
 
 **Acceptance.**
 1. With ledger, payroll and bank fakes holding open invoices and bills, a semimonthly pay schedule, a term-loan payment and a planned spend line, the API journey reads 13 weeks in which each invoice lands in the week its customer's paid-invoice history puts it (a customer averaging 12 days late lands 12 days after its due date), each bill on its due date, each payroll run on its run date, the loan payment in its scheduled week and the planned spend in its planned week
@@ -715,7 +715,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Finance connects Gusto (OAuth, read-only). Easel pulls employees and contractors, with department, title, employment type (W-2 or 1099), compensation, start and termination dates, and payroll run totals by employee. The roster is reconciled to planned positions: matched, unplanned hires, planned but not hired, and changed salaries. Payroll actuals reconcile to the ledger's payroll lines. Pay detail stays under `EASEL-007` and `PEOPLE-005`. [Detailed semantics](docs/planning-semantics.md#people-001).
+**Requirement.** Finance connects Gusto (OAuth, read-only). Easel pulls employees and contractors, with department, title, employment type (W-2 or 1099), compensation, start and termination dates, and payroll run totals by employee. The roster is reconciled to planned positions: matched, unplanned hires, planned but not hired, and changed salaries. Payroll actuals reconcile to the ledger's payroll lines. Pay detail stays under `EASEL-007` and `PEOPLE-005`. [Detailed semantics](docs/planning-semantics.md#people-001--roster-and-payroll-actuals-from-gusto).
 
 **Acceptance.**
 1. A recorded Gusto demo-company fake
@@ -726,7 +726,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** The same roster pull, reconciliation and restriction as `PEOPLE-001` from Rippling, [Willow](https://github.com/just-every/run-willow), BambooHR and ADP Workforce Now, with each provider's own fields mapped and anything unmapped listed. [Detailed semantics](docs/planning-semantics.md#people-002).
+**Requirement.** The same roster pull, reconciliation and restriction as `PEOPLE-001` from Rippling, [Willow](https://github.com/just-every/run-willow), BambooHR and ADP Workforce Now, with each provider's own fields mapped and anything unmapped listed. [Detailed semantics](docs/planning-semantics.md#people-002--roster-from-rippling-willow-bamboohr-and-adp).
 
 **Acceptance.**
 1. The `PEOPLE-001` journey against a fake for each provider, with an unmapped custom field listed rather than dropped.
@@ -735,7 +735,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Open requisitions from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse become to-be-hired positions with department, level and target start. An accepted offer updates the position's name, salary and start date as a proposal for finance, and a closed requisition proposes removing the position. [Detailed semantics](docs/planning-semantics.md#people-003).
+**Requirement.** Open requisitions from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse become to-be-hired positions with department, level and target start. An accepted offer updates the position's name, salary and start date as a proposal for finance, and a closed requisition proposes removing the position. [Detailed semantics](docs/planning-semantics.md#people-003--open-roles-from-the-ats).
 
 **Acceptance.**
 1. An ATS fake opens a requisition, then marks an offer accepted with a later start
@@ -745,7 +745,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Salary or hourly W-2 and 1099 positions retain traced base wages, benefits, employer match and department on-cost assumptions. [Detailed semantics](docs/planning-semantics.md#people-004).
+**Requirement.** Salary or hourly W-2 and 1099 positions retain traced base wages, benefits, employer match and department on-cost assumptions. [Detailed semantics](docs/planning-semantics.md#people-004-people-008-people-009--us-compensation-assumptions).
 
 **Acceptance.**
 1. A salaried engineer and an hourly W-2 position at $40 for 120 expected hours produce exact monthly base costs.
@@ -759,7 +759,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* PEOPLE-004 · *Cites:* BASE-ROLE-001, BASE-INPUT-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance enters dated merit and an explicitly timed salary bonus without inferring payroll execution. [Detailed semantics](docs/planning-semantics.md#people-004).
+**Requirement.** Finance enters dated merit and an explicitly timed salary bonus without inferring payroll execution. [Detailed semantics](docs/planning-semantics.md#people-004-people-008-people-009--us-compensation-assumptions).
 
 **Acceptance.**
 1. A salaried engineer's merit increase applies on its inclusive entered date, including leap and retail periods.
@@ -771,7 +771,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* PEOPLE-004 · *Cites:* BASE-ROLE-001, BASE-INPUT-001 · *Rules:* D-1
 
-**Requirement.** Explicit contract-position links generate commission planning estimates; pipeline commissions use the same rules when REV-001 ships. [Detailed semantics](docs/planning-semantics.md#people-004).
+**Requirement.** Explicit contract-position links generate commission planning estimates; pipeline commissions use the same rules when REV-001 ships. [Detailed semantics](docs/planning-semantics.md#people-004-people-008-people-009--us-compensation-assumptions).
 
 **Acceptance.**
 1. The contract salesperson's commission equals the explicitly linked booking times its rate, rounded once, expensed at booking start and paid through the payroll schedule.
@@ -785,7 +785,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** The owner's separate Pay detail grant controls compensation detail independently of planning membership and preserves aggregate planning reads. [Detailed semantics](docs/planning-semantics.md#people-005).
+**Requirement.** The owner's separate Pay detail grant controls compensation detail independently of planning membership and preserves aggregate planning reads. [Detailed semantics](docs/planning-semantics.md#people-005--compensation-access-separate-from-finance).
 
 **Acceptance.**
 1. An analyst without Pay detail, a department head and a viewer retain aggregate planning reads but receive no salary outside their explicit grants.
@@ -799,7 +799,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Monthly headcount, hires, departures and payroll cost are compared between plan and roster actual by department. Hiring slippage (planned start against actual start), backfills and an attrition assumption are shown, and the slippage history feeds `AGENT-004`. [Detailed semantics](docs/planning-semantics.md#people-006).
+**Requirement.** Monthly headcount, hires, departures and payroll cost are compared between plan and roster actual by department. Hiring slippage (planned start against actual start), backfills and an attrition assumption are shown, and the slippage history feeds `AGENT-004`. [Detailed semantics](docs/planning-semantics.md#people-006--headcount-plan-against-actual).
 
 **Acceptance.**
 1. After a roster pull with a late hire and departure, API and browser reads show monthly planned and actual headcount and payroll cost by department.
@@ -811,7 +811,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** A buyer whose PEO or payroll provider has no connector (for example Justworks, TriNet, Insperity, ADP TotalSource, Paychex, Paylocity or Paycom) imports a roster file and a payroll-register file as CSV or .xlsx. Finance maps columns once: employee ID, name, department, title, W-2 or 1099, salary or hourly rate, and start and termination dates; and, per pay run, gross wages, employer taxes, benefits and fees. The mapping is saved per provider. The import previews without writing, lands through the import journal with the original bytes, undoes exactly, and reconciles to planned positions in the same four buckets as `PEOPLE-001`: matched, unplanned hire, planned but not hired, and changed salary. Payroll-register totals reconcile to the ledger's payroll lines. Pay detail follows `EASEL-007` and `PEOPLE-005`. [Detailed semantics](docs/planning-semantics.md#people-007).
+**Requirement.** A buyer whose PEO or payroll provider has no connector (for example Justworks, TriNet, Insperity, ADP TotalSource, Paychex, Paylocity or Paycom) imports a roster file and a payroll-register file as CSV or .xlsx. Finance maps columns once: employee ID, name, department, title, W-2 or 1099, salary or hourly rate, and start and termination dates; and, per pay run, gross wages, employer taxes, benefits and fees. The mapping is saved per provider. The import previews without writing, lands through the import journal with the original bytes, undoes exactly, and reconciles to planned positions in the same four buckets as `PEOPLE-001`: matched, unplanned hire, planned but not hired, and changed salary. Payroll-register totals reconcile to the ledger's payroll lines. Pay detail follows `EASEL-007` and `PEOPLE-005`. [Detailed semantics](docs/planning-semantics.md#people-007--roster-and-payroll-register-file-import).
 
 **Acceptance.**
 1. Through the API, import a Justworks-shaped roster CSV and an .xlsx payroll register: the preview writes nothing
@@ -826,7 +826,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-ROLE-001
 
-**Requirement.** Finance connects [Orbit](https://github.com/just-every/run-orbit), HubSpot or Salesforce (OAuth, read-only) and pulls open and closed deals with stage, amount, owner, close date and product. From Salesforce, Easel reads Opportunities with their stage and that stage's probability (custom stages included), their OpportunityLineItems (product, quantity, unit price and term), and the org's fiscal periods, so a close date lands in the fiscal period Salesforce assigns it, custom fiscal years included. A deal with line items is split by product, and each product follows its own deal-to-revenue rule. From Orbit, Easel reads deals through Orbit's API with a scoped read-only token. Finance owns the assumptions, which are explicit and versioned: probability by stage (or the CRM's own probability, labeled), close-date slippage by stage, and the deal-to-revenue rule (one-time, ratable over term, or subscription start). Weighted bookings feed revenue, deferred revenue, commissions and cash. Each revenue cell traces to the deals behind it, under role filtering. [Detailed semantics](docs/planning-semantics.md#rev-001).
+**Requirement.** Finance connects [Orbit](https://github.com/just-every/run-orbit), HubSpot or Salesforce (OAuth, read-only) and pulls open and closed deals with stage, amount, owner, close date and product. From Salesforce, Easel reads Opportunities with their stage and that stage's probability (custom stages included), their OpportunityLineItems (product, quantity, unit price and term), and the org's fiscal periods, so a close date lands in the fiscal period Salesforce assigns it, custom fiscal years included. A deal with line items is split by product, and each product follows its own deal-to-revenue rule. From Orbit, Easel reads deals through Orbit's API with a scoped read-only token. Finance owns the assumptions, which are explicit and versioned: probability by stage (or the CRM's own probability, labeled), close-date slippage by stage, and the deal-to-revenue rule (one-time, ratable over term, or subscription start). Weighted bookings feed revenue, deferred revenue, commissions and cash. Each revenue cell traces to the deals behind it, under role filtering. [Detailed semantics](docs/planning-semantics.md#rev-001--pipeline-drivers-from-orbit-hubspot-and-salesforce).
 
 **Acceptance.**
 1. A HubSpot fake with deals at three stages
@@ -842,7 +842,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-ROLE-001
 
-**Requirement.** Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax). [Detailed semantics](docs/planning-semantics.md#rev-002).
+**Requirement.** Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax). [Detailed semantics](docs/planning-semantics.md#rev-002--subscription-metrics-from-stripe-billing-and-nectar).
 
 **Acceptance.**
 1. A Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months
@@ -853,7 +853,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-ROLE-001 · *Rules:* D-1, D-2
 
-**Requirement.** Beyond volume × rate and customers × revenue per customer, revenue can come from seats × price with expansion, usage × unit price, billable headcount × utilization × rate (with actuals from [Gauge](https://github.com/just-every/run-gauge) or Harvest), project milestones and backlog burn-down, and the formula lines of `MODEL-004`. Every driver traces. [Detailed semantics](docs/planning-semantics.md#rev-003). MODEL-004 carries formula-line revenue through its formula and proposal doors.
+**Requirement.** Beyond volume × rate and customers × revenue per customer, revenue can come from seats × price with expansion, usage × unit price, billable headcount × utilization × rate (with actuals from [Gauge](https://github.com/just-every/run-gauge) or Harvest), project milestones and backlog burn-down, and the formula lines of `MODEL-004`. Every driver traces. [Detailed semantics](docs/planning-semantics.md#rev-003--a-revenue-driver-library). MODEL-004 carries formula-line revenue through its formula and proposal doors.
 
 **Acceptance.**
 1. Volume, customers, seats, usage, services, milestones and backlog lines have hand-computed monthly cents, complete traces and their exact collection timing.
@@ -866,7 +866,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INPUT-001, BASE-ROLE-001 · *Rules:* D-1, D-2
 
-**Requirement.** For contract revenue, a booking carries term, billing frequency (monthly, quarterly, annual upfront) and start date. Billings, deferred revenue, recognized revenue and collections follow from it and appear on the three statements (`FIN-001`, `FIN-002`). [Detailed semantics](docs/planning-semantics.md#rev-004).
+**Requirement.** For contract revenue, a booking carries term, billing frequency (monthly, quarterly, annual upfront) and start date. Billings, deferred revenue, recognized revenue and collections follow from it and appear on the three statements (`FIN-001`, `FIN-002, FIN-008, FIN-009`). [Detailed semantics](docs/planning-semantics.md#rev-004--bookings-billings-revenue-and-cash).
 
 **Acceptance.**
 1. Asserts a $120,000 annual-upfront booking creates a $120,000 billing, $10,000 monthly revenue, declining deferred revenue, and exact-day DSO collection; it also asserts monthly and quarterly schedules, partial terms, anniversary/day allocation and cent remainders, linked statement identities, role filtering, proposals, frozen arithmetic and independently evaluated formula Excel.
@@ -878,7 +878,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-SECRET-001
 
-**Requirement.** Purchase orders and committed contracts from [Purse](https://github.com/just-every/run-purse), expense reports from [Coaster](https://github.com/just-every/run-coaster), and card and bill-payment data from Ramp, Brex and Bill.com feed the forecast as committed spend by line, department and month. The variance view shows budget, committed, actual and remaining for each. [Detailed semantics](docs/planning-semantics.md#spend-001).
+**Requirement.** Purchase orders and committed contracts from [Purse](https://github.com/just-every/run-purse), expense reports from [Coaster](https://github.com/just-every/run-coaster), and card and bill-payment data from Ramp, Brex and Bill.com feed the forecast as committed spend by line, department and month. The variance view shows budget, committed, actual and remaining for each. [Detailed semantics](docs/planning-semantics.md#spend-001--committed-and-card-spend).
 
 **Acceptance.**
 1. A Ramp fake and a Purse fake add a card transaction and a purchase order
@@ -890,7 +890,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-003 · *Rules:* D-1, D-2 · *Register:* R-3
 
-**Requirement.** A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand (a Refresh command for the workbook or the selection) and when the workbook opens, and each refresh pulls every change made in Easel since the last one, under server-side role filtering for the person refreshing. Write-back follows the same rules as the browser. While a contributor's department submission is requested or returned, their write to that department's budget inputs lands directly as their own entry at the next plan revision, as an entry in the grid would, and their later submission includes it. Once the department is submitted, a write to its working plan becomes a proposal bound to the current revision. A write to an approved budget, a kept forecast or another department's cells is refused with the reason. The workbook's own formulas around Easel cells stay live: a formula that references an Easel function cell (for example a `SUM` over them) recalculates whenever a refresh changes that cell, as any Excel dependency does. [Detailed semantics](docs/planning-semantics.md#sheet-001).
+**Requirement.** A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand (a Refresh command for the workbook or the selection) and when the workbook opens, and each refresh pulls every change made in Easel since the last one, under server-side role filtering for the person refreshing. Write-back follows the same rules as the browser. While a contributor's department submission is requested or returned, their write to that department's budget inputs lands directly as their own entry at the next plan revision, as an entry in the grid would, and their later submission includes it. Once the department is submitted, a write to its working plan becomes a proposal bound to the current revision. A write to an approved budget, a kept forecast or another department's cells is refused with the reason. The workbook's own formulas around Easel cells stay live: a formula that references an Easel function cell (for example a `SUM` over them) recalculates whenever a refresh changes that cell, as any Excel dependency does. [Detailed semantics](docs/planning-semantics.md#sheet-001--excel-add-in-with-live-formulas).
 
 **Acceptance.**
 1. An Office.js test host loads the add-in against a running Easel, in a workbook holding `=EASEL.VALUE(...)` cells and a plain `=SUM(...)` over them: the functions return role-filtered values
@@ -905,7 +905,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-003 · *Rules:* D-1, D-2 · *Register:* R-6
 
-**Requirement.** The same functions, refresh, role filtering and write-back rules as `SHEET-001` (direct entry during an open submission, a proposal once submitted, refusal on approved budgets, kept forecasts and other departments), as a Google Workspace add-on with custom functions. Refresh runs on demand from the add-on menu and when the spreadsheet opens, and scheduled refresh runs through an installable time-driven trigger that pulls Easel changes without the spreadsheet being open. Sheet formulas over Easel cells recalculate after each refresh. [Detailed semantics](docs/planning-semantics.md#sheet-002).
+**Requirement.** The same functions, refresh, role filtering and write-back rules as `SHEET-001` (direct entry during an open submission, a proposal once submitted, refusal on approved budgets, kept forecasts and other departments), as a Google Workspace add-on with custom functions. Refresh runs on demand from the add-on menu and when the spreadsheet opens, and scheduled refresh runs through an installable time-driven trigger that pulls Easel changes without the spreadsheet being open. Sheet formulas over Easel cells recalculate after each refresh. [Detailed semantics](docs/planning-semantics.md#sheet-002--google-sheets-add-on-with-live-formulas).
 
 **Acceptance.**
 1. An Apps Script test harness against a running Easel replays the `SHEET-001` journey, including the on-demand refresh, the refresh on open and a `SUM` over Easel cells recalculating after each, and the viewer's role-filtered refresh
@@ -915,7 +915,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-003 · *Rules:* D-1
 
-**Requirement.** Importing an existing Excel or Google Sheets model translates supported formulas (arithmetic, SUM, IF, references across sheets and months, growth and lookups) into Easel formulas. Every formula it cannot translate is listed with its sheet and cell, and that cell keeps its cached value with provenance. Totals reconcile to the workbook's own totals before anything is accepted, and undo works through the journal. [Detailed semantics](docs/planning-semantics.md#sheet-003).
+**Requirement.** Importing an existing Excel or Google Sheets model translates supported formulas (arithmetic, SUM, IF, references across sheets and months, growth and lookups) into Easel formulas. Every formula it cannot translate is listed with its sheet and cell, and that cell keeps its cached value with provenance. Totals reconcile to the workbook's own totals before anything is accepted, and undo works through the journal. [Detailed semantics](docs/planning-semantics.md#sheet-003--model-import-that-keeps-formulas).
 
 **Acceptance.**
 1. Import a fixture workbook model with cross-sheet formulas and one unsupported function
@@ -925,7 +925,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-003 · *Rules:* D-1, D-2
 
-**Requirement.** Any report, plan or pack exports as .xlsx with live subtotal, total and variance formulas and one sheet per statement, not values only. CSV exports remain. Pay detail follows `PEOPLE-005`. This obligation applies to every report and statement that exists today (scenario/overview P&L and cash, scenario comparisons, monthly variances, published packs, actuals reconciliation and filtered activity), using the same server-filtered views and immutable snapshots as the app. Future report, statement and plan capabilities (`REPORT-001` to `REPORT-007`, `FIN-001` to `FIN-007`, `MODEL-001` to `MODEL-009`) inherit this export obligation before they ship. Workbook amounts are integer minor units, labeled with their currency; differences are actual minus budget or comparison-to minus comparison-from. Unavailable comparison periods or different currencies have no difference value. A department-filtered plan exports that department's P&L and visible inputs, without a company-wide cash statement. [Detailed semantics](docs/planning-semantics.md#sheet-004).
+**Requirement.** Any report, plan or pack exports as .xlsx with live subtotal, total and variance formulas and one sheet per statement, not values only. CSV exports remain. Pay detail follows `PEOPLE-005`. This obligation applies to every report and statement that exists today (scenario/overview P&L and cash, scenario comparisons, monthly variances, published packs, actuals reconciliation and filtered activity), using the same server-filtered views and immutable snapshots as the app. Future report, statement and plan capabilities (`REPORT-001`, `REPORT-008`, `REPORT-002`, `REPORT-003`, `REPORT-004`, `REPORT-005`, `REPORT-006`, `REPORT-007`, `REPORT-009`, `FIN-001`, `FIN-002`, `FIN-008`, `FIN-009`, `FIN-003`, `FIN-010`, `FIN-004`, `FIN-005`, `FIN-006`, `FIN-007`, `MODEL-001`, `MODEL-010`, `MODEL-002`, `MODEL-003`, `MODEL-011`, `MODEL-004`, `MODEL-005`, `MODEL-006`, `MODEL-007`, `MODEL-012`, `MODEL-008`, `MODEL-013`, `MODEL-009`) inherit this export obligation before they ship. Workbook amounts are integer minor units, labeled with their currency; differences are actual minus budget or comparison-to minus comparison-from. Unavailable comparison periods or different currencies have no difference value. A department-filtered plan exports that department's P&L and visible inputs, without a company-wide cash statement. [Detailed semantics](docs/planning-semantics.md#sheet-004--excel-exports-with-formulas).
 
 **Acceptance.**
 1. Download a report as .xlsx through the browser, open it with a spreadsheet library in the test, and assert that subtotal cells hold formulas that evaluate to Easel's totals.
@@ -934,7 +934,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-003
 
-**Requirement.** A linked sheet range (for example a sales team's capacity sheet) is pulled on a schedule. Its changes arrive as a previewed proposal for finance with the changed cells listed. A sheet that went missing or changed shape is reported, never read as zeros. [Detailed semantics](docs/planning-semantics.md#sheet-005).
+**Requirement.** A linked sheet range (for example a sales team's capacity sheet) is pulled on a schedule. Its changes arrive as a previewed proposal for finance with the changed cells listed. A sheet that went missing or changed shape is reported, never read as zeros. [Detailed semantics](docs/planning-semantics.md#sheet-005--scheduled-spreadsheet-pulls).
 
 **Acceptance.**
 1. A Google Sheets fake changes two cells and then deletes a column between scheduled pulls
@@ -946,7 +946,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-MAIL-001
 
-**Requirement.** Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status is one kind of task. Before shipping, CYCLE-001 inherits REPORT-005: its open department tasks appear in that department's monthly email and app statement under the same recipient and detail filtering. [Detailed semantics](docs/planning-semantics.md#cycle-001).
+**Requirement.** Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status is one kind of task. Before shipping, CYCLE-001 inherits REPORT-005: its open department tasks appear in that department's monthly email and app statement under the same recipient and detail filtering. [Detailed semantics](docs/planning-semantics.md#cycle-001--budget-calendar-tasks-and-reminders).
 
 **Acceptance.**
 1. With a fake clock and mail and chat fakes, the API journey requests submissions due Friday
@@ -956,7 +956,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-MAIL-001 · *Rules:* D-1
 
-**Requirement.** Finance configures actual-spend, runway and next-quarter-pipeline rules that create cited planning tasks without duplicate open work. [Detailed semantics](docs/planning-semantics.md#cycle-002).
+**Requirement.** Finance configures actual-spend, runway and next-quarter-pipeline rules that create cited planning tasks without duplicate open work. [Detailed semantics](docs/planning-semantics.md#cycle-002-cycle-008--metric-triggered-tasks).
 
 **Acceptance.**
 1. A closed month exceeding a ten-percent spend rule creates one department task with actual, budget, variance, source citations, owner and due date.
@@ -969,7 +969,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* CYCLE-002 · *Cites:* BASE-ROLE-001, BASE-MAIL-001
 
-**Requirement.** Rule management and task completion follow the relevant finance and assignee planning grants. [Detailed semantics](docs/planning-semantics.md#cycle-002).
+**Requirement.** Rule management and task completion follow the relevant finance and assignee planning grants. [Detailed semantics](docs/planning-semantics.md#cycle-002-cycle-008--metric-triggered-tasks).
 
 **Acceptance.**
 1. Finance creates, checks and disables rules at desktop and phone widths.
@@ -981,7 +981,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-MAIL-001, BASE-ROLE-001
 
-**Requirement.** Planning events notify the eligible person through their selected channels with an exact record link. Under the recorded ct ruling, immediate email is the initial preference, with daily digest and chat-only alternatives. [Detailed semantics](docs/planning-semantics.md#cycle-003).
+**Requirement.** Planning events notify the eligible person through their selected channels with an exact record link. Under the recorded ct ruling, immediate email is the initial preference, with daily digest and chat-only alternatives. [Detailed semantics](docs/planning-semantics.md#cycle-003--notifications-from-discussions-and-events).
 
 **Acceptance.**
 1. Under mail and chat edge fixtures, each event sends one eligible notification linked to its record: a variance mention, returned submission, pending approval, restatement, refresh failure and triggered task.
@@ -993,7 +993,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-MAIL-001 · *Rules:* D-1
 
-**Requirement.** Any planner can make a private sandbox scenario that only they can see, share it with named people or groups as read or edit, and submit it as a proposal. Finance sets which scenarios are official (budget, forecast, board case).  [Detailed semantics](docs/planning-semantics.md#cycle-004). ACCESS-001 carries the equivalent group-share journey.
+**Requirement.** Any planner can make a private sandbox scenario that only they can see, share it with named people or groups as read or edit, and submit it as a proposal. Finance sets which scenarios are official (budget, forecast, board case).  [Detailed semantics](docs/planning-semantics.md#cycle-004--private-and-shared-scenarios). ACCESS-001 carries the equivalent group-share journey.
 
 **Acceptance.**
 1. Creates a contributor's private scenario, asserts 404 for another contributor, a viewer and unshared finance across reads/comparisons/CSV/Excel/branches, shares read-only with the viewer, compares exact cells and refuses edits, exercises edit shares with current department/pay restrictions, revocation, stale sharing/submission and changed contributor scope.
@@ -1004,7 +1004,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-MAIL-001 · *Rules:* D-1, D-2
 
-**Requirement.** Finance saves named frozen reforecasts at reviewed revisions and compares actual, budget, each reforecast and working forecast without changing the source. [Detailed semantics](docs/planning-semantics.md#cycle-005).
+**Requirement.** Finance saves named frozen reforecasts at reviewed revisions and compares actual, budget, each reforecast and working forecast without changing the source. [Detailed semantics](docs/planning-semantics.md#cycle-005--quarterly-reforecasts-and-version-comparison).
 
 **Acceptance.**
 1. Q2 and Q3 saves retain reviewed source revisions; stale saves and duplicate trimmed case-insensitive names are refused.
@@ -1018,7 +1018,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-MAIL-001 · *Rules:* D-1
 
-**Requirement.** Finance links a three-to-five-year annual target plan to the operating budget and reads top-down gaps. [Detailed semantics](docs/planning-semantics.md#cycle-006).
+**Requirement.** Finance links a three-to-five-year annual target plan to the operating budget and reads top-down gaps. [Detailed semantics](docs/planning-semantics.md#cycle-006--long-range-plan-linked-to-the-operating-plan).
 
 **Acceptance.**
 1. For a five-year plan with forty-percent growth, year one equals the twelve-month operating budget.
@@ -1031,7 +1031,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-MAIL-001
 
-**Requirement.** Finance assigns versioned ordered department chains to named reviewers and groups without changing global approval authority. [Detailed semantics](docs/planning-semantics.md#cycle-007).
+**Requirement.** Finance assigns versioned ordered department chains to named reviewers and groups without changing global approval authority. [Detailed semantics](docs/planning-semantics.md#cycle-007-cycle-009-cycle-010--per-department-ordered-approval-chains).
 
 **Acceptance.**
 1. Sales receives two steps, a department-head group then a named finance planner; Engineering without a chain retains its single finance step.
@@ -1044,7 +1044,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* CYCLE-007 · *Cites:* BASE-ROLE-001, BASE-MAIL-001
 
-**Requirement.** Department review decisions bind the submitted department content in strict order. [Detailed semantics](docs/planning-semantics.md#cycle-007).
+**Requirement.** Department review decisions bind the submitted department content in strict order. [Detailed semantics](docs/planning-semantics.md#cycle-007-cycle-009-cycle-010--per-department-ordered-approval-chains).
 
 **Acceptance.**
 1. Step two is refused before step one, and one step cannot complete twice in the same pass.
@@ -1059,7 +1059,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* CYCLE-007 · *Cites:* BASE-ROLE-001, BASE-MAIL-001
 
-**Requirement.** A submission retains the chain version it entered, and pending review reaches only eligible reviewers. [Detailed semantics](docs/planning-semantics.md#cycle-007).
+**Requirement.** A submission retains the chain version it entered, and pending review reaches only eligible reviewers. [Detailed semantics](docs/planning-semantics.md#cycle-007-cycle-009-cycle-010--per-department-ordered-approval-chains).
 
 **Acceptance.**
 1. A new chain saved mid-flight applies to the next submission; the current submission stays on its recorded version.
@@ -1073,7 +1073,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001 · *Rules:* D-1
 
-**Requirement.** Permitted planners build saved, shared numeric reports over lines, dimensions, hierarchies, periods and planning versions. [Detailed semantics](docs/planning-semantics.md#report-001).
+**Requirement.** Permitted planners build saved, shared numeric reports over lines, dimensions, hierarchies, periods and planning versions. [Detailed semantics](docs/planning-semantics.md#report-001-report-008--report-builder).
 
 **Acceptance.**
 1. At desktop width, build and save a department-by-quarter actual-versus-budget report with YTD, trailing-twelve-month, prior-year and year-over-year percentage columns, a department filter and a highlight rule.
@@ -1085,7 +1085,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* REPORT-001 · *Cites:* BASE-ROLE-001
 
-**Requirement.** Named recipients receive daily, weekly or monthly report copies in the saved company time zone. [Detailed semantics](docs/planning-semantics.md#report-001).
+**Requirement.** Named recipients receive daily, weekly or monthly report copies in the saved company time zone. [Detailed semantics](docs/planning-semantics.md#report-001-report-008--report-builder).
 
 **Acceptance.**
 1. A Monday-eight-AM Eastern weekly schedule sends finance and a viewer exactly one copy each under fake clock and mail edges.
@@ -1096,7 +1096,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001 · *Rules:* D-1, D-2
 
-**Requirement.** Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width. [Detailed semantics](docs/planning-semantics.md#report-002). REV-001 carries pipeline coverage, REV-002 imported ARR and REPORT-001 saved-report widgets.
+**Requirement.** Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width. [Detailed semantics](docs/planning-semantics.md#report-002--dashboards). REV-001 carries pipeline coverage, REV-002 imported ARR and REPORT-001, REPORT-008 saved-report widgets.
 
 **Acceptance.**
 1. At 1440/390 finance creates runway, ARR and headcount tiles, saves and shares with board; rendered numbers equal API metrics.
@@ -1107,7 +1107,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001 · *Rules:* D-2
 
-**Requirement.** A board pack template contains statements, KPIs, charts, variance commentary, decisions and appendix tables. It is generated for a closed month or quarter, refreshed until published, and published as an immutable snapshot (as in `EASEL-014`). It exports as PDF, PowerPoint (.pptx) and Excel, and can be saved to [Chest](https://github.com/just-every/run-chest), Google Drive or SharePoint. Refreshing keeps the commentary that people wrote. [Detailed semantics](docs/planning-semantics.md#report-003).
+**Requirement.** A board pack template contains statements, KPIs, charts, variance commentary, decisions and appendix tables. It is generated for a closed month or quarter, refreshed until published, and published as an immutable snapshot (as in `EASEL-014`). It exports as PDF, PowerPoint (.pptx) and Excel, and can be saved to [Chest](https://github.com/just-every/run-chest), Google Drive or SharePoint. Refreshing keeps the commentary that people wrote. [Detailed semantics](docs/planning-semantics.md#report-003--board-pack).
 
 **Acceptance.**
 1. Generate a quarter pack in the browser, refresh it after a late adjustment with commentary kept, publish, download PDF, .pptx and .xlsx, and confirm through the API that the published numbers do not change after a later refresh; save the published pack to a Chest folder, a Google Drive folder and a SharePoint library through fakes, each holding a PDF with the same digest.
@@ -1116,7 +1116,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001
 
-**Requirement.** PowerPoint and Word add-ins insert Easel tables, charts and single numbers into a deck or memo, and refresh them in place from a chosen version and period, under the person's role filtering. [Detailed semantics](docs/planning-semantics.md#report-004).
+**Requirement.** PowerPoint and Word add-ins insert Easel tables, charts and single numbers into a deck or memo, and refresh them in place from a chosen version and period, under the person's role filtering. [Detailed semantics](docs/planning-semantics.md#report-004--linked-powerpoint-and-word-reporting).
 
 **Acceptance.**
 1. An Office.js test host inserts a table and a number into a .pptx, refreshes after an Easel change, and sees the new values.
@@ -1125,7 +1125,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-MAIL-001, BASE-ROLE-001
 
-**Requirement.** Each department owner receives a monthly actual-against-budget statement after close, with source rows and current follow-up. [Detailed semantics](docs/planning-semantics.md#report-005).
+**Requirement.** Each department owner receives a monthly actual-against-budget statement after close, with source rows and current follow-up. [Detailed semantics](docs/planning-semantics.md#report-005--department-budget-owner-reporting).
 
 **Acceptance.**
 1. After a month closes, Engineering's contributor receives only Engineering's statement and a link to its variances.
@@ -1137,7 +1137,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001 · *Rules:* D-1
 
-**Requirement.** Finance sets cash alerts: forecast lowest cash below the floor, actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged. [Detailed semantics](docs/planning-semantics.md#report-006).
+**Requirement.** Finance sets cash alerts: forecast lowest cash below the floor, actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged. [Detailed semantics](docs/planning-semantics.md#report-006--scheduled-cash-alerts).
 
 **Acceptance.**
 1. With a fake clock, a bank fake and mail and Slack fakes: a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month; bank cash $60,000 below plan under a $50,000 rule sends one alert, and a 10% rule fires the same way; runway falling to 11 months under a 12-month rule sends one alert
@@ -1150,7 +1150,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001
 
-**Requirement.** Reviewed Snowflake, BigQuery and Databricks metrics become driver actuals. RL-104 requires both dialect-aware query validation and a provider-enforced read-only role, with qualified Base resolved-address egress before external connections ship. [Detailed semantics](docs/planning-semantics.md#report-007).
+**Requirement.** Reviewed Snowflake, BigQuery and Databricks metrics become driver actuals. RL-104 requires both dialect-aware query validation and a provider-enforced read-only role, with qualified Base resolved-address egress before external connections ship. [Detailed semantics](docs/planning-semantics.md#report-007-report-009--bi-and-warehouse-feeds).
 
 **Acceptance.**
 1. A warehouse-edge fixture supplies a monthly metric that drives an exact revenue-line amount.
@@ -1161,7 +1161,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *From:* REPORT-007 · *Cites:* BASE-ROLE-001
 
-**Requirement.** Power BI, Looker and Tableau consume role-scoped planning datasets and scheduled CSV or Parquet drops. RL-104 requires each Pay-free export to recheck its named audience. [Detailed semantics](docs/planning-semantics.md#report-007).
+**Requirement.** Power BI, Looker and Tableau consume role-scoped planning datasets and scheduled CSV or Parquet drops. RL-104 requires each Pay-free export to recheck its named audience. [Detailed semantics](docs/planning-semantics.md#report-007-report-009--bi-and-warehouse-feeds).
 
 **Acceptance.**
 1. A scoped BI client receives actuals, plans and versions without Pay detail.
@@ -1174,7 +1174,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-SIGNIN-001
 
-**Requirement.** Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario and by capability: compensation, connections, model structure, approvals and publishing. An access report shows who can see what. Before groups ship, ACCESS-001 inherits CYCLE-004: scenario read/edit group shares use current group membership on every read, comparison, export and write; membership removal ends access immediately. Before shipping, ACCESS-001 inherits REPORT-005: its ownership and group grants govern department-statement recipients, reads and exports, with recipient access rechecked before delivery. [Detailed semantics](docs/planning-semantics.md#access-001).
+**Requirement.** Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario and by capability: compensation, connections, model structure, approvals and publishing. An access report shows who can see what. Before groups ship, ACCESS-001 inherits CYCLE-004: scenario read/edit group shares use current group membership on every read, comparison, export and write; membership removal ends access immediately. Before shipping, ACCESS-001 inherits REPORT-005: its ownership and group grants govern department-statement recipients, reads and exports, with recipient access rechecked before delivery. [Detailed semantics](docs/planning-semantics.md#access-001--groups-and-per-dimension-permissions).
 
 **Acceptance.**
 1. Makes a group with edit on two departments and no pay access, adds a person, and confirms reads, writes and exports respect it
@@ -1184,7 +1184,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-SIGNIN-001, BASE-ROLE-001
 
-**Requirement.** SAML and OIDC sign-in and SCIM provisioning support Okta, Microsoft Entra ID, Google Workspace and Auth. RL-101 requires explicit configured identity associations and current native privilege grants; SCIM grants ordinary membership only, deprovisioning promptly removes live authority, and history retains attribution without restoring credentials. [Detailed semantics](docs/planning-semantics.md#access-002).
+**Requirement.** SAML and OIDC sign-in and SCIM provisioning support Okta, Microsoft Entra ID, Google Workspace and Auth. RL-101 requires explicit configured identity associations and current native privilege grants; SCIM grants ordinary membership only, deprovisioning promptly removes live authority, and history retains attribution without restoring credentials. [Detailed semantics](docs/planning-semantics.md#access-002--sso-and-scim).
 
 **Acceptance.**
 1. An identity-provider fake signs in one explicitly associated person by SAML and another by OIDC.
@@ -1197,7 +1197,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-AUDIT-001 · *Rules:* D-1
 
-**Requirement.** Planning changes retain actor, scenario, record, revisions before and after and changed values within the shared searchable audit. [Detailed semantics](docs/planning-semantics.md#audit-001).
+**Requirement.** Planning changes retain actor, scenario, record, revisions before and after and changed values within the shared searchable audit. [Detailed semantics](docs/planning-semantics.md#audit-001--model-audit-trail).
 
 **Acceptance.**
 1. Changes by three people to setup, inputs, formulas, mappings, connections, permissions, submissions, approvals, closes and packs identify the planning record, scenario, before/after revisions and changed values.
@@ -1207,7 +1207,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-DATA-003, BASE-DATA-006 · *Rules:* D-2
 
-**Requirement.** Erasing a former member pseudonymizes their planning history without losing financial amounts or the integrity of captured planning decisions. [Detailed semantics](docs/planning-semantics.md#erase-001).
+**Requirement.** Erasing a former member pseudonymizes their planning history without losing financial amounts or the integrity of captured planning decisions. [Detailed semantics](docs/planning-semantics.md#erase-001--person-erasure).
 
 **Acceptance.**
 1. After a contributor who submitted and commented is erased, their name is absent from live views, pack downloads and installation export.
@@ -1220,7 +1220,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Integrations use scoped, expiring personal or service credentials to read and revise planning records within the issuing person's planning authority. [Detailed semantics](docs/planning-semantics.md#api-001).
+**Requirement.** Integrations use scoped, expiring personal or service credentials to read and revise planning records within the issuing person's planning authority. [Detailed semantics](docs/planning-semantics.md#api-001--public-api-with-scoped-tokens).
 
 **Acceptance.**
 1. A read-only credential reads a scenario and cannot write it.
@@ -1231,7 +1231,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001
 
-**Requirement.** Signed webhooks fire on approval, close, publish, refresh failure, alert and task events. Published apps for [Crank](https://github.com/just-every/run-crank), Zapier and Make expose those triggers and the proposal and comment actions. [Detailed semantics](docs/planning-semantics.md#api-002).
+**Requirement.** Signed webhooks fire on approval, close, publish, refresh failure, alert and task events. Published apps for [Crank](https://github.com/just-every/run-crank), Zapier and Make expose those triggers and the proposal and comment actions. [Detailed semantics](docs/planning-semantics.md#api-002--webhooks-and-automation-apps).
 
 **Acceptance.**
 1. Register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID.
@@ -1241,7 +1241,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-005, BASE-AGENT-007, BASE-ROLE-001
 
-**Requirement.** The person's outside agent reads scenarios, comparisons, variances and metrics and performs planning actions through Easel's tool registry. Draft and comment work carries standard, outside contact external and binding approval, close, publication or promotion commitment; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#api-003).
+**Requirement.** The person's outside agent reads scenarios, comparisons, variances and metrics and performs planning actions through Easel's tool registry. Draft and comment work carries standard, outside contact external and binding approval, close, publication or promotion commitment; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#api-003--mcp-endpoint-for-outside-agents).
 
 **Acceptance.**
 1. A contributor's MCP client lists the planning tools, reads a variance and creates a proposal within that contributor's departments.
@@ -1253,7 +1253,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core
 
-**Requirement.** A company plans several entities (for example a US C-corp and a services subsidiary), each with its own ledger connection (`CONNECT-001` to `CONNECT-004`, `CONNECT-011`), or several entities from one connection: a Sage Intacct multi-entity shared company or NetSuite subsidiaries. Easel shows consolidated P&L, balance sheet and cash with intercompany balances and charges eliminated by rules finance sets. Entity-level access uses `ACCESS-001`. [Detailed semantics](docs/planning-semantics.md#entity-001).
+**Requirement.** A company plans several entities (for example a US C-corp and a services subsidiary), each with its own ledger connection (`CONNECT-001`, `CONNECT-002`, `CONNECT-003`, `CONNECT-004`, `CONNECT-011`), or several entities from one connection: a Sage Intacct multi-entity shared company or NetSuite subsidiaries. Easel shows consolidated P&L, balance sheet and cash with intercompany balances and charges eliminated by rules finance sets. Entity-level access uses `ACCESS-001`. [Detailed semantics](docs/planning-semantics.md#entity-001--multiple-entities-and-management-consolidation).
 
 **Acceptance.**
 1. Two entities with an intercompany management fee
@@ -1264,7 +1264,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core
 
-**Requirement.** An entity plans in its local currency and reports in USD, using rate tables that finance keeps (budget rate, monthly average and month-end rates). Profit and loss converts at average rates, the balance sheet at month-end rates, and the translation difference is shown. Constant-currency comparisons are available. [Detailed semantics](docs/planning-semantics.md#entity-002).
+**Requirement.** An entity plans in its local currency and reports in USD, using rate tables that finance keeps (budget rate, monthly average and month-end rates). Profit and loss converts at average rates, the balance sheet at month-end rates, and the translation difference is shown. Constant-currency comparisons are available. [Detailed semantics](docs/planning-semantics.md#entity-002--multi-currency-planning).
 
 **Acceptance.**
 1. A CAD entity with budget and actual rates
@@ -1274,13 +1274,13 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Rules:* D-1
 
-**Requirement.** A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYYY dates, a January fiscal year with any other start month available, US time zones for schedules and reminders, and the US payroll and tax assumptions of `FIN-006` and `PEOPLE-004`. Files with US date and number formats import without extra choices. [Detailed semantics](docs/planning-semantics.md#us-001).
+**Requirement.** A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYYY dates, a January fiscal year with any other start month available, US time zones for schedules and reminders, and the US payroll and tax assumptions of `FIN-006` and `PEOPLE-004, PEOPLE-008, PEOPLE-009`. Files with US date and number formats import without extra choices. [Detailed semantics](docs/planning-semantics.md#us-001--us-defaults).
 
 **Acceptance.**
 1. Create a company without changing defaults and assert USD/$ formatting, en-US, MM/DD/YYYY, January and America/New_York; import a CSV with US dates and dollar/grouped/parenthesized amounts without extra format choices, preview without writes, commit and reload exact cents.
 2. At 1440/390 inspect setup, the populated planning/review screens, department statements and the downloaded pack, then change and reload the owner-controlled preferences and prove date rendering follows them.
 3. Also sets a July fiscal start and an alternative currency/US zone.
-4. FIN-006/PEOPLE-004 carry statutory defaults and the named scheduled clauses carry actual company-zone delivery acceptance before shipping.
+4. FIN-006/PEOPLE-004, PEOPLE-008, PEOPLE-009 carry statutory defaults and the named scheduled clauses carry actual company-zone delivery acceptance before shipping.
 
 ### Move in and out
 
@@ -1288,7 +1288,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Rules:* D-1
 
-**Requirement.** Easel imports a Workday Adaptive Planning export (levels, accounts, dimensions and attributes, versions with their data, sheet exports, and the rows of modeled sheets), together with the buyer's mapping. The rows of the personnel or workforce modeled sheet, read through `exportConfigurableModelData`, become Easel positions under `EASEL-007` and `PEOPLE-004`: employees and to-be-hired rows alike, each with its level (mapped to a department), title, start and end dates, salary or hourly rate with hours, and the row's own bonus, benefits and merit assumptions where present. The account totals that the personnel sheet calculates (from `exportData`) are the check: the imported positions' monthly cost per payroll account must equal them for the same version, and any difference is shown before anything is accepted. Pay detail on imported positions is restricted under `EASEL-007` and `PEOPLE-005` from the moment of import, the preview included. Rows of other modeled sheets (for example a capital-asset sheet) are listed, and their account totals still arrive through `exportData`. The import previews what will be created, lists everything that did not map (formulas it cannot translate, modeled-sheet columns with no Easel equivalent, other modeled-sheet rows, access rules), and lands through the journal with undo. [Detailed semantics](docs/planning-semantics.md#move-001).
+**Requirement.** Easel imports a Workday Adaptive Planning export (levels, accounts, dimensions and attributes, versions with their data, sheet exports, and the rows of modeled sheets), together with the buyer's mapping. The rows of the personnel or workforce modeled sheet, read through `exportConfigurableModelData`, become Easel positions under `EASEL-007` and `PEOPLE-004, PEOPLE-008, PEOPLE-009`: employees and to-be-hired rows alike, each with its level (mapped to a department), title, start and end dates, salary or hourly rate with hours, and the row's own bonus, benefits and merit assumptions where present. The account totals that the personnel sheet calculates (from `exportData`) are the check: the imported positions' monthly cost per payroll account must equal them for the same version, and any difference is shown before anything is accepted. Pay detail on imported positions is restricted under `EASEL-007` and `PEOPLE-005` from the moment of import, the preview included. Rows of other modeled sheets (for example a capital-asset sheet) are listed, and their account totals still arrive through `exportData`. The import previews what will be created, lists everything that did not map (formulas it cannot translate, modeled-sheet columns with no Easel equivalent, other modeled-sheet rows, access rules), and lands through the journal with undo. [Detailed semantics](docs/planning-semantics.md#move-001--move-in-from-adaptive-planning).
 
 **Acceptance.**
 1. A fixture export in the shapes of Adaptive's documented API calls (`exportLevels`, `exportAccounts`, `exportDimensions`, `exportAttributes`, `exportVersions`, `exportData` and `exportConfigurableModelData` for a personnel sheet) and a sheet export
@@ -1302,7 +1302,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core
 
-**Requirement.** Planful exports of the chart of accounts, segments, scenarios and data load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo. [Detailed semantics](docs/planning-semantics.md#move-002).
+**Requirement.** Planful exports of the chart of accounts, segments, scenarios and data load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo. [Detailed semantics](docs/planning-semantics.md#move-002--move-in-from-planful).
 
 **Acceptance.**
 1. The `MOVE-001` journey with a fixture in Planful's documented export shapes.
@@ -1311,7 +1311,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core
 
-**Requirement.** Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo. [Detailed semantics](docs/planning-semantics.md#move-003).
+**Requirement.** Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo. [Detailed semantics](docs/planning-semantics.md#move-003--move-in-from-anaplan-runway-and-pigment).
 
 **Acceptance.**
 1. The `MOVE-001` journey with one fixture per product in its documented export shape.
@@ -1320,7 +1320,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Rules:* D-1, D-2
 
-**Requirement.** For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools. [Detailed semantics](docs/planning-semantics.md#move-004).
+**Requirement.** For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools. [Detailed semantics](docs/planning-semantics.md#move-004--a-parallel-month-against-the-old-tool).
 
 **Acceptance.**
 1. With a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off.
@@ -1331,7 +1331,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-DATA-001 · *Rules:* D-1, D-2
 
-**Requirement.** Besides the `rer export` archive, finance can download the whole plan as open files: one CSV per table, an.xlsx per scenario with formulas, the model definition as JSON, and every snapshot and original file, with a manifest of digests. [Detailed semantics](docs/planning-semantics.md#port-001).
+**Requirement.** Besides the `rer export` archive, finance can download the whole plan as open files: one CSV per table, an.xlsx per scenario with formulas, the model definition as JSON, and every snapshot and original file, with a manifest of digests. [Detailed semantics](docs/planning-semantics.md#port-001--an-export-a-buyer-can-open-without-easel).
 
 **Acceptance.**
 1. Download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's.
@@ -1342,7 +1342,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ACCESSIBILITY-001, BASE-ROLE-001 · *Register:* R-1, R-2
 
-**Requirement.** Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001` to `CYCLE-007`, `REPORT-001` to `REPORT-007`, `AGENT-001` to `AGENT-011`) inherit the same 390-pixel obligation before they ship. [Detailed semantics](docs/planning-semantics.md#mobile-001).
+**Requirement.** Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001`, `CYCLE-002`, `CYCLE-008`, `CYCLE-003`, `CYCLE-004`, `CYCLE-005`, `CYCLE-006`, `CYCLE-007`, `CYCLE-009`, `CYCLE-010`, `REPORT-001`, `REPORT-008`, `REPORT-002`, `REPORT-003`, `REPORT-004`, `REPORT-005`, `REPORT-006`, `REPORT-007`, `REPORT-009`, `AGENT-001`, `AGENT-002`, `AGENT-003`, `AGENT-004`, `AGENT-005`, `AGENT-006`, `AGENT-007`, `AGENT-008`, `AGENT-009`, `AGENT-010`, `AGENT-011`) inherit the same 390-pixel obligation before they ship. [Detailed semantics](docs/planning-semantics.md#mobile-001--review-and-approve-at-phone-width).
 
 **Acceptance.**
 1. S at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page.
@@ -1351,7 +1351,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-ROLE-001, BASE-ACCESS-002, BASE-ACCESSIBILITY-001 · *Register:* R-4
 
-**Requirement.** Native iOS and Android clients provide sign-in, dashboards, alerts, tasks, approvals and comments. Under RL-103, opted-in devices bind the exact live native session and current record rights, send generic notices without financial contents, exclude device credentials from archives and erase local data and authority on sign-out. [Detailed semantics](docs/planning-semantics.md#mobile-002).
+**Requirement.** Native iOS and Android clients provide sign-in, dashboards, alerts, tasks, approvals and comments. Under RL-103, opted-in devices bind the exact live native session and current record rights, send generic notices without financial contents, exclude device credentials from archives and erase local data and authority on sign-out. [Detailed semantics](docs/planning-semantics.md#mobile-002--native-ios-and-android-apps).
 
 **Acceptance.**
 1. An iOS simulator and Android emulator each sign in against Easel and display the native planning journey.
@@ -1363,7 +1363,7 @@ The [buyer and scope reference](docs/product-scope.md) retains the named provide
 
 *Tier:* Core · *Cites:* BASE-INSTALL-001, BASE-BACKUP-001, BASE-OPS-001 · *Rules:* D-2
 
-**Requirement.** Easel's hosted installation runs its planning loop, source scheduler and mail integration on the buyer's Cloudflare resources. [Detailed semantics](docs/planning-semantics.md#host-001).
+**Requirement.** Easel's hosted installation runs its planning loop, source scheduler and mail integration on the buyer's Cloudflare resources. [Detailed semantics](docs/planning-semantics.md#host-001--hosted-operation-on-the-buyers-cloudflare-account).
 
 **Acceptance.**
 1. A disposable Cloudflare deployment with D1 runs Easel's native planning loop.
@@ -1511,11 +1511,11 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Agent surface · *From:* new · *Cites:* BASE-AGENT-007, BASE-AGENT-012, BASE-AGENT-013
 
-**Requirement.** A stranger given Easel's URL completes a seeded finance week entirely through the planning door under two named company policies.
+**Requirement.** A stranger given Easel's URL and existing company provider connections completes a seeded finance week entirely through the planning door under two named company policies.
 
 **Acceptance.**
 1. The week reviews ledger and roster arrivals, prepares a budget, requests department work, compares a cash-floor response, closes a month and publishes its source-backed review pack.
-2. Under the all-autonomous company policy, every declared class runs without a person waiting on or deciding a call, and the finished numbers reconcile to the fixture.
+2. Under the all-autonomous company policy, every declared class is autonomous and the seeded week completes without a person waiting on or deciding a call; its finished numbers reconcile to the fixture.
 3. Under the held company policy, standard calls enter review and the other declared classes await the policy's named approver; the signed-in test person decides those saved revisions.
 4. The resulting budget, source provenance, scenario comparisons, notifications and immutable pack match the same week's expected planning outcomes under both policies.
 5. Repeating an interrupted import or planning decision yields one intended effect, and another department's payroll never appears in the specialist's results.
@@ -1529,7 +1529,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** The planning watch detects breaches of agreed cash, runway, covenant and department limits and opens source-backed decisions without revising the forecast. A response that changes a binding planning decision carries commitment, decided by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-001).
+**Requirement.** The planning watch detects breaches of agreed cash, runway, covenant and department limits and opens source-backed decisions without revising the forecast. A response that changes a binding planning decision carries commitment, decided by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-001--constraint-watch).
 
 **Acceptance.**
 1. A provider-fake refresh slipping a large deal by two quarters breaks the cash floor and opens one decision item.
@@ -1540,7 +1540,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** The specialist searches only owner-designated adjustable levers and ranks feasible planning responses with their impact and trade-offs. Drafting carries standard; promotion carries commitment, whose disposition is set by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-002).
+**Requirement.** The specialist searches only owner-designated adjustable levers and ranks feasible planning responses with their impact and trade-offs. Drafting carries standard; promotion carries commitment, whose disposition is set by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-002--feasible-responses-for-the-owner-to-choose).
 
 **Acceptance.**
 1. For a breached constraint, at least three proposals each restore the cash floor on full recalculation.
@@ -1551,7 +1551,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** The specialist asks source owners about uncertain assumptions and retains sourced answers, alternatives and escalation. Outside questions carry external, applying an internal assumption standard and a binding forecast decision commitment; the company's policy decides each. [Detailed semantics](docs/planning-semantics.md#agent-003).
+**Requirement.** The specialist asks source owners about uncertain assumptions and retains sourced answers, alternatives and escalation. Outside questions carry external, applying an internal assumption standard and a binding forecast decision commitment; the company's policy decides each. [Detailed semantics](docs/planning-semantics.md#agent-003--asking-owners-for-uncertain-assumptions).
 
 **Acceptance.**
 1. A Slack-fake question to the deal owner retains its source and the answer 'new date 15 January'.
@@ -1563,7 +1563,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · *Rules:* D-2
 
-**Requirement.** The specialist compares kept forecasts with actuals, separates timing, permanent and driver errors, and backtests revised stage probabilities, close-date and hire slippage, collection lag and churn assumptions. Drafts carry standard and adopted planning decisions commitment; the company's policy decides their disposition. [Detailed semantics](docs/planning-semantics.md#agent-004).
+**Requirement.** The specialist compares kept forecasts with actuals, separates timing, permanent and driver errors, and backtests revised stage probabilities, close-date and hire slippage, collection lag and churn assumptions. Drafts carry standard and adopted planning decisions commitment; the company's policy decides their disposition. [Detailed semantics](docs/planning-semantics.md#agent-004--learning-from-the-companys-own-forecast-errors).
 
 **Acceptance.**
 1. A history whose deals close thirty-four days late produces a proposal for approximately thirty-four days of slippage.
@@ -1574,7 +1574,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** Source review detects renamed or new accounts, changed dimensions, missing payroll, stale feeds and source-shape changes, showing reasoned mapping proposals and their impacts. Mapping and exclusion calls carry standard, whose disposition is set by the company's policy; incomplete source data cannot support conclusions. [Detailed semantics](docs/planning-semantics.md#agent-005).
+**Requirement.** Source review detects renamed or new accounts, changed dimensions, missing payroll, stale feeds and source-shape changes, showing reasoned mapping proposals and their impacts. Mapping and exclusion calls carry standard, whose disposition is set by the company's policy; incomplete source data cannot support conclusions. [Detailed semantics](docs/planning-semantics.md#agent-005--source-change-guard).
 
 **Acceptance.**
 1. A refresh with a new software-like account proposes a mapping with its reason.
@@ -1586,7 +1586,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · *Rules:* D-2
 
-**Requirement.** Decision follow-up links a published action to its forecast effect, owner and due date and compares approved assumptions with realized cash, revenue, headcount and capacity. Outside chases carry external and changes to binding decisions commitment, decided by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-006).
+**Requirement.** Decision follow-up links a published action to its forecast effect, owner and due date and compares approved assumptions with realized cash, revenue, headcount and capacity. Outside chases carry external and changes to binding decisions commitment, decided by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-006--following-decisions-through-to-results).
 
 **Acceptance.**
 1. A published decision delaying two hires to July retains the approved forecast effect.
@@ -1601,7 +1601,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · *Rules:* D-2
 
-**Requirement.** The specialist explains material closed-month variances using visible ledger, deal, roster, bill and committed-spend evidence, separating evidence-backed claims from hypotheses. Drafting carries standard; a binding confirmation or publication carries commitment, whose disposition is set by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-007).
+**Requirement.** The specialist explains material closed-month variances using visible ledger, deal, roster, bill and committed-spend evidence, separating evidence-backed claims from hypotheses. Drafting carries standard; a binding confirmation or publication carries commitment, whose disposition is set by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-007--variance-commentary-grounded-in-sources).
 
 **Acceptance.**
 1. A model-edge fixture returns an explanation citing existing visible row IDs.
@@ -1613,7 +1613,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · *Rules:* D-1
 
-**Requirement.** The modeler turns a natural-language request into a separate planning proposal, with structure/input diffs, formulas, moved cells and expected-value checks. Drafting carries standard, payroll data adds sensitive and promotion carries commitment; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#agent-008).
+**Requirement.** The modeler turns a natural-language request into a separate planning proposal, with structure/input diffs, formulas, moved cells and expected-value checks. Drafting carries standard, payroll data adds sensitive and promotion carries commitment; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#agent-008--modeler-agent).
 
 **Acceptance.**
 1. A model-edge request adds the named positions and drivers to a separate proposal with the corresponding differences and checked values.
@@ -1624,7 +1624,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** The analyst answers questions using visible cells, rows and deals and makes what-ifs as private scenarios. Read-only analysis and reversible what-ifs carry standard, regulated payroll data adds sensitive and outside sharing external; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#agent-009).
+**Requirement.** The analyst answers questions using visible cells, rows and deals and makes what-ifs as private scenarios. Read-only analysis and reversible what-ifs carry standard, regulated payroll data adds sensitive and outside sharing external; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#agent-009--analyst-with-cited-answers).
 
 **Acceptance.**
 1. A viewer asking about payroll by department receives only visible totals.
@@ -1635,7 +1635,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** A recurring mission runs a saved analysis on its schedule and delivers cited, labeled results to its named audience. Internal analysis carries standard and outside recipients add external; the company's policy decides mission creation, audience and delivery. [Detailed semantics](docs/planning-semantics.md#agent-010).
+**Requirement.** A recurring mission runs a saved analysis on its schedule and delivers cited, labeled results to its named audience. Internal analysis carries standard and outside recipients add external; the company's policy decides mission creation, audience and delivery. [Detailed semantics](docs/planning-semantics.md#agent-010--recurring-missions).
 
 **Acceptance.**
 1. With fake clock, mail and model edges, a weekly cash brief runs on Monday and reaches two named recipients.
@@ -1646,7 +1646,7 @@ Inherits BASE-AGENT-001 to BASE-AGENT-013. The company's policy decides every ca
 
 *Tier:* Core · *Cites:* BASE-AGENT-007, BASE-AGENT-009, BASE-AGENT-011, BASE-AGENT-002, BASE-AGENT-008
 
-**Requirement.** Planning agents use the company-selected model and credential through the shared policy and planning audit. Their seed-specific activity includes constraint work, source review, questions, learning, commentary, modeling, analyses, missions and action chases; the company's policy decides each tool's declared classes. [Detailed semantics](docs/planning-semantics.md#agent-011).
+**Requirement.** Planning agents use the company-selected model and credential through the shared policy and planning audit. Their seed-specific activity includes constraint work, source review, questions, learning, commentary, modeling, analyses, missions and action chases; the company's policy decides each tool's declared classes. [Detailed semantics](docs/planning-semantics.md#agent-011--agent-governance).
 
 **Acceptance.**
 1. A model-edge planning run records the sponsoring person, chosen model and reserved provider-cost basis.
@@ -1677,7 +1677,7 @@ Easel is a US-first FP&A product. These are the jobs it deliberately does not do
 - **A full spreadsheet engine.** Easel does not re-implement every Excel function or VBA. Excel and Google Sheets stay the buyer's spreadsheets, connected live (`SHEET-001`, `SHEET-002`). Formulas Easel cannot translate are listed and kept as values with provenance (`SHEET-003`).
 - **Statutory consolidation and disclosure.** Easel does management consolidation for a few entities (`ENTITY-001`). Statutory consolidation, minority interests, SEC reporting and audit-ready disclosure belong in the ledger or a specialist consolidation tool.
 - **Warehouse-scale analytics.** Large event data is processed in Snowflake, BigQuery or Databricks and arrives as metrics (`REPORT-007`). Easel's models stay within `MODEL-007`'s scale, with larger work run as bounded background jobs.
-- **Hosting frontier models.** Agents call the owner's chosen model provider under the owner's budget (`AGENT-011`). Easel hosts no model.
+- **Hosting frontier models.** Agents call the company's chosen model provider under its own spend policy (`AGENT-011`). Easel hosts no model.
 - **Native app distribution.** This needs Apple and Google developer accounts. That is release engineering (`MOBILE-002`), not a reason to drop the apps.
 - **Region, currency and language.** US-first: USD by default, US English, US payroll and tax assumptions and the buyer's own Cloudflare account. Other currencies are planned through `ENTITY-002`. Localized interfaces and non-US payroll rules are not claimed.
 

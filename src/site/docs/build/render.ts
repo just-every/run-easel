@@ -14,6 +14,10 @@ const collapse = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 
 export function renderMarkdown(markdown: string): RenderedPage {
+  // Standalone and generated Markdown can carry a document title. The manifest supplies that title in the page frame.
+  // Whole-line generator comments stay invisible; raw HTML elsewhere remains escaped and interior h1s remain invalid.
+  markdown = markdown.replace(/^[ \t]*<!--[^\n]*-->[ \t]*$/gm, '').replace(/^\s*# [^\n]*(?:\n|$)/, '');
+
   const slug = createSlugger();
   const toc: DocsTocEntry[] = [];
   const ids: string[] = [];
