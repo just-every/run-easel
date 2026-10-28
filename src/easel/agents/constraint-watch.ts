@@ -24,7 +24,7 @@ const WATCH = new Set(['actuals-accepted', 'actuals-undone', 'close-month', 'pro
 export const needsConstraintCheck = (c: Context) => c.activity.some(e => WATCH.has(e.action))
 export const CONSTRAINTS = { 'cash-floor': 'Cash floor', runway: 'Runway minimum' } as const
 const KINDS = ['revenue', 'position', 'expense', 'schedule', 'debt'] as const
-const IGNORED = new Set(['id', 'scenario', 'dimensions', 'revision'])
+const IGNORED = new Set(['id', 'scenario', 'dimensions', 'revision', 'commissionPosition'])
 
 const scalar = (v: unknown) => v === null || ['string', 'number', 'boolean'].includes(typeof v)
 /** Input changes since a reference model: added, removed or edited rows, by origin, without pay detail for readers who may not see it. */
