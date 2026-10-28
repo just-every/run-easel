@@ -119,6 +119,11 @@ try{
  assert.ok(guard.unresolved.some(i=>i.kind==='hris-metadata'))
  assert.equal((await context.request.get(`${runtime.origin}/api/easel/scenario/${forecast.id}`)).status(),409)
  await show(card,'provider-source-change-hold')
+ await page.goto(`${runtime.origin}/app?tab=actuals`);await settle(page)
+ const sourceGuard=page.getByRole('region',{name:'Source change guard',exact:true})
+ await sourceGuard.getByRole('link',{name:'Review this HRIS roster in Settings',exact:true}).first().waitFor()
+ assert.ok((await sourceGuard.innerText()).includes('Renamed Product Engineering'))
+ await show(sourceGuard,'shared-source-guard-hris')
  console.log('Provider-owned hire question, sourced answer and proposal, changed-source holds: 1440/390 proof passed')
 }catch(error){if(page&&!page.isClosed())await page.screenshot({path:join(evidence,'hris-failed.png'),fullPage:true}).catch(()=>{});throw error}
 finally{await browser?.close();await runtime.close()}

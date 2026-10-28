@@ -4583,7 +4583,7 @@
       "executable": false
     },
     "src/ui/source-guard.tsx": {
-      "sha256": "6f6ff453a6239b13eef9a6deb727b2c5533f8cd99fbf238db722b19a8dd1b469",
+      "sha256": "a7d0504114b4b419917b3dc1c350c8a39674c49b77b86e72b3c0fe146b3b0bb7",
       "executable": false
     },
     "src/ui/spend.tsx": {
@@ -5091,7 +5091,7 @@
       "executable": false
     },
     "tests/hris-browser.mjs": {
-      "sha256": "ad1737afaac24434222fdbe0444e6339917eccf3500d237b3076ba45a12e0262",
+      "sha256": "300017198bed2e360a82104cea93844c7478c8d566b74aec0814f0654316521d",
       "executable": false
     },
     "tests/hris-fixture.mjs": {
