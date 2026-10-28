@@ -129,9 +129,17 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  const caPlan=await h.get('/api/easel/scenario/'+f.first.id)
  await h.command('formula',{scenario:f.first.id,revision:caPlan.scenario.revision,department:f.department.id,name:'Explicit empty source month',unit:'money',formula:'IF(PERIOD() = 6, ACTUAL("Management revenue", "Services", -24), 0)',start:'2026-01'})
  assert.equal((await h.get('/api/easel/scenario/'+f.first.id)).calculation.formulaValues.find(v=>v.name==='Explicit empty source month'&&v.month==='2026-06').value,0)
- for(const e of [f.ca,f.eu])for(const dimension of f.dimensions.filter(d=>d.dimension.name==='Posting location').map(d=>d.dimension).slice(0,1)){
+ for(const e of [f.ca,f.eu])for(const dimension of new Map(f.dimensions.map(d=>[d.dimension.id,d.dimension])).values()){
   const report=await h.get(`/api/easel/dimension-report/actuals?entity=${e.id}&dimension=${dimension.id}`)
   assert.equal(report.currency,e.currency)
+  const line=e.id===f.ca.id?f.revenue.id:f.expense.id,amount=e.id===f.ca.id?10000:8000
+  for(const [month,department]of [['2025-01','D3'],['2025-02','D1'],['2025-03','D2']]){
+   const source=dimension.name==='Posting location'?(e.id===f.ca.id?'L1':'L2'):department
+   const member=f.dimensions.find(d=>d.dimension.id===dimension.id&&d.source===source).member
+   const rows=report.dimensions[0].members
+   assert.equal(rows.find(r=>r.id===member.id).lineTotals[line][month],amount,'Every source location and department reaches its mapped dimension member')
+   assert.equal(rows.reduce((n,r)=>n+r.lineTotals[line][month],0),amount,'Dimension member totals reconcile to the accepted entity ledger')
+  }
  }
  const firstBatch=(await h.get('/api/easel/state')).batches.find(b=>b.intacctSource?.sourceEntity==='CA'&&b.intacctSource?.month==='2024-01')
  await h.kit('actuals','undo',{id:firstBatch.id})
