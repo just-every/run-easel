@@ -5,20 +5,18 @@ Source: [just-every/run-easel](https://github.com/just-every/run-easel). The sit
 
 ## Run it locally
 
-Follow the same two steps as [Run Easel](https://run-easel.com/run). Git is required on macOS, Linux or Windows with WSL2; the installer brings Node and `rer` brings pnpm.
-
-1. Install the Run Edit Run command:
+Start with one line, as on [Run Easel](https://run-easel.com/run) and the [getting-started guide](https://run-easel.com/docs/getting-started):
 
 ```sh
-curl -fsSL https://runeditrun.com/install.sh | sh
+curl -fsSL https://runeditrun.com/install.sh | sh -s -- dev just-every/run-easel
 ```
 
-Run the PATH line the installer prints in your terminal.
+macOS, Linux or Windows with WSL2. git is required; rer brings Node and pnpm.
 
-2. Download Easel and start it:
+Already have Node 22 or later? Use this alternative:
 
 ```sh
-rer dev just-every/run-easel
+npx -y @runeditrun/rer dev just-every/run-easel
 ```
 
 To start it again later, run `cd ./run-easel && rer dev`. To choose the owner mailbox yourself before the first start, use the installed command:

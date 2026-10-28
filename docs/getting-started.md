@@ -1,31 +1,27 @@
-Easel runs on your own computer with the `rer` command. Two steps get it open in your browser, signed in as you, the owner. The same instructions are at [Run Easel](https://run-easel.com/run).
+Start Easel on your own computer with one line, signed in as its owner:
 
-Easel runs on macOS, Linux or Windows with WSL2. `rer` selects the exact Node version Easel declares and fetches a checksum-verified copy when your computer does not have it.
+```sh
+{{run.start}}
+```
+
+macOS, Linux or Windows with WSL2. {{run.requirements}}
+
+Already have Node 22 or later? Use this alternative:
+
+```sh
+{{run.clone}}
+```
 
 ## Get Easel and start it
 
-1. Install `rer`:
-
-```sh
-curl -fsSL https://runeditrun.com/install.sh | sh
-```
-
-Run the PATH line the installer prints in your terminal.
-
-2. Download Easel and start it:
-
-```sh
-rer dev just-every/run-easel
-```
-
-Git is required; the installer brings Node and `rer` brings pnpm. The second command clones Easel into `./run-easel`, installs everything and makes you the owner. To start Easel again later, run `cd ./run-easel && rer dev`. When Easel is ready, it prints two lines:
+The line clones Easel into `./run-easel`, installs everything and makes you the owner. To start Easel again later, run `cd ./run-easel && rer dev`. When Easel is ready, it prints two lines:
 
 - `RER_READY` with the local address, and
 - `RER_OPEN`, a link that opens Easel signed in as the owner.
 
 Open the `RER_OPEN` link on this computer. It carries this checkout's private key, so treat it like a password: do not paste it into chats or tickets.
 
-The first time, Easel asks you to **Finish setup**: check the owner's name and email, confirm, and press **Finish setup**. Then [set up your plan](/docs/first-plan).
+The first time, Easel asks you to **Finish setup**: check the owner's name and email, confirm, and press **Finish setup**. Then [set up your plan](/docs/first-plan). To put Easel online for your team, follow the [hosting guide](https://run-easel.com/docs/hosting).
 
 ## Use your own email
 

@@ -199,7 +199,7 @@
       "executable": false
     },
     "docs/getting-started.md": {
-      "sha256": "6d22b626ebfc3197f20d0000299ecb2e842d29e4166bb6bfaf840e995df38c57",
+      "sha256": "044b1eb8c7b0480d4524fbb9e7ad1e549fb9061fd0049ad04c60f48f4b2c2bf4",
       "executable": false
     },
     "docs/gusto-roster.md": {
@@ -799,7 +799,7 @@
       "executable": false
     },
     "README.md": {
-      "sha256": "af0216b4727437aebdbe92932a54a49175fe992ce2ae17c44611af11b63f6978",
+      "sha256": "3cd72cccea44be770c10939e0efd60557acd3efc169d5ba5fc6c8b412dbf7b6a",
       "executable": false
     },
     "RELEASE.json": {
@@ -815,7 +815,7 @@
       "executable": false
     },
     "RUN-LOCALLY.md": {
-      "sha256": "7473c796ba604e72597ee8218a560fdfe9747c0bb52c62f85e1f17341c39a19f",
+      "sha256": "7c731446bf91960960cdab7d9de98055c3ade433ba9b9e08fa6b2664b06452ee",
       "executable": false
     },
     "scripts/ci/chromium-probe.mjs": {
@@ -4675,7 +4675,7 @@
       "executable": false
     },
     "src/site/docs/build/site.ts": {
-      "sha256": "4a60aa046818f350bbd92b38b670a31b918b6ce8ba6f81d37f8a2030dd7bc70e",
+      "sha256": "5d8b300f93734124387cf233a1d5844fd623a756f537ee7b526d49e30e8224c6",
       "executable": false
     },
     "src/site/docs/build/slug.ts": {
