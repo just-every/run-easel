@@ -6,8 +6,13 @@ const { chromium } = await import(
   isAbsolute(playwrightModule) ? pathToFileURL(playwrightModule).href : playwrightModule
 )
 
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.platform === 'darwin' ? { args: ['--use-mock-keychain', '--password-store=basic'] } : {})
-})
-await browser.close()
+try {
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--use-mock-keychain', '--password-store=basic']
+  })
+  await browser.close()
+} catch (error) {
+  console.error(error)
+  process.exit(/EACCES|permission denied/i.test(String(error)) ? 77 : 1)
+}

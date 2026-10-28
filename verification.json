@@ -1,0 +1,203 @@
+{
+  "push": [
+    {
+      "name": "types-site",
+      "browser": false,
+      "commands": [
+        "node scripts/contract-docs.mjs check",
+        "node scripts/edition-authoring/cli.mjs check",
+        "pnpm exec rer check",
+        "pnpm typecheck",
+        "pnpm exec rer build --site"
+      ]
+    },
+    {
+      "name": "domain-1",
+      "browser": false,
+      "commands": [
+        "node --test --test-concurrency=1 --test-shard=1/2 tests/*.test.mjs"
+      ]
+    },
+    {
+      "name": "domain-2",
+      "browser": false,
+      "commands": [
+        "node --test --test-concurrency=1 --test-shard=2/2 tests/*.test.mjs"
+      ]
+    },
+    {
+      "name": "runtime",
+      "browser": true,
+      "commands": [
+        "pnpm exec rer build",
+        "node tests/approval-chains-browser.mjs",
+        "node tests/connectors-browser.mjs --existing-build",
+        "node tests/intacct-browser.mjs --existing-build",
+        "node tests/netsuite-browser.mjs --existing-build",
+        "node tests/weekly-cash-browser.mjs --existing-build",
+        "node tests/excel-browser.mjs",
+        "node tests/spend-browser.mjs",
+        "node tests/gauge-schedule-browser.mjs",
+        "node tests/bi-feeds-browser.mjs --existing-build"
+      ]
+    }
+  ],
+  "nightly": [
+    {
+      "name": "journeys",
+      "browser": true,
+      "commands": [
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof\" node tests/browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/mobile\" node tests/mobile.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/cash-health\" node tests/cash-health-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/reforecasts\" node tests/reforecasts-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/long-range\" node tests/long-range-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/parallel-month\" node tests/parallel-month-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/metric-tasks\" node tests/metric-tasks-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/calendar\" node tests/calendar-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/statements\" node tests/statements-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/department-statements\" node tests/department-statements-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/sandboxes\" node tests/sandboxes-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/history\" node tests/history-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/dashboards\" node tests/dashboards-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/gauge\" node tests/gauge-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/revenue-drivers\" node tests/revenue-drivers-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/us-defaults\" perl -e 'setpgrp(0,0); exec @ARGV' -- node tests/us-defaults-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/working-capital\" perl -e 'setpgrp(0,0); exec @ARGV' -- node tests/working-capital-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/translation\" node tests/translation-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/cash-alerts\" node tests/cash-alerts-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/variance-commentary\" node tests/variance-commentary-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/weekly-cash\" node tests/weekly-cash-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/forecast-learning\" node tests/forecast-learning-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/board-pack\" node tests/board-pack-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/bi-feeds\" node tests/bi-feeds-browser.mjs",
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-proof/constraints\" node tests/constraint-responses-browser.mjs"
+      ]
+    },
+    {
+      "name": "model-scale",
+      "browser": false,
+      "commands": [
+        "node tests/model-scale.mjs \"nightly-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\""
+      ]
+    },
+    {
+      "name": "model-background",
+      "browser": false,
+      "commands": [
+        "node tests/calculation-background.mjs"
+      ]
+    },
+    {
+      "name": "model-browser",
+      "browser": true,
+      "commands": [
+        "EASEL_EVIDENCE=\"$RUNNER_TEMP/easel-model-calculation\" node tests/calculation-browser.mjs"
+      ]
+    }
+  ],
+  "readers": {
+    "tests/agent-governance.test.mjs": [],
+    "tests/api-tokens.test.mjs": [],
+    "tests/approval-chains-browser.mjs": [],
+    "tests/approval-chains.test.mjs": [],
+    "tests/assets.test.mjs": [],
+    "tests/audit.test.mjs": [],
+    "tests/bi-feeds-browser.mjs": [],
+    "tests/bi-feeds.test.mjs": [],
+    "tests/billing.test.mjs": [],
+    "tests/board-pack-browser.mjs": [],
+    "tests/board-pack.test.mjs": [],
+    "tests/browser.mjs": [],
+    "tests/calculation-background.mjs": [],
+    "tests/calculation-browser.mjs": [],
+    "tests/calendar-browser.mjs": [],
+    "tests/calendar.test.mjs": [],
+    "tests/cash-alerts-browser.mjs": [],
+    "tests/cash-alerts.test.mjs": [],
+    "tests/cash-drivers.test.mjs": [],
+    "tests/cash-health-browser.mjs": [],
+    "tests/cash-health.test.mjs": [],
+    "tests/compensation-access.test.mjs": [],
+    "tests/connectors-browser.mjs": [],
+    "tests/constraint-responses-browser.mjs": [],
+    "tests/constraint-responses.test.mjs": [],
+    "tests/contracts.test.mjs": [],
+    "tests/dashboards-browser.mjs": [],
+    "tests/dashboards.test.mjs": [],
+    "tests/decision-followup.test.mjs": [],
+    "tests/department-statements-browser.mjs": [],
+    "tests/department-statements.test.mjs": [],
+    "tests/dimensions.test.mjs": [],
+    "tests/drillthrough.test.mjs": [],
+    "tests/easel.test.mjs": [],
+    "tests/entities.test.mjs": [],
+    "tests/erasure-portability.test.mjs": [],
+    "tests/erasure.test.mjs": [],
+    "tests/excel-browser.mjs": [],
+    "tests/financing.test.mjs": [],
+    "tests/fiscal-calendar.test.mjs": [],
+    "tests/forecast-learning-browser.mjs": [],
+    "tests/forecast-learning.test.mjs": [],
+    "tests/formula-import.test.mjs": [],
+    "tests/gauge-browser.mjs": [],
+    "tests/gauge-schedule-browser.mjs": [],
+    "tests/gauge-utilization.test.mjs": [],
+    "tests/grid.test.mjs": [],
+    "tests/groups.test.mjs": [],
+    "tests/headcount.test.mjs": [],
+    "tests/history-browser.mjs": [],
+    "tests/history.test.mjs": [],
+    "tests/intacct-browser.mjs": [],
+    "tests/intacct.test.mjs": [],
+    "tests/long-range-browser.mjs": [],
+    "tests/long-range.test.mjs": [],
+    "tests/mapping-rules.test.mjs": [],
+    "tests/mcp.test.mjs": [],
+    "tests/metric-tasks-browser.mjs": [],
+    "tests/metric-tasks.test.mjs": [],
+    "tests/mobile.mjs": [],
+    "tests/model-scale.mjs": [],
+    "tests/netsuite-browser.mjs": [],
+    "tests/netsuite.test.mjs": [],
+    "tests/notifications.test.mjs": [],
+    "tests/open-export.test.mjs": [],
+    "tests/parallel-month-browser.mjs": [],
+    "tests/parallel-month.test.mjs": [],
+    "tests/payroll-erasure.test.mjs": [],
+    "tests/payroll-files.test.mjs": [],
+    "tests/people-comp.test.mjs": [],
+    "tests/plaid-cash.test.mjs": [],
+    "tests/qbo.test.mjs": [],
+    "tests/reforecasts-browser.mjs": [],
+    "tests/reforecasts.test.mjs": [],
+    "tests/revenue-drivers-browser.mjs": [],
+    "tests/revenue-drivers.test.mjs": [],
+    "tests/review-fixes.test.mjs": [],
+    "tests/rolling-forecast.test.mjs": [],
+    "tests/sandboxes-browser.mjs": [],
+    "tests/sandboxes.test.mjs": [],
+    "tests/saved-reports.test.mjs": [],
+    "tests/spend-browser.mjs": [],
+    "tests/spend.test.mjs": [],
+    "tests/spreadsheet-export.test.mjs": [],
+    "tests/starters.test.mjs": [],
+    "tests/statements-browser.mjs": [],
+    "tests/statements.test.mjs": [],
+    "tests/structure-versions.test.mjs": [],
+    "tests/taxes.test.mjs": [],
+    "tests/totals.test.mjs": [],
+    "tests/translation-browser.mjs": [],
+    "tests/translation.test.mjs": [],
+    "tests/us-defaults-browser.mjs": [],
+    "tests/us-defaults.test.mjs": [],
+    "tests/variance-commentary-browser.mjs": [],
+    "tests/variance-commentary.test.mjs": [],
+    "tests/weekly-cash-browser.mjs": [],
+    "tests/weekly-cash.test.mjs": [],
+    "tests/workbook-undo.test.mjs": [],
+    "tests/working-capital-browser.mjs": [],
+    "tests/working-capital.test.mjs": [],
+    "tests/xero.test.mjs": []
+  }
+}

@@ -22,7 +22,17 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .node-version
-      - run: corepack enable && pnpm install --frozen-lockfile
+          package-manager-cache: false
+      - name: Set runner-owned pnpm store
+        run: corepack enable && pnpm config set store-dir "$RUNNER_TEMP/pnpm-store"
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
+      - name: Cache frozen deployment dependencies
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: ${{ runner.temp }}/pnpm-store
+          key: easel-ubuntu24-deploy-store-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml', 'package.json') }}
+      - run: pnpm install --frozen-lockfile
         env:
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
       - run: pnpm exec rer deploy --site

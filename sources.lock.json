@@ -90,24 +90,20 @@
     }
   ],
   "files": {
-    ".github/workflows/journeys.yml": {
-      "sha256": "b0d843e9f78c835e6edaea6729a24ce1240da00f1ed913445b501c8447fe9bc3",
-      "executable": false
-    },
     ".github/workflows/model-recalculation.yml": {
-      "sha256": "66b9549e848d2ea8a34068a1469b3c8d65212a7ab757faaf3cb0232521baddf7",
+      "sha256": "a1a08fd5f49e1e497081567ea37ea596d44b978b17505e6f89d12d05b2d9cfd8",
       "executable": false
     },
     ".github/workflows/run-demo.yml": {
-      "sha256": "41365ec7c002e9451166313b085f9e64ed2e3ea002c27f3d5ead845bc9c302b2",
+      "sha256": "dbf43fcbfbfd2b0149dfd0dc87f96e7b0242a32961dd6a8b6ceb49bfa569a85a",
       "executable": false
     },
     ".github/workflows/run-site.yml": {
-      "sha256": "1466e0cc78eeee30a85f1602c0b4bbb74f053fc9f1aa723635c5f0fc5a0f19b0",
+      "sha256": "0505c45f53745b1dba130948dfc7631c701d34fb719065c247eb5b8e6b4ae994",
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "c35623fe310b785aa32ad43c404e96216146ecc226066a19610f2adb702f71f1",
+      "sha256": "7903f018067538ba4ecae151fcb4a5a3a03597e8b033bfd3eba2b108fb8e61b1",
       "executable": false
     },
     ".gitignore": {
@@ -139,7 +135,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "ddf617b89c7b1fa921b94d7d953fd08469a57a0f15e2ee34860305c2120fd132",
+      "sha256": "2195233bfbe539faaf7fb51afc569e4b81ca38a797197c154b04480018271667",
       "executable": false
     },
     "CLAUDE.md": {
@@ -819,7 +815,15 @@
       "executable": false
     },
     "scripts/ci/chromium-probe.mjs": {
-      "sha256": "f73aaceb43336249aef70a79c33e9614a2af003b19c24d1398fd3638c7d32de3",
+      "sha256": "c564c27821818a1bf4d796c6b599675d8929253494f9da380ac64e42d444cf0d",
+      "executable": false
+    },
+    "scripts/ci/playwright-loader.mjs": {
+      "sha256": "bc3fdbb4a0827eacd7d932bc074f5d67c64a17edacceff0c57c3a33ed66aefc9",
+      "executable": false
+    },
+    "scripts/ci/playwright-register.mjs": {
+      "sha256": "0476001fb5148ebf1ea41ddc5d6b82620143680b161a49ddb3f2231cdeb2c177",
       "executable": false
     },
     "scripts/contract-docs.mjs": {
@@ -1390,6 +1394,10 @@
       "sha256": "d0e747277142e54d86acd1c01549ee8b76bf15c060366387bd074c57f77f7d2d",
       "executable": false
     },
+    "scripts/install-chromium-deps.py": {
+      "sha256": "f0d43a47b4d8417fb97bd74e7f4edc9ff27d7b157696ca80343c7bdbb71edc95",
+      "executable": false
+    },
     "scripts/installer/easel-policy.mjs": {
       "sha256": "d45370bc8b28a8992e7e17e081325a6d5c655ac26f14297773c6371fddf03579",
       "executable": false
@@ -1444,6 +1452,26 @@
     },
     "scripts/operations-config.mjs": {
       "sha256": "decbd8619e40c741708b49639d54282bd19edc4581a782b240d96a423ad47f01",
+      "executable": false
+    },
+    "scripts/verify-app.mjs": {
+      "sha256": "54c2c9fa2285fcfaa21c0fd55fc1e1b235195f29dab461613a8939e143cb6cb7",
+      "executable": false
+    },
+    "scripts/verify-ci.mjs": {
+      "sha256": "e502c3c46ae086549cca5a24df852255b50ea558eb2db7ed0d6839761a777fc6",
+      "executable": false
+    },
+    "scripts/verify-evidence.mjs": {
+      "sha256": "9224f772d6a17f043448694eca3c149df83070417b995a2840497e36a9ad0100",
+      "executable": false
+    },
+    "scripts/verify-light.mjs": {
+      "sha256": "b8924483ff80721cdc3d624c583116aab68db71c9f0be6d4c698d7b6e9065760",
+      "executable": false
+    },
+    "scripts/verify-plan.mjs": {
+      "sha256": "ab988c57c6efff896df9a7a5fa215e794c755a7af1e21199f128fef41c559bab",
       "executable": false
     },
     "SEED-COMMAND-CONTRACT.md": {
@@ -6124,6 +6152,10 @@
     },
     "tsconfig.json": {
       "sha256": "d7cd1fc9b074215c4b55017098ec4fd90aeac43264bf6af5b906fd4b16cb2bc0",
+      "executable": false
+    },
+    "verification.json": {
+      "sha256": "45fa3213ed19665e800f40019ba290bcd55f9958391151248d91a30d432be38f",
       "executable": false
     },
     "vite.config.ts": {
