@@ -44,6 +44,7 @@ export async function variance(c: Context, month: string, selected?:string) {
  const forecast = forecastFor(s, month,selected)
  scenarioAccess(s,c.x,forecast.id)
  const scope=ledgerScope(s,forecast),currency=boundEntity(s,forecast)?.currency??w.currency
+ requireThat(!scopedReader(c.x)||!!scope,'Monthly review requires complete variance scope for the installation ledger',403)
  const budget = await snapshot(c.db, forecast.budgetSnapshot)
  const prior = forecast.priorForecasts?.find((p: Data) => p.month === month)
  const priorBody = prior ? (await snapshot(c.db, prior.snapshot)).body : null
