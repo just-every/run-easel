@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
 
-test('FIN-003 debt, interest, monthly covenants and equity reconcile all statements without executing payments', async t => {
+test('FIN-003, FIN-010 debt, interest, monthly covenants and equity reconcile all statements without executing payments', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Harbour Analytics', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Operations' })

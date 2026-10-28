@@ -1,4 +1,4 @@
-// CYCLE-002: create real rules and complete the resulting assigned work through
+// CYCLE-002, CYCLE-008: create real rules and complete the resulting assigned work through
 // the finance and contributor pages at desktop and phone widths.
 import assert from 'node:assert/strict'
 import { mkdir, rm } from 'node:fs/promises'

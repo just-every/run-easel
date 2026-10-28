@@ -53,7 +53,7 @@ position. The first employee has annual salary 120000, 10% merit effective
 2026-07-01 and a 10% December bonus of 13200. Payroll totals are 19000 January–June,
 24000 July–September, 27000 October–November and 40200 December: annual 280200.
 Benefits, match and on-costs are explicitly zero; no tax policy is supplied.
-The generic preview must calculate these positions with existing PEOPLE-004
+The generic preview must calculate these positions with existing PEOPLE-004, PEOPLE-008, PEOPLE-009
 semantics and compare payroll-account totals before any acceptance. It must also
 report `Custom Column`, apply server-side pay filtering even in preview, and
 include every created native record in fingerprinted commit and journal undo.

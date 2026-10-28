@@ -2,18 +2,18 @@
 
 # Accept a Easel installation
 
-The primary journey: Exercise the capabilities and acceptance journeys below.
+The primary journey: configure the company, bring in ledger and workforce data and the existing model, prepare department budgets, approve the exact plan, compare alternatives, close with actuals, explain the variances, publish the review pack and preserve the installation.
 
 ## Progress
 
 | Tier | Done | Partial | Missing | Total |
 | --- | ---: | ---: | ---: | ---: |
-| Core | 81 | 17 | 6 | 104 |
-| Agent surface | 0 | 0 | 0 | 0 |
+| Core | 6 | 107 | 6 | 119 |
+| Agent surface | 0 | 1 | 4 | 5 |
 | Later | 0 | 0 | 0 | 0 |
-| Full target | 81 | 17 | 6 | 104 |
+| Full target | 6 | 108 | 10 | 124 |
 
-Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab13e` (23 October 2026). Field proof register: 0 rows; 0 passed, 0 failed, 0 not run.
+Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab13e` (23 October 2026). Field proof register: 7 rows; 0 passed, 0 failed, 7 not run.
 
 ## Core
 
@@ -21,1356 +21,1457 @@ Judged from the code and tests at commit `2f6274c485ec86e514899f029856e7138e2ab1
 
 #### EASEL-001 — Setup, roles and membership
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-SIGNIN-001, BASE-ROLE-001
 
-**Requirement.** Finance (the claimed owner and any Base admin) sets the company name, reporting currency, fiscal-year start and first plan month (twelve months), departments (shared or not), planning lines (revenue, cost of sales, operating expense; payroll or not) and people. Contributors are scoped to named departments; viewers read. A signed-in person without an active Easel membership sees no plan data.
+**Requirement.** Finance configures the planning company, its calendar, departments and planning membership. [Detailed semantics](docs/planning-semantics.md#easel-001).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-001` and the planning journey in `tests/browser.mjs`.
+1. Finance saves and reads back the company name, reporting currency, fiscal-year start and first plan month for a twelve-month plan.
+2. Shared and ordinary departments and revenue, cost-of-sales and operating-expense lines retain their payroll classification.
+3. The planning membership distinguishes company finance, contributors assigned to named departments and viewers.
+4. A signed-in person without active planning membership receives no plan data.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 1: Finance saves; point 1: reads back the company name; point 1: fiscal-year start; point 1: first plan month for a twelve-month plan; point 2: Shared; point 2: ordinary departments; point 2: revenue; point 2: cost-of-sales; point 2: operating-expense lines retain their payroll classification; point 3: The planning membership distinguishes company finance; point 3: viewers; point 4: A signed-in person without active planning membership receives no plan data. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-002 — Actuals preview that writes nothing
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-INPUT-003
 
-**Requirement.** An actuals CSV preview reads the file with the person's column, sign and date choices and shows months covered, per-account totals with a sign check, department totals, and every rejected row with its line number and reason (malformed date or amount, missing account, both debit and credit, an exact repeat of an earlier line, a row already accepted in another import). The preview writes nothing.
+**Requirement.** Finance previews an actuals CSV with explicit column, sign and date choices before accepting it. [Detailed semantics](docs/planning-semantics.md#easel-002).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-002`.
+1. The preview shows covered months, per-account totals and sign checks, and department totals.
+2. Malformed dates, malformed amounts, missing accounts, simultaneous debit and credit, repeated lines and already-accepted rows each appear as rejected rows with line number and reason.
+3. The preview creates no actuals, journal jobs or other stored changes.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 4 audited outcomes. Complete assertion mapping remains owed for point 1: per-account totals; point 1: and department totals; point 2: Malformed dates; point 2: malformed amounts; point 2: missing accounts; point 2: simultaneous debit; point 2: credit; point 2: already-accepted rows each appear as rejected rows with line number; point 2: reason; point 3: journal jobs or other stored changes. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-003 — Mapped, reconciled actuals acceptance
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-INPUT-003
 
-**Requirement.** An actuals file is accepted only when every account maps to a planning line, the cash balance or an explicit exclusion, every department maps, the reviewed preview fingerprint still matches, and finance confirms the rejected rows stay out. Acceptance goes through the Base import-kit journal with the exact original bytes. Reconciliation shows, month by month, that imported = mapped + excluded + cash + unmapped, with unmapped accounts listed.
+**Requirement.** Finance accepts only the reviewed, fully mapped actuals file and reads its complete monthly classification reconciliation. [Detailed semantics](docs/planning-semantics.md#easel-003).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-003` and `tests/review-fixes.test.mjs`.
+1. Acceptance requires every account to map to a planning line, cash or an explicit exclusion, every department to map, and the reviewed fingerprint still to match.
+2. Rejected rows remain excluded only after finance confirms them.
+3. The journal retains the exact original bytes of the accepted file.
+4. For every month, imported amounts equal mapped plus excluded plus cash plus unmapped amounts.
+5. The reconciliation lists the unmapped accounts.
 
-**Evidence.** `tests/easel.test.mjs` `tests/review-fixes.test.mjs`
-**Gap.** None.
+**Evidence.** `tests/easel.test.mjs`; `tests/review-fixes.test.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Acceptance requires every account to map to a planning line; point 1: cash or an explicit exclusion; point 1: every department to map; point 1: and the reviewed fingerprint still to match; point 2: Rejected rows remain excluded only after finance confirms them; point 3: The journal retains the exact original bytes of the accepted file; point 4: For every month; point 4: imported amounts equal mapped plus excluded plus cash plus unmapped amounts; point 5: The reconciliation lists the unmapped accounts. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-004 — Exact undo of an actuals import
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-INPUT-003
 
-**Requirement.** Undo of an accepted actuals import removes exactly the rows it wrote, through the journal. An import whose months a forecast has already closed cannot be undone; a correcting file is imported instead.
+**Requirement.** Finance reverses an accepted actuals import without removing unrelated actuals. [Detailed semantics](docs/planning-semantics.md#easel-004).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-004`.
+1. Undo removes exactly the rows written by the selected import and keeps unrelated rows.
+2. An import used by a closed forecast month cannot be undone.
+3. A correcting file can instead be reviewed and imported.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: An import used by a closed forecast month cannot be undone; point 3: A correcting file can instead be reviewed; point 3: imported. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-005 — Labeled opening cash and explicit cash timing
 
-Core · published · **done**
+Core · published · **partial** · Rules D-1
 
-**Requirement.** Each scenario's opening cash is either an estimate the person enters or the balance imported from accepted rows mapped to the cash balance before the first plan month, and every cash figure says which. Collections and payments follow explicit lags (months) plus opening receivables and payables; payroll is paid in its month. Each month's cash shows its arithmetic.
+**Requirement.** Each scenario's opening cash is either an estimate the person enters or the balance imported from accepted rows mapped to the cash balance before the first plan month, and every cash figure says which. Collections and payments follow explicit lags (months) plus opening receivables and payables; payroll is paid in its month. Each month's cash shows its arithmetic. [Detailed semantics](docs/planning-semantics.md#easel-005).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-005`.
+1. Each scenario's opening cash is either an estimate the person enters or the balance imported from accepted rows mapped to the cash balance before the first plan month, and every cash figure says which.
+2. Collections and payments follow explicit lags (months) plus opening receivables and payables; payroll is paid in its month.
+3. Each month's cash shows its arithmetic.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 3 audited outcomes. Complete assertion mapping remains owed for point 2: payments follow explicit lags (months) plus opening receivables; point 2: payables; point 2: payroll is paid in its month; point 3: Each month's cash shows its arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-006 — Exact revenue drivers with traces
 
-Core · published · **done**
+Core · published · **partial** · Rules D-1
 
-**Requirement.** Revenue comes from volume × rate (with monthly growth) or customers × revenue per customer (with churn, new customers per month and new customers per hire in a named department, ramped by the recorded ramp rule). Every cell carries the arithmetic that produced it. Money is integer cents, counts are hundredths and every division rounds half away from zero once; the same inputs always produce the same cells.
+**Requirement.** Volume and customer drivers produce reproducible revenue cells with their arithmetic. [Detailed semantics](docs/planning-semantics.md#easel-006).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-006` and `tests/totals.test.mjs`.
+1. Volume times rate includes monthly growth.
+2. Customer revenue includes churn, new customers per month and customers per hire in a named department, using the recorded hiring ramp.
+3. Every revenue cell carries its arithmetic trace.
+4. Repeated calculation of identical inputs produces identical cells.
 
-**Evidence.** `tests/easel.test.mjs` `tests/totals.test.mjs`
-**Gap.** None.
+**Evidence.** `tests/easel.test.mjs`; `tests/totals.test.mjs`
+**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: Volume times rate includes monthly growth; point 2: Customer revenue includes churn; point 2: new customers per month; point 2: customers per hire in a named department; point 2: using the recorded hiring ramp; point 3: Every revenue cell carries its arithmetic trace. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-007 — Position costs and restricted pay detail
 
-Core · published · **done**
+Core · published · **partial** · Rules D-1
 
-**Requirement.** Positions (named or to be hired) cost annual salary ÷ 12 × (1 + owner-supplied on-costs) from start to end month. Individual positions and salaries require the owner-granted Pay detail permission (`PEOPLE-005`); that grant lets finance see all departments and contributors only their own. The sources behind another department's numbers remain restricted to finance and that department's contributors; viewers and other departments receive amounts with the detail removed by the server, and cannot change another department's inputs through any route.
+**Requirement.** Named and planned positions contribute the salary schedule while the separate Pay detail grant controls position visibility. [Detailed semantics](docs/planning-semantics.md#easel-007).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-007`.
+1. From the entered start through end month, salary divided by twelve plus entered on-costs equals each position's monthly cost.
+2. Owner-granted Pay detail exposes all departments to finance and only assigned departments to contributors.
+3. Viewers and other departments retain aggregate amounts without individual position inputs, salaries or restricted source detail.
+4. A contributor cannot change another department's inputs through any planning door.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: Owner-granted Pay detail exposes all departments to finance; point 2: only assigned departments to contributors; point 3: Viewers; point 3: other departments retain aggregate amounts without individual position inputs; point 3: salaries or restricted source detail; point 4: A contributor cannot change another department's inputs through any planning door. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-008 — Expenses, schedules and visible allocations
 
-Core · published · **done**
+Core · published · **partial** · Rules D-1
 
-**Requirement.** Recurring and one-off expenses and imported monthly schedules feed their line and department. A shared department's costs are allocated to other departments by monthly headcount or fixed shares adding to exactly 100%; line totals never change and every allocated amount names its rule. Self, chained or unshared allocations, unknown lines or departments, and deleting a department or line still in use are refused.
+**Requirement.** Expenses and imported schedules feed department totals, with source-preserving shared-cost allocations. [Detailed semantics](docs/planning-semantics.md#easel-008).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-008` and `tests/totals.test.mjs`.
+1. Recurring expenses, one-off expenses and monthly schedules post to their entered line and department.
+2. Headcount and fixed-share allocation rules distribute shared costs and identify the rule on each allocated amount.
+3. Fixed shares total exactly one hundred percent, and allocation preserves the original line total.
+4. Self, chained and unshared allocations are refused.
+5. Unknown lines or departments and deletion of an in-use line or department are refused.
 
-**Evidence.** `tests/easel.test.mjs` `tests/totals.test.mjs`
-**Gap.** None.
+**Evidence.** `tests/easel.test.mjs`; `tests/totals.test.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Recurring expenses; point 1: one-off expenses; point 1: monthly schedules post to their entered line; point 1: department; point 2: Headcount; point 2: fixed-share allocation rules distribute shared costs; point 2: identify the rule on each allocated amount; point 3: Fixed shares total exactly one hundred percent; point 3: and allocation preserves the original line total; point 4: Self; point 4: chained; point 4: unshared allocations are refused; point 5: Unknown lines or departments; point 5: deletion of an in-use line or department are refused. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-009 — Department submissions
 
-Core · published · **done**
+Core · published · **partial**
 
-**Requirement.** Finance requests submissions from departments. A contributor revises only their own department's budget inputs while its submission is requested or returned, comments on their own department, and submits; a submitted department is locked until finance returns it with a reason. The full request/submit/return history is kept.
+**Requirement.** Finance requests submissions from departments. A contributor revises only their own department's budget inputs while its submission is requested or returned, comments on their own department, and submits; a submitted department is locked until finance returns it with a reason. The full request/submit/return history is kept. [Detailed semantics](docs/planning-semantics.md#easel-009).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-009` and `tests/review-fixes.test.mjs`.
+1. Finance requests submissions from departments.
+2. A contributor revises only their own department's budget inputs while its submission is requested or returned, comments on their own department, and submits
+3. A submitted department is locked until finance returns it with a reason.
+4. The full request/submit/return history is kept.
 
-**Evidence.** `tests/easel.test.mjs` `tests/review-fixes.test.mjs`
-**Gap.** None.
+**Evidence.** `tests/easel.test.mjs`; `tests/review-fixes.test.mjs`
+**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: Finance requests submissions from departments; point 2: A contributor revises only their own department's budget inputs while its submission is requested or returned; point 2: comments on their own department; point 2: and submits; point 3: A submitted department is locked until finance returns it with a reason. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-010 — Exact-revision budget approval
 
-Core · published · **done**
+Core · published · **partial** · Rules D-2, D-1
 
-**Requirement.** Finance approves the budget only at the exact revision reviewed and only when every requested department has submitted. Approval freezes the budget and stores an immutable snapshot (inputs, outputs, approver, time, revision, submissions, SHA-256) that the database refuses to change or delete. The forecast opens from the approved budget.
+**Requirement.** The reviewed budget becomes a frozen planning decision from which the forecast opens. [Detailed semantics](docs/planning-semantics.md#easel-010).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-010`.
+1. Budget approval requires the exact reviewed revision and every requested department to be submitted.
+2. The snapshot contains inputs, outputs, approver, time, revision, submissions and digest.
+3. The approved snapshot cannot be changed or deleted.
+4. The forecast opens with the approved budget's arithmetic.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 5 audited outcomes. Complete assertion mapping remains owed for point 1: Budget approval requires the exact reviewed revision; point 1: every requested department to be submitted; point 2: The snapshot contains inputs; point 2: outputs; point 2: time; point 2: submissions. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-011 — Scenario branch and comparison
 
-Core · published · **done**
+Core · published · **partial**
 
-**Requirement.** Finance branches any plan into a scenario (for example a downside with later hiring or higher churn) and compares two scenarios: monthly profit and closing cash side by side, every changed assumption, and every cell that moved.
+**Requirement.** Finance branches plans and compares their assumptions and results. [Detailed semantics](docs/planning-semantics.md#easel-011).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-011`.
+1. A downside branch can delay hiring or change churn without changing its source.
+2. The comparison shows monthly profit and closing cash side by side.
+3. Every changed assumption and every moved cell is listed.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 1: A downside branch can delay hiring or change churn without changing its source; point 3: Every changed assumption; point 3: every moved cell is listed. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-012 — Proposals promoted at exact revisions
 
-Core · published · **done**
+Core · published · **partial**
 
-**Requirement.** A proposal is a copy of a working plan bound to that plan's exact revision. Its author (a contributor for their own departments, finance for any) changes it and submits it; finance promotes only the exact proposal revision reviewed, and only while the target is still at the bound revision. Otherwise nothing changes. Promotion records the target's revision before and after.
+**Requirement.** A proposal carries a working plan's reviewed revision into exact-revision promotion. [Detailed semantics](docs/planning-semantics.md#easel-012).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-012`.
+1. A new proposal copies its source and binds that source revision.
+2. Contributors change only assigned departments; finance can prepare changes across departments.
+3. Promotion requires the reviewed proposal revision and the unchanged bound target revision.
+4. A stale proposal or target changes nothing.
+5. Successful promotion records the target revision before and after.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: A new proposal copies its source; point 1: binds that source revision; point 2: Contributors change only assigned departments; point 2: finance can prepare changes across departments; point 3: Promotion requires the reviewed proposal revision; point 3: the unchanged bound target revision; point 4: A stale proposal or target changes nothing. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-013 — Month close and source-backed variance
 
-Core · published · **done**
+Core · published · **partial** · Rules D-2
 
-**Requirement.** Finance closes the next month on the forecast once accepted actuals cover it. The forecast as it stood is kept as an immutable snapshot first; closed months then use actuals. For a closed month, each line and department shows actual against the approved budget and the kept forecast, with the accepted rows behind it, the budget sources, and a draft that marks any timing explanation as an unconfirmed hypothesis. Finance or the department's contributor writes and confirms the business explanation.
+**Requirement.** Finance closes the next month on the forecast once accepted actuals cover it. The forecast as it stood is kept as an immutable snapshot first; closed months then use actuals. For a closed month, each line and department shows actual against the approved budget and the kept forecast, with the accepted rows behind it, the budget sources, and a draft that marks any timing explanation as an unconfirmed hypothesis. Finance or the department's contributor writes and confirms the business explanation. [Detailed semantics](docs/planning-semantics.md#easel-013).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-013` and the review journey at 390 in `tests/browser.mjs`.
+1. Finance closes the next month on the forecast once accepted actuals cover it.
+2. The forecast as it stood is kept as an immutable snapshot first; closed months then use actuals.
+3. For a closed month, each line and department shows actual against the approved budget and the kept forecast, with the accepted rows behind it, the budget sources, and a draft that marks any timing explanation as an unconfirmed hypothesis.
+4. Finance or the department's contributor writes and confirms the business explanation.
 
-**Evidence.** `tests/easel.test.mjs` `tests/browser-journey.mjs`
-**Gap.** None.
+**Evidence.** `tests/easel.test.mjs`; `tests/browser-journey.mjs`
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: The forecast as it stood is kept as an immutable snapshot first; point 2: closed months then use actuals; point 3: For a closed month; point 3: each line; point 3: department shows actual against the approved budget; point 3: the kept forecast; point 3: with the accepted rows behind it; point 3: the budget sources; point 4: Finance or the department's contributor writes; point 4: confirms the business explanation. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-014 — Published review pack with decisions
 
-Core · published · **done**
+Core · published · **partial** · Rules D-2
 
-**Requirement.** Finance creates a review pack for a closed month, records decisions and actions, and publishes it as an immutable snapshot binding the numbers, the approved budget and forecast revisions, the accepted source files with their digests, the explanations and the decisions. Every member, viewers included, can download it as HTML or CSV; it carries no individual pay detail. Action progress is recorded without changing the pack.
+**Requirement.** Finance publishes a closed-month review pack binding numbers, explanations and decisions. [Detailed semantics](docs/planning-semantics.md#easel-014).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-014`.
+1. Publication captures numbers, budget and forecast revisions, source files and their digests, explanations, decisions and actions.
+2. Every member, including a viewer, downloads the published HTML and CSV.
+3. Published outputs contain no individual pay detail.
+4. Recording action progress leaves the published pack unchanged.
 
 **Evidence.** `tests/easel.test.mjs`
-**Gap.** None.
+**Gap.** Carried evidence establishes 1 audited outcomes. Complete assertion mapping remains owed for point 1: Publication captures numbers; point 1: budget; point 1: forecast revisions; point 1: source files; point 1: their digests; point 1: explanations; point 1: decisions; point 1: actions; point 2: Every member; point 2: including a viewer; point 2: downloads the published HTML; point 2: CSV; point 3: Published outputs contain no individual pay detail. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-015 — Excel workbook move-in with provenance
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-INPUT-003 · Rules D-1
 
-**Requirement.** The Excel planning workbook kit reads an .xlsx sheet with Line, Department and month columns, uses each cell's cached value, keeps sheet, row, cell address and formula text as provenance, rounds to cents visibly, skips total rows, and requires every line and department to match or be mapped. It stages the workbook as a new scenario through the import journal; undo removes what it wrote and keeps any row a person has since edited (and what that row needs).
+**Requirement.** Finance imports cached Excel planning cells as a separate scenario with cell provenance. [Detailed semantics](docs/planning-semantics.md#easel-015).
 
 **Acceptance.**
-1. `tests/easel.test.mjs` `EASEL-015` and `tests/workbook-undo.test.mjs`.
+1. Line, Department and month columns are read from an Excel worksheet, using cached values and visibly rounded cents.
+2. Every value retains sheet, row, cell address and formula text as provenance.
+3. Total rows are skipped, and every planning line and department must match or be mapped.
+4. Acceptance stages a separate scenario through the import journal.
+5. Undo removes imported rows while retaining subsequently edited rows and their dependencies.
 
-**Evidence.** `tests/easel.test.mjs` `tests/workbook-undo.test.mjs`
-**Gap.** None.
+**Evidence.** `tests/easel.test.mjs`; `tests/workbook-undo.test.mjs`
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 1: Line; point 1: Department; point 1: month columns are read from an Excel worksheet; point 1: using cached values; point 1: visibly rounded cents; point 2: Every value retains sheet; point 2: row; point 3: Total rows are skipped; point 3: and every planning line; point 3: department must match or be mapped; point 4: Acceptance stages a separate scenario through the import journal; point 5: Undo removes imported rows while retaining subsequently edited rows; point 5: their dependencies. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Portability and runtime
 
 #### EASEL-016 — Complete export and clean restore
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-DATA-001 · Rules D-2
 
-**Requirement.** `rer export` writes the complete installation (model, actuals, journal and originals, approvals, kept forecasts, packs and activity); `rer import` refuses a non-empty destination or a corrupt archive and restores into a clean installation of the release that made it, which then shows the same model, approvals, outputs and packs and re-exports identical rows.
+**Requirement.** The Base export and restore journey preserves Easel's complete planning loop. [Detailed semantics](docs/planning-semantics.md#easel-016).
 
 **Acceptance.**
-1. the export and restore steps of `tests/browser.mjs` and `tests/review-fixes.test.mjs`.
+1. After export and clean restore, the same model, actuals, journal originals, approvals, kept forecasts, packs and activity are present.
+2. The restored installation shows identical scenario outputs and pack downloads and re-exports identical planning rows.
+3. A non-empty destination and a corrupt archive are refused without changing the destination.
 
-**Evidence.** `tests/browser.mjs` `tests/review-fixes.test.mjs`
-**Gap.** None.
+**Evidence.** `tests/browser.mjs`; `tests/review-fixes.test.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: After export; point 1: clean restore; point 1: the same model; point 1: actuals; point 1: journal originals; point 1: approvals; point 1: kept forecasts; point 1: packs; point 1: activity are present; point 2: The restored installation shows identical scenario outputs; point 2: pack downloads; point 2: re-exports identical planning rows; point 3: A non-empty destination; point 3: a corrupt archive are refused without changing the destination. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### EASEL-017 — Owned runtime on Base
 
-Core · published · **done**
+Core · published · **partial** · Cites BASE-INSTALL-001, BASE-OPS-002 · Register R-1, R-2
 
-**Requirement.** MIT source starts with one line, `npx -y @runeditrun/rer dev just-every/run-easel`, and the checkout runs through `rer` install, setup, dev, build, preview, verify, reset, export, import, deploy --dry-run, describe and check, on TanStack Start, Hono and Cloudflare D1, with self-hosted IBM Plex Sans, Easel's theme on Base's installer and sign-in pages, and dev identity with finance, sales, engineering and board personas. Builds refuse the local dev layer.
+**Requirement.** Easel's Base runtime presents its own theme, self-hosted IBM Plex Sans and planning personas. [Detailed semantics](docs/planning-semantics.md#easel-017).
 
 **Acceptance.**
-1. `tests/browser.mjs`, `rer verify` and the GitHub Verify workflow.
+1. The installer and sign-in pages use the Easel theme and self-hosted IBM Plex Sans.
+2. Finance, sales, engineering and board development personas complete their corresponding planning jobs.
+3. A production build refuses the development identity layer.
 
-**Evidence.** `tests/browser.mjs` `tests/approval-chains-browser.mjs` (emitted Worker health, unclaimed setup and native sign-in/approval at 1440/390) `.github/workflows/verify.yml`
-**Gap.** None.
+**Evidence.** `tests/browser.mjs`; `tests/approval-chains-browser.mjs`; `.github/workflows/verify.yml`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: The installer; point 1: sign-in pages use the Easel theme; point 1: self-hosted IBM Plex Sans; point 2: Finance; point 2: sales; point 2: engineering; point 2: board development personas complete their corresponding planning jobs; point 3: A production build refuses the development identity layer. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Connected actuals
 
 #### CONNECT-001 — QuickBooks Online actuals connector
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. The first connection backfills history: finance chooses 12 to 36 closed months (24 by default), and each backfilled month lands as its own reviewed batch with its own trial-balance reconciliation, so prior-year actuals are there to plan from (`MODEL-009`) and to report against (`REPORT-001`). Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not.
-
-Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
-
-Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
-
-Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, last-closed actual statement openings, explicit source-attributed prepaid/accrued/deferred/asset schedule openings, visible reconciliation differences, current authority and frozen captures. Its provider journey asserts those balances and allocations before shipping.
-
-Current implementation semantics: native history review defaults to 24 separately accepted closed months, with the preceding source opening imported once. Explicitly empty months retain reviewed source-month records without invented journal rows. Intuit's fiscal-year report transfers are displayed separately from posted revenue. Same-transaction, same-account and same-dimension posting splits aggregate under a stable source identity; a changed transaction can therefore have paired debit and credit deltas. Zero-value observations without a posting account are visible exclusions requiring finance confirmation. OAuth state is one-use and native-session bound; an existing authorized company grant can also be connected. Accounting calls are allowlisted reads; token renewal and explicit provider revocation are the only OAuth writes.
+**Requirement.** Finance connects QuickBooks Online through Intuit OAuth 2.0 (accounting scope, read-only). Easel pulls the chart of accounts, classes, locations, departments, customers and vendors, and general-ledger detail by month for the profit-and-loss and balance-sheet accounts. The first connection backfills history: finance chooses 12 to 36 closed months (24 by default), and each backfilled month lands as its own reviewed batch with its own trial-balance reconciliation, so prior-year actuals are there to plan from and to report against. Each pull is previewed as a reviewed batch: rows by month, new or changed accounts and dimensions, and anything unmapped. It lands through the import journal with the provider's transaction IDs, so a re-pull of the same month is idempotent and a provider-side edit shows as a change rather than a duplicate. Monthly totals reconcile to the QuickBooks trial balance for the same period, and the difference is shown when they do not. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-001).
 
 **Acceptance.**
-1. through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance; then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance; one recorded run against Intuit's live sandbox.
-2. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
-3. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
+1. Through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months, connect and see all 24 months backfilled and accepted, each with a reconciled trial balance
+2. Then pull two current months, map, accept, edit one transaction in the fake, pull again and see one changed row, no duplicates, and a reconciled trial balance
+3. One recorded run against Intuit's live sandbox.
+4. CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically
+5. A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped
+6. Source account types and dimensions remain available to the resolver.
+7. CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL
+8. A viewer reads amounts without restricted source rows.
 
-**Evidence.** `tests/qbo.test.mjs` — “QuickBooks OAuth backfills separate reconciled months and imports idempotent corrections under native custody”: one-use OAuth, 24 separately reconciled closed months, two current months, one changed transaction without duplicates, source types and dimensions, automatic and unresolved accounts, native custody, audit, rate limits, revocation and source-history undo. `tests/mapping-rules.test.mjs` — “CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export”, QBO source: zero-sum close, source openings and allocations, visible differences, current authority, frozen captures and formula Excel. `tests/connectors-browser.mjs` — native QuickBooks review, provider transaction link, viewer amounts without rows, connection and disconnect at 1440 and 390. `tests/qbo-live.mjs` — “QuickBooks native existing OAuth grant and monthly source preview”: held Intuit sandbox run, 26 October 2026, September source, 222 ledger groups and reconciled trial balance, immediate refresh-token custody, zero accounting writes.
-**Gap.** None for reviewed native pulls; CONNECT-005 retains schedules and propagated freshness.
+**Evidence.** `tests/qbo.test.mjs`; `tests/mapping-rules.test.mjs`; `tests/connectors-browser.mjs`; `tests/qbo-live.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Through the HTTP API against a recorded QuickBooks Online sandbox company (a fake only at the Intuit edge) holding 24 closed months; point 1: connect; point 1: see all 24 months backfilled; point 1: accepted; point 1: each with a reconciled trial balance; point 2: Then pull two current months; point 2: map; point 2: accept; point 2: edit one transaction in the fake; point 2: pull again; point 2: see one changed row; point 2: no duplicates; point 2: and a reconciled trial balance; point 3: One recorded run against Intuit's live sandbox; point 4: CONNECT-006 on initial backfill; point 4: a later refresh: a new in-range account is mapped; point 4: listed automatically; point 5: A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; point 6: Source account types; point 6: dimensions remain available to the resolver; point 7: CONNECT-008 in the browser at 1440/390: open a variance cell; point 7: read all its accepted rows; point 7: follow a row link to this provider fake's transaction URL; point 8: A viewer reads amounts without restricted source rows. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CONNECT-002 — Xero actuals connector
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · Register R-5
 
-**Requirement.** Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`.
-
-Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
-
-Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
-
-Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, last-closed actual statement openings, explicit source-attributed prepaid/accrued/deferred/asset schedule openings, visible reconciliation differences, current authority and frozen captures. Its provider journey asserts those balances and allocations before shipping.
+**Requirement.** Finance connects Xero through OAuth 2.0 (read-only accounting scopes). Easel pulls accounts, both tracking categories (mapped to departments or other dimensions under `MODEL-003`), contacts and journals by month, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation as `CONNECT-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-002).
 
 **Acceptance.**
-1. the `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions; one recorded run against Xero's live demo company.
-2. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
-3. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
-4. Current implementation semantics: each month is explicitly previewed and accepted through the existing actuals journal.
-5. Initial source openings are imported once; empty months retain source review records.
-6. Both tracking categories are ordered by their stable source IDs: the first supplies source class rules and the second source tracking-option rules in Settings → Dimensions.
-7. Each maps independently to an existing custom dimension.
-8. Source journal line IDs retain correction identity. Xero fiscal report transfers remain separate from posted revenue. An OAuth callback accepts exactly one authorized organisation; an existing read-only grant requires an explicit authorized tenant ID. Native finance administration inherits CONNECT-010 and the same native-session boundary as CONNECT-001; credentials are sealed and excluded from portable archives. Accounting requests are fixed reads; renewal and explicit revocation are the OAuth writes.
+1. The `CONNECT-001` journey, including the 24-month backfill, against a recorded Xero demo company, including two tracking categories mapped to two dimensions
+2. CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically
+3. A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped
+4. Source account types and dimensions remain available to the resolver.
+5. CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL
+6. A viewer reads amounts without restricted source rows.
 
-**Evidence.** `tests/xero.test.mjs` — “Xero OAuth backfills separate reconciled months and imports idempotent corrections under native custody”: one-use session-bound OAuth, 24 separately reconciled months, two current months, idempotent paired correction deltas, both tracking categories mapped to separate custom dimensions, new and unresolved accounts, zero-write preview, source links, viewer filtering, sealed archive-excluded credentials, native finance administration, audit, rate limits and truthful revocation. `tests/mapping-rules.test.mjs` — “CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export”, Xero source: source openings, explicit allocations, visible differences, current authority, frozen captures and formula Excel. `tests/connectors-browser.mjs` — native Xero connection, monthly review, accepted source months, provider-fake follow-link, viewer amounts without rows and disconnect at 1440 and 390.
-**Gap.** Recorded live Xero Demo Company qualification pending; this cloud has no provisioned OAuth broker helper or broker-supplied organisation consent. CONNECT-005 retains scheduled refresh and propagated freshness.
+**Evidence.** `tests/xero.test.mjs`; `tests/mapping-rules.test.mjs`; `tests/connectors-browser.mjs`
+**Gap.** Reviewed Xero pulls and both tracking dimensions are delivered. Full inherited source reconciliation, refresh and downstream-freshness proof remains incomplete; live tenant proof is R-5.
 
 #### CONNECT-003 — NetSuite actuals connector
 
-Core · target · **missing**
+Core · target · **missing** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`.
-
-Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
-
-Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
-
-Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, last-closed actual statement openings, explicit source-attributed prepaid/accrued/deferred/asset schedule openings, visible reconciliation differences, current authority and frozen captures. Its provider journey asserts those balances and allocations before shipping.
+**Requirement.** Finance connects NetSuite through token-based authentication or OAuth 2.0 with a read-only role. Easel pulls accounts, subsidiaries, departments, classes and locations and posted transaction lines by period through SuiteQL, with the same history backfill, preview, idempotent re-pull, change detection and trial-balance reconciliation. Subsidiaries map to entities under `ENTITY-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. Its provider entity mapping satisfies ENTITY-001, including source partitions, currencies and current entity/department grants. [Detailed semantics](docs/planning-semantics.md#connect-003).
 
 **Acceptance.**
-1. the `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries; one recorded run against a NetSuite sandbox account.
-2. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
-3. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
+1. The `CONNECT-001` journey, including the 24-month backfill, against a recorded NetSuite SuiteQL fake with two subsidiaries
+2. One recorded run against a NetSuite sandbox account.
+3. CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically
+4. A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped
+5. Source account types and dimensions remain available to the resolver.
+6. CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL
+7. A viewer reads amounts without restricted source rows.
 
 **Evidence.** None.
 **Gap.** No NetSuite SuiteQL connector or subsidiary mapping
 
 #### CONNECT-004 — Pantry actuals connector
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`.
-
-Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
-
-Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
-
-Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, last-closed actual statement openings, explicit source-attributed prepaid/accrued/deferred/asset schedule openings, visible reconciliation differences, current authority and frozen captures. Its provider journey asserts those balances and allocations before shipping.
+**Requirement.** A buyer on [Pantry](https://github.com/just-every/run-pantry) connects it through Pantry's API with a scoped read-only token, and gets the same history backfill, chart, dimension and journal pull, idempotency, change detection and reconciliation as `CONNECT-001`. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. [Detailed semantics](docs/planning-semantics.md#connect-004).
 
 **Acceptance.**
-1. two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree.
-2. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
-3. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
-4. The current native-finance API connects an installation-configured Pantry origin with explicit read consent, seals the credential outside archives, and records administration.
-5. Manual range previews retain posted entry IDs, revisions, account types and class, location and project metadata.
-6. The source must agree with the accrual general ledger and both boundary trial balances.
-7. Reviewed commits use the existing actuals journal, reusable mappings and explicit continuation or undo.
-8. A repeated unchanged pull adds nothing; reviewed amount corrections import only the difference. Changes to an accepted source account, date or dimension require explicit correcting-file review. Disconnect deletes the local secret and records the exact owner revocation step in Pantry; no remote revocation is claimed. *Acceptance evidence for this slice:* `tests/mapping-rules.test.mjs` — “Pantry read-only source backfills reviewed actuals, re-pulls without duplicates and accepts reconciled corrections with sealed native custody” proves a historical range, account-type range mapping, complete cursor reads, trial-balance agreement, no-write preview, reviewed correction, unchanged re-pull, source inconsistency refusal, current finance authority, cross-origin refusal, archive exclusion and truthful disconnect through HTTP with a network-edge fake. `tests/pantry-browser.mjs` drives native connection, masked custody, date-range preview, automatic mapping, reviewed acceptance, unchanged refresh, correction, truthful disconnect and exact variance transaction links in the built application at 1440 and 390. A viewer reads the exact aggregate while source rows and links remain absent. The provider link uses Pantry’s native exact journal-record search door; the browser replaces only the provider page at the network edge. The same HTTP flow additionally proves a new in-range account on refresh, an uncovered account refusing acceptance without affecting the prior complete month, explicit resolution, preserved source dimensions and viewer filtering.
+1. Two local installations (Pantry and Easel) where Easel backfills every closed month Pantry holds, pulls a current month, a Pantry correction shows as a changed row on the next pull, and trial balances agree.
+2. CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically
+3. A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped
+4. Source account types and dimensions remain available to the resolver.
+5. CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL
+6. A viewer reads amounts without restricted source rows.
 
-**Evidence.** `tests/pantry-live.mjs` (CONNECT-004 real local Pantry and Easel); `tests/mapping-rules.test.mjs` (Pantry read-only source backfills reviewed actuals, re-pulls without duplicates and accepts reconciled corrections with sealed native custody; CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export); `tests/pantry-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/pantry-live.mjs`; `tests/mapping-rules.test.mjs`; `tests/pantry-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Two local installations (Pantry; point 1: Easel) where Easel backfills every closed month Pantry holds; point 1: pulls a current month; point 1: a Pantry correction shows as a changed row on the next pull; point 1: and trial balances agree; point 2: CONNECT-006 on initial backfill; point 2: a later refresh: a new in-range account is mapped; point 2: listed automatically; point 3: A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; point 4: Source account types; point 4: dimensions remain available to the resolver; point 5: CONNECT-008 in the browser at 1440/390: open a variance cell; point 5: read all its accepted rows; point 5: follow a row link to this provider fake's transaction URL; point 6: A viewer reads amounts without restricted source rows. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CONNECT-011 — Sage Intacct actuals connector
 
-Core · target · **missing**
+Core · target · **missing** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance connects Sage Intacct with a Web Services sender ID and a read-only web-services user, or through the Sage Intacct REST API with OAuth 2.0. Easel pulls the chart of accounts, entities (a multi-entity shared company maps its entities under `ENTITY-001`), the standard dimensions (location, department, class, project, customer and vendor), any user-defined dimensions, and general-ledger detail by period. Location and department map to Easel dimension members under `CONNECT-006` and `MODEL-003`. It has the same history backfill, preview, idempotent re-pull by the provider's record number, change detection and trial-balance reconciliation as `CONNECT-001`, and drill-through links to the Intacct entry (`CONNECT-008`).
-
-Before this connector ships, it inherits CONNECT-006: source account-type and dimension metadata feed the reusable mapping rules on initial backfill and every refresh; newly covered accounts are mapped and listed automatically, and uncovered or ambiguous accounts block only dependent conclusions without becoming zero.
-
-Before this connector ships, it also inherits CONNECT-008: every accepted transaction row links to its provider transaction under the same server-side department filtering as file rows.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
-
-Before this connector ships, it inherits CONNECT-007: zero-sum ledger close, last-closed actual statement openings, explicit source-attributed prepaid/accrued/deferred/asset schedule openings, visible reconciliation differences, current authority and frozen captures. Its provider journey asserts those balances and allocations before shipping.
+**Requirement.** Finance connects Sage Intacct with a Web Services sender ID and a read-only web-services user, or through the Sage Intacct REST API with OAuth 2.0. Easel pulls the chart of accounts, entities (a multi-entity shared company maps its entities under `ENTITY-001`), the standard dimensions (location, department, class, project, customer and vendor), any user-defined dimensions, and general-ledger detail by period. Location and department map to Easel dimension members under `CONNECT-006` and `MODEL-003`. It has the same history backfill, preview, idempotent re-pull by the provider's record number, change detection and trial-balance reconciliation as `CONNECT-001`, and drill-through links to the Intacct entry. The connector also satisfies mapping, drill-through, custody and balance-opening duties in CONNECT-006, CONNECT-008, CONNECT-010 and CONNECT-007 on its own source data. Its provider entity mapping satisfies ENTITY-001, including source partitions, currencies and current entity/department grants. [Detailed semantics](docs/planning-semantics.md#connect-011).
 
 **Acceptance.**
-1. the `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles; a variance cell's row links to the Intacct fake's entry URL (`CONNECT-008`); one recorded run against a Sage Intacct sandbox company.
-2. Also assert CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically; a new out-of-range or ambiguous account blocks only its dependent conclusions until mapped; source account types and dimensions remain available to the resolver.
-3. Also exercise inherited CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL; a viewer reads amounts without restricted source rows.
+1. The `CONNECT-001` journey, including the 24-month backfill, against a recorded Sage Intacct fake of Web Services or REST general-ledger detail with two entities, two locations and three departments, where locations and departments map to two Easel dimensions and each entity's trial balance reconciles
+2. A variance cell's row links to the Intacct fake's entry URL
+3. One recorded run against a Sage Intacct sandbox company.
+4. CONNECT-006 on initial backfill and a later refresh: a new in-range account is mapped and listed automatically
+5. A new out-of-range or ambiguous account blocks only its dependent conclusions until mapped
+6. Source account types and dimensions remain available to the resolver.
+7. CONNECT-008 in the browser at 1440/390: open a variance cell, read all its accepted rows and follow a row link to this provider fake's transaction URL
+8. A viewer reads amounts without restricted source rows.
 
 **Evidence.** None.
 **Gap.** No Sage Intacct connector, dimension mapping or entity mapping
 
 #### CONNECT-005 — Scheduled refresh with visible freshness
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · Rules D-2
 
-**Requirement.** Each connection refreshes on a schedule finance sets (hourly, nightly or weekly, in the company's US time zone) and on demand. Refresh pulls data and metadata together. Every view shows each source's last successful refresh, and a source older than its schedule is marked stale wherever its numbers appear. A failed refresh keeps the previous data, shows the provider error and notifies finance (`CYCLE-003`). Before this capability ships, CONNECT-005 inherits CYCLE-003's notification rules for restatement notices and refresh failures to finance (each person's preference, record link, once per event and recipient). A provider-side change to a month that is already closed never silently changes closed numbers: it opens a restatement notice that lists the affected lines, packs and kept forecasts, and finance accepts or rejects it.
-
-Before this capability ships, CONNECT-005 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
+**Requirement.** Finance schedules source refreshes and sees freshness and errors wherever those sources inform a planning conclusion; closed figures change only through an explicit restatement decision. [Detailed semantics](docs/planning-semantics.md#connect-005).
 
 **Acceptance.**
-1. a Workers journey with the scheduled handler, a provider fake and a mail fake: refresh on schedule; fail, and show the error with data unchanged while finance receives one refresh-failure notification naming the source and error (`CYCLE-003`); go stale; and post a change to a closed month that produces a restatement notice instead of a changed pack.
+1. Hourly, nightly and weekly schedules and on-demand refresh read data and metadata together in the saved company time zone.
+2. Every consuming view shows the last successful source refresh and marks data older than its schedule as stale.
+3. A failed refresh retains previous data, displays its error and notifies finance once under CYCLE-003.
+4. A closed-month source change opens a notice naming affected lines, packs and kept forecasts instead of changing a pack.
+5. Finance accepts or rejects the restatement.
+6. Payroll and HR refresh retain PEOPLE-006 dates, backfills, attrition and history and ERASE-001 identity erasure.
 
-**Evidence.** `tests/gauge-utilization.test.mjs` — “REV-003 CONNECT-010 reviewed Gauge agency utilization, sealed custody, source changes, undo, authority and frozen values”; `tests/gauge-schedule-browser.mjs`
-**Gap.** Gauge source-month observations, accepted provenance, schedule-aware stale and error metadata propagate through scenario, Plan, dashboard, saved-report and Review reads and report exports without changing model values or captures. Standing observation consent approved by ct 23 October 20:50 UTC. Restatement review and affected lines, packs and kept forecasts; freshness in other consuming views and for other sources; non-Gauge and payroll refresh and qualification; qualified Base resolved-address and pinned-egress door (gr-base-285; CYCLE-003); PEOPLE-006 date and history and ERASE-001 provider erasure remain held
+**Evidence.** `tests/gauge-utilization.test.mjs`; `tests/gauge-schedule-browser.mjs`
+**Gap.** Gauge month observations and health overlays are delivered. Closed-month restatement review and affected-line/pack/forecast notices, non-Gauge/payroll refresh and qualified Base resolved-address/pinned-egress remain incomplete.
 
 #### CONNECT-006 — Mapping rules that survive refresh
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · Rules D-2
 
-**Requirement.** Account and dimension mappings are reusable rules, not only one-to-one picks. They cover a single account, an account-number range, a prefix or a provider account type to a planning line, the cash balance, a balance-sheet line or an exclusion, and a provider department, class or tracking option to an Easel dimension member. A new account that a rule covers is mapped automatically and listed. A new account that no rule covers blocks only the conclusions that depend on it, and is never treated as zero.
-
-For current CSV sources, exact account picks override reusable rules. Number ranges are inclusive and compare digit-only account codes numerically, including leading zeros. Prefixes and account types match case sensitively after trimming surrounding spaces. Multiple rules with the same target agree; differing targets are ambiguous until finance resolves them, including by an exact pick. Optional account-type metadata comes from a selected CSV column. Each preview lists automatic rule matches and period completeness. EASEL-003 still requires the whole file to map before acceptance. An accepted period with unresolved account or department rows blocks calculations consuming that period, even when unresolved rows net to zero; its revenue and cost conclusions are absent, never zero. Earlier complete-period reviews and frozen snapshots remain available. Existing mappings continue to classify working actuals; changing rules never changes frozen arithmetic. Current CSV doors satisfy this obligation. CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004 and CONNECT-011 inherit provider refresh and metadata resolution; MODEL-003 inherits custom dimension mappings and finer line/dimension dependency blocking; CONNECT-007 inherits balance-sheet targets, each before shipping.
+**Requirement.** Account and dimension rules survive refresh and resolve only the conclusions their inputs support. [Detailed semantics](docs/planning-semantics.md#connect-006).
 
 **Acceptance.**
-1. the API journey maps by range, pulls a month containing a new in-range account (mapped and listed) and a new out-of-range account, and sees the dependent month's reconciliation blocked until finance maps it.
+1. Single-account, numeric-range, prefix and source-account-type rules map to a planning line, cash, a balance-sheet line or exclusion.
+2. Department, class and tracking-option rules map source dimensions to model members.
+3. A newly covered account is automatically mapped and listed.
+4. An uncovered or ambiguous account blocks only dependent conclusions until resolved and is never counted as zero.
+5. Existing completed-period reviews and frozen values remain available after a rule change.
 
-**Evidence.** `src/easel/account-rules.ts`, `src/easel/actuals-read.ts`, `tests/mapping-rules.test.mjs`, `tests/mapping-rules-browser.mjs`
-**Gap.** Current CSV exact/range/prefix/type rules, automatic match listing, reviewed fingerprints and period-dependent blocking; future connectors, balance-sheet targets and dimensions inherit the obligation in their clauses
+**Evidence.** `src/easel/account-rules.ts`; `src/easel/actuals-read.ts`; `tests/mapping-rules.test.mjs`; `tests/mapping-rules-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Single-account; point 1: numeric-range; point 1: prefix; point 1: source-account-type rules map to a planning line; point 1: cash; point 1: a balance-sheet line or exclusion; point 2: Department; point 2: class; point 2: tracking-option rules map source dimensions to model members; point 3: A newly covered account is automatically mapped; point 3: listed; point 4: An uncovered or ambiguous account blocks only dependent conclusions until resolved; point 4: is never counted as zero; point 5: Existing completed-period reviews; point 5: frozen values remain available after a rule change. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CONNECT-007 — Balance-sheet actuals and the trial balance
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Accepted actuals include month-end balance-sheet balances (cash, receivables, prepaid, fixed assets, payables, accrued liabilities, deferred revenue, debt and equity), not only profit-and-loss flows and the cash account. Each closed month shows a trial balance that sums to zero, and the forecast balance sheet (`FIN-001`) opens from the last closed month's actual balances. CONNECT-007 carries FIN-001: imported balances replace the corresponding opening estimates and reconcile the three statements, with visible traced differences rather than balancing plugs.
-
-Balance-sheet actuals carry CONNECT-006: single-account, numeric-range, prefix and source-account-type rules can target every supported balance-sheet line, with automatic listing and dependency blocking for unresolved balances.
-
-Imported balance-sheet openings carry FIN-002: imported operating prepaids, accrued payroll/bonuses and deferred revenue open the forecast subledgers with source attribution and traced statement reconciliation, instead of labeled estimates. Imported net fixed assets carry FIN-004: the accepted net fixed-asset balance, allocated to explicit asset origins with finance-entered remaining life, continues those schedules under FIN-004's straight-line cent and disposal rules.
+**Requirement.** Accepted ledger balances open the forecast from the last closed month, with complete mapping and visible reconciliation. [Detailed semantics](docs/planning-semantics.md#connect-007).
 
 **Acceptance.**
-1. the API journey accepts a ledger month with balance-sheet accounts, reads a zero-sum trial balance, closes the month and sees the forecast balance sheet open from those balances.
-2. Also assert inherited CONNECT-006 rules targeting supported balance-sheet lines: a new in-range balance-sheet account maps automatically, and an unresolved balance blocks dependent balance-sheet conclusions until mapped.
-3. Also assert inherited FIN-001: imported balance-sheet balances replace the corresponding opening estimates, reconcile the three statements and trace any difference.
-4. Also assert inherited FIN-002: explicit origin allocations of imported prepaid, accrued payroll/bonus and deferred-revenue balances replace prepaid amortization, payroll settlement and deferred recognition with source attribution and traced statement reconciliation.
-5. Also assert inherited FIN-004: an imported net fixed-asset balance allocated to an asset origin with an entered remaining life depreciates by FIN-004's straight-line cent rule from the following month, and its disposal removes the remaining book value with its proceeds.
-6. Allocations equal the accepted target balance to the cent; every statement and formula Excel export reconciles; frozen captures stay unchanged; viewer reads omit allocation inputs and restricted source detail.
-7. Current reviewed CSV slice: balance-sheet targets include cash, receivables, prepaid, net fixed assets, payables, accrued liabilities, deferred revenue, debt and equity.
-8. Single-account and numeric-range/prefix/source-type rules use the same resolver as P&L mappings. CSV rows remain debit-positive posted journal movements, including an opening journal when needed; repeated month-end snapshots are not additive journal inputs. Each month-end review cumulatively sums accepted rows through that month. The trial balance includes all source accounts (P&L and explicitly excluded accounts included), presents debit and credit balances separately and tests their difference against zero. This is distinct from the existing classification reconciliation, which checks that every imported amount is accounted for. A zero-sum imported ledger does not certify source completeness. Asset balances are displayed debit-normal and liabilities/equity credit-normal. Account/type/department, source periods, row counts and import references remain attributed. Any unresolved cumulative account/department mapping makes balance conclusions unavailable, including zero-net unresolved accounts. All current actuals review and mapping doors keep their existing finance authority. A ledger with a balance-sheet mapping uses balance-sheet close enforcement: every cumulative mapping must resolve and debit minus credit must be exactly zero before any snapshot or close write. Published P&L-only extracts keep their existing flow; once a forecast has used a balance-sheet ledger, that requirement persists. Closed statements use accepted balances and separate imported equity from unclosed ledger P&L. Each open month rolls from the last closed balances using entered future movements. Unsupported or unexplained movements retain explicit statement/cash differences; there is no balancing plug or invented receipt. Finance associates each imported prepaid, accrued-payroll/bonus, deferred-revenue or net-fixed-asset balance with explicit scenario input origins through `ledger-allocation` at the reviewed scenario revision. Allocations must equal the accepted target balance to the cent and retain the source accounts, periods, rows and import references. Changed source balances invalidate the review. Unallocated openings remain visible as unresolved schedule attribution rather than silently retaining estimated openings. Remaining prepaid service months amortize the imported balance in equal integer-cent installments, with the final month taking the remainder. Accrued openings replace the estimated opening component of the first entered future payroll/bonus settlement; no settlement date is inferred. Contract deferred openings adjust remaining recognition by the imported opening difference, apportioned over remaining service by largest remainder using the existing weights. Entered future invoices and collection dates remain unchanged; deferred and unbilled balances roll from the imported boundary. Negative remaining recognition is refused for review. Asset origins use the imported net balance and finance-entered remaining life, retain explicit disposals and use FIN-004's straight-line cent rules. These allocations copy with scenarios/proposals and freeze in snapshots. Member reads retain existing source/pay filtering; complete owner archives retain the allocation inputs. Current API and native statement/download doors conform; CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004 and CONNECT-011 inherit these semantics before shipping.
+1. Accepted cash, receivables, prepaid, fixed assets, payables, accrued liabilities, deferred revenue, debt and equity contribute to a zero-sum month-end trial balance.
+2. Closing that ledger month opens the forecast balance sheet from accepted balances instead of the corresponding estimates.
+3. New balance-sheet accounts use CONNECT-006 rules; unresolved balances block dependent conclusions until mapped.
+4. The three statements reconcile and show traced differences without balancing plugs.
 
-**Evidence.** `src/easel/balance-actuals.ts`, `src/easel/ledger-statements.ts`, `src/easel/ledger-allocation.ts`, `tests/mapping-rules.test.mjs`, `tests/balance-actuals-browser.mjs`
-**Gap.** Zero-sum ledger close, last-closed actual statement openings, explicit attributed prepaid/accrued/deferred/asset openings, exact schedules, visible differences and filtered frozen formula exports
+**Evidence.** `src/easel/balance-actuals.ts`; `src/easel/ledger-statements.ts`; `src/easel/ledger-allocation.ts`; `tests/mapping-rules.test.mjs`; `tests/balance-actuals-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Accepted cash; point 1: receivables; point 1: prepaid; point 1: fixed assets; point 1: payables; point 1: accrued liabilities; point 1: deferred revenue; point 1: debt; point 1: equity contribute to a zero-sum month-end trial balance; point 2: Closing that ledger month opens the forecast balance sheet from accepted balances instead of the corresponding estimates; point 3: New balance-sheet accounts use CONNECT-006 rules; point 3: unresolved balances block dependent conclusions until mapped; point 4: The three statements reconcile; point 4: show traced differences without balancing plugs. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### CONNECT-012 — Source-attributed opening schedules
+
+Core · target · **partial** · From CONNECT-007 · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004 · Rules D-1, D-2
+
+**Requirement.** Finance attributes imported opening balances to the operating and asset schedules that consume them. [Detailed semantics](docs/planning-semantics.md#connect-007).
+
+**Acceptance.**
+1. Explicit prepaid, accrued payroll/bonus and deferred-revenue origin allocations replace estimated amortization, settlement and recognition with source attribution.
+2. An imported net fixed-asset balance and entered remaining life produce straight-line depreciation from the following month; disposal removes remaining book value and includes proceeds.
+3. Allocations equal the accepted target balance to the cent.
+4. Statements and formula Excel reconcile to these source-attributed schedules.
+5. Frozen captures remain unchanged, and viewers receive no allocation inputs or restricted source detail.
+
+**Evidence.** `src/easel/balance-actuals.ts`; `src/easel/ledger-statements.ts`; `src/easel/ledger-allocation.ts`; `tests/mapping-rules.test.mjs`; `tests/balance-actuals-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Explicit prepaid; point 1: accrued payroll/bonus; point 1: deferred-revenue origin allocations replace estimated amortization; point 1: settlement; point 1: recognition with source attribution; point 2: An imported net fixed-asset balance; point 2: entered remaining life produce straight-line depreciation from the following month; point 2: disposal removes remaining book value; point 2: includes proceeds; point 3: Allocations equal the accepted target balance to the cent; point 4: Statements; point 4: formula Excel reconcile to these source-attributed schedules; point 5: Frozen captures remain unchanged; point 5: and viewers receive no allocation inputs or restricted source detail. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CONNECT-008 — Drill-through to the ledger transaction
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Every actual cell drills to the accepted rows behind it (as `EASEL-013` does for files). For a connected source, each row also links to the transaction in QuickBooks Online, Xero, NetSuite, Sage Intacct or Pantry, under the same role filtering as `EASEL-007`.
-
-All accepted CSV rows behind each variance cell are available, without an evidence sample cap, under the existing department filtering. Current CSV doors satisfy CONNECT-008. CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004 and CONNECT-011 inherit provider transaction links and their provider-fake follow-link journeys before shipping.
+**Requirement.** Actual cells expose every accepted source row the reader is entitled to inspect, including a connected provider's transaction link. [Detailed semantics](docs/planning-semantics.md#connect-008).
 
 **Acceptance.**
-1. in the browser at 1440 and 390, open a variance cell, see its rows, and follow a row's link to the provider-fake transaction URL; a viewer sees amounts without another department's rows.
+1. At desktop and phone widths, a variance cell lists all accepted rows behind it without an evidence sample cap.
+2. A connected row links to the corresponding QuickBooks Online, Xero, NetSuite, Sage Intacct or Pantry transaction.
+3. A viewer receives aggregate amounts without another department's source rows.
 
-**Evidence.** `src/easel/actuals-read.ts`, `src/easel/review.ts`, `tests/drillthrough.test.mjs`, `tests/mapping-rules-browser.mjs`
-**Gap.** Every accepted CSV row is drillable under inherited department filtering; future connectors carry provider links and browser assertions before shipping
+**Evidence.** `src/easel/actuals-read.ts`; `src/easel/review.ts`; `tests/drillthrough.test.mjs`; `tests/mapping-rules-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: At desktop; point 1: phone widths; point 1: a variance cell lists all accepted rows behind it without an evidence sample cap; point 2: A connected row links to the corresponding QuickBooks Online; point 2: Xero; point 2: NetSuite; point 2: Sage Intacct or Pantry transaction; point 3: A viewer receives aggregate amounts without another department's source rows. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CONNECT-009 — Bank balances for current cash
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-SECRET-001, BASE-DATA-004
 
-**Requirement.** Finance can connect bank accounts read-only through Plaid (balances and transactions). Current cash position and daily balance movement then feed the cash alerts (`REPORT-006`) and the 13-week view (`FIN-007`) between ledger closes, labeled as bank balances rather than ledger actuals. Easel never initiates a payment or transfer.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** Finance can connect bank accounts read-only through Plaid (balances and transactions). Current cash position and daily balance movement then feed the cash alerts and the 13-week view between ledger closes, labeled as bank balances rather than ledger actuals. Easel never initiates a payment or transfer. Under RL-102, only current company-wide finance authority and its explicit scoped finance reads see bank observations, bank-basis cash and bank alerts; other readers receive planned cash without bank data. Credential administration remains native finance-only, and bank outputs remain aggregate-only. [Detailed semantics](docs/planning-semantics.md#connect-009).
 
 **Acceptance.**
-1. a Plaid sandbox fake supplies two accounts; the 13-week view and a cash alert use the bank balance and label it as such; no payment route exists.
-2. Current source semantics: finance explicitly approves read-only balances and transactions for one already-authorized Plaid item, selecting the fixed sandbox or production origin and entering its client credentials and access token in the native Connections form.
-3. Credentials are installation-sealed with provider-bound authenticated encryption, excluded from both open and portable archives, and represented only by a suffix.
-4. Administration/status require a current native finance session with company-wide access; finance API tokens retain aggregate bank-cash and cash-alert read parity under their live role and scope, without credential administration.
-5. Manual refresh reads current balances for every depository account in the item and a complete, paginated 30-day posted-transaction window.
-6. Credit and other non-depository accounts are excluded, pending transactions are excluded from movement, and only aggregate balance/count/currency and daily posted collections/payments/counts persist: account identities and merchant descriptions are not retained.
-7. All eligible accounts must have explicit current balances in one ISO currency; missing/duplicate/changed/incomplete sources refuse rather than become zero.
-8. A failed refresh retains the prior complete aggregate and blocks bank conclusions; an observation older than 24 hours also blocks until an explicit successful refresh. Neither refresh nor disconnect changes scenario inputs, revisions or frozen calculations. Disconnect asks Plaid to remove the item without redirect/retry and deletes local credentials on every outcome, retaining an honest unconfirmed owner action when removal is not confirmed. CONNECT-005 inherits scheduled refresh with these source, failure, authority and custody rules before shipping. FIN-007's explicit bank basis opens from the observed current bank balance and schedules forecast cash starting the following UTC day. Historical posted movements never add to that balance again; earlier weekly adjustments are excluded. Currency mismatches, dates before that boundary, disconnected/restored credentials and captured versions refuse bank reads. Monthly reconciliation retains the visible bank-versus-monthly difference; planned and frozen cash remain available independently. REPORT-006's finance-only bank shortfall rules compare that observation with the approved budget's dated cash on the observation date, using strict amount/percent thresholds and existing once-per-breach, worsening, interval and acknowledgment rules; failed/stale/currency-mismatched sources block. Bank data is not ledger actuals and never closes a ledger month. No payment or transfer operation exists. *Acceptance evidence for this slice:* `tests/plaid-cash.test.mjs` — “FIN-007 CONNECT-009 native finance reads sealed Plaid cash once into weekly estimates and source-labeled cash alerts without changing the plan” proves two bank accounts, exact weekly and bank-alert amounts, formula Excel, consent, native credential authority, finance-token aggregate parity, archive exclusions, unchanged plans and provider removal. Its “CONNECT-009 failed, stale and changed Plaid sources block bank conclusions and retain the previous complete aggregate without leaking provider bodies” proves failure/redirect/rate-limit handling, source completeness, exact cents, expiry and unconfirmed local deletion. `tests/plaid-cash-browser.mjs` exercises a held-key Plaid sandbox through native Settings/Overview/alerts at 1440/390, real credential-free `rer export` and provider item removal; sandbox receipts remain outside the product repository.
+1. A Plaid sandbox fake supplies two accounts
+2. The 13-week view and a cash alert use the bank balance and label it as such; no payment route exists.
+3. Current finance-only reads and scoped reads obey RL-102 without exposing bank data to other readers.
+4. Bank credentials remain sealed, archive-excluded and outside the aggregate output; bank access grants no payroll or other private-data authority.
 
-**Evidence.** `src/easel/plaid-provider.ts` `src/easel/plaid-connection.ts` `tests/plaid-cash.test.mjs` `tests/plaid-cash-browser.mjs`
-**Gap.** Sealed manual Plaid item, current balance and posted movement, explicit weekly bank basis, bank alert thresholds and truthful revocation ship; conservative company-wide finance bank-data audience awaits ct approval
+**Evidence.** `src/easel/plaid-provider.ts`; `src/easel/plaid-connection.ts`; `tests/plaid-cash.test.mjs`; `tests/plaid-cash-browser.mjs`
+**Gap.** Sealed Plaid reads and aggregate weekly cash/alerts are delivered. RL-102 settles the audience; exact-head acceptance of the complete adopted audience and all source-failure outcomes remains to be rejudged without promotion in this rewrite.
 
 #### CONNECT-010 — Connection custody and status
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-SECRET-001, BASE-AUDIT-001, BASE-INPUT-001, BASE-DATA-004 · Rules D-2
 
-**Requirement.** Every connector credential (OAuth tokens, API keys, certificates) is stored encrypted, excluded from `rer export`, shown only by masked suffix, and removed on disconnect, which also revokes the token at the provider where the provider supports it. A Connections page lists each source with its scopes, owner, schedule, last refresh, row counts, errors and rate-limit state. Only finance connects, disconnects or changes schedules, and each of those actions enters the audit trail (`AUDIT-001`).
-
-Future connector capabilities inherit these custody, status, finance authority and audit obligations before shipping: CONNECT-001, CONNECT-002, CONNECT-003, CONNECT-004, CONNECT-009, CONNECT-011, PEOPLE-001, PEOPLE-002, PEOPLE-003, REV-001, REV-002, SPEND-001, SHEET-001, SHEET-002 and SHEET-005. CONNECT-005 inherits connection schedule changes and their audit trail. Where a future provider's scoped credential supports remote revocation, disconnect performs it; otherwise the UI states the exact owner action still needed and never claims revocation. Gauge supports scoped-key self-revocation: disconnect posts the stored key to `/api/gauge/keys/revoke` at the origin that originally received it, without redirects or automatic retries. The local sealed key is deleted on confirmed, refused and unreachable outcomes. The audit trail and Connections retain the outcome, HTTP status and time without the provider response body or key. An unconfirmed outcome displays "Gauge did not confirm revocation; revoke it in Gauge Access". Credential administration and inspection require the approved native finance session with origin and revision/session fences; API tokens are refused. Explicit month health checks update refresh time, row count, errors and sanitized rate-limit status without importing utilization; import previews remain no-write reads.
+**Requirement.** Connections retain sealed provider custody and an honest source-status and disconnect outcome; finance administers the credential. [Detailed semantics](docs/planning-semantics.md#connect-010).
 
 **Acceptance.**
-1. `tests/gauge-utilization.test.mjs` (CONNECT-010) asserts sealed-at-rest and archive-excluded custody, masked native status, every current scope/owner/schedule/refresh/count/error/rate-limit field, contributor and token refusals, audited connect/check/disconnect, provider confirmation/refusal/redirect/network-failure outcomes and local deletion on every outcome with immutable imported values.
-2. `tests/gauge-browser.mjs` (CONNECT-010) connects a real current Gauge, checks status and errors, proves the actual `rer export` excludes its stored key, imports and disconnects at 1440/390, and asserts the real key returns 401 after revocation.
-3. The same journey displays the exact unconfirmed warning at both widths after the provider becomes unreachable.
+1. Credentials are encrypted at rest, excluded from installation archives, masked by suffix and deleted locally on disconnect.
+2. The source status includes scopes, owner, schedule, last refresh, row counts, errors and rate-limit state.
+3. Native finance can connect, inspect, check and disconnect; contributors and API tokens cannot administer credentials.
+4. Each administration action has an audit record.
+5. Disconnect reports confirmed, refused, redirected and unreachable provider outcomes accurately and performs supported remote revocation.
+6. An unsupported or unconfirmed revocation displays the exact remaining owner action without claiming success.
+7. Local deletion on every provider outcome leaves imported values and frozen captures unchanged.
+8. At desktop and phone widths, Gauge status, export exclusion, revoked-key refusal and the unreachable-provider warning are observable.
 
-**Evidence.** `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs`
-**Gap.** Sealed/excluded custody, native masked health inspection, audited remote self-revocation and deletion on every outcome
+**Evidence.** `tests/gauge-utilization.test.mjs`; `tests/gauge-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Credentials are encrypted at rest; point 1: excluded from installation archives; point 1: masked by suffix; point 1: deleted locally on disconnect; point 2: The source status includes scopes; point 2: owner; point 2: schedule; point 2: last refresh; point 2: row counts; point 2: errors; point 2: rate-limit state; point 3: Native finance can connect; point 3: inspect; point 3: check; point 3: disconnect; point 3: contributors; point 3: API tokens cannot administer credentials; point 4: Each administration action has an audit record; point 5: Disconnect reports confirmed; point 5: refused; point 5: redirected; point 5: unreachable provider outcomes accurately; point 5: performs supported remote revocation; point 6: An unsupported or unconfirmed revocation displays the exact remaining owner action without claiming success; point 7: Local deletion on every provider outcome leaves imported values; point 7: frozen captures unchanged; point 8: At desktop; point 8: phone widths; point 8: Gauge status; point 8: export exclusion; point 8: revoked-key refusal; point 8: the unreachable-provider warning are observable. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Flexible model
 
-#### MODEL-001 — Configurable horizon and multi-year plans
+#### MODEL-001 — Fiscal horizons and roll-ups
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1, D-2
 
-**Requirement.** Finance sets any fiscal-year start month and a plan horizon from 12 to 60 months, with monthly detail and quarter and fiscal-year roll-ups. Budgets can span one fiscal year or several. A 4-4-5 or 5-4-4 retail calendar is available as an alternative to calendar months.
+**Requirement.** Finance chooses the fiscal start and twelve-to-sixty-period planning horizon, with monthly, quarterly and annual views. [Detailed semantics](docs/planning-semantics.md#model-001).
 
 **Acceptance.**
-1. the API journey sets a 36-month horizon starting in a fiscal year that begins in October, and reads monthly, quarterly and annual totals that agree to the cent; a second plan on a 4-4-5 calendar reads periods of 4, 4 and 5 weeks in each quarter, with each quarter's total equal to the sum of its three periods and the year equal to its four quarters, to the cent.
-2. Calendar-month plans and retail plans share 12–60 consecutive accounting periods.
-3. Retail setup chooses an explicit first date within the first plan-month key.
-4. The 4-4-5 or 5-4-4 pattern repeats each quarter in consecutive 52-week years, with no inferred 53rd week.
-5. Period boundaries are inclusive UTC dates; retail `YYYY-MM` keys are sortable ordinal aliases, not Gregorian months.
-6. Monthly driver inputs apply once per accounting period.
-7. Fiscal years are named by the ending year of their twelve ordinal period keys.
-8. Partial quarter/year roll-ups are marked. Flow amounts sum integer cents without another rounding; cash takes the first opening and last closing, summing only collections and payments. Dated ledger rows, workforce observations, planned hire dates and Gauge date ranges use these accounting boundaries; explicit period-only CSV and workbook headings use period keys. Excel date-serial headings resolve their actual date. Contract service anniversaries and billing cadence remain Gregorian dates, with recognition split by actual service days at accounting-period boundaries and final-segment cent remainders preserved. DSO/DPO/curves use exact days from period-end invoices or dated contract invoices. Retail payroll pay days count from the target period's first day and clamp to its end; employer wage caps use the real calendar year of the earning period's end as a labelled planning convention. Calendar-month pay-day behavior is unchanged. Sales-tax remittance retains its Gregorian month lag from each actual collection date (or the target period end for period-only lag assumptions), then maps that date to an accounting period. The calendar and anchor are fixed after setup. A horizon edit advances affected working scenario revisions; approved budgets and kept versions retain their captured horizon, calendar and arithmetic, and opened forecasts inherit the approved horizon. Fiscal YTD resets after twelve periods. `tests/fiscal-calendar.test.mjs` (MODEL-001) asserts the 36-month October monthly/quarter/year reconciliation, each fiscal start month, valid 12–60-month plans and invalid horizons, multi-year/frozen horizons, exact formula Excel, finance authority, both retail patterns and their dated imports/recognition/settlements. `tests/fiscal-calendar-browser.mjs` (MODEL-001) drives setup, populated fiscal totals and period boundaries, settings, a persisted horizon edit and formula Excel at 1440/390.
+1. A thirty-six-month plan beginning in October has monthly, quarterly and annual totals agreeing to the cent.
+2. Every fiscal start month and horizons from twelve to sixty periods are supported.
+3. Budgets may cover one fiscal year or several, while frozen versions retain their captured horizon.
 
-**Evidence.** `src/easel/fiscal-calendar.ts` `src/easel/fiscal-summary.ts` `tests/fiscal-calendar.test.mjs` `tests/fiscal-calendar-browser.mjs`
-**Gap.** —
+**Evidence.** `src/easel/fiscal-calendar.ts`; `src/easel/fiscal-summary.ts`; `tests/fiscal-calendar.test.mjs`; `tests/fiscal-calendar-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A thirty-six-month plan beginning in October has monthly; point 1: quarterly; point 1: annual totals agreeing to the cent; point 2: Every fiscal start month; point 2: horizons from twelve to sixty periods are supported; point 3: Budgets may cover one fiscal year or several; point 3: while frozen versions retain their captured horizon. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### MODEL-010 — Retail accounting calendars
+
+Core · target · **partial** · From MODEL-001 · Cites BASE-INPUT-001 · Rules D-1
+
+**Requirement.** Finance can choose a 4-4-5 or 5-4-4 calendar instead of calendar months. [Detailed semantics](docs/planning-semantics.md#model-001).
+
+**Acceptance.**
+1. Each quarter follows the selected four/four/five or five/four/four-week pattern, with consecutive accounting-period boundaries.
+2. Every quarter equals its three periods and the year equals its four quarters to the cent.
+3. Dated imports, service recognition, payroll and settlements follow the selected accounting boundaries without changing the Gregorian service and tax conventions documented for the calendar.
+
+**Evidence.** `src/easel/fiscal-calendar.ts`; `src/easel/fiscal-summary.ts`; `tests/fiscal-calendar.test.mjs`; `tests/fiscal-calendar-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Each quarter follows the selected four/four/five or five/four/four-week pattern; point 1: with consecutive accounting-period boundaries; point 2: Every quarter equals its three periods; point 2: the year equals its four quarters to the cent; point 3: Dated imports; point 3: service recognition; point 3: payroll; point 3: settlements follow the selected accounting boundaries without changing the Gregorian service; point 3: tax conventions documented for the calendar. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MODEL-002 — A rolling forecast that extends itself
 
-Core · target · **done**
+Core · target · **done** · Cites BASE-INPUT-001 · Rules D-2
 
-**Requirement.** Finance sets a rolling window (for example always 18 months ahead). Closing a month (`EASEL-013`) extends the forecast by one month and seeds the new month from its drivers, with the kept forecast snapshot taken first. Budgets keep their fixed fiscal horizon.
+**Requirement.** Finance sets a rolling window (for example always 18 months ahead). Closing a month extends the forecast by one month and seeds the new month from its drivers, with the kept forecast snapshot taken first. Budgets keep their fixed fiscal horizon. [Detailed semantics](docs/planning-semantics.md#model-002).
 
 **Acceptance.**
-1. with an 18-month window, close two months in the API journey and see the forecast end move by two months, the new months calculated from drivers, and both kept forecasts unchanged.
+1. With an 18-month window, close two months in the API journey and see the forecast end move by two months, the new months calculated from drivers, and both kept forecasts unchanged.
 
-**Evidence.** `tests/rolling-forecast.test.mjs` (MODEL-002)
+**Evidence.** `tests/rolling-forecast.test.mjs`
 **Gap.** None.
 
 #### MODEL-003 — Custom dimensions and hierarchies
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001
 
-**Requirement.** Beyond lines and departments, finance defines dimensions (for example entity, region, product, customer segment, project, class or location), each with a hierarchy of members and roll-ups. Inputs, actuals and reports can be cut by any dimension, and source dimensions map onto them (`CONNECT-006`). Lines get a chart-of-accounts hierarchy with subtotals.
-
-Before custom dimensions ship, MODEL-003 inherits MODEL-006: custom dimension-member presets in each of the four starter models with grid/report parity, asserted at 1440/390. Before custom dimensions ship, MODEL-003 inherits MODEL-008: grid rows, paste, selection tools, splits, notes, undo and current dimension-member authority at 1440/390. Before custom dimensions ship, MODEL-003 inherits MODEL-005: each dimension/hierarchy definition and change has an exact version, readable diff and moved-cell list under existing authority; approved budgets, kept forecasts and published packs retain their captured structure and arithmetic. MODEL-003 also inherits CONNECT-006: source departments, classes and tracking options map to their dimension members through reusable rules. Source dimension metadata also enables finer line/dimension-level dependency blocking, which remains a gap until this clause ships; unrelated conclusions remain available and unresolved inputs are never zero.
+**Requirement.** Finance defines hierarchical dimensions such as entity, region, product, customer segment, project, class and location, and cuts inputs, actuals and reports by them. [Detailed semantics](docs/planning-semantics.md#model-003).
 
 **Acceptance.**
-1. the API journey adds a Region dimension with a two-level hierarchy, enters inputs by region, maps a provider class to it, and reads a report that rolls regions up to the total without changing line totals; it then builds a chart-of-accounts hierarchy (for example Operating expense, then Sales and marketing, then Advertising and Events) and reads subtotals equal to the sum of their lines in every month.
-2. Also assert inherited CONNECT-006 source department/class/tracking-option rules for custom dimension members, and finer line/dimension-level blocking: an unresolved member blocks its dependent cells while unrelated cells remain available, with no invented zero.
-3. Also assert inherited MODEL-006 custom dimension-member presets in all four starters with grid/report parity at 1440/390.
-4. Also assert inherited MODEL-008 grid rows, paste, selection tools, splits, notes, undo and dimension-member authority at 1440/390.
-5. Also assert inherited MODEL-005 exact custom-dimension/hierarchy structure versions, readable diffs and moved cells, with frozen definitions/arithmetic unchanged.
-6. Current semantics: inputs carry stable dimension/member identities, including an explicit Unassigned bucket; rollups follow parent/child definitions without reposting or changing line totals.
-7. Account groups contain same-type child groups and lines.
-8. Shared allocations retain source dimension cents, including deterministic cent remainders. Exact/prefix source department, class and tracking-option rules resolve live on the existing reviewed CSV actuals door; conflicting targets remain unresolved. An unknown source member blocks the affected dimension/line/month while independent lines and known dimension cuts remain readable. Closed forecast actuals and frozen captures retain their source partitions. Existing department and Pay detail boundaries apply, with explicit member constraints checked again on grid apply and undo. CONNECT-001/002/003/004/011 inherit the same custom source mapping and dependency rules on their future provider doors; ACCESS-001 carries group grants.
+1. A two-level Region hierarchy rolls entered regional inputs into an unchanged line total.
+2. A source provider class maps to Region; department, class and tracking-option rules resolve source members.
+3. An unresolved member blocks dependent line/dimension cells while unrelated cells remain available, with no invented zero.
+4. Custom dimension-member presets exist in every starter with grid/report parity at desktop and phone widths.
+5. Dimension grid rows, paste, selection tools, splits, notes and undo obey the current member grants at both widths.
 
-**Evidence.** `tests/dimensions.test.mjs` (Custom dimensions preserve cents through member and account rollups and version their moved cells while approvals stay frozen; Source class, department and tracking rules preserve actual cuts and block only dependent line cells after a rule changes); `tests/dimensions-browser.mjs` (native definition/input/report/Excel journey); `tests/grid-browser.mjs` (dimension-tagged paste/tools/splits/notes/undo); `tests/starters.test.mjs` and `tests/starters-browser.mjs` (four preset/grid/report journeys at 1440/390)
-**Gap.** None for current native and reviewed-CSV doors; CONNECT-001/002/003/004/011 inherit their provider mappings, ACCESS-001 group grants
+**Evidence.** `tests/dimensions.test.mjs`; `tests/dimensions-browser.mjs`; `tests/grid-browser.mjs`; `tests/starters.test.mjs`; `tests/starters-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A two-level Region hierarchy rolls entered regional inputs into an unchanged line total; point 2: A source provider class maps to Region; point 2: department; point 2: class; point 2: tracking-option rules resolve source members; point 3: An unresolved member blocks dependent line/dimension cells while unrelated cells remain available; point 3: with no invented zero; point 4: Custom dimension-member presets exist in every starter with grid/report parity at desktop; point 4: phone widths; point 5: Dimension grid rows; point 5: paste; point 5: selection tools; point 5: splits; point 5: notes; point 5: undo obey the current member grants at both widths. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### MODEL-011 — Account hierarchies and dimension versions
+
+Core · target · **partial** · From MODEL-003 · Cites BASE-INPUT-001 · Rules D-1, D-2
+
+**Requirement.** Finance reads account subtotals and exact structure histories for dimension and hierarchy changes. [Detailed semantics](docs/planning-semantics.md#model-003).
+
+**Acceptance.**
+1. An Operating expense hierarchy containing Sales and marketing, Advertising and Events has monthly subtotals equal to its component lines.
+2. Every custom-dimension or hierarchy change has an exact version, readable diff and moved-cell list.
+3. Approved budgets, kept forecasts and published packs retain their captured definitions and arithmetic.
+
+**Evidence.** `tests/dimensions.test.mjs`; `tests/dimensions-browser.mjs`; `tests/grid-browser.mjs`; `tests/starters.test.mjs`; `tests/starters-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: An Operating expense hierarchy containing Sales; point 1: marketing; point 1: Advertising; point 1: Events has monthly subtotals equal to its component lines; point 2: Every custom-dimension or hierarchy change has an exact version; point 2: readable diff; point 2: moved-cell list; point 3: Approved budgets; point 3: kept forecasts; point 3: published packs retain their captured definitions; point 3: arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MODEL-004 — User-defined formulas and driver lines
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1, D-2
 
-**Requirement.** Finance writes driver lines and formulas over named drivers, lines, dimensions and time: arithmetic, prior-period and offset references (including references to the Actuals version and other versions at an offset, `MODEL-009`), growth, lookups by dimension member, IF, MIN, MAX, ROUND and SUM over a dimension. Evaluation keeps the published arithmetic rules: integer cents, counts in hundredths, one rounding half away from zero per division, and a trace per cell. Circular references are refused with the cycle named. Every formula change is a revision that a proposal can carry (`EASEL-012`). Before user-defined formulas ship, MODEL-004 inherits MODEL-008: formula cells remain read-only in the planning grid with their exact traces, including refused typing. Before user-defined formulas ship, MODEL-004 inherits REV-003: formula lines can drive revenue with exact cells and traces through HTTP, Plan and proposal doors, including the REV-003 formula-line revenue acceptance journey. Before user-defined formulas ship, MODEL-004 inherits MODEL-005: every definition and change has an exact structure version, readable formula diff and moved-cell list, and approved budgets, kept forecasts and published packs retain their captured definitions and arithmetic.
-
-Native definitions are scalar drivers or named dimension/member expression tables, optionally posting money to a planning line. References bind stable driver, line, department and version identities when saved. `LINE` reads the final allocated and taxed line; `ACTUAL` reads accepted source cells and distinguishes accepted zero from missing data. `PRIOR` and signed offsets select periods; lazy `IF` can seed recurrences. Native multiplication and division each perform their scale division with half-away rounding to hundredths, separately from SHEET-003 workbook arithmetic. Source changes revise dependent working versions and invalidate submitted arithmetic; frozen versions keep captured definitions, external sources and results. Normal pack projections omit the private definition bundle retained by complete exports. All source and destination permissions use the existing department, Pay detail and scenario boundaries. [API.md](API.md#native-formulas-and-driver-lines-model-004) documents the syntax.
+**Requirement.** Finance defines driver formulas over named drivers, lines, dimensions, versions and time, with growth, lookups, conditions, arithmetic and dimension sums. [Detailed semantics](docs/planning-semantics.md#model-004).
 
 **Acceptance.**
-1. the API journey defines a support-cost driver as tickets per customer × cost per ticket with a lookup by region, reads exact cells with traces, and is refused a circular formula with the cycle named.
-2. Also assert inherited MODEL-008 read-only formula grid cells, exact traces and refused typing.
-3. Also assert inherited MODEL-005 exact formula structure versions, readable diffs and moved cells, with frozen definitions/arithmetic unchanged.
+1. A tickets-per-customer times cost-per-ticket support formula with a regional lookup produces exact cells and traces.
+2. Prior-period and offset references, including Actuals and other versions, and IF, MIN, MAX, ROUND and SUM retain their specified calculation semantics.
+3. A circular formula is refused with its cycle named.
+4. Formula-driven revenue works through the planning and proposal doors.
+5. Grid formula cells display their traces and refuse typing.
+6. Formula changes have exact structure versions, readable diffs and moved-cell lists; frozen definitions and arithmetic remain unchanged.
 
-**Evidence.** `tests/revenue-drivers.test.mjs` — “Native formula drivers: regional support, exact arithmetic, revenue proposals, grid refusal and immutable definitions”: regional lookup/SUM support costs, exact arithmetic/traces, prior/Actuals/version offsets, named cycles, formula revenue and HTTP/MCP proposals, refused grid typing, exact structure definitions/diffs/moved cells, immutable approved/kept/published definitions and arithmetic. `tests/revenue-drivers-browser.mjs` — nativeFormulasJourney in `tests/native-formulas-journey.mjs`: Plan scalar/member and revenue authoring/edit/reload, exact rendered traces, named cycle and read-only grid typing refusal at 1440/390; independently evaluated formula Excel.
-**Gap.** —
+**Evidence.** `tests/revenue-drivers.test.mjs`; `tests/revenue-drivers-browser.mjs`; `tests/native-formulas-journey.mjs`
+**Gap.** Carried evidence establishes 4 audited outcomes. Complete assertion mapping remains owed for point 2: Prior-period; point 2: offset references; point 2: including Actuals; point 2: other versions; point 2: and IF; point 2: MIN; point 2: MAX; point 2: ROUND; point 2: SUM retain their specified calculation semantics; point 3: A circular formula is refused with its cycle named; point 4: Formula-driven revenue works through the planning; point 4: proposal doors; point 6: Formula changes have exact structure versions; point 6: readable diffs; point 6: moved-cell lists; point 6: frozen definitions; point 6: arithmetic remain unchanged. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MODEL-005 — Versioned model structure
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-2
 
-**Requirement.** Changes to model structure (dimensions, formulas, driver forms, mapping rules) are versioned with a readable diff of what changed and which cells moved. Approved budgets, kept forecasts and published packs keep the structure they were made with and never recompute.
-
-Current editable structures conform: workspace/calendar and cash settings, lines, departments, account and department mappings, reusable account rules and every current driver/input form. Each fenced save appends a structure version to the existing finance-only Activity trail, identified by its sequence and source model revision, with actor/time, exact changed definitions, field differences, captured global definitions and affected working-scenario revisions and cells. Current formula changes mean changes to the fixed driver forms and their parameters. Cells use integer minor units; difference is after minus before in the same currency. An absent side or changed currency has no difference value. Incomplete sources are explicitly blocked, never substituted with zero. Frozen scenarios never recalculate; new approvals, kept forecasts, reforecasts and packs capture global definitions as well as their existing saved arithmetic, with individual inputs remaining under existing snapshot filtering. Journal-backed workbook imports and undo and MCP proposal changes also enter the version trail. Existing older immutable snapshots stay as captured. Ct approved current-capability completion on 19 October; MODEL-003 inherits custom-dimension/hierarchy structure versions, and MODEL-004 inherits user-defined formula structure versions, readable diffs and moved-cell lists before either ships.
+**Requirement.** A structure revision explains the definitions and cells changed while preserving the structure captured by approved and kept versions. [Detailed semantics](docs/planning-semantics.md#model-005).
 
 **Acceptance.**
-1. `tests/structure-versions.test.mjs` (MODEL-005) changes a working forecast's rate/growth formula parameters, reads exact definitions, field diffs and every moved cell through HTTP, changes dimensions/lines/mappings/rules, and proves approved/kept/reforecast/pack bodies and SHA-256 values unchanged.
-2. It asserts append-only storage, filtered API/CSV/Excel and open exports, failed-write atomicity and MCP attribution.
-3. `tests/workbook-undo.test.mjs` (MODEL-005) asserts no-write preview, imported structure versions and exact undo effects.
-4. `tests/structure-versions-browser.mjs` (MODEL-005) edits Plan and reads Activity definitions, moved cells and filtered Excel at 1440/390 without page overflow.
+1. Changing rate or growth parameters, dimensions, lines, mappings and rules records exact definitions, field differences and every moved cell.
+2. Approved budgets, kept forecasts, reforecasts and published packs retain both their bodies and digests after structure changes.
+3. The structure history is append-only; filtered API, CSV, Excel and open exports obey their audience.
+4. A failed write is atomic and a tool-originated write retains its attribution.
+5. Workbook preview changes nothing; acceptance and exact undo add the corresponding structure versions.
+6. At desktop and phone widths, Plan edits and Activity expose definitions, moved cells and filtered Excel without page overflow.
 
-**Evidence.** `src/easel/structure-versions.ts` `tests/structure-versions.test.mjs` `tests/workbook-undo.test.mjs` `tests/structure-versions-browser.mjs`
-**Gap.** Current structures versioned in append-only Activity with exact diffs/moved cells and immutable captures; MODEL-003/004 inherit future dimensions/formulas
+**Evidence.** `src/easel/structure-versions.ts`; `tests/structure-versions.test.mjs`; `tests/workbook-undo.test.mjs`; `tests/structure-versions-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Changing rate or growth parameters; point 1: dimensions; point 1: lines; point 1: mappings; point 1: rules records exact definitions; point 1: field differences; point 1: every moved cell; point 2: Approved budgets; point 2: kept forecasts; point 2: reforecasts; point 2: published packs retain both their bodies; point 2: digests after structure changes; point 3: The structure history is append-only; point 3: filtered API; point 3: CSV; point 3: Excel; point 3: open exports obey their audience; point 4: A failed write is atomic; point 4: a tool-originated write retains its attribution; point 5: Workbook preview changes nothing; point 5: acceptance; point 5: exact undo add the corresponding structure versions; point 6: At desktop; point 6: phone widths; point 6: Plan edits; point 6: Activity expose definitions; point 6: moved cells; point 6: filtered Excel without page overflow. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MODEL-006 — Starter models for US small businesses
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1
 
-**Requirement.** Setup offers starter models that a buyer edits rather than builds from nothing: SaaS (ARR, churn, CAC, seats), professional services (billable headcount, utilization, rate), project or backlog businesses, and wholesale or ecommerce (units, price, COGS, inventory days). Each comes with its drivers, lines, dimensions, dashboards and cash timing, in USD.
-
-**Acceptance.**
-1. in the browser at 1440, create a company from each starter (SaaS, professional services, project or backlog, and wholesale or ecommerce) and, for each, see a three-statement forecast, a dashboard and a cash view without entering a formula; the services starter's revenue traces to billable headcount × utilization × rate, the project starter's to milestones and backlog, and the wholesale starter's cash to inventory days.
-2. The four starters are installed atomically during initial company setup by the existing finance role, with a January fiscal year and explicit editable opening-cash estimate.
-3. Their input names and setup summary label every value as a starter assumption, never imported actuals.
-4. The blank-plan option retains its existing settings; US-001 remains responsible for general US defaults.
-5. Today's dimensions are named departments, including a dedicated billable services department; MODEL-003 inherits starter dimension-member presets and their grid/report parity for all four starters before custom dimensions ship.
-6. SaaS has independent customer/churn and seat products.
-7. Its acquisition expense follows new customers before churn (including ramped acquisition capacity) × entered CAC, with one division to cents; changing the acquisition driver or CAC recalculates cost.
-8. Services uses only active positions in its billable department. Project milestones and the separately labelled backlog are distinct revenue sources. Wholesale COGS follows the linked same-department units driver × unit cost. Its target closing stock is monthly COGS × inventory days ÷ that month's actual UTC calendar-day count, rounded half away from zero; opening stock is explicitly zero. Purchases are max(0, COGS + target − opening stock), and closing stock is opening + purchases − COGS, so excess stock is consumed before replenishment and no negative purchase implies a refund. Purchases follow the scenario's supplier payment lag, independently of inventory days. Estimated stock is an asset; indirect cash subtracts its increase and operating payables include unpaid purchases. The three statements and formula Excel reconcile exactly. Closed-month COGS uses accepted rows; unavailable COGS blocks rather than becoming zero, and inventory remains labelled a planning estimate until CONNECT-007 supplies balance-sheet actuals. Existing department-detail filtering applies to linked input terms and source traces; aggregates remain readable. All original starter forms and the added CAC/unit-cost/inventory-day forms are editable without formula entry, and approved/kept versions retain their captured arithmetic. `tests/starters.test.mjs` (MODEL-006) creates all four through HTTP, asserts exact service/milestone/backlog/CAC/COGS/stock/cash cells and traces, live driver edits through HTTP and MCP proposals, balanced linked statements, immutable approval, scoped reads and independently evaluated formula Excel. `tests/starters-browser.mjs` (MODEL-006) creates each company through setup at 1440, reads every starter's three statements, cash, dashboard and source traces at 1440/390, and edits CAC/inventory assumptions through Plan with matching persisted arithmetic.
-
-**Evidence.** `src/easel/starter-models.ts` `src/easel/commercial-costs.ts` `tests/starters.test.mjs` `tests/starters-browser.mjs`
-**Gap.** None.
-
-#### MODEL-007 — Recalculation at small-business scale
-
-Core · target · **done**
-
-**Requirement.** A model with 2,000 input rows, 5 dimensions and a 36-month horizon recalculates after an input change in under 2 seconds p95. Larger changes run as a visible background calculation, and the affected cells show as recalculating rather than stale-but-final.
+**Requirement.** Setup offers starter models that a buyer edits rather than builds from nothing: SaaS (ARR, churn, CAC, seats), professional services (billable headcount, utilization, rate), project or backlog businesses, and wholesale or ecommerce (units, price, COGS, inventory days). Each comes with its drivers, lines, dimensions, dashboards and cash timing, in USD. [Detailed semantics](docs/planning-semantics.md#model-006).
 
 **Acceptance.**
-1. a load fixture at the stated size through the API, timing 50 edits at p95, and a larger bulk import showing calculation state in the browser.
-2. The measured native API journey includes the complete save, exact structure-version effects and a fresh filtered recalculated read.
-3. Calculation-local indexes and exact source-cent dimension folds preserve source arithmetic without caching model results across requests.
-4. Native input/grid mutations above 2,000 input rows and larger reviewed workbook commit/continuation/undo operations return an accepted job.
-5. Affected reads carry job metadata without final figures; paused partial imports stay unavailable until explicitly continued or undone.
-6. Stored responses follow the initiating actor's current authority; an interrupted outcome requires inspection rather than automatic resubmission.
+1. In the browser at 1440, create a company from each starter (SaaS, professional services, project or backlog, and wholesale or ecommerce) and, for each, see a three-statement forecast, a dashboard and a cash view without entering a formula
+2. The services starter's revenue traces to billable headcount × utilization × rate, the project starter's to milestones and backlog, and the wholesale starter's cash to inventory days.
 
-**Evidence.** `tests/model-scale.mjs` — 50-edit API scale journey, exact-candidate heavy-slot run sx-easel-w1-model-scale-final; `tests/calculation-background.mjs` — reviewed large workbook/background edit journey; `tests/calculation-browser.mjs` — Background calculation 1440/390 journey  Named nightly: `.github/workflows/model-recalculation.yml`, Model recalculation journeys, MODEL-007 nightly.
-**Gap.** None.
+**Evidence.** `src/easel/starter-models.ts`; `src/easel/commercial-costs.ts`; `tests/starters.test.mjs`; `tests/starters-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: In the browser at 1440, create a company from each starter (SaaS; point 1: professional services; point 1: project or backlog; point 1: and wholesale or ecommerce) and; point 1: for each; point 1: see a three-statement forecast; point 1: a dashboard; point 1: a cash view without entering a formula; point 2: The services starter's revenue traces to billable headcount × utilization × rate; point 2: the project starter's to milestones; point 2: backlog; point 2: and the wholesale starter's cash to inventory days. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
-#### MODEL-008 — Planning grid entry
+#### MODEL-007 — Measured model recalculation
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001
 
-**Requirement.** Finance and contributors enter budgets in a browser grid of lines (with their dimension members) by months for a scenario, limited to the cells they may edit (`EASEL-007`, `EASEL-009`, `ACCESS-001`). In the grid a person types into a cell or pastes a rectangular block copied from Excel or Google Sheets; the pasted cells are previewed, and any non-numeric or out-of-scope cell is refused with its address. They spread an amount across selected cells evenly, in proportion to the cells' current values, or in the shape of the same months' prior-year actuals (`MODEL-009`), with the cent remainder placed so the total is exact; or they change selected cells by a percent or an amount. They copy a value forward to later months. They split a cell into named sub-rows (for example one per vendor) that roll up to it, so the cell becomes their sum; sub-row detail follows the department's visibility, so finance and that department's contributors see it, and viewers and other departments see only the cell total. They add a note to a cell, kept with the cell's revision and shown in its trace. Cells that come from drivers or formulas show their trace and cannot be typed over. Each grid save is one revision fenced like every other save (a conflict returns 409), and undo restores the previous values of the cells it changed. At 390 pixels the grid scrolls inside its own frame with the line column pinned, and the page has no horizontal overflow.
+**Requirement.** A model with 2,000 input rows, five dimensions and a thirty-six-month horizon recalculates after an input edit in under two seconds at p95. [Detailed semantics](docs/planning-semantics.md#model-007).
 
 **Acceptance.**
-1. in the browser at 1440 and 390, a contributor opens their department's budget during a requested submission, pastes a 3 × 12 block copied from a spreadsheet, spreads $120,000 across twelve months evenly ($10,000 a month) and then by prior-year actual shape (each cell in the prior-year proportion, summing to exactly $120,000), copies a value forward, splits one cell into two vendor sub-rows that total the cell, adds a note, and reads the cells and note back through the API.
-2. A proportional spread of $60,000 over three cells holding $1,000, $2,000 and $3,000 reads $10,000, $20,000 and $30,000; a 10% increase and then a $500 decrease on a selection read exactly; undo of the last grid save restores the previous values of exactly the cells it changed; a save at a stale revision returns 409 and changes nothing; a pasted block that reaches into another department's row lists that cell's address as refused and leaves that department's cell unchanged; typing over a driver-calculated cell is refused and its trace shows.
-3. Another department's contributor and a viewer read the same cell through the API and receive its total without the sub-rows or vendor names, and the page has no horizontal overflow at 390.
-4. The current grid edits entered schedule rows by line and department; its calculated totals remain read-only and show source traces.
-5. A rectangle is atomic: any invalid, out-of-plan, closed, driver-calculated or out-of-scope cell refuses the whole save with its address.
-6. Preview writes nothing; apply must match the preview fingerprint and exact scenario revision.
-7. Amounts are signed decimal money converted to integer cents.
-8. Even spreads use equal weights; proportional and prior-year spreads use absolute source amounts, refusing unavailable prior-year cells or all-zero weights. Largest remainders receive cents in selection order. Percent changes round half away from zero once per cell; amount changes add to each selected cell. Copy forward uses the focused entered value in selected later months. Split amounts sum to the entered cell; notes, split names and amounts retain existing department-detail filtering in inputs, traces and exports. Notes keep the saving scenario revision, actor and time. Undo restores exactly the most recent grid save's cells and metadata only while its resulting scenario revision is current, then consumes that undo; later scenario changes refuse undo rather than overwrite them. Existing approved/kept/published versions remain captured. These rules cover today's entered schedules and fixed drivers. MODEL-003 inherits grid rows and authority for future custom dimension members; MODEL-004 inherits read-only formula cells and traces before those capabilities ship. Acceptance evidence: `tests/grid.test.mjs` (MODEL-008) asserts the complete arithmetic, no-write preview, exact fingerprint/revision, split/note traces, live authority, export filtering, driver refusal and undo through HTTP. `tests/grid-browser.mjs` (MODEL-008) asserts the contributor's 3 × 12 paste, every selection tool, named splits and note, matching API values, trace, undo, refused addresses and pinned grid with no page overflow at 1440/390.
+1. Fifty API edits at the declared fixture size meet the under-two-second p95 bar, including the save and fresh filtered recalculation.
+2. The measured result includes exact structure-version effects rather than omitting them from timing.
 
-**Evidence.** `src/easel/grid.ts` `tests/grid.test.mjs` `tests/grid-browser.mjs`
+**Evidence.** `tests/model-scale.mjs`; `tests/calculation-background.mjs`; `tests/calculation-browser.mjs`; `.github/workflows/model-recalculation.yml`
+**Gap.** Carried evidence establishes 3 audited outcomes. Complete assertion mapping remains owed for point 2: The measured result includes exact structure-version effects rather than omitting them from timing. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### MODEL-012 — Visible background calculations
+
+Core · target · **done** · From MODEL-007 · Cites BASE-INPUT-001 · Rules D-1
+
+**Requirement.** Larger changes expose a background calculation instead of presenting stale cells as final. [Detailed semantics](docs/planning-semantics.md#model-007).
+
+**Acceptance.**
+1. A larger bulk import shows calculation state in the browser.
+2. Affected cells remain visibly recalculating and have no stale-but-final amount.
+3. An interrupted or paused import retains an inspectable job and remains unavailable until explicitly continued or undone.
+
+**Evidence.** `tests/model-scale.mjs`; `tests/calculation-background.mjs`; `tests/calculation-browser.mjs`; `.github/workflows/model-recalculation.yml`
 **Gap.** None.
+
+#### MODEL-008 — Planning grid paste and selection edits
+
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1
+
+**Requirement.** Finance and contributors enter authorized scenario cells by typing or pasting with an explicit preview. [Detailed semantics](docs/planning-semantics.md#model-008).
+
+**Acceptance.**
+1. At desktop and phone widths, a contributor in a requested budget submission pastes a three-by-twelve spreadsheet block and reads the entered values through the API.
+2. Non-numeric or out-of-scope pasted cells are refused with their addresses; another department's cells remain unchanged.
+3. An even spread of $120,000 over twelve months yields $10,000 each; a prior-year-shaped spread keeps the exact $120,000 total and source proportions.
+4. A proportional $60,000 spread over $1,000, $2,000 and $3,000 yields $10,000, $20,000 and $30,000.
+5. A ten-percent increase, a $500 decrease and copy-forward each yield the selected exact values.
+
+**Evidence.** `src/easel/grid.ts`; `tests/grid.test.mjs`; `tests/grid-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: At desktop; point 1: phone widths; point 1: a contributor in a requested budget submission pastes a three-by-twelve spreadsheet block; point 1: reads the entered values through the API; point 2: Non-numeric or out-of-scope pasted cells are refused with their addresses; point 2: another department's cells remain unchanged; point 3: An even spread of $120,000 over twelve months yields $10,000 each; point 3: a prior-year-shaped spread keeps the exact $120,000 total; point 3: source proportions; point 4: A proportional $60,000 spread over $1,000, $2,000; point 4: $3,000 yields $10,000, $20,000; point 4: $30,000; point 5: A ten-percent increase; point 5: a $500 decrease; point 5: copy-forward each yield the selected exact values. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### MODEL-013 — Planning grid detail and recovery
+
+Core · target · **partial** · From MODEL-008 · Cites BASE-INPUT-001 · Rules D-1
+
+**Requirement.** Grid sub-rows and notes retain their source cell's visibility and revision while conflict handling and undo preserve exact edits. [Detailed semantics](docs/planning-semantics.md#model-008).
+
+**Acceptance.**
+1. Two named vendor sub-rows sum to their parent cell; a note is read back from the cell's revision and trace.
+2. Other departments and viewers receive the parent total without sub-row detail.
+3. A stale save changes nothing; undo restores exactly the cells changed by its save.
+4. A calculated driver or formula cell refuses typing and shows its exact trace.
+5. At phone width the line column stays pinned in an internally scrolling frame, with no page overflow.
+
+**Evidence.** `src/easel/grid.ts`; `tests/grid.test.mjs`; `tests/grid-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Two named vendor sub-rows sum to their parent cell; point 1: a note is read back from the cell's revision; point 1: trace; point 2: Other departments; point 2: viewers receive the parent total without sub-row detail; point 3: A stale save changes nothing; point 3: undo restores exactly the cells changed by its save; point 4: A calculated driver or formula cell refuses typing; point 4: shows its exact trace; point 5: At phone width the line column stays pinned in an internally scrolling frame; point 5: with no page overflow. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MODEL-009 — Plans built from actuals history
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1
 
-**Requirement.** Accepted actuals (from connectors or files) form an Actuals version that every plan can read. A plan line or driver can be defined from it at a time offset, for example the same month last year × 1.05 or the trailing three-month average, under the `MODEL-004` arithmetic and trace rules; each cell's trace names the actual cells it read. Finance can seed a new budget scenario from prior-year actuals by line and department in one step, with a growth percent per line, and the seeded inputs stay editable in the grid (`MODEL-008`). Plan views and the grid can overlay actuals for closed and prior-year months beside the plan. A month with no accepted actuals is reported as missing, never read as zero.
-
-The fixed Actuals-reference schedule form stores a source line/department, positive month offset (1–60), averaging window (1–60) and growth percentage (−100% to 1,000%). For target month M it reads M−offset and the window−1 months before it. It sums integer minor units, multiplies by (10000 + growth basis points), and divides once by (10000 × window), rounding half away from zero. An explicit accepted zero is valid. Every missing source cell, unresolved mapping or incomplete consumed import blocks with the source month; historical periods are checked even outside the current plan horizon, while unrelated periods do not block. Current contributor authority applies to both the target and source department. All working read, compare, export, proposal, approval, kept-forecast, reforecast, pack, metric and structure-version calculations use the same dependency preparation. Approved and frozen versions keep captured inputs, arithmetic and actual-history overlays; older snapshots without an overlay say it was not captured. MODEL-004 retains the general user formula language and references to other named versions.
-
-Ct approved the identity rule on 19 October (14:32Z): seeding creates a genuine new working alternative budget, with one ordinary monthly schedule per line/department present in the prior-year history and complete source cells for every required month; unknown line growth settings are refused. Cash settings copy the existing budget's assumptions and remain estimates until reviewed. The existing budget and forecast are unchanged. Budget cycle explicitly selects which budget receives requests and approval; an alternative's approval opens its own forecast. Deliberately switching the installation's operating pair is outside MODEL-009; no such switch is claimed. Seeded cells are editable through a monthly grid, saved at the reviewed scenario revision with the native session/model fence; stale edits change nothing. Actual-reference cells remain calculated and show their sources. Current/prior-year overlays in both the grid and scenario view are aggregate line/department cells, missing or blocked values have no number, and Excel includes the same values with live difference formulas. MODEL-008 retains paste, spreading, copy-forward, splits, cell notes and grid undo.
+**Requirement.** Accepted actuals (from connectors or files) form an Actuals version that every plan can read. A plan line or driver can be defined from it at a time offset, for example the same month last year × 1.05 or the trailing three-month average, under the `MODEL-004` arithmetic and trace rules; each cell's trace names the actual cells it read. Finance can seed a new budget scenario from prior-year actuals by line and department in one step, with a growth percent per line, and the seeded inputs stay editable in the grid. Plan views and the grid can overlay actuals for closed and prior-year months beside the plan. A month with no accepted actuals is reported as missing, never read as zero. [Detailed semantics](docs/planning-semantics.md#model-009).
 
 **Acceptance.**
-1. `tests/history.test.mjs` and `tests/history-browser.mjs` (MODEL-009) accept 24 posted months and assert every same-month prior-year × 1.05 cell, every trailing-three average, one half-away division and every source citation; seed a genuine budget with per-line growth, read/edit its monthly inputs, refuse a stale save atomically, and name missing months rather than zero.
-2. Assert accepted zero, consumed historical mapping/import blocking, existing target/source authority, unchanged source budgets and captured overlays/arithmetic after later historical corrections.
+1. accept 24 posted months and assert every same-month prior-year × 1.05 cell, every trailing-three average, one half-away division and every source citation; seed a genuine budget with per-line growth, read/edit its monthly inputs, refuse a stale save atomically, and name missing months rather than zero.
+2. Accepted zero, consumed historical mapping/import blocking, existing target/source authority, unchanged source budgets and captured overlays/arithmetic after later historical corrections.
 3. At 1440/390 create the forms, seed/edit/reload the grid, compare its current/prior actuals with the API and Overview, and select the alternative in Budget cycle.
 4. Independently evaluate actual-history Excel formulas.
 5. MODEL-004/MODEL-008 keep the further formula/grid obligations named above.
 
-**Evidence.** `src/easel/history-schedules.ts` `tests/history.test.mjs` `tests/history-browser.mjs`
-**Gap.** None.
+**Evidence.** `src/easel/history-schedules.ts`; `tests/history.test.mjs`; `tests/history-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: accept 24 posted months; point 1: assert every same-month prior-year × 1.05 cell; point 1: every trailing-three average; point 1: one half-away division; point 1: every source citation; point 1: seed a genuine budget with per-line growth; point 1: read/edit its monthly inputs; point 1: refuse a stale save atomically; point 1: and name missing months rather than zero; point 2: Accepted zero; point 2: consumed historical mapping/import blocking; point 2: existing target/source authority; point 2: unchanged source budgets; point 2: captured overlays/arithmetic after later historical corrections; point 3: At 1440/390 create the forms; point 3: seed/edit/reload the grid; point 3: compare its current/prior actuals with the API; point 3: Overview; point 3: and select the alternative in Budget cycle; point 4: Independently evaluate actual-history Excel formulas; point 5: MODEL-004/MODEL-008 keep the further formula/grid obligations named above. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Three statements and cash
 
 #### FIN-001 — Linked P&L, balance sheet and cash flow
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1
 
-**Requirement.** Every scenario produces a monthly forecast profit and loss, balance sheet and indirect cash-flow statement that link: net income flows to retained earnings, working-capital, capex and financing movements flow to cash, and the balance sheet balances every month. A visible check marks any month that does not balance, and its cause is traced. Current working scenarios and newly captured approvals/reforecasts conform; older immutable snapshots remain as captured and explicitly show when statements were not captured. Opening equity is a labeled estimate: opening cash + receivables + unbilled contract revenue + operating prepaids + net fixed assets + capital prepayments − deferred revenue − accrued payroll/bonuses − operating payables − capital payables − opening debt. Net income accumulates in retained earnings. Generic noncash expenses accumulate in a labeled other-noncash reserve; asset expenses reduce net fixed assets instead. Capital payments before service create capital prepayments; service before payment creates capital payables, which remain until paid. AR/AP movements follow existing monthly collection/payment timing, including settlement of opening AR/AP in the first month. Indirect operating cash is net income + noncash expense − increase in receivables − increase in unbilled revenue − increase in inventory − increase in operating prepaids + increase in operating payables + increase in deferred revenue + increase in accrued payroll/bonuses; investing cash is disposal proceeds − capex payments. Financing follows FIN-003: opening debt reduces the opening-equity estimate; planned draws, principal repayments and equity raises link cash and debt/contributed equity without being income. No balancing plug is applied: inconsistent closed-month depreciation versus the asset schedule leaves a visible difference with the month, source line and amounts. Under ct 19 October pattern 1, current capabilities complete FIN-001; CONNECT-007 inherits imported balance-sheet openings and reconciliation, FIN-002 inherits its deferred/prepaid/accrual statement movements, and FIN-003 inherits debt/equity/financing statement movements before each ships.
-
-**Acceptance.**
-1. the API journey reads three statements for 24 months and asserts assets equal liabilities plus equity in every month and that cash-flow closing cash equals balance-sheet cash.
-
-**Evidence.** `src/easel/statements.ts`, `tests/statements.test.mjs`, `tests/statements-browser.mjs`
-**Gap.** Linked current statements, labeled opening equity/noncash reserve, AR/AP and asset timing, retained income, traced imbalance checks, frozen captures and formula Excel; future movements inherited by CONNECT-007/FIN-002/FIN-003
-
-#### FIN-002 — Working-capital timing
-
-Core · target · **done**
-
-**Requirement.** Receivables follow days-sales-outstanding or a collection curve by revenue line, and payables follow days-payables-outstanding or payment terms by expense line. Annual-upfront billing creates deferred revenue that is recognized ratably, prepaid expenses amortize, and accrued payroll and bonuses settle on their pay dates. Opening balances come from actuals (`CONNECT-007`) or labeled estimates (`EASEL-005`). Before shipping, FIN-002 inherits FIN-001: every deferred-revenue, prepaid and accrued-liability movement links its profit recognition, balance-sheet balance and indirect cash-flow adjustment, with visible traced reconciliation checks.
-
-Current working inputs and newly captured versions conform. Noncontract revenue and vendor invoices are assumed dated at calendar month end; DSO, DPO and vendor terms add exact calendar days (0–365 inclusive), independent of the displayed horizon. Collection curves have 1–24 positive installments, distinct days and shares totaling exactly 100%; largest-remainder cent allocation gives earlier installments priority on ties. Contract curves use their actual planned invoice dates, with the existing service recognition and upfront billing of REV-004. Without a new timing option, existing monthly cash conventions remain. Accepted aggregate rows with conflicting driver timing are visibly blocked until timing is consistent or attributed source data exists; they never silently choose a cash policy.
-
-A prepaid expense carries total amount, service start, 1–120 amortization months and payment month at/before service start (at most 120 months earlier). Ordinary amortization installments floor to cents; the final month receives the remainder. An entered quarterly bonus amount accrues in three installments with the final cent remainder in the third; its first pay month is from the first quarter end through twelve months later, inclusive, and settlement repeats every three months at calendar month end. Salary and entered on-cost recognition retain EASEL-007 arithmetic; optional pay day 1–31 (clamped to month end) and month offset 0–3 determine settlement. Prior-horizon entered schedules establish labeled estimated openings, including ordinary monthly earned-payroll estimates. CONNECT-007 inherits imported prepaid/accrued/deferred openings and their reconciliation before it ships. Closing with a different accepted recognition amount retains accepted P&L and the known estimated payment/balance schedule, exposing the exact statement difference rather than creating a liability plug. The existing native/API/MCP proposal, revision, department/pay filtering, immutable capture and formula Excel doors apply; published packs capture aggregates only, and older immutable snapshots remain as captured.
+**Requirement.** The forecast links profit and loss, balance sheet and direct and indirect cash through visible opening balances and movements. [Detailed semantics](docs/planning-semantics.md#fin-001).
 
 **Acceptance.**
-1. `tests/working-capital.test.mjs` (FIN-002) asserts 45-day DSO, 30-day vendor terms/DPO, annual-upfront ratable deferred revenue, $24,000 insurance amortized at $2,000 per month to zero, earned payroll paid next-month day 5, and a quarterly bonus accrued monthly then settled on its pay month.
-2. It proves exact traces and every statement identity, prior-horizon estimated openings, calendar-day and clamping boundaries, cent conservation, atomic invalid-input refusals, conflicting aggregate timing blocking, native and MCP proposals, exact promotion, frozen arithmetic, pay filtering and independently evaluated formula Excel.
-3. `tests/working-capital-browser.mjs` (FIN-002) enters and edits DSO/curves/vendor terms/prepaids/pay dates/bonus schedules, reads reconciled statements and traces, closes matching accepted recognition, publishes a pack and downloads filtered formula Excel as finance/board at 1440/390.
+1. Across twenty-four months, assets equal liabilities plus equity in every month.
+2. Cash-flow closing cash equals balance-sheet cash in every month.
+3. Entered opening equity is identified as an estimate, and unresolved source or statement differences remain visible instead of being plugged.
 
-**Evidence.** `tests/working-capital.test.mjs` `tests/working-capital-browser.mjs`
-**Gap.** Exact-day/curve collections and vendor terms, prepaid/payroll/bonus subledgers, estimated openings, traced statements, frozen captures and filtered formula Excel
+**Evidence.** `src/easel/statements.ts`; `tests/statements.test.mjs`; `tests/statements-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Across twenty-four months; point 1: assets equal liabilities plus equity in every month; point 2: Cash-flow closing cash equals balance-sheet cash in every month; point 3: Entered opening equity is identified as an estimate; point 3: and unresolved source or statement differences remain visible instead of being plugged. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
-#### FIN-003 — Debt and financing
+#### FIN-002 — Receivables and deferred-revenue timing
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001
 
-**Requirement.** Term loans, lines of credit and venture debt carry principal, rate (fixed, or variable over a stated base rate), draws, repayments and amortization schedules, with interest flowing to the P&L. Covenant tests (minimum cash, liquidity, debt-to-EBITDA) are computed every month. Equity raises are planned events. Before shipping, FIN-003 inherits FIN-001: debt draws/repayments and equity events link financing cash flows and balance-sheet debt/equity; interest links profit and operating cash, with visible traced reconciliation checks.
-
-Finance alone creates, edits, removes and exports instrument terms and input records; members read aggregate funding, debt/equity and covenant outcomes (ct, 19 October). Instruments are planning assumptions, never arranged funding or executed payments. Opening principal is a labeled estimate at the first plan month. Beginning-month draws precede interest, which is principal after draws × annual basis points ÷ 120000, rounded half away from zero once and paid that month regardless of vendor terms. Variable rates name their reference and require an explicit base rate for every displayed month with principal; the annual rate is base plus margin, never a carried or invented rate. Extra principal is reserved before automatic repayments. Interest-only schedules clear principal at maturity. Equal-principal schedules use the principal at their first payment month, floor ordinary installments and put the cent remainder in the last installment; extra repayment caps later automatic installments, and later draws after the first installment are refused. Invalid dates, excess extra repayments and credit-limit breaches refuse the save. Schedules are independent of the displayed horizon's end.
-
-Covenants apply each active month, including start and maturity. Minimum cash is closing cash; liquidity is closing cash plus all active undrawn credit. Minimums breach strictly below their threshold. Debt/EBITDA is total closing debt divided by 12 × (current-month net income + recognized interest + noncash expense), explicitly an annualized monthly estimate. Its maximum uses exact integer cross multiplication; equality passes. Positive debt with nonpositive EBITDA breaches without a fabricated numeric ratio; zero debt passes. Each result retains numerator, denominator, threshold, trace and first breach month. Accepted closed-month interest replaces the projected expense and operating cash once; schedule differences are visible. Principal and equity remain planned schedules until CONNECT-007 supplies their actual balances. Working inputs branch and travel in proposals under current authority, enter MODEL-005 structure versions, and freeze with approvals, kept forecasts and reforecasts. Published packs capture only aggregate funding/covenants. App and formula Excel exports apply the same filtering; older immutable snapshots remain as captured and disclose when financing was not captured.
+**Requirement.** Finance plans receivable collections and deferred recognition with explicit days and curves. [Detailed semantics](docs/planning-semantics.md#fin-002).
 
 **Acceptance.**
-1. `tests/financing.test.mjs` (FIN-003) adds a downside credit line, reads exact draws, interest, principal, all three monthly covenant kinds and first breach, and adds a $5,000,000 raise with no P&L effect.
-2. It asserts fixed term and variable venture debt, exact amortization/remainders and early repayment, invalid-input refusal, operating-payables separation, every statement identity, closed-month interest without double charging, immutable approvals/reforecasts, captured published funding, MODEL-005 versioning and finance-only terms in reads/comparisons/Excel.
-3. `tests/financing-browser.mjs` (FIN-003) enters credit/equity through Plan and reads breach traces, reconciled statements and role-filtered formula Excel as finance/board at 1440/390 without page overflow.
+1. Forty-five-day DSO and collection curves date customer collections exactly.
+2. Annual-upfront ratable revenue recognizes through deferred balances without inventing an immediate cash receipt.
+3. Exact traces and direct and indirect statement identities reconcile over calendar-day and short-period boundaries.
+4. Conflicting aggregate timing blocks instead of choosing an invented allocation.
 
-**Evidence.** `src/easel/financing.ts` `tests/financing.test.mjs` `tests/financing-browser.mjs`
-**Gap.** Fixed/variable term, credit and venture schedules, monthly covenants and equity link every statement; terms remain finance-only and nothing executes payments
+**Evidence.** `tests/working-capital.test.mjs`; `tests/working-capital-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Forty-five-day DSO; point 1: collection curves date customer collections exactly; point 2: Annual-upfront ratable revenue recognizes through deferred balances without inventing an immediate cash receipt; point 3: Exact traces; point 3: direct; point 3: indirect statement identities reconcile over calendar-day; point 3: short-period boundaries; point 4: Conflicting aggregate timing blocks instead of choosing an invented allocation. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### FIN-008 — Vendor terms and prepaid schedules
+
+Core · target · **partial** · From FIN-002 · Cites BASE-INPUT-001 · Rules D-1, D-2
+
+**Requirement.** Finance plans operating payables and prepaid amortization as distinct recognition and settlement schedules. [Detailed semantics](docs/planning-semantics.md#fin-002).
+
+**Acceptance.**
+1. Thirty-day vendor terms date payments and operating payable balances exactly.
+2. A $24,000 insurance prepayment amortizes $2,000 monthly until its remaining balance is zero.
+3. Prior-horizon estimated openings, exact-cent remainders and statement identities reconcile without an invented source opening.
+4. Native and proposal edits and formula Excel carry the same timing, current visibility and frozen arithmetic.
+
+**Evidence.** `tests/working-capital.test.mjs`; `tests/working-capital-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Thirty-day vendor terms date payments; point 1: operating payable balances exactly; point 2: A $24,000 insurance prepayment amortizes $2,000 monthly until its remaining balance is zero; point 3: Prior-horizon estimated openings; point 3: exact-cent remainders; point 3: statement identities reconcile without an invented source opening; point 4: Native; point 4: proposal edits; point 4: formula Excel carry the same timing; point 4: current visibility; point 4: frozen arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### FIN-009 — Payroll accrual and settlement schedules
+
+Core · target · **partial** · From FIN-002 · Cites BASE-INPUT-001 · Rules D-1, D-2
+
+**Requirement.** Earned payroll and bonuses settle on their entered pay dates rather than being confused with recognition. [Detailed semantics](docs/planning-semantics.md#fin-002).
+
+**Acceptance.**
+1. Earned payroll paid on next-month day five leaves an accrual until settlement.
+2. A quarterly bonus accrues monthly and settles in its selected pay month.
+3. Prior-horizon accruals, clamped dates and cent conservation retain exact cash and statement traces.
+4. Invalid timing is refused atomically, and pay-filtered reads and frozen captures retain the same amounts.
+
+**Evidence.** `tests/working-capital.test.mjs`; `tests/working-capital-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Earned payroll paid on next-month day five leaves an accrual until settlement; point 2: A quarterly bonus accrues monthly; point 2: settles in its selected pay month; point 3: Prior-horizon accruals; point 3: clamped dates; point 3: cent conservation retain exact cash; point 3: statement traces; point 4: Invalid timing is refused atomically; point 4: and pay-filtered reads; point 4: frozen captures retain the same amounts. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### FIN-003 — Debt schedules and covenants
+
+Core · target · **partial** · Cites BASE-INPUT-001 · Rules D-1, D-2
+
+**Requirement.** Finance plans fixed or variable term and venture debt, amortization, early repayment and explicit cash/liquidity/leverage covenants. [Detailed semantics](docs/planning-semantics.md#fin-003).
+
+**Acceptance.**
+1. Fixed-term and variable venture schedules have exact principal, interest and cent remainders, including early repayment.
+2. All three monthly covenant kinds expose the first breach and the corresponding traced values.
+3. Operating payables stay distinct from financing; accepted actual interest is not charged again.
+4. Frozen versions and published funding retain captured debt arithmetic, with finance-only terms in reads, comparisons and formula Excel.
+
+**Evidence.** `src/easel/financing.ts`; `tests/financing.test.mjs`; `tests/financing-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Fixed-term; point 1: variable venture schedules have exact principal; point 1: interest; point 1: cent remainders; point 1: including early repayment; point 2: All three monthly covenant kinds expose the first breach; point 2: the corresponding traced values; point 3: Operating payables stay distinct from financing; point 3: accepted actual interest is not charged again; point 4: Frozen versions; point 4: published funding retain captured debt arithmetic; point 4: with finance-only terms in reads; point 4: comparisons; point 4: formula Excel. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### FIN-010 — Credit facilities and equity financing
+
+Core · target · **partial** · From FIN-003 · Cites BASE-INPUT-001 · Rules D-1
+
+**Requirement.** Finance models credit draws and equity raises without treating financing proceeds as operating revenue. [Detailed semantics](docs/planning-semantics.md#fin-003).
+
+**Acceptance.**
+1. A downside credit line draws only the required amount and reports exact draw, interest, principal and covenant breach.
+2. A $5,000,000 equity raise increases cash and contributed equity without changing profit and loss.
+3. Linked statements and formula Excel reconcile, and invalid financing inputs leave no partial change.
+
+**Evidence.** `src/easel/financing.ts`; `tests/financing.test.mjs`; `tests/financing-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A downside credit line draws only the required amount; point 1: reports exact draw; point 1: interest; point 1: principal; point 1: covenant breach; point 2: A $5,000,000 equity raise increases cash; point 2: contributed equity without changing profit and loss; point 3: Linked statements; point 3: formula Excel reconcile; point 3: and invalid financing inputs leave no partial change. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### FIN-004 — Capex and depreciation
 
-Core · target · **done**
+Core · target · **done** · Cites BASE-INPUT-001
 
-**Requirement.** Planned asset purchases by category depreciate straight-line over a useful life set per category. Disposals and existing fixed assets (from `CONNECT-007`) continue their schedules. Capex reaches cash in its payment month. Current purchased, opening existing and imported assets conform: `CONNECT-007` maps the accepted net fixed-asset balance onto explicit asset origins, each with finance-entered remaining life. Category useful life is in whole months. With zero residual value, each ordinary month depreciates the opening depreciable balance divided by its life, rounded down to integer cents; the final month takes the remaining cents. For an existing asset that balance is cost minus entered opening accumulated depreciation, spread over its entered remaining life. For an imported asset it is the net balance allocated to it at the last closed month, spread over its entered remaining life from the following month. Depreciation begins in the in-service month, inclusive. No depreciation is charged in the disposal month: book value is removed, proceeds reach cash and the book value minus proceeds is a gain or loss on the non-cash expense line. Non-cash lines, including accepted depreciation actuals, do not create cash payments. Purchases are paid in the explicit payment month (the in-service month when omitted). Categories and assets copy with scenarios and freeze with approvals; schedules appear in plan exports and published pack workbooks.
+**Requirement.** Finance plans asset purchases, straight-line depreciation, disposals and imported remaining book value. [Detailed semantics](docs/planning-semantics.md#fin-004).
 
 **Acceptance.**
-1. the API journey adds $120,000 of equipment over 5 years and reads $2,000 of monthly depreciation, net book value and the cash outflow.
-2. Also assert inherited CONNECT-007 imported assets: an accepted $17,500 net fixed-asset balance allocated to an asset with 35 months of remaining life depreciates $500 in the following month, and its later disposal charges no depreciation in that month and removes the remaining book value with its proceeds.
+1. A $120,000 equipment purchase over five years produces $2,000 monthly depreciation, the corresponding net book value and the purchase cash outflow.
+2. A $17,500 imported net asset allocated over thirty-five remaining months depreciates $500 in the following month.
+3. Disposal charges no depreciation in its month, removes remaining book value and includes its proceeds.
 
-**Evidence.** `src/easel/assets.ts`, `tests/assets.test.mjs`, `tests/assets-browser-journey.mjs`, `tests/mapping-rules.test.mjs`
-**Gap.** Category useful lives, purchased/opening/imported assets, cent-exact depreciation and book values, disposals, non-cash expense lines, explicit cash timing, immutable snapshots and formula exports
+**Evidence.** `src/easel/assets.ts`; `tests/assets.test.mjs`; `tests/assets-browser-journey.mjs`; `tests/mapping-rules.test.mjs`
+**Gap.** None.
 
 #### FIN-005 — Runway, burn and an agreed cash floor
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001
 
-**Requirement.** Every scenario shows, by month, gross burn (cash paid out), net burn (cash paid out less cash received), months of runway (closing cash divided by the trailing three-month average net burn), the lowest cash month, and the cash-zero date (the first forecast month whose closing cash falls below zero). Finance records an agreed cash floor and runway minimum, which every scenario, proposal and comparison checks and marks where they are crossed. Money is in integer cents. The trailing window includes the current month and up to two preceding available plan months; no unavailable history is invented. Runway is rounded half away from zero once to hundredths of a month from the unrounded average; a negative ratio means cash is already exhausted. Nonpositive average net burn has no finite runway and is labeled “Not burning” for positive cash or “Cash exhausted” otherwise. Minimum checks use the unrounded ratio; equality meets the minimum. The earliest tied month is the lowest-cash month, and cash-zero searches only months after actuals-through. Current finance-agreed thresholds apply to saved and working cash without changing approved snapshots; a currency mismatch is explicitly not assessed.
+**Requirement.** Finance agrees a cash floor and reads gross burn, net burn, runway and the first breach from the forecast. [Detailed semantics](docs/planning-semantics.md#fin-005).
 
 **Acceptance.**
-1. the API and browser journeys set a $500,000 floor, branch a downside that crosses it, and see the crossing month and runway on the scenario, the comparison and the dashboard.
-2. Through the API, each month's gross burn, net burn and runway equal values computed by hand from that month's cash in and out, and a scenario whose cash runs out reads its cash-zero date as the first month with closing cash below zero.
+1. A downside crossing a $500,000 floor shows the crossing month and runway in the scenario, comparison and dashboard.
+2. Every month's gross burn, net burn and runway equal its hand-computed cash-in and cash-out values.
+3. Cash-zero date is the first month whose closing cash is below zero.
 
-**Evidence.** `tests/cash-health.test.mjs` and `tests/cash-health-browser-journey.mjs` (FIN-005): monthly hand-computed burn/runway, floor and runway crossings, lowest cash, forecast cash-zero, current agreement on immutable cash, proposals/comparisons and Excel; 1440/390 finance and board journeys
-**Gap.** None.
+**Evidence.** `tests/cash-health.test.mjs`; `tests/cash-health-browser-journey.mjs`
+**Gap.** Carried evidence establishes 4 audited outcomes. Complete assertion mapping remains owed for point 1: A downside crossing a $500,000 floor shows the crossing month; point 1: runway in the scenario; point 1: comparison; point 1: dashboard. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### FIN-006 — US tax estimates in the forecast
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001
 
-**Requirement.** Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labeled as such, and never filings.
-
-Before this capability ships, FIN-006 inherits US-001: provide US statutory payroll and tax defaults for a new US company, with the effective tax year and every planning-estimate label; retain finance overrides.
+**Requirement.** Employer payroll taxes are calculated per person under US rules with annual wage bases: Social Security, Medicare, FUTA, and SUTA at a state rate and wage base finance enters. Income tax is estimated at the federal rate plus a state rate, with a loss carryforward. Sales tax collected is a pass-through to cash that never counts as revenue. These are planning estimates, labeled as such, and never filings. [Detailed semantics](docs/planning-semantics.md#fin-006).
 
 **Acceptance.**
-1. the API journey plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, SUTA at an entered 2.7% state rate stopping at an entered state wage base, and an income-tax line on a profitable month; a loss in an early month is carried forward and reduces income tax in a later profitable month; and sales tax collected on an invoice flows into cash and out through a sales-tax payable without changing revenue.
-2. Current scenario estimates are enabled through the finance-only `tax-policy` HTTP/MCP input and use explicit effective-year assumptions.
-3. Defaults are 2026 employer Social Security 6.2% on $184,500, Medicare 1.45% without a cap or employer Additional Medicare share, and gross FUTA 6% on $7,000, before any credit.
-4. Finance may enter a credit-adjusted FUTA rate explicitly; no credit or state eligibility is inferred.
-5. SUTA's employer/state rate and wage base and the state income rate require explicit finance entry (zero is an explicit choice).
-6. The federal corporate planning rate defaults to 21%.
-7. Sources: [SSA wage bases](https://www.ssa.gov/oact/cola/cbb.html), [IRS Publication 15](https://www.irs.gov/publications/p15), [IRS Publication 542](https://www.irs.gov/publications/p542) and [IRS Form 1120 instructions](https://www.irs.gov/instructions/i1120).
-8. Assumptions remain held into future plan years until finance revises them; this is not a claim of future statutory verification. Salary before entered on-costs is the taxable wage assumption. Each position is W-2 by default or explicitly 1099 (zero employer payroll taxes); PEOPLE-004 retains its additional compensation components and inherits applying these employer taxes to their taxable wages before shipping. Caps and cumulative liabilities reset each January. A continuing W-2 position in a partial first calendar year requires finance's prior year-to-date wages, rather than invented zero history. Monthly tax is the difference between rounded cumulative liabilities, so annual caps conserve cents exactly; each cumulative division rounds half away from zero. Employer taxes add to salary/on-cost expense and follow the position's existing pay-date treatment. Entered on-costs remain additional assumptions, with an explicit reminder to avoid double counting. Income tax uses accounting profit before income-tax expense as a labeled approximation of taxable profit. Entered opening losses and later negative months carry forward; positive profit consumes losses up to the finance-entered allowance (80% by default), then the combined federal/state rate applies with one half-away rounding. The dedicated income-tax expense line is paid in its recognition month as a planning assumption; accepted closed-month expense retains precedence. Sales tax uses the entered uniform rate on revenue invoice collections (including the existing dated contract/DSO/curve conventions), rounds each collection once, enters cash and a separate payable, and remits after the entered 0–12 calendar-month lag (one month by default). It never changes revenue. The payable and its movement appear in the linked balance sheet, indirect cash flow and formula Excel, including prior-horizon collected tax still awaiting remittance. Taxability, returns and actual tax payments are not inferred. Existing native pay/department filtering, proposals, immutable captures and exports apply. `tests/taxes.test.mjs` (FIN-006) asserts every original acceptance point, default and explicitly overridden wage caps, uncapped Medicare, FUTA/SUTA and 1099 components, cumulative cent conservation, midyear YTD and January reset, early loss/later profit and the loss allowance, invoice tax cash/payable/remittance without revenue, every statement identity, finance overrides, API/MCP authority, pay filtering, accepted closes, frozen arithmetic and independently evaluated Excel formulas. The $180,000 midyear fixture includes $100,000 of explicit prior YTD wages and reaches the default 2026 cap; a separate $250,000 January fixture proves the full default annual maximum. `tests/taxes-browser.mjs` (FIN-006) drives native 1099/W-2/YTD position edits, persisted tax results, current statements/reconciliation and filtered formula Excel at 1440/390.
+1. Plans one $180,000 W-2 position and reads Social Security stopping at the wage base within the year, Medicare continuing, FUTA on the first $7,000, SUTA at an entered 2.7% state rate stopping at an entered state wage base, and an income-tax line on a profitable month
+2. A loss in an early month is carried forward and reduces income tax in a later profitable month
+3. sales tax collected on an invoice flows into cash and out through a sales-tax payable without changing revenue.
 
-**Evidence.** `src/easel/payroll-taxes.ts`, `src/easel/tax-input.ts`, `src/easel/tax-calculation.ts`, `tests/taxes.test.mjs`, `tests/taxes-browser.mjs`
-**Gap.** Explicit effective-year payroll bases/rates, loss carryforward, invoice sales-tax cash/payable, linked statements, frozen captures, filtering and Excel
+**Evidence.** `src/easel/payroll-taxes.ts`; `src/easel/tax-input.ts`; `src/easel/tax-calculation.ts`; `tests/taxes.test.mjs`; `tests/taxes-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Plans one $180,000 W-2 position; point 1: reads Social Security stopping at the wage base within the year; point 1: Medicare continuing; point 1: FUTA on the first $7,000, SUTA at an entered 2.7% state rate stopping at an entered state wage base; point 1: and an income-tax line on a profitable month; point 2: A loss in an early month is carried forward; point 2: reduces income tax in a later profitable month; point 3: sales tax collected on an invoice flows into cash; point 3: out through a sales-tax payable without changing revenue. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### FIN-007 — 13-week cash forecast
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-INPUT-001
 
-**Requirement.** A weekly direct cash view for the next 13 weeks is built from open receivables by due date and expected payment behavior (each customer's average days late from its paid-invoice history, or a collection curve finance sets), open payables and bills by due date, payroll on its run dates (from the payroll connection or file, `PEOPLE-001` and `PEOPLE-007`, or a pay schedule finance sets), debt service on its schedule (`FIN-003`) and planned spend in its planned week. Finance can override any week with a note, and the view reconciles to the monthly forecast at month ends.
+**Requirement.** A weekly direct cash view for the next 13 weeks is built from open receivables by due date and expected payment behavior (each customer's average days late from its paid-invoice history, or a collection curve finance sets), open payables and bills by due date, payroll on its run dates (from the payroll connection or file, `PEOPLE-001` and `PEOPLE-007`, or a pay schedule finance sets), debt service on its schedule and planned spend in its planned week. Finance can override any week with a note, and the view reconciles to the monthly forecast at month ends. [Detailed semantics](docs/planning-semantics.md#fin-007).
 
 **Acceptance.**
-1. with ledger, payroll and bank fakes holding open invoices and bills, a semimonthly pay schedule, a term-loan payment and a planned spend line, the API journey reads 13 weeks in which each invoice lands in the week its customer's paid-invoice history puts it (a customer averaging 12 days late lands 12 days after its due date), each bill on its due date, each payroll run on its run date, the loan payment in its scheduled week and the planned spend in its planned week; the month-end weeks agree with the monthly cash forecast, and an override keeps its note.
-2. The current planned-cash slice reads the same dated contract collections, collection curves, DSO/DPO and entered payroll pay days as the monthly forecast.
-3. It shows thirteen consecutive seven-day windows from an explicit first UTC date; dates are inclusive.
-4. Monthly-only cash assumptions use accounting-period end, except debt draws at period start, and weeks containing them say that dates are assumed.
-5. Opening cash rolls the plan opening through all earlier scheduled events.
-6. A finance override is a signed cent adjustment with a required note, settling on its selected week's final day; saving that same week replaces its prior adjustment, including an explicit zero to cancel.
-7. Later windows carry earlier adjustments.
-8. Overrides change only the weekly view; the accounting-period-end reconciliation displays monthly forecast, dated schedule, cumulative overrides, weekly closing and the difference rather than hiding a mismatch. Formula Excel exports carry the same weekly and reconciliation amounts, with live closing and difference formulas. Current scenario, membership, finance edit and immutable-version rules apply. All readers receive aggregate cash amounts without input identities or individual pay detail. Weeks beyond the captured horizon are unavailable, and older frozen versions without dated cash show an explicit unavailable message rather than invented zeroes. Finance can place a cash, non-payroll one-off expense on an explicit planned payment date within its earned accounting period, including retail periods. The date replaces that expense's monthly-lag assumption, puts its entire signed amount in its selected week once, and uses that same dated event in the monthly forecast. Blank/default timing keeps existing monthly-lag behavior. It is a planning estimate, not a vendor bill or executed payment. Conflicting vendor days, invalid dates, dates outside the expense period and dated recurring/noncash/payroll inputs refuse atomically. Accepted aggregate actuals use the date only in that expense's accounting period; differing timing policies on the same aggregate cell require review rather than guessing an allocation. Approvals retain the captured date and cash arithmetic. Finance can enter an optional second payroll pay day later than the first (both 1–31) with the existing zero-to-three-period offset. Regular earned payroll, including on-costs, benefits, match, commissions and employer-tax estimates, splits into two equal cent installments; the first receives an odd-cent remainder. Each date independently clamps to the target period end, so two dates that clamp to the same date combine without losing cents. Calendar-month schedules are semimonthly; retail-calendar days retain MODEL-001's one-based target-period semantics. A position bonus and its incremental employer taxes still settle once on the first pay day of the bonus period, without the regular offset. Prior earned regular payroll remains an opening accrual until both installments settle. This is a finance-entered planning schedule, not a provider payroll run or a payment. *Acceptance evidence for the partial slice:* `tests/weekly-cash.test.mjs` (FIN-007) asserts exact dates, thirteen-week arithmetic, dated payroll, contract DSO, monthly reconciliation, carried/replaced overrides and notes, invalid and unauthorized saves, horizon unavailability and unchanged frozen captures through HTTP. `tests/weekly-cash-browser.mjs` (FIN-007) enters and reloads an adjustment through Overview and reads weekly cash and month-end reconciliation at 1440/390, including viewer read-only access. The same flows assert persisted semimonthly schedules, equal installments with odd-cent conservation, February clamping, prior-earned accruals and single-date position bonuses. They also assert explicit one-off planned spend in its selected week without a duplicate month-end charge, same-period monthly cash, retail boundaries and accepted-amount attribution, atomic timing/date refusals, immutable captures, native Plan editing and reload at both widths, and matching weekly/reconciliation formula Excel. Dimension-scoped readers are refused both weekly API and workbook doors. The Pantry source and combined forecast are proved by the additional evidence below. CONNECT-009 now supplies an explicitly selected finance-only bank basis with source labels, observed-balance boundary and visible monthly differences, proved by `tests/plaid-cash.test.mjs` and `tests/plaid-cash-browser.mjs`; its conservative bank-data audience awaits ct approval. The default view remains the dated planning estimate. The current Pantry source preview (`POST /api/easel/pantry/cash`) reads current open invoices and bills with explicit read scopes. It dates an invoice from its customer’s fully paid invoice history, rounds average nonnegative late days once to the nearest day, and places a bill on its due date. Reversed payments do not count as paid history. Missing history and past expected dates remain unresolved; no date is invented. The observation date must be today in UTC because current balances cannot reconstruct historical open items. This door is a no-write source preview; the combined native review consumes its exact fingerprint. *Additional partial evidence:* `tests/weekly-cash.test.mjs` — “Pantry open-item preview dates invoices from fully paid customer history and bills from due dates without changing planned cash” proves an invoice due February 10 dated February 22 from twelve-day paid history, the exact remaining invoice and bill cents, due-date placement, reversal refusal, current-date boundary, finance authority, sanitized source failure and unchanged scenarios through HTTP with a network-edge fake. The native-finance read-only `POST /api/easel/pantry/cash-forecast` combines the reviewed source with a working scenario. Its fingerprint and scenario revision must still match. Finance explicitly accounts for every source cent as a replacement of reviewed dated planned cash or additional cash; dates cannot repeat and replacements cannot exceed the planned amounts. No identity match is inferred. The preview preserves other payroll, debt and spend events and noted weekly adjustments, shows monthly differences and returns the same formula Excel with `format: "xlsx"`. It changes no model, stored source or captured version. Plan opening cash rolls through the observation date; a chosen bank basis requires a bank observation on that same date. Forecasting starts the next day. Missing history or overdue items refuse the combined preview rather than disappearing. The existing named Pantry open-item test in `tests/weekly-cash.test.mjs` proves combined ledger and two-account bank fakes, replacements without duplicates, semimonthly payroll, loan payments, planned spend, noted overrides, monthly reconciliation, formula Excel, revision and source fences, finance authority and immutable captures. Finance reviews the combined forecast in Overview by selecting Pantry open items under Cash sources. The review shows dated source items, invoice paid-history lateness, aggregate dated planned cash and explicit replacement amounts. Finance accounts for additional source cash separately; no match is preselected. Changing allocations clears the combined result. Source reads and formula Excel recheck the fingerprint and scenario revision; failures clear the prior result and require explicit review. The bank basis displays its observation date, account count and opening balance. The native review is limited to the existing company-wide native finance audience; no new bank audience is introduced. *Native evidence:* `tests/weekly-cash-browser.mjs` — “Native combined source review through the built Worker” asserts the twelve-day invoice and due-date bill, exact weekly collections and payments with semimonthly payroll, scheduled debt and planned spend, preserved override note, exact month-end differences, explicit additional cash, both formula Excel bases, source and revision refusals and an unchanged monthly plan. It exercises and records the native review, combined plan and bank results and unresolved state at 1440 and 390 with provider-edge fakes and a pinned UTC clock; push Verify invokes the journey.
+1. With ledger, payroll and bank fakes holding open invoices and bills, a semimonthly pay schedule, a term-loan payment and a planned spend line, the API journey reads 13 weeks in which each invoice lands in the week its customer's paid-invoice history puts it (a customer averaging 12 days late lands 12 days after its due date), each bill on its due date, each payroll run on its run date, the loan payment in its scheduled week and the planned spend in its planned week
+2. The month-end weeks agree with the monthly cash forecast, and an override keeps its note.
 
-**Evidence.** `tests/weekly-cash.test.mjs` (Pantry open-item preview dates invoices from fully paid customer history and bills from due dates without changing planned cash); `tests/plaid-cash.test.mjs`; `tests/plaid-cash-browser.mjs`; `tests/weekly-cash-browser.mjs` (Native combined source review through the built Worker)
-**Gap.** Ct endorsement of the CONNECT-009 bank-data audience default remains. Default ADOPTED: company-wide finance-only aggregate bank reads; native finance credential administration and combined-source review; other readers retain planned cash.
+**Evidence.** `tests/weekly-cash.test.mjs`; `tests/plaid-cash.test.mjs`; `tests/plaid-cash-browser.mjs`; `tests/weekly-cash-browser.mjs`
+**Gap.** Dated planned cash and reviewed Pantry/bank combinations are delivered. Connected payroll-provider run dates and the complete ledger/payroll/bank end-to-end reconciliation remain unproved. Bank audience follows CONNECT-009 and RL-102.
 
 ### Headcount and compensation
 
 #### PEOPLE-001 — Roster and payroll actuals from Gusto
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Finance connects Gusto (OAuth, read-only). Easel pulls employees and contractors, with department, title, employment type (W-2 or 1099), compensation, start and termination dates, and payroll run totals by employee. The roster is reconciled to planned positions: matched, unplanned hires, planned but not hired, and changed salaries. Payroll actuals reconcile to the ledger's payroll lines. Pay detail stays under `EASEL-007` and `PEOPLE-005`.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** Finance connects Gusto (OAuth, read-only). Easel pulls employees and contractors, with department, title, employment type (W-2 or 1099), compensation, start and termination dates, and payroll run totals by employee. The roster is reconciled to planned positions: matched, unplanned hires, planned but not hired, and changed salaries. Payroll actuals reconcile to the ledger's payroll lines. Pay detail stays under `EASEL-007` and `PEOPLE-005`. [Detailed semantics](docs/planning-semantics.md#people-001).
 
 **Acceptance.**
-1. a recorded Gusto demo-company fake; the API journey connects, sees reconciliation buckets, accepts matches, and confirms a viewer receives headcount totals without names or salaries; one recorded run against Gusto's demo environment.
+1. A recorded Gusto demo-company fake
+2. Connects, sees reconciliation buckets, accepts matches, and confirms a viewer receives headcount totals without names or salaries
+3. One recorded run against Gusto's demo environment.
 
-**Evidence.** `src/easel/gusto-provider.ts`, `tests/headcount.test.mjs`, `tests/gusto-roster-browser.mjs`
-**Gap.** Manual reviewed company-token employee/payroll observations for PEOPLE-006; OAuth, contractors, full reconciliation/accept-matches and recorded demo-provider proof remain
+**Evidence.** `src/easel/gusto-provider.ts`; `tests/headcount.test.mjs`; `tests/gusto-roster-browser.mjs`
+**Gap.** Manual Gusto employee/payroll observations are delivered. OAuth, contractors, full reconciliation and accepted matches, and demo-environment qualification remain incomplete.
 
 #### PEOPLE-002 — Roster from Rippling, Willow, BambooHR and ADP
 
-Core · target · **missing**
+Core · target · **missing** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** The same roster pull, reconciliation and restriction as `PEOPLE-001` from Rippling, [Willow](https://github.com/just-every/run-willow), BambooHR and ADP Workforce Now, with each provider's own fields mapped and anything unmapped listed.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** The same roster pull, reconciliation and restriction as `PEOPLE-001` from Rippling, [Willow](https://github.com/just-every/run-willow), BambooHR and ADP Workforce Now, with each provider's own fields mapped and anything unmapped listed. [Detailed semantics](docs/planning-semantics.md#people-002).
 
 **Acceptance.**
-1. the `PEOPLE-001` journey against a fake for each provider, with an unmapped custom field listed rather than dropped.
+1. The `PEOPLE-001` journey against a fake for each provider, with an unmapped custom field listed rather than dropped.
 
 **Evidence.** None.
 **Gap.** No HRIS connectors
 
 #### PEOPLE-003 — Open roles from the ATS
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Open requisitions from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse become to-be-hired positions with department, level and target start. An accepted offer updates the position's name, salary and start date as a proposal for finance (`EASEL-012`), and a closed requisition proposes removing the position.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** Open requisitions from [Lodge](https://github.com/just-every/run-lodge) or Greenhouse become to-be-hired positions with department, level and target start. An accepted offer updates the position's name, salary and start date as a proposal for finance, and a closed requisition proposes removing the position. [Detailed semantics](docs/planning-semantics.md#people-003).
 
 **Acceptance.**
-1. an ATS fake opens a requisition, then marks an offer accepted with a later start; the API journey sees a proposal with the changed start and cost and promotes it.
-2. The Greenhouse option uses fixed Harvest GET endpoints and complete bounded pages.
-3. Finance selects a job, its numeric opening when there is more than one, the mapped department and payroll line.
-4. The job's `level`, `target_start_date` and annual USD currency field `annual_salary` supply the planned role.
-5. Accepted offers use Harvest `starts_at`, candidate name and the annual USD currency field `annual_salary` (or `salary` with an explicit `salary_period` of `year`).
-6. Free-text salary, unknown units, missing fields and ambiguous offers block instead of being guessed.
-7. A closed job, or an unfilled closed opening, proposes removal; a filled opening in an open job retains its accepted offer.
-8. Stable job and numeric opening IDs survive native position edits. Existing compensation assumptions remain on updated roles; new roles capture department defaults. Annual salary changes to a position changed manually to hourly require explicit manual reconciliation. Every observation is a no-write preview. The reviewed source digest, mapping and current plan revision are refetched before creating a draft proposal; duplicate reviewed proposals are refused. Submit, compare, promote and decline use the existing EASEL-012 doors, human finance authority and exact proposal and target revision fences. No observation silently changes the official plan. Native company-wide finance with Pay administers and previews the connection; service actors and API tokens are refused. Candidate names and pay stay in existing filtered position inputs, not shared scenario metadata. Connect, manual health check, proposal creation and disconnect are audited. Settings shows the masked suffix, scope, owner, manual schedule, last successful read, row count, sanitized errors and rate-limit state. Disconnect always deletes the sealed archive-excluded key and explicitly instructs the owner to delete the Harvest key in Greenhouse API Credential Management; it never claims remote revocation.
+1. An ATS fake opens a requisition, then marks an offer accepted with a later start
+2. Sees a proposal with the changed start and cost and promotes it.
 
-**Evidence.** `tests/headcount.test.mjs` — “Greenhouse requisitions, accepted offers and closed roles become reviewed revision-bound finance proposals with sealed native custody”; `tests/greenhouse-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/headcount.test.mjs`; `tests/greenhouse-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: An ATS fake opens a requisition; point 1: then marks an offer accepted with a later start; point 2: Sees a proposal with the changed start; point 2: cost; point 2: promotes it. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
-#### PEOPLE-004 — US compensation assumptions
+#### PEOPLE-004 — Base compensation assumptions
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001 · Rules D-1
 
-**Requirement.** Each position or person carries salary or hourly rate with expected hours, W-2 or 1099 type, merit increases on a date, bonus (percent of salary, paid in a month), sales commission (rate on REV-004 contract bookings now and weighted pipeline bookings from `REV-001` when it ships), benefits per head per month, 401(k) match, and employer taxes from `FIN-006`. On-cost defaults are set per department and overridden per position. Each cost traces to its components.
-
-Ct scope-review-61 (21 October 2026) also permits commission now on REV-004 bookings through an explicit contract `commissionPosition` link to a same-scenario position origin and that position's `commissionRateBps`. The planning estimate is contract cents × basis points ÷ 10000, rounded once half away from zero, expensed in the booking's start period on the position department/salary line, with existing payroll cash timing. W-2 commission enters FIN-006 taxable wages and caps; 1099 adds no employer tax; on-costs do not apply. Traces disclose that ASC 340-40 capitalisation is not modelled. Missing, cross-scenario or inactive position links and edits orphaning a link refuse with 409. Frozen captures retain link, rate and arithmetic. The rate, link, per-position amount and trace component are PEOPLE-005 pay detail; restricted readers see only department totals. Every surface labels it a planning estimate. Quota, attainment and tiered accelerators use the exact marginal rules below. A 401(k) match must state whether commission enters its base. The explicit REV-004 commission planning estimate now ships through native Plan, HTTP and MCP proposal doors, proved by `tests/people-comp.test.mjs` and `tests/people-comp-browser.mjs` (PEOPLE-004, including PEOPLE-005 filtering and 1440/390 forms, traces and comparisons). Its linked position must use a cash salary line; changing that line to noncash or orphaning the link is refused. The existing Pay detail and department grants apply to link administration as well as reads. PEOPLE-004 is done for current contract bookings; REV-001 carries weighted-pipeline commission and the same quota/attainment/accelerator rules before shipping. No commission payment or statutory filing is executed.
-
-The base-compensation slice also ships through the same native Plan, HTTP and MCP doors. A position chooses salary (the existing annual cent-conserving schedule) or hourly pay: rate in cents × expected hours in hundredths per active accounting period ÷ 100, rounded once half away from zero. Hourly on-costs are a separately once-rounded percentage of those wages. Salary and hourly inputs are mutually exclusive; use zero annual salary for hourly pay. The expected hours and entered benefits per head apply once in every active period, including a four- or five-week retail period; no daily or overtime allocation is inferred. Entered monthly benefits and the employer 401(k) match estimate add to cost. The match is salary or hourly base wages × the entered match rate, rounded once half away from zero, excluding commission; it does not infer employee elections, eligibility or statutory limits. Benefits and employer match are additional employer-cost assumptions, excluded from FIN-006 taxable wages and on-costs. All these components follow the position's existing earned-period/pay-date cash timing and appear in traces; continuing prior-period service also carries them into estimated opening payroll accruals. Existing FIN-006 employer taxes still apply to salary/hourly wages plus commission, with 1099 taxes zero. All inputs, component traces, proposals, frozen arithmetic and formula exports inherit PEOPLE-005 filtering. `tests/people-comp.test.mjs` and `tests/people-comp-browser.mjs` name and exercise these base-compensation components. No statutory benefit or retirement compliance, payroll execution or payment is claimed.
-
-PEOPLE-004 uses one explicit merit increase and one explicitly dated salary bonus per position. Merit is additional base wages × entered basis points × affected inclusive UTC calendar days / (10,000 × days in the accounting period), rounded half away to cents once; dates before a period affect all its days, including leap and retail periods. Existing salary cent conservation is unchanged. Merit adds separately rounded on-costs and enters the employer match base and FIN-006 taxable wages. The match excludes both bonus and commission. A bonus is the entered percentage of the annual salary rate in force at its selected period end (including the full merit rate if effective by then), rounded once, expensed once and paid in that period; it has no on-cost or match. With dated payroll, the bonus and its incremental employer taxes settle on the selected pay day in that same period, ignoring the regular payroll month offset. Other components retain their earned/pay-date timing. Benefits and match remain excluded from taxable wages. Continuing service retains these components in estimated opening accruals.
-
-A department has an entered on-cost default. Blank or omitted position on-costs capture that department rate at each position save; an explicit percentage, including zero, overrides it. Changing a department default alone changes no existing position or frozen arithmetic. A commission quota is entered in cents per accounting period. Attainment is cumulative explicitly linked contract bookings / quota, displayed as once-rounded basis points; zero quota disables attainment and requires no tiers. Up to twenty increasing attainment thresholds and increasing commission rates define marginal accelerators: only booking cents above a threshold earn that tier's rate, without retroactive changes to earlier cents. Threshold cents are quota × attainment basis points / 10,000 once half-away rounded, and must be positive and distinct. Same-period contracts consume quota in ascending stable origin-ID order. Each contract sums exact cent × rate numerators over its marginal slices, then rounds once to cents; without tiers the existing contract × rate rule is unchanged. Quota resets each accounting period. Every trace names the quota, attainment, slices and resulting planning estimate; employer taxes, live pay filtering, proposals, immutable captures and formula exports use the same result. REV-001 inherits these quota/attainment/accelerator rules for weighted pipeline bookings before shipping. No eligibility, deferral, payment, payroll execution or statutory certification is inferred.
-
-Before this capability ships, PEOPLE-004 inherits US-001: provide US statutory compensation, payroll and tax defaults for a new US company, with the effective tax year and every planning-estimate label; retain finance overrides.
+**Requirement.** Salary or hourly W-2 and 1099 positions retain traced base wages, benefits, employer match and department on-cost assumptions. [Detailed semantics](docs/planning-semantics.md#people-004).
 
 **Acceptance.**
-1. the API journey plans a salaried W-2 engineer with a merit increase, a commissioned salesperson tied to pipeline bookings, a 1099 contractor with no employer tax, an hourly W-2 position at $40 × 120 hours a month, and a salaried position carrying a 10% bonus paid in March, $1,200 a month of benefits, a 4% 401(k) match and a department on-cost default overridden on that position; each monthly cost reads as traced components (salary or hours × rate, merit, bonus, commission, benefits, 401(k) match and each employer tax) that sum to the cell.
-2. `tests/people-comp.test.mjs` (PEOPLE-004) asserts all current compensation components, 2026 defaults and retained overrides, exact leap/retail/prior-service merit, March bonus cash/taxes, captured defaults/zero override, marginal tiers/reset/multiple bookings, atomic invalid-save refusals, live pay filtering, independently evaluated Excel, MCP proposals and frozen approvals.
-3. `tests/people-comp-browser.mjs` (PEOPLE-004) exercises native Settings and Plan, persisted entry/edit, source traces, quota/attainment/accelerators, merit/bonus, formula exports and restricted reads at 1440/390.
-4. Weighted pipeline is asserted under REV-001 when that provider capability ships.
+1. A salaried engineer and an hourly W-2 position at $40 for 120 expected hours produce exact monthly base costs.
+2. A 1099 contractor has no employer payroll tax.
+3. Entered $1,200 monthly benefits and a four-percent employer match appear as separate traced components; the match base excludes bonus and commission.
+4. An explicit position on-cost, including zero, overrides the department default; changing that default alone changes no existing position.
+5. Each monthly cost equals its traced base-pay, benefit, match, on-cost and FIN-006 employer-tax components.
+6. US-001 statutory assumptions carry the effective tax year, planning-estimate labels and retained finance overrides.
 
-**Evidence.** `tests/people-comp.test.mjs` — “PEOPLE-004 REV-004 linked commission planning estimates round once…” proves explicit contract links, rounding, wage caps, cash timing, refusals, frozen captures and live Pay filtering; “PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through taxes, payroll timing, proposals, captures and PEOPLE-005” proves hourly wages, benefits, match, component sums, taxes, cash, Excel and MCP proposals; “PEOPLE-004 dated merit, March salary bonus, captured department defaults and marginal quota accelerators reach every compensation component through HTTP” proves merit, bonus, default capture and overrides, quota, attainment, marginal tiers, statutory defaults and retained overrides; “PEOPLE-004 merit uses inclusive leap…days, half-away cents and prior-service cash without rewriting captures” proves date boundaries and prior service. `tests/people-comp-browser.mjs` — PEOPLE-004 native Settings and Plan entry, reload and edit, component traces, formula Excel, proposal comparisons and restricted reads at 1440 and 390.
-**Gap.** Salary/hourly pay, dated merit, position bonus, captured department default/override, benefits, match excluding bonus/commission, FIN-006 taxes and marginal quota/attainment/accelerators on REV-004 bookings; REV-001 inherits weighted pipeline parity
+**Evidence.** `tests/people-comp.test.mjs`; `tests/people-comp-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A salaried engineer; point 1: an hourly W-2 position at $40 for 120 expected hours produce exact monthly base costs; point 2: A 1099 contractor has no employer payroll tax; point 3: Entered $1,200 monthly benefits; point 3: a four-percent employer match appear as separate traced components; point 3: the match base excludes bonus; point 3: commission; point 4: An explicit position on-cost; point 4: including zero; point 4: overrides the department default; point 4: changing that default alone changes no existing position; point 5: Each monthly cost equals its traced base-pay; point 5: benefit; point 5: match; point 5: on-cost; point 5: FIN-006 employer-tax components; point 6: US-001 statutory assumptions carry the effective tax year; point 6: planning-estimate labels; point 6: retained finance overrides. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### PEOPLE-008 — Merit and salary bonuses
+
+Core · target · **partial** · From PEOPLE-004 · Cites BASE-ROLE-001, BASE-INPUT-001 · Rules D-1, D-2
+
+**Requirement.** Finance enters dated merit and an explicitly timed salary bonus without inferring payroll execution. [Detailed semantics](docs/planning-semantics.md#people-004).
+
+**Acceptance.**
+1. A salaried engineer's merit increase applies on its inclusive entered date, including leap and retail periods.
+2. A ten-percent salary bonus paid in March appears once with its incremental employer tax and correct cash date.
+3. Merit, bonus, base wages and employer taxes reconcile to each position's monthly cell and trace.
+4. Frozen captures retain their dates and compensation arithmetic.
+
+**Evidence.** `tests/people-comp.test.mjs`; `tests/people-comp-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A salaried engineer's merit increase applies on its inclusive entered date; point 1: including leap; point 1: retail periods; point 2: A ten-percent salary bonus paid in March appears once with its incremental employer tax; point 2: correct cash date; point 3: Merit; point 3: bonus; point 3: base wages; point 3: employer taxes reconcile to each position's monthly cell; point 3: trace; point 4: Frozen captures retain their dates; point 4: compensation arithmetic. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### PEOPLE-009 — Commission quotas and accelerators
+
+Core · target · **partial** · From PEOPLE-004 · Cites BASE-ROLE-001, BASE-INPUT-001 · Rules D-1
+
+**Requirement.** Explicit contract-position links generate commission planning estimates; pipeline commissions use the same rules when REV-001 ships. [Detailed semantics](docs/planning-semantics.md#people-004).
+
+**Acceptance.**
+1. The contract salesperson's commission equals the explicitly linked booking times its rate, rounded once, expensed at booking start and paid through the payroll schedule.
+2. W-2 commission enters employer-tax wages and caps; 1099 commission adds no employer tax, and neither commission has on-costs.
+3. Missing, cross-scenario, inactive or orphaned position links refuse atomically.
+4. Quota attainment and marginal accelerators reset per accounting period and retain deterministic contract ordering, exact thresholds, slices and rounding.
+5. Commission rate, link and per-position trace remain Pay detail while totals remain readable.
+6. Every output identifies a planning estimate without inferring capitalization, payment or statutory filing.
+
+**Evidence.** `tests/people-comp.test.mjs`; `tests/people-comp-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: The contract salesperson's commission equals the explicitly linked booking times its rate; point 1: rounded once; point 1: expensed at booking start; point 1: paid through the payroll schedule; point 2: W-2 commission enters employer-tax wages; point 2: caps; point 2: 1099 commission adds no employer tax; point 2: and neither commission has on-costs; point 3: Missing; point 3: cross-scenario; point 3: inactive or orphaned position links refuse atomically; point 4: Quota attainment; point 4: marginal accelerators reset per accounting period; point 4: retain deterministic contract ordering; point 4: exact thresholds; point 4: slices; point 4: rounding; point 5: Commission rate; point 5: link; point 5: per-position trace remain Pay detail while totals remain readable; point 6: Every output identifies a planning estimate without inferring capitalization; point 6: payment or statutory filing. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### PEOPLE-005 — Compensation access separate from finance
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Compensation detail (names, salaries, bonus and commission) is a permission of its own. Finance can grant a finance analyst plan access without pay access. Department heads see their department's totals and, only when granted, their own people's detail. Exports, packs, API responses, agent answers and Excel or Sheets pulls apply the same server-side filtering. REPORT-005 department-statement app reads, workbooks and each recipient's email body apply these same live grants. The signed-in installation owner holds Pay detail and alone grants or revokes it separately from planning membership; finance analysts and department contributors start without it, and viewers cannot receive it. A contributor's grant applies only to their current departments. Removing a payroll classification or moving an existing payroll input requires Pay detail, so model editing cannot bypass the grant. Complete open archives and the unfiltered Activity trail refuse readers without Pay detail rather than silently exporting an incomplete archive. Scenario, comparison, snapshot, CSV and Excel reads retain totals while removing restricted compensation inputs, traces and payroll evidence. Tokens retain the pay ceiling at issuance and lose access on revocation; MCP uses the current person's same filtering. A stored pending statement email whose pay audience changes is blocked rather than resent with stale detail; accepted or uncertain sends never resend. This applies to all current capabilities; future compensation fields/providers (PEOPLE-001 to PEOPLE-004, PEOPLE-007, FIN-006), spreadsheet add-ins (SHEET-001, SHEET-002), reports and agent answers (REPORT-001, REPORT-003, REPORT-007, AGENT-009) inherit the grant on every new door before shipping.
+**Requirement.** The owner's separate Pay detail grant controls compensation detail independently of planning membership and preserves aggregate planning reads. [Detailed semantics](docs/planning-semantics.md#people-005).
 
 **Acceptance.**
-1. through the API and the Excel add-in fake, an analyst without pay access, a department head and a viewer each read the same plan, and none receives a salary they are not granted; a planted salary never appears in their exports.
+1. An analyst without Pay detail, a department head and a viewer retain aggregate planning reads but receive no salary outside their explicit grants.
+2. A planted salary is absent from their API responses, add-in pulls and exports.
+3. Only the owner grants or revokes Pay detail; contributors' detail grants remain limited to their departments and viewers cannot receive one.
+4. Reclassifying payroll or moving a protected input cannot bypass the Pay detail requirement.
+5. Complete archives and unfiltered Activity refuse a reader without Pay detail rather than returning an incomplete archive.
+6. Department app statements, workbooks and every recipient's email recheck the same pay audience; a pending stale-detail message cannot be sent.
 
-**Evidence.** `tests/compensation-access.test.mjs` `tests/compensation-access-browser.mjs`
-**Gap.** —
+**Evidence.** `tests/compensation-access.test.mjs`; `tests/compensation-access-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: An analyst without Pay detail; point 1: a department head; point 1: a viewer retain aggregate planning reads but receive no salary outside their explicit grants; point 2: A planted salary is absent from their API responses; point 2: add-in pulls; point 2: exports; point 3: Only the owner grants or revokes Pay detail; point 3: contributors' detail grants remain limited to their departments; point 3: viewers cannot receive one; point 4: Reclassifying payroll or moving a protected input cannot bypass the Pay detail requirement; point 5: Complete archives; point 5: unfiltered Activity refuse a reader without Pay detail rather than returning an incomplete archive; point 6: Department app statements; point 6: workbooks; point 6: every recipient's email recheck the same pay audience; point 6: a pending stale-detail message cannot be sent. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### PEOPLE-006 — Headcount plan against actual
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** Monthly headcount, hires, departures and payroll cost are compared between plan and roster actual by department. Hiring slippage (planned start against actual start), backfills and an attrition assumption are shown, and the slippage history feeds `AGENT-004`.
+**Requirement.** Monthly headcount, hires, departures and payroll cost are compared between plan and roster actual by department. Hiring slippage (planned start against actual start), backfills and an attrition assumption are shown, and the slippage history feeds `AGENT-004`. [Detailed semantics](docs/planning-semantics.md#people-006).
 
 **Acceptance.**
-1. after a roster pull with one late hire and one departure, the API and browser journeys show plan against actual headcount and cost by department, with the slippage in days.
-2. Current reviewed-file evidence is `tests/headcount.test.mjs` and `tests/headcount-browser.mjs` (PEOPLE-006); connected Gusto employee observations are additionally proved by `tests/headcount.test.mjs` and the production-built `tests/gusto-roster-browser.mjs` at 1440/390.
-3. Ct approved explicit dates on 20 October 18:32Z: a position may carry an exact ISO planned start date in its start month; month-only starts show unavailable day slippage.
-4. Accepted roster observations retain the reviewed planned date and actual start date as slippage history for AGENT-004; subsequent plan edits do not rewrite that history.
-5. The HTTP read door is `/api/easel/headcount/:scenario`, displayed in Overview.
-6. Each month uses the latest complete dated reviewed roster per provider within that month, with observation dates displayed; missing months are unavailable, never carried forward.
-7. Active actual headcount includes starts on or before the observation and excludes terminations on or before it; hires and departures use their source calendar month up to the observation.
-8. Planned positions use inclusive start/end months, so planned departures fall in the month after the end month. An explicit same-department link identifies a backfilled position; no identity match is inferred. Per-position monthly attrition probabilities are summed over active planned positions and rounded once half away from zero to hundredths of an expected departure; this displayed assumption does not remove positions or change costs. Planned payroll uses the scenario inputs (captured inputs for frozen versions) before closed-actual substitution; actual cost sums accepted pay-run gross wages, employer taxes, benefits and fees in the pay-date month, with missing runs unavailable. Duplicate cross-provider position links block actual headcount conclusions. Detail and history inherit PEOPLE-005 live pay/scenario grants and ERASE-001 erasure. CONNECT-005 carries the connected payroll/HR roster pull through PEOPLE-001/PEOPLE-002 before shipping, with these explicit-date, unavailable-day, retained-history and erasure rules. Backfill, attrition and AGENT-004 history obligations remain binding. The manual Gusto source pulls real fixed-host employee, compensation and processed-payroll APIs, then requires explicit employee/department/position mappings and the exact refetched review fingerprint before journal acceptance. Finance explicitly supplies the earliest source payroll period to review; it cannot be later than a source job hire or the cost window. Contiguous provider pay-period slices include regular, off-cycle and external payrolls; check dates determine cost months after source reads. Repeated source payroll IDs are consumed once and changed accepted source rows require review rather than overwrite. Source fields and payroll costs are limited to reported gross, employer taxes and employer benefits; unreported provider service fees are explicitly excluded, never estimated. No history or zero cost is inferred before the reviewed source boundary or in missing months. A complete empty roster supersedes earlier observations. This source does not claim PEOPLE-001's future OAuth/contractor connection or its live sandbox receipt. `tests/headcount.test.mjs` — “Connected Gusto observations require reviewed employee mapping and retain dated hiring, departure, backfill, attrition and department cost through the payroll journal” proves the connected late hire/departure, monthly department counts/costs, exact day slippage and retained history. Its “Gusto accepts only complete read-only provider pages and exact processed payroll cost; failed reads, changed mappings and hidden scenarios cannot mutate observations” and “Gusto credentials stay sealed and archive-excluded while native live pay authority and explicit member erasure govern all retained observations and future pulls” prove completeness, live authority and erasure. `tests/headcount.test.mjs` and `tests/headcount-browser.mjs` retain the reviewed-file/plan-date coverage. `tests/gusto-roster-browser.mjs` is the native connection/mapping/acceptance/headcount path at 1440/390.
+1. After a roster pull with a late hire and departure, API and browser reads show monthly planned and actual headcount and payroll cost by department.
+2. Explicit start dates produce exact slippage in days; month-only starts show that day slippage is unavailable.
+3. Backfills, attrition assumptions and retained observation history remain visible under the current pay and scenario grants.
+4. Connected Gusto observations retain the same date/history rules, and provider identity erasure follows ERASE-001.
 
-**Evidence.** `tests/headcount.test.mjs` (Connected Gusto observations require reviewed employee mapping and retain dated hiring, departure, backfill, attrition and department cost through the payroll journal), `tests/gusto-roster-browser.mjs`, `tests/headcount.test.mjs`, `tests/headcount-browser.mjs`
-**Gap.** None; connected reviewed Gusto employee/payroll observations, retained day slippage, department headcount/cost, explicit source history, erasure and native 1440/390 journeys passed
+**Evidence.** `tests/headcount.test.mjs`; `tests/gusto-roster-browser.mjs`; `tests/headcount-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: After a roster pull with a late hire; point 1: departure; point 1: API; point 1: browser reads show monthly planned; point 1: actual headcount; point 1: payroll cost by department; point 2: Explicit start dates produce exact slippage in days; point 2: month-only starts show that day slippage is unavailable; point 3: Backfills; point 3: attrition assumptions; point 3: retained observation history remain visible under the current pay; point 3: scenario grants; point 4: Connected Gusto observations retain the same date/history rules; point 4: and provider identity erasure follows ERASE-001. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### PEOPLE-007 — Roster and payroll-register file import
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** A buyer whose PEO or payroll provider has no connector (for example Justworks, TriNet, Insperity, ADP TotalSource, Paychex, Paylocity or Paycom) imports a roster file and a payroll-register file as CSV or .xlsx. Finance maps columns once: employee ID, name, department, title, W-2 or 1099, salary or hourly rate, and start and termination dates; and, per pay run, gross wages, employer taxes, benefits and fees. The mapping is saved per provider. The import previews without writing, lands through the import journal with the original bytes, undoes exactly, and reconciles to planned positions in the same four buckets as `PEOPLE-001`: matched, unplanned hire, planned but not hired, and changed salary. Payroll-register totals reconcile to the ledger's payroll lines. Pay detail follows `EASEL-007` and `PEOPLE-005`.
+**Requirement.** A buyer whose PEO or payroll provider has no connector (for example Justworks, TriNet, Insperity, ADP TotalSource, Paychex, Paylocity or Paycom) imports a roster file and a payroll-register file as CSV or .xlsx. Finance maps columns once: employee ID, name, department, title, W-2 or 1099, salary or hourly rate, and start and termination dates; and, per pay run, gross wages, employer taxes, benefits and fees. The mapping is saved per provider. The import previews without writing, lands through the import journal with the original bytes, undoes exactly, and reconciles to planned positions in the same four buckets as `PEOPLE-001`: matched, unplanned hire, planned but not hired, and changed salary. Payroll-register totals reconcile to the ledger's payroll lines. Pay detail follows `EASEL-007` and `PEOPLE-005`. [Detailed semantics](docs/planning-semantics.md#people-007).
 
 **Acceptance.**
-1. through the API, import a Justworks-shaped roster CSV and an .xlsx payroll register: the preview writes nothing; the accepted import shows the four reconciliation buckets and a register total reconciled to the ledger's payroll lines; a viewer receives headcount and cost totals without names or salaries; a second file in the same shape needs no column choices; and undo removes exactly what the import wrote.
-2. The HTTP door is `/api/easel/import/payroll/:op` (preview, commit, status, resume, undo), with `/api/easel/payroll/:scenario` for the reconciled result.
-3. Roster observations have an explicit ISO `asOf` date; pay runs have their actual pay date.
-4. Provider mappings retain column names, date convention, department choices and explicit source employee-ID to position-origin links.
-5. No name-based identity match is inferred.
-6. Annual salaries compare in cents; an hourly observation against a salary-only planned position is listed as a changed compensation basis, never silently treated as equal.
-7. Each provider's latest complete dated roster is shown independently; duplicate employee observations or employee/pay-date runs are refused until the previous import is undone.
-8. Register gross wages, employer taxes, benefits and fees sum in cents by payroll line, department and pay month; absent or unresolved ledger data is unavailable, and a difference stays visible. String dates use the saved ISO/US/UK format; Excel dates use whole UTC serial days from 1899-12-30. Invalid rows or fractional cents refuse the entire file. Undo removes the journal's observations and preserves unrelated records; its mapping reverts to the previous retained import. All detail and import administration inherit the existing live Pay detail grant; aggregate headcount and cost remain visible under current planning access. Ct ruled 20 October 16:55Z: finance explicitly associates a provider employee ID with an existing Easel member (`memberMap`); no name match establishes identity. Erasure pseudonymizes that provider employee across current and retained imports, mapping keys, linked planned holders, journals and CSV/XLSX originals on export. Provider and employee hashes scope the durable map; original job ID, digest, mapped columns and sheet bind file transforms. The same short ID in another provider or a monetary cell remains unchanged. Stored originals and snapshots remain immutable, with transformed portable digests. Journal undo recognizes only the identity redaction and still preserves later independent edits. Existing CYCLE-004 scenario read/edit shares also govern payroll imports, saved mappings, reconciliation, journals and open-export originals, with live grants rechecked for import batches.
+1. Through the API, import a Justworks-shaped roster CSV and an .xlsx payroll register: the preview writes nothing
+2. The accepted import shows the four reconciliation buckets and a register total reconciled to the ledger's payroll lines
+3. A viewer receives headcount and cost totals without names or salaries
+4. A second file in the same shape needs no column choices
+5. undo removes exactly what the import wrote.
 
-**Evidence.** `src/easel/payroll-import.ts` `src/easel/payroll-file.ts` `src/easel/payroll-reconciliation.ts` `tests/payroll-files.test.mjs` `tests/payroll-erasure.test.mjs` `tests/payroll-files-browser.mjs`
-**Gap.** —
+**Evidence.** `src/easel/payroll-import.ts`; `src/easel/payroll-file.ts`; `src/easel/payroll-reconciliation.ts`; `tests/payroll-files.test.mjs`; `tests/payroll-erasure.test.mjs`; `tests/payroll-files-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Through the API; point 1: import a Justworks-shaped roster CSV; point 1: an .xlsx payroll register: the preview writes nothing; point 2: The accepted import shows the four reconciliation buckets; point 2: a register total reconciled to the ledger's payroll lines; point 3: A viewer receives headcount; point 3: cost totals without names or salaries; point 4: A second file in the same shape needs no column choices; point 5: undo removes exactly what the import wrote. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Revenue and pipeline
 
 #### REV-001 — Pipeline drivers from Orbit, HubSpot and Salesforce
 
-Core · target · **missing**
+Core · target · **missing** · Cites BASE-INPUT-001, BASE-ROLE-001
 
-**Requirement.** Finance connects [Orbit](https://github.com/just-every/run-orbit), HubSpot or Salesforce (OAuth, read-only) and pulls open and closed deals with stage, amount, owner, close date and product. From Salesforce, Easel reads Opportunities with their stage and that stage's probability (custom stages included), their OpportunityLineItems (product, quantity, unit price and term), and the org's fiscal periods, so a close date lands in the fiscal period Salesforce assigns it, custom fiscal years included. A deal with line items is split by product, and each product follows its own deal-to-revenue rule. From Orbit, Easel reads deals through Orbit's API with a scoped read-only token. Finance owns the assumptions, which are explicit and versioned: probability by stage (or the CRM's own probability, labeled), close-date slippage by stage, and the deal-to-revenue rule (one-time, ratable over term, or subscription start). Weighted bookings feed revenue, deferred revenue, commissions and cash. Each revenue cell traces to the deals behind it, under role filtering.
-
-Before pipeline capability ships, REV-001 inherits CYCLE-002: next-quarter pipeline coverage is a rule metric with a finance-set threshold, evaluated on refresh/close to create cited owned/due tasks, with no duplicate while open. Existing task authority, blocking and evidence rules apply.
-
-Before pipeline capability ships, REV-001 also inherits REPORT-002 dashboard pipeline-coverage widgets, with saved layouts, audience filtering and aggregate Excel exports.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** Finance connects [Orbit](https://github.com/just-every/run-orbit), HubSpot or Salesforce (OAuth, read-only) and pulls open and closed deals with stage, amount, owner, close date and product. From Salesforce, Easel reads Opportunities with their stage and that stage's probability (custom stages included), their OpportunityLineItems (product, quantity, unit price and term), and the org's fiscal periods, so a close date lands in the fiscal period Salesforce assigns it, custom fiscal years included. A deal with line items is split by product, and each product follows its own deal-to-revenue rule. From Orbit, Easel reads deals through Orbit's API with a scoped read-only token. Finance owns the assumptions, which are explicit and versioned: probability by stage (or the CRM's own probability, labeled), close-date slippage by stage, and the deal-to-revenue rule (one-time, ratable over term, or subscription start). Weighted bookings feed revenue, deferred revenue, commissions and cash. Each revenue cell traces to the deals behind it, under role filtering. [Detailed semantics](docs/planning-semantics.md#rev-001).
 
 **Acceptance.**
-1. a HubSpot fake with deals at three stages; the API journey sets probabilities and slippage, reads weighted bookings and revenue traced to deal IDs, moves a deal's close date in the fake, refreshes, and sees the revenue move; one recorded run against a HubSpot developer test account.
-2. The same journey against a recorded Salesforce fake of Opportunity, OpportunityLineItem and fiscal-period records: a custom stage whose CRM probability is 60% is overridden by finance to 40%, and weighted bookings use 40% with the trace labeling the override; an opportunity with a one-time setup product and a 12-month subscription product recognizes the first in its close month and the second ratably over 12 months; a close date inside a custom fiscal period lands in that period; one recorded run against a Salesforce Developer Edition org.
-3. Two local installations (Orbit and Easel), as in `CONNECT-004`: Easel pulls Orbit's deals, a deal's close date changed in Orbit moves its revenue on Easel's next refresh, and the trace cites the Orbit deal ID.
-4. Also assert inherited CYCLE-002 next-quarter coverage rules: a below-threshold refresh creates a cited owned/due task, a second unchanged refresh does not duplicate it while open, and live task visibility, owner authority and blocked-source handling hold.
+1. A HubSpot fake with deals at three stages
+2. Sets probabilities and slippage, reads weighted bookings and revenue traced to deal IDs, moves a deal's close date in the fake, refreshes, and sees the revenue move
+3. One recorded run against a HubSpot developer test account.
+4. The same journey against a recorded Salesforce fake of Opportunity, OpportunityLineItem and fiscal-period records: a custom stage whose CRM probability is 60% is overridden by finance to 40%, and weighted bookings use 40% with the trace labeling the override
+5. An opportunity with a one-time setup product and a 12-month subscription product recognizes the first in its close month and the second ratably over 12 months
+6. A close date inside a custom fiscal period lands in that period
+7. One recorded run against a Salesforce Developer Edition org.
+8. Two local installations (Orbit and Easel), as in `CONNECT-004`: Easel pulls Orbit's deals, a deal's close date changed in Orbit moves its revenue on Easel's next refresh, and the trace cites the Orbit deal ID.
 
 **Evidence.** None.
 **Gap.** No Orbit, HubSpot or Salesforce connector, stage probabilities, line-item revenue rules or pipeline drivers
 
 #### REV-002 — Subscription metrics from Stripe Billing and Nectar
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-ROLE-001
 
-**Requirement.** Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax).
-
-Before subscription imports ship, REV-002 inherits REPORT-002 imported ARR widgets, with saved layouts, audience filtering and aggregate Excel exports.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
-
-Current Stripe semantics: licensed monthly and annual invoice periods provide recurring run rates, bounded by actual subscription end dates. Bridges and cohorts aggregate by customer; retention uses the opening active customer base. Invoice service-period allocation, deferred balance, refunds and tax are displayed separately from ledger revenue, with an explicit finance explanation for any residual difference. One subscription driver receives the account-wide totals for each selected month and scenario. Source review and acceptance require the approved native finance session; imported ARR follows the existing dashboard audiences, personal layouts and aggregate formula Excel. Frozen plans retain captured observations.
+**Requirement.** Finance connects Stripe Billing (restricted read-only key) or [Nectar](https://github.com/just-every/run-nectar). Easel computes MRR and ARR movements (new, expansion, contraction, churn and reactivation), customer counts, gross and net revenue retention, and monthly cohorts. These serve as actuals for the subscription drivers in `EASEL-006` and `REV-003`, and reconcile to ledger revenue with the difference explained (deferred revenue, refunds, tax). [Detailed semantics](docs/planning-semantics.md#rev-002).
 
 **Acceptance.**
-1. a Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months; the API journey reads an ARR bridge and a cohort table that agree with hand-computed values, and a reconciliation to ledger revenue; one recorded run against Stripe test mode.
+1. A Stripe fake with subscriptions, upgrades, downgrades and cancellations across three months
+2. Reads an ARR bridge and a cohort table that agree with hand-computed values, and a reconciliation to ledger revenue
+3. One recorded run against Stripe test mode.
 
-**Evidence.** `tests/billing.test.mjs` — “Subscription billing review reconciles exact movements and cohorts, drives ARR and retains native sealed custody”: three-month bridge, all movements, cohorts, counts and retention; service revenue, deferred balance, refunds, tax and explained ledger differences; imported customer and seat drivers, REPORT-002 personal layouts, audience filtering and aggregate formula Excel; encrypted excluded credentials, native administration, audit, masked health and truthful unsupported revocation. `tests/connectors-browser.mjs` — native billing review, accepted history, finance and board imported ARR, connection and disconnect at 1440 and 390.
-**Gap.** Recorded Stripe test-mode qualification requires a restricted read-only test key; all three held Stripe test secrets are unrestricted and are refused. Nectar remains an unimplemented alternative. Supported Stripe history is licensed monthly or annual recurring pricing; unsupported historical statuses and pricing shapes refuse explicitly.
+**Evidence.** `tests/billing.test.mjs`; `tests/connectors-browser.mjs`
+**Gap.** Read-only subscription observations and their retained metrics are delivered. Complete bridge/cohort reconciliation and the recorded Stripe test-mode journey remain incomplete.
 
 #### REV-003 — A revenue driver library
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-ROLE-001 · Rules D-1, D-2
 
-**Requirement.** Beyond volume × rate and customers × revenue per customer, revenue can come from seats × price with expansion, usage × unit price, billable headcount × utilization × rate (with actuals from [Gauge](https://github.com/just-every/run-gauge) or Harvest), project milestones and backlog burn-down, and the formula lines of `MODEL-004`. Every driver traces.
-
-Every fixed form ships through Plan, HTTP and proposal/MCP doors, retaining department/pay filtering, cash collection timing, exact structure revisions and frozen arithmetic. Starting seats and usage apply in their start month; subsequent months compound the entered monthly expansion/growth and round quantities to hundredths before quantity × price rounds once to cents. Services uses the number of active positions in its own department (inclusive start/end months), explicitly assuming those positions are billable, × entered available hours per position per month × utilization × hourly rate, with one final division/rounding and no salary in revenue. Named milestones recognize their amounts in their specified months. Backlog begins with entered opening backlog, adds entered bookings at each month's start, recognizes the entered percentage rounded once to cents and capped at the available amount, then carries the remaining backlog forward; bookings are never added again as revenue. All driver cells cite their origin and arithmetic; closed ledger actuals replace them rather than adding twice. Ct approved MODEL-004 as the carrier for user-defined formula-line revenue drivers on 19 October; it inherits those driver forms and their exact traced-cell journey before shipping. Ct approved native finance session plus origin/revision fences for connect, disconnect, status and import on 19 October (18:28Z); API-001 tokens are refused on these doors. Gauge operational actuals now use its owner-created `utilization:read` key, sealed under CONNECT-010; native session cookies are never transferred. Finance previews a complete inclusive calendar month against the installation-configured GAUGE_ORIGIN and explicitly maps the entire agency aggregate to one services driver; Gauge has no department/service filter, names, pay or monetary amounts in this door. A Gauge month cannot be counted in two drivers in the same scenario. Missing capacity blocks; an explicit zero is valid only with zero billable time. The reviewed digest binds the source aggregate, scenario revision, target driver, planned hourly rate and reporting currency; acceptance refetches and refuses any changed source or plan. Gauge's volatile observation timestamp is retained as provenance but excluded from this equality digest. Approved billable seconds × the reviewed hourly rate in cents / 3600 rounds once half away from zero to cents, labelled operational utilization actuals at planned rate, never ledger revenue. Accepted months keep that reviewed rate after forecast assumption edits; unimported months retain their assumptions and closed ledger actuals retain precedence. Identical pulls do not duplicate or revise the model. The native append-only model/activity journal retains provenance, actor, acceptance time, source dates, counts, seconds and digest; one atomic save applies the aggregate. Undo restores exactly the preceding imported values while its resulting scenario revision remains current; later changes refuse undo. Snapshots and exports keep accepted nonsecret provenance and frozen arithmetic. CONNECT-005 inherits scheduled Gauge refresh, source freshness/failure notifications and restatement handling before shipping. Harvest remains an alternative provider, not a claimed shipped connector.
+**Requirement.** Beyond volume × rate and customers × revenue per customer, revenue can come from seats × price with expansion, usage × unit price, billable headcount × utilization × rate (with actuals from [Gauge](https://github.com/just-every/run-gauge) or Harvest), project milestones and backlog burn-down, and the formula lines of `MODEL-004`. Every driver traces. [Detailed semantics](docs/planning-semantics.md#rev-003). MODEL-004 carries formula-line revenue through its formula and proposal doors.
 
 **Acceptance.**
-1. `tests/revenue-drivers.test.mjs` (REV-003) plans a separate line for volume, customers, seats, usage, services, milestones and backlog, checks hand-computed monthly cents and complete traces, all forms' collection timing, active headcount boundaries, invalid-input atomicity, role filtering, proposal/MCP editing, structure diffs, live Excel formulas and frozen approvals/reforecasts/kept forecasts/published packs after edits.
-2. `tests/revenue-drivers-browser.mjs` (REV-003) enters and edits every new fixed form, reads traced cells and downloads Excel at 1440/390 with no page overflow.
-3. `tests/gauge-utilization.test.mjs` (REV-003) asserts reviewed Gauge import, exact seconds/rounding/collection timing, no-write preview, source/period/capacity failures, replay, corrections, undo, role filtering and frozen values through HTTP.
-4. `tests/gauge-browser.mjs` (REV-003) starts a real current Gauge installation, creates and approves time through its public API, creates its scoped owner key, and imports through the Easel UI with exact traced cents, reload and undo at 1440/390.
-5. MODEL-004 inherits the formula-line revenue journey.
+1. Volume, customers, seats, usage, services, milestones and backlog lines have hand-computed monthly cents, complete traces and their exact collection timing.
+2. Active headcount boundaries, invalid-save atomicity, role filtering, proposal editing, structure differences and live Excel formulas preserve frozen approvals, reforecasts, kept forecasts and packs.
+3. At desktop and phone widths, the fixed forms are entered and edited, traced cells read and Excel downloaded without page overflow.
+4. A reviewed Gauge import conserves source seconds and rounding, changes nothing during preview and handles source, period, capacity, replay, correction and undo outcomes without changing frozen values.
+5. Two local installations approve time through Gauge's public door and import it through Easel with exact traced cents, reload and undo at both widths.
 
-**Evidence.** `tests/revenue-drivers.test.mjs` `tests/revenue-drivers-browser.mjs` `tests/gauge-utilization.test.mjs` `tests/gauge-browser.mjs`
-**Gap.** Fixed forms and reviewed Gauge operational actuals; MODEL-004 carries formula-line drivers
+**Evidence.** `tests/revenue-drivers.test.mjs`; `tests/revenue-drivers-browser.mjs`; `tests/gauge-utilization.test.mjs`; `tests/gauge-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Volume; point 1: customers; point 1: seats; point 1: usage; point 1: services; point 1: milestones; point 1: backlog lines have hand-computed monthly cents; point 1: complete traces; point 1: their exact collection timing; point 2: Active headcount boundaries; point 2: invalid-save atomicity; point 2: role filtering; point 2: proposal editing; point 2: structure differences; point 2: live Excel formulas preserve frozen approvals; point 2: reforecasts; point 2: kept forecasts; point 2: packs; point 3: At desktop; point 3: phone widths; point 3: the fixed forms are entered; point 3: edited; point 3: traced cells read; point 3: Excel downloaded without page overflow; point 4: A reviewed Gauge import conserves source seconds; point 4: rounding; point 4: changes nothing during preview; point 4: handles source; point 4: period; point 4: capacity; point 4: replay; point 4: correction; point 4: undo outcomes without changing frozen values; point 5: Two local installations approve time through Gauge's public door; point 5: import it through Easel with exact traced cents; point 5: reload; point 5: undo at both widths. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### REV-004 — Bookings, billings, revenue and cash
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INPUT-001, BASE-ROLE-001 · Rules D-1, D-2
 
-**Requirement.** For contract revenue, a booking carries term, billing frequency (monthly, quarterly, annual upfront) and start date. Billings, deferred revenue, recognized revenue and collections follow from it and appear on the three statements (`FIN-001`, `FIN-002`).
-
-Contract inputs are planning assumptions, never issued invoices or confirmed receipts. They use existing scenario, department and proposal authority and retain their definitions and arithmetic in frozen versions. Total contract value is integer cents; service terms are whole months. Monthly service periods begin on the start date and its monthly anniversaries, clamped to the last day of a shorter month. Each ordinary service period recognizes floor(total cents / term); the final period takes the remaining cents. A service period crossing calendar months allocates its recognition by its exact UTC service days, with the final calendar segment taking the cent remainder. Monthly, quarterly and annual-upfront invoices occur on those anniversaries every one, three or twelve service months and bill the sum of their service-period amounts; the final partial billing interval takes its remaining amount. Collections occur on the invoice date plus the entered whole-day DSO, assigned to that UTC calendar month, independently of the legacy monthly collection lag. No service, billing or collection schedule restarts at the displayed horizon.
-
-Bookings, invoices, recognized revenue and collections remain distinct. Billed amounts less recognition produce deferred revenue; recognition ahead of billing produces unbilled revenue, and billed receivables decrease on collection. The three statements include those assets/liabilities and their indirect cash movements with exact reconciliation checks, and formula Excel exports use the same role-filtered schedules. Accepted closed-month ledger revenue retains precedence on the P&L; contract invoices and collections remain explicitly planned until source invoice actuals exist. A mismatch or ambiguous mixed-driver closed cell is reported as an unresolved reconciliation with its source amounts, never silently allocated into an invented receipt. Known invoice receivables remain unchanged by that mismatch; real statement differences remain visible. Cash minimums are not assessed, affected dashboard cash/burn/runway values are unavailable and runway task conclusions are blocked until the reconciliation is resolved. FIN-002 retains its other collection curves, vendor terms, prepaids and accrued-payroll obligations; CONNECT-007 retains imported balance-sheet openings.
+**Requirement.** For contract revenue, a booking carries term, billing frequency (monthly, quarterly, annual upfront) and start date. Billings, deferred revenue, recognized revenue and collections follow from it and appear on the three statements (`FIN-001`, `FIN-002`). [Detailed semantics](docs/planning-semantics.md#rev-004).
 
 **Acceptance.**
-1. `tests/contracts.test.mjs` (REV-004) asserts a $120,000 annual-upfront booking creates a $120,000 billing, $10,000 monthly revenue, declining deferred revenue, and exact-day DSO collection; it also asserts monthly and quarterly schedules, partial terms, anniversary/day allocation and cent remainders, linked statement identities, role filtering, proposals, frozen arithmetic and independently evaluated formula Excel.
-2. `tests/contracts-browser.mjs` (REV-004) creates and edits a contract through Plan and reads billing, revenue, collection and reconciled statements at 1440/390 without page overflow.
+1. Asserts a $120,000 annual-upfront booking creates a $120,000 billing, $10,000 monthly revenue, declining deferred revenue, and exact-day DSO collection; it also asserts monthly and quarterly schedules, partial terms, anniversary/day allocation and cent remainders, linked statement identities, role filtering, proposals, frozen arithmetic and independently evaluated formula Excel.
+2. Creates and edits a contract through Plan and reads billing, revenue, collection and reconciled statements at 1440/390 without page overflow.
 
-**Evidence.** `tests/revenue-drivers.test.mjs` `tests/contracts-browser.mjs`
-**Gap.** Contract billing/recognition/DSO schedules, deferred and unbilled balances, linked statements and formula exports
+**Evidence.** `tests/revenue-drivers.test.mjs`; `tests/contracts-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Asserts a $120,000 annual-upfront booking creates a $120,000 billing; point 1: $10,000 monthly revenue; point 1: declining deferred revenue; point 1: and exact-day DSO collection; point 1: it also asserts monthly; point 1: quarterly schedules; point 1: partial terms; point 1: anniversary/day allocation; point 1: cent remainders; point 1: linked statement identities; point 1: role filtering; point 1: proposals; point 1: frozen arithmetic; point 1: independently evaluated formula Excel; point 2: Creates; point 2: edits a contract through Plan; point 2: reads billing; point 2: revenue; point 2: collection; point 2: reconciled statements at 1440/390 without page overflow. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Spend
 
 #### SPEND-001 — Committed and card spend
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-SECRET-001
 
-**Requirement.** Purchase orders and committed contracts from [Purse](https://github.com/just-every/run-purse), expense reports from [Coaster](https://github.com/just-every/run-coaster), and card and bill-payment data from Ramp, Brex and Bill.com feed the forecast as committed spend by line, department and month. The variance view shows budget, committed, actual and remaining for each.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** Purchase orders and committed contracts from [Purse](https://github.com/just-every/run-purse), expense reports from [Coaster](https://github.com/just-every/run-coaster), and card and bill-payment data from Ramp, Brex and Bill.com feed the forecast as committed spend by line, department and month. The variance view shows budget, committed, actual and remaining for each. [Detailed semantics](docs/planning-semantics.md#spend-001).
 
 **Acceptance.**
-1. a Ramp fake and a Purse fake add a card transaction and a purchase order; the API journey reads budget, committed, actual and remaining for the affected department.
+1. A Ramp fake and a Purse fake add a card transaction and a purchase order
+2. Reads budget, committed, actual and remaining for the affected department.
 
-**Evidence.** `tests/spend.test.mjs` — “Reviewed Ramp cards and Purse POs replace one forecast assumption with exact nonduplicated department spend under native custody”; “Reviewed refunds, authenticated Purse bill settlements and PO releases conserve exact spend without duplicate payments”; “Scoped final Coaster reports move from approved obligation to reimbursed actual with fresh reviewed provenance”; “Reviewed ledger matches remove only explicit equal source overlaps and preserve additional actuals without posting entries”; “Reviewed Brex settlements and exact recurring allocations replace all selected months atomically while preserving unreviewed assumptions”; “Explicit cross-provider payment parts conserve residual actuals and refuse duplicate capacity reuse through reviewed acceptance”; `tests/spend-browser.mjs` (native controls asserted at 1440, changed screens captured at 1440 and 390)
-**Gap.** Committed contracts require a Purse read-only contract door; its documented public API exposes POs only. Bill.com remains unbuilt. Multi-line and multi-department allocation, mixed or dimensioned forecast cells, non-card refunds and chargebacks remain unproved. Recorded live Ramp, Brex, Purse and Coaster qualification and restricted source-scope verification require provider grants not provisioned here. Purse and Coaster reads require explicit scoped record IDs; no listing door is assumed
+**Evidence.** `tests/spend.test.mjs`; `tests/spend-browser.mjs`
+**Gap.** Reviewed Ramp/Purse import slices are delivered. All named committed-spend sources, complete line/month reconciliation and their source qualification remain incomplete.
 
 ### Spreadsheets
 
 #### SHEET-001 — Excel add-in with live formulas
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-003 · Rules D-1, D-2 · Register R-3
 
-**Requirement.** A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand (a Refresh command for the workbook or the selection) and when the workbook opens, and each refresh pulls every change made in Easel since the last one, under server-side role filtering for the person refreshing. Write-back follows the same rules as the browser. While a contributor's department submission is requested or returned (`EASEL-009`), their write to that department's budget inputs lands directly as their own entry at the next plan revision, as an entry in the grid (`MODEL-008`) would, and their later submission includes it. Once the department is submitted, a write to its working plan becomes a proposal bound to the current revision (`EASEL-012`). A write to an approved budget, a kept forecast or another department's cells is refused with the reason. The workbook's own formulas around Easel cells stay live: a formula that references an Easel function cell (for example a `SUM` over them) recalculates whenever a refresh changes that cell, as any Excel dependency does.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** A Microsoft Excel add-in (Office.js, Windows, Mac and Excel on the web) signs in as the person and provides worksheet functions, for example `=EASEL.VALUE("Revenue","Sales","2027-01","Forecast")`, plus pull-a-report ranges. Values refresh on demand (a Refresh command for the workbook or the selection) and when the workbook opens, and each refresh pulls every change made in Easel since the last one, under server-side role filtering for the person refreshing. Write-back follows the same rules as the browser. While a contributor's department submission is requested or returned, their write to that department's budget inputs lands directly as their own entry at the next plan revision, as an entry in the grid would, and their later submission includes it. Once the department is submitted, a write to its working plan becomes a proposal bound to the current revision. A write to an approved budget, a kept forecast or another department's cells is refused with the reason. The workbook's own formulas around Easel cells stay live: a formula that references an Easel function cell (for example a `SUM` over them) recalculates whenever a refresh changes that cell, as any Excel dependency does. [Detailed semantics](docs/planning-semantics.md#sheet-001).
 
 **Acceptance.**
-1. an Office.js test host loads the add-in against a running Easel, in a workbook holding `=EASEL.VALUE(...)` cells and a plain `=SUM(...)` over them: the functions return role-filtered values; a value changed in Easel through the browser or the API, followed by an on-demand refresh, shows the new value in its function cell and the new total in the `SUM`; after a second Easel change, closing and reopening the workbook refreshes on open and shows that change in the cell and the `SUM`; a viewer refreshing the same workbook receives role-filtered values without restricted detail; during a requested submission a contributor's write to their own department lands directly at the next revision and reads back in the browser and the API; after they submit, the same write returns as a proposal bound to the revision; a write to the approved budget and a write to another department are refused; one recorded run in Excel on the web.
+1. An Office.js test host loads the add-in against a running Easel, in a workbook holding `=EASEL.VALUE(...)` cells and a plain `=SUM(...)` over them: the functions return role-filtered values
+2. A value changed in Easel through the browser or the API, followed by an on-demand refresh, shows the new value in its function cell and the new total in the `SUM`
+3. After a second Easel change, closing and reopening the workbook refreshes on open and shows that change in the cell and the `SUM`
+4. A viewer refreshing the same workbook receives role-filtered values without restricted detail
+5. During a requested submission a contributor's write to their own department lands directly at the next revision and reads back in the browser and the API
+6. After they submit, the same write returns as a proposal bound to the revision
+7. A write to the approved budget and a write to another department are refused
 
-**Evidence.** `tests/grid.test.mjs` — “Excel refresh reads live filtered cells and write-back follows submission and exact-revision authority”; `tests/excel-browser.mjs`; `docs/excel-bridge.md`
-**Gap.** Native session cell and report-range reads, installable manifest and metadata, production shared-runtime startup, workbook and selection Refresh commands and exact-revision direct entry and proposal write-back ship. The built Office.js boundary proves wiring and simulated dependency and reopen behavior only. Remaining: real Windows, Mac and web host installation and sign-in lifecycle, Excel dependency and reopen qualification, inherited CONNECT-010 qualification and recorded Excel on the web run; Microsoft 365 host access is not held
+**Evidence.** `tests/grid.test.mjs`; `tests/excel-browser.mjs`; `docs/excel-bridge.md`
+**Gap.** Native scoped spreadsheet client APIs are delivered. The complete Windows, Mac and web Office.js lifecycle, live workbook dependency recalculation and all direct/proposal/refusal branches remain unproved; tenant proof is R-3.
 
 #### SHEET-002 — Google Sheets add-on with live formulas
 
-Core · target · **missing**
+Core · target · **missing** · Cites BASE-ROLE-001, BASE-INPUT-003 · Rules D-1, D-2 · Register R-6
 
-**Requirement.** The same functions, refresh, role filtering and write-back rules as `SHEET-001` (direct entry during an open submission, a proposal once submitted, refusal on approved budgets, kept forecasts and other departments), as a Google Workspace add-on with custom functions. Refresh runs on demand from the add-on menu and when the spreadsheet opens, and scheduled refresh runs through an installable time-driven trigger that pulls Easel changes without the spreadsheet being open. Sheet formulas over Easel cells recalculate after each refresh.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** The same functions, refresh, role filtering and write-back rules as `SHEET-001` (direct entry during an open submission, a proposal once submitted, refusal on approved budgets, kept forecasts and other departments), as a Google Workspace add-on with custom functions. Refresh runs on demand from the add-on menu and when the spreadsheet opens, and scheduled refresh runs through an installable time-driven trigger that pulls Easel changes without the spreadsheet being open. Sheet formulas over Easel cells recalculate after each refresh. [Detailed semantics](docs/planning-semantics.md#sheet-002).
 
 **Acceptance.**
-1. an Apps Script test harness against a running Easel replays the `SHEET-001` journey, including the on-demand refresh, the refresh on open and a `SUM` over Easel cells recalculating after each, and the viewer's role-filtered refresh; the harness then fires the installable time-driven trigger with the spreadsheet closed, and on reopening the sheet shows an Easel change made before the trigger ran; one recorded run in a Google Workspace test domain.
+1. An Apps Script test harness against a running Easel replays the `SHEET-001` journey, including the on-demand refresh, the refresh on open and a `SUM` over Easel cells recalculating after each, and the viewer's role-filtered refresh
+2. The harness then fires the installable time-driven trigger with the spreadsheet closed, and on reopening the sheet shows an Easel change made before the trigger ran
 
 **Evidence.** None.
 **Gap.** No Google Sheets add-on, refresh on open or installable-trigger refresh
 
 #### SHEET-003 — Model import that keeps formulas
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-003 · Rules D-1
 
-**Requirement.** Importing an existing Excel or Google Sheets model translates supported formulas (arithmetic, SUM, IF, references across sheets and months, growth and lookups) into Easel formulas (`MODEL-004`). Every formula it cannot translate is listed with its sheet and cell, and that cell keeps its cached value with provenance (`EASEL-015`). Totals reconcile to the workbook's own totals before anything is accepted, and undo works through the journal.
+**Requirement.** Importing an existing Excel or Google Sheets model translates supported formulas (arithmetic, SUM, IF, references across sheets and months, growth and lookups) into Easel formulas. Every formula it cannot translate is listed with its sheet and cell, and that cell keeps its cached value with provenance. Totals reconcile to the workbook's own totals before anything is accepted, and undo works through the journal. [Detailed semantics](docs/planning-semantics.md#sheet-003).
 
 **Acceptance.**
-1. import a fixture workbook model with cross-sheet formulas and one unsupported function; the import report lists the unsupported cell, Easel totals equal the workbook totals, a driver change recalculates the translated formulas, and undo removes the import.
-2. The import door consumes an .xlsx export from Excel or Google Sheets.
-3. Supported formulas use exact rational arithmetic (+, −, ×, ÷ and bounded integer powers), comparisons, SUM ranges, lazy IF, references across sheets/months, and exact VLOOKUP (FALSE/0) or XLOOKUP (default/match mode 0; linear forward/reverse).
-4. Text lookup comparisons are case insensitive; duplicate matches choose the first in the selected search direction.
-5. Unsupported functions, named references and other unsupported syntax are explicitly listed and kept at their cached value.
-6. A supported cycle, missing numeric result or division by zero refuses the operation; no script or macro runs.
-7. Final numeric cells round once half away from zero to cents.
-8. Source formula-cell caches and supported formula total rows must match calculated cents before acceptance; a missing, unsupported or mismatched total refuses acceptance. The import report retains all formula statuses and reconciliations. A private workbook source graph is captured as a model input, following the same complete-source finance/Pay detail door as its original file. Numeric assumptions outside plan rows can be changed with exact decimal source units (up to eight places) in Plan or `command/workbook-driver`, fenced to the reviewed scenario revision. Constant plan cells use the existing planning grid; calculated cells refuse typing over their formulas. Branches/proposals copy the source graph and overrides, saved versions retain frozen arithmetic, model versions record driver changes, and journal undo preserves independently edited records under EASEL-015. Source graphs, snapshots and original files inherit ERASE-001 identity mapping; server-filtered plan and snapshot reads retain totals without exposing the complete graph to readers lacking the original-file grant. Native formula-line authoring, lookups and REV-003 formula-driver forms are proved separately under MODEL-004 with its per-division arithmetic. `tests/formula-import.test.mjs` (SHEET-003) asserts every original acceptance point, exact cross-sheet/month/growth/lookups, stale-cache refusal, no-write preview and arithmetic-error edits, cycle refusal, revision/role fences, driver recalculation, saved/proposal models, erased source graphs and exact no-edit/edited journal undo. `tests/formula-import-browser.mjs` (SHEET-003) imports and inspects the report, edits a source driver, reads recalculated totals, verifies the filtered board view and undoes at 1440/390.
+1. Import a fixture workbook model with cross-sheet formulas and one unsupported function
+2. The import report lists the unsupported cell, Easel totals equal the workbook totals, a driver change recalculates the translated formulas, and undo removes the import.
 
-**Evidence.** `src/easel/workbook-formula.ts` `tests/formula-import.test.mjs` `tests/formula-import-browser.mjs`
-**Gap.** —
+**Evidence.** `src/easel/workbook-formula.ts`; `tests/formula-import.test.mjs`; `tests/formula-import-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Import a fixture workbook model with cross-sheet formulas; point 1: one unsupported function; point 2: The import report lists the unsupported cell; point 2: Easel totals equal the workbook totals; point 2: a driver change recalculates the translated formulas; point 2: and undo removes the import. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### SHEET-004 — Excel exports with formulas
 
-Core · target · **done**
+Core · target · **done** · Cites BASE-ROLE-001, BASE-INPUT-003 · Rules D-1, D-2
 
-**Requirement.** Any report, plan or pack exports as .xlsx with live subtotal, total and variance formulas and one sheet per statement, not values only. CSV exports remain. Pay detail follows `PEOPLE-005`. This obligation applies to every report and statement that exists today (scenario/overview P&L and cash, scenario comparisons, monthly variances, published packs, actuals reconciliation and filtered activity), using the same server-filtered views and immutable snapshots as the app. Future report, statement and plan capabilities (`REPORT-001` to `REPORT-007`, `FIN-001` to `FIN-007`, `MODEL-001` to `MODEL-009`) inherit this export obligation before they ship. Workbook amounts are integer minor units, labeled with their currency; differences are actual minus budget or comparison-to minus comparison-from. Unavailable comparison periods or different currencies have no difference value. A department-filtered plan exports that department's P&L and visible inputs, without a company-wide cash statement.
+**Requirement.** Any report, plan or pack exports as .xlsx with live subtotal, total and variance formulas and one sheet per statement, not values only. CSV exports remain. Pay detail follows `PEOPLE-005`. This obligation applies to every report and statement that exists today (scenario/overview P&L and cash, scenario comparisons, monthly variances, published packs, actuals reconciliation and filtered activity), using the same server-filtered views and immutable snapshots as the app. Future report, statement and plan capabilities (`REPORT-001` to `REPORT-007`, `FIN-001` to `FIN-007`, `MODEL-001` to `MODEL-009`) inherit this export obligation before they ship. Workbook amounts are integer minor units, labeled with their currency; differences are actual minus budget or comparison-to minus comparison-from. Unavailable comparison periods or different currencies have no difference value. A department-filtered plan exports that department's P&L and visible inputs, without a company-wide cash statement. [Detailed semantics](docs/planning-semantics.md#sheet-004).
 
 **Acceptance.**
-1. download a report as .xlsx through the browser, open it with a spreadsheet library in the test, and assert that subtotal cells hold formulas that evaluate to Easel's totals.
+1. Download a report as .xlsx through the browser, open it with a spreadsheet library in the test, and assert that subtotal cells hold formulas that evaluate to Easel's totals.
 
-**Evidence.** `src/easel/report-workbooks.ts`, `src/easel/pack-workbook.ts`, `tests/spreadsheet-export.test.mjs`, `tests/export-browser-journey.mjs`
-**Gap.** Every current plan/report/pack exports XLSX with live subtotal, total and variance formulas; statement sheets, scoped detail, immutable packs and CSV retained
+**Evidence.** `src/easel/report-workbooks.ts`; `src/easel/pack-workbook.ts`; `tests/spreadsheet-export.test.mjs`; `tests/export-browser-journey.mjs`
+**Gap.** None.
 
 #### SHEET-005 — Scheduled spreadsheet pulls
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-003
 
-**Requirement.** A linked sheet range (for example a sales team's capacity sheet) is pulled on a schedule. Its changes arrive as a previewed proposal for finance with the changed cells listed. A sheet that went missing or changed shape is reported, never read as zeros.
-
-Before this connector ships, it inherits CONNECT-010 encrypted/excluded custody, masked status, finance-only administration, audit and truthful provider-revocation outcomes.
+**Requirement.** A linked sheet range (for example a sales team's capacity sheet) is pulled on a schedule. Its changes arrive as a previewed proposal for finance with the changed cells listed. A sheet that went missing or changed shape is reported, never read as zeros. [Detailed semantics](docs/planning-semantics.md#sheet-005).
 
 **Acceptance.**
-1. a Google Sheets fake changes two cells and then deletes a column between scheduled pulls; the API journey sees a proposal with two changed cells, then a shape error with no write.
-2. Current capability: native finance with live Pay detail explicitly connects an offline Google OAuth grant restricted to spreadsheets.readonly.
-3. The grant covers spreadsheets accessible to that Google account, not only the linked range.
-4. Credentials are sealed with a Google-specific purpose and excluded from archives; status never returns them.
-5. Finance reviews a numeric A1 rectangle, its complete mapping to existing entered native schedule cells and an exact source/target fingerprint before enabling hourly or company-zone daily pulls.
-6. Each run rechecks the live native finance owner, capabilities and Pay detail.
-7. Source changes create a separate submitted proposal carrying the exact source/native cell differences and target revision; the working plan changes only through normal reviewed promotion.
-8. An identical source creates no duplicate proposal. Stable sheet ID, grid shape and every requested numeric cell are checked; missing/reshaped sources record health and audit only, leaving target inputs, proposals and the last valid baseline unchanged. Disconnect disables range schedules, requests Google revocation without redirects/retries and deletes local credentials on every outcome; unconfirmed revocation names the Google Account removal step. Google revocation can affect other grants in the same OAuth project. This is the linked-range connector, not the SHEET-002 add-on.
+1. A Google Sheets fake changes two cells and then deletes a column between scheduled pulls
+2. Sees a proposal with two changed cells, then a shape error with no write.
 
-**Evidence.** `tests/workbook-undo.test.mjs` (Scheduled Google Sheets ranges submit exact changed-cell proposals and refuse missing or reshaped sources with sealed native custody); `tests/sheet-browser.mjs` (native connect, complete range mapping/baseline, changed-cell proposal/comparison, shape error and disconnect at 1440/390)
-**Gap.** None; scheduled Google network-edge fake proves two-cell proposals, unchanged working target and valid baseline on deleted column/missing source, current-owner Pay revocation, deduplication, sealed/archive-excluded custody, native authority, audit and confirmed/refused/redirected/unreachable revocation outcomes
+**Evidence.** `tests/workbook-undo.test.mjs`; `tests/sheet-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A Google Sheets fake changes two cells; point 1: then deletes a column between scheduled pulls; point 2: Sees a proposal with two changed cells; point 2: then a shape error with no write. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Planning cycles and collaboration
 
 #### CYCLE-001 — Budget calendar, tasks and reminders
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-MAIL-001
 
-**Requirement.** Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status (`EASEL-009`) is one kind of task. Before shipping, CYCLE-001 inherits REPORT-005: its open department tasks appear in that department's monthly email and app statement under the same recipient and detail filtering.
-
-Before this capability ships, CYCLE-001 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
-
-Current calendar semantics (ct, 19 October 23:00Z and 20 October 01:08Z). Finance alone creates and edits calendar tasks (review headcount, confirm variance explanations, or another named planning task) with one owner and a due date; a department task's owner is an active contributor assigned to that department, and a company-wide task's owner is active finance (a Base owner or admin). Requested department submissions with a due date are calendar tasks owned by that department's active contributors; submitting cancels their reminder. Only finance and a task's owners read it; only finance and its owner complete it. In the saved company zone, the reminder is due at 09:00 local time on the calendar day before the due date, and an open task escalates to every active finance person (Base owner or admin) at 09:00 local time on the first weekday (Monday to Friday, no holiday calendar) after the due date; daylight saving time moves the UTC instant. A scheduled run every 15 minutes acts as `scheduler:calendar` for the still-active owner/admin who turned reminders on, with that person attributed in Activity, fenced on the exact model revision; it appends only delivery intents and outcomes and cannot change plans or roles. Each reminder or escalation is recorded once per task, due date, channel and recipient, with its scheduled and actual dispatch instants and zone. A task completed before its reminder time records a canceled reminder. Live authority is rechecked before every send. Email goes to each rechecked owner (reminders) or finance person (escalations) and carries the task detail; Slack and Microsoft Teams incoming webhooks (deployment secrets `SLACK_WEBHOOK_URL`, `TEAMS_WEBHOOK_URL`) and one Nook channel receive only the generic text "Easel planning task reminder" and a sign-in link. The Nook connection is made by the owner alone in a signed-in session: Nook origin, channel ID and a Nook integration token (`NOOK-079`), sealed, never shown again, exported or archived; Nook posts carry the delivery's idempotency key. Provider acceptance is labeled as acceptance only, never as delivery; local development suppresses email and says so. Refused, redirected or unconfigured sends stay pending for an explicit finance retry with the same captured message and key; accepted sends are never resent and an uncertain outcome is never retried. Outbound chat destinations follow ct's 19 October EGRESS RULE: entered only by owner-level authority, called with Workers fetch over HTTPS only, no credentials or fragment in the URL, no loopback, private, link-local or reserved IP literal and no local-only host name, redirects refused, no DNS preflight. Gap: resolved-address/pinned egress (Base egress door); CYCLE-001 goes done when Easel adopts that door, and every future clause that calls an owner-entered destination (`API-002`, `CYCLE-003`, `REPORT-006`) inherits it by name.
+**Requirement.** Finance sets a planning calendar with tasks (submit department budget, review headcount, confirm variance explanations), owners and due dates. Owners get reminders by email, [Nook](https://github.com/just-every/run-nook), Slack or Microsoft Teams in the company's time zone. Reminders stop when the task is done, and overdue tasks escalate to finance. Submission status is one kind of task. Before shipping, CYCLE-001 inherits REPORT-005: its open department tasks appear in that department's monthly email and app statement under the same recipient and detail filtering. [Detailed semantics](docs/planning-semantics.md#cycle-001).
 
 **Acceptance.**
-1. with a fake clock and mail and chat fakes, the API journey requests submissions due Friday; a reminder goes out Thursday morning Eastern, the reminder for a submitted department is canceled, and an overdue department escalates to finance on Monday.
+1. With a fake clock and mail and chat fakes, the API journey requests submissions due Friday
+2. A reminder goes out Thursday morning Eastern, the reminder for a submitted department is canceled, and an overdue department escalates to finance on Monday.
 
-**Evidence.** `src/easel/calendar.ts` `src/easel/calendar-dispatch.ts` `src/easel/calendar-channels.ts` `tests/calendar.test.mjs` `tests/calendar-browser.mjs`
-**Gap.** Planning calendar, owners, due dates, company-zone reminders, cancellation, escalation, email and generic Slack/Teams/Nook reminders ship; Gap: resolved-address/pinned egress (Base egress door) for owner-entered chat destinations
+**Evidence.** `src/easel/calendar.ts`; `src/easel/calendar-dispatch.ts`; `src/easel/calendar-channels.ts`; `tests/calendar.test.mjs`; `tests/calendar-browser.mjs`
+**Gap.** Calendar tasks, saved-zone reminders and escalation are delivered. Qualified Base resolved-address and pinned-egress remains required for owner-entered chat destinations.
 
 #### CYCLE-002 — Metric-triggered tasks
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-MAIL-001 · Rules D-1
 
-**Requirement.** Finance writes rules such as "a department's actual spend exceeds budget by 10% and $5,000 in a closed month", "runway falls below 12 months" or "pipeline coverage for next quarter falls below 3×". When a refresh or close meets a rule, Easel creates a task with an owner and due date that cites the numbers, and does not create a duplicate while the task is open. Current actuals and runway metrics conform (ct, 19 October); before pipeline capability ships, REV-001 inherits the pipeline-coverage metric, rule evaluation on refresh/close, cited tasks and open-task deduplication. Finance creates, revises and disables rules. Closed-month spend is the department's natural-sign cost-of-sales plus operating expense, including non-cash costs, against the approved budget in the same currency and covered period. Both percentage and amount bounds are strict; equality does not trigger. A nonpositive budget has no finite overspend percentage: positive actual expense above the amount bound meets the percentage condition. Runway uses FIN-005's exact unrounded ratio and the earliest future breach; non-burning positive cash does not breach. Rules evaluate after accepted CSV refreshes and month closes, on save and on an explicit check. Incomplete imports, unresolved consumed mappings, unavailable owners, absent approved periods and currency mismatches are visibly blocked, never replaced with zero. Overspend tasks are deduplicated per rule/month, runway per rule/forecast while open; completing a task permits a new task on a subsequent check. Each task captures its rule revision and numeric/source evidence, owner and due date (N UTC calendar days after trigger). An overspend owner must be an active contributor of that department; runway owners must be active finance owners/admins. Finance sees/completes all tasks; an assignee sees/completes only their own tasks while their role and department remain valid. Rules are finance-only. Tasks are in-app records; CYCLE-003 carries notification delivery. Disabling a rule preserves existing tasks and their captured evidence.
+**Requirement.** Finance configures actual-spend, runway and next-quarter-pipeline rules that create cited planning tasks without duplicate open work. [Detailed semantics](docs/planning-semantics.md#cycle-002).
 
 **Acceptance.**
-1. `tests/metric-tasks.test.mjs` and `tests/metric-tasks-browser.mjs` (`CYCLE-002`): the API journey sets a 10% overspend rule, accepts and closes a month that breaks it, sees one task for the department contributor with actual/budget/variance/source citations and due date, and refreshes again without a duplicate.
-2. Assert strict percentage/amount boundaries, zero-budget spend, automatic late-refresh checks, immutable open-task evidence, all live authority restrictions, explicit blocking, runway arithmetic/earliest future breach and completion/retrigger semantics.
-3. At 1440/390 finance creates/checks/disables a rule, reads cited tasks and the assignee completes them with persisted attribution; viewers see neither rules nor tasks.
-4. REV-001 carries future pipeline metric/evaluation/dedup acceptance before shipping.
+1. A closed month exceeding a ten-percent spend rule creates one department task with actual, budget, variance, source citations, owner and due date.
+2. A repeated refresh while the task is open creates no duplicate.
+3. Percentage and amount comparisons are strict, including zero-budget spend; incomplete sources visibly block assessment.
+4. Runway uses the earliest future breach and its exact arithmetic.
+5. Completing a task permits a later trigger; disabling a rule retains captured task evidence.
 
-**Evidence.** `tests/metric-tasks.test.mjs` `tests/metric-tasks-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/metric-tasks.test.mjs`; `tests/metric-tasks-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A closed month exceeding a ten-percent spend rule creates one department task with actual; point 1: budget; point 1: variance; point 1: source citations; point 1: owner; point 1: due date; point 2: A repeated refresh while the task is open creates no duplicate; point 3: Percentage; point 3: amount comparisons are strict; point 3: including zero-budget spend; point 3: incomplete sources visibly block assessment; point 4: Runway uses the earliest future breach; point 4: its exact arithmetic; point 5: Completing a task permits a later trigger; point 5: disabling a rule retains captured task evidence. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### CYCLE-008 — Metric-task authority and surfaces
+
+Core · target · **partial** · From CYCLE-002 · Cites BASE-ROLE-001, BASE-MAIL-001
+
+**Requirement.** Rule management and task completion follow the relevant finance and assignee planning grants. [Detailed semantics](docs/planning-semantics.md#cycle-002).
+
+**Acceptance.**
+1. Finance creates, checks and disables rules at desktop and phone widths.
+2. The assigned contributor completes the task with persisted attribution; viewers see neither rules nor tasks.
+3. A removed or out-of-scope assignee cannot read or complete the task.
+4. Next-quarter pipeline coverage evaluates on refresh and close with cited numbers and open-task deduplication when REV-001 supplies the metric.
+
+**Evidence.** `tests/metric-tasks.test.mjs`; `tests/metric-tasks-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Finance creates; point 1: checks; point 1: disables rules at desktop; point 1: phone widths; point 2: The assigned contributor completes the task with persisted attribution; point 2: viewers see neither rules nor tasks; point 3: A removed or out-of-scope assignee cannot read or complete the task; point 4: Next-quarter pipeline coverage evaluates on refresh; point 4: close with cited numbers; point 4: open-task deduplication when REV-001 supplies the metric. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CYCLE-003 — Notifications from discussions and events
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-MAIL-001, BASE-ROLE-001
 
-**Requirement.** Mentioning a person in a comment or explanation, a returned submission, a pending approval, a restatement notice, a failed refresh and a triggered task each notify the person by email and, if connected, in Slack, Microsoft Teams or Nook. The notification links to the exact cell or record. Each person sets their channels, and a daily digest is the default.
-
-Before this capability ships, CYCLE-003 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
-
-Current notification semantics (ct, 20 October 06:45Z). Notified events today: an `@email` mention in a budget comment or variance explanation (only a person who can read that department may be mentioned; any other mention refuses the write), a returned submission (every active contributor of that department), every requested department having submitted (active finance, as a pending approval) and a metric-triggered task (its owner). Before restatement notices and scheduled refresh failures ship, CONNECT-005 inherits notifying finance of them under this clause's rules. Each person sets one preference: immediate email (the default, replacing the earlier daily-digest default under ct's ruling), a daily email digest at 08:00 in the saved company zone (one message listing every waiting notification created before that instant, DST-correct, with scheduled and actual times recorded), or chat only, limited to the Slack, Microsoft Teams or Nook channel the owner connected under `CYCLE-001`. Chat channels are shared, so a chat notification is only the generic text "You have an Easel notification" and a sign-in link, and a chat-only person gets no email. Every notification links to its record (`/app?tab=…&record=…`) and is recorded once per event and recipient in the same fenced save as the event; delivery rechecks that the recipient can still read the record and follows `CYCLE-001`'s delivery rules (acceptance labeled as acceptance only, refused sends pending for finance retry with the same message and key, uncertain outcomes never retried) and its EGRESS RULE. The daily digest runs in the `CYCLE-001` scheduled run and needs reminders turned on. Gap: resolved-address/pinned egress (Base egress door), as in `CYCLE-001`.
+**Requirement.** Planning events notify the eligible person through their selected channels with an exact record link. Under the recorded ct ruling, immediate email is the initial preference, with daily digest and chat-only alternatives. [Detailed semantics](docs/planning-semantics.md#cycle-003).
 
 **Acceptance.**
-1. with mail, Slack, Microsoft Teams and Nook fakes and a fake clock, the API journey produces one notification per event type, each linking to its record: a mention in a variance explanation (email and Slack), a returned submission to its contributor (email and Teams), a pending approval to finance, a restatement notice to finance, a failed refresh to finance, and a triggered task to its owner (Nook).
-2. A person who chose Teams only receives no email, and a digest-only person receives all their events in the next daily digest instead.
+1. Under mail and chat edge fixtures, each event sends one eligible notification linked to its record: a variance mention, returned submission, pending approval, restatement, refresh failure and triggered task.
+2. Email, Slack, Teams and Nook follow each person's chosen channel; a Teams-only preference sends no email.
+3. A digest-only person receives all their queued events in the next company-zone daily digest.
+4. Saved-zone daylight saving and scheduled versus actual dispatch instants are visible.
 
-**Evidence.** `src/easel/notify.ts` `src/easel/notify-dispatch.ts` `tests/notifications.test.mjs` `tests/calendar-browser.mjs`
-**Gap.** Mentions, returned submissions, pending approvals and triggered tasks notify by each person's email, digest or generic chat preference; CONNECT-005 carries restatement and refresh-failure notices; Gap: resolved-address/pinned egress (Base egress door)
+**Evidence.** `src/easel/notify.ts`; `src/easel/notify-dispatch.ts`; `tests/notifications.test.mjs`; `tests/calendar-browser.mjs`
+**Gap.** Current mentions, submission/approval events and tasks support channel preferences. Restatement and non-Gauge refresh events and qualified Base resolved-address/pinned-egress remain incomplete.
 
 #### CYCLE-004 — Private and shared scenarios
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-MAIL-001 · Rules D-1
 
-**Requirement.** Any planner can make a private sandbox scenario that only they can see, share it with named people or groups as read or edit, and submit it as a proposal. Finance sets which scenarios are official (budget, forecast, board case). Scenario-specific access rights are enforced on every read, comparison and export.
-
-Ct approved current named-person completion on 19 October. Current planners are finance and contributors. A sandbox is private to its creator until they share it with named active members; finance has no implicit scenario-access bypass. Read permits comparison and filtered CSV/Excel download, while edit also requires the reader's current planner role and department/pay authority; a viewer cannot receive edit. Only a current planner who created the sandbox changes its grants or submits it. Revocation and membership changes apply immediately. Sharing and submission require the exact reviewed sandbox revision. Submission copies the reviewed inputs and cash into a new submitted proposal against an exact reviewed, visible working target, preserving the private original; EASEL-012 promotion fences and current contributor scope still apply. A changed or frozen original target requires choosing another current working target and its revision. Private sandboxes remain private through branches; official version saving and adoption use their submitted proposals rather than publishing the private source. Finance designates company-visible cases as budget, forecast or board case through separate metadata: labels never approve or change arithmetic or immutable snapshot bodies. Private sandboxes are retained with their sharing history. Activity (including mixed structure-version records), comments, app exports and open-file exports omit unseen sandbox definitions and figures; every visible manifest file retains its correct digest. The existing owner CLI backup remains whole-installation custody. ACCESS-001 inherits group scenario shares and immediate group-membership enforcement before groups ship.
+**Requirement.** Any planner can make a private sandbox scenario that only they can see, share it with named people or groups as read or edit, and submit it as a proposal. Finance sets which scenarios are official (budget, forecast, board case).  [Detailed semantics](docs/planning-semantics.md#cycle-004). ACCESS-001 carries the equivalent group-share journey.
 
 **Acceptance.**
-1. `tests/sandboxes.test.mjs` (CYCLE-004) creates a contributor's private scenario, asserts 404 for another contributor, a viewer and unshared finance across reads/comparisons/CSV/Excel/branches, shares read-only with the viewer, compares exact cells and refuses edits, exercises edit shares with current department/pay restrictions, revocation, stale sharing/submission and changed contributor scope.
-2. It asserts exact copied/submitted proposals with an unchanged private original, promotion fences, official metadata without arithmetic changes, hidden Activity/comments/open-export rows and every visible manifest digest.
-3. `tests/sandboxes-browser.mjs` (CYCLE-004) creates, edits, shares, compares, downloads, submits and designates cases at 1440/390 with no page overflow.
-4. ACCESS-001 carries the group-share journey before shipping.
+1. Creates a contributor's private scenario, asserts 404 for another contributor, a viewer and unshared finance across reads/comparisons/CSV/Excel/branches, shares read-only with the viewer, compares exact cells and refuses edits, exercises edit shares with current department/pay restrictions, revocation, stale sharing/submission and changed contributor scope.
+2. Exact copied/submitted proposals with an unchanged private original, promotion fences, official metadata without arithmetic changes, hidden Activity/comments/open-export rows and every visible manifest digest.
+3. Creates, edits, shares, compares, downloads, submits and designates cases at 1440/390 with no page overflow.
 
-**Evidence.** `tests/sandboxes.test.mjs` `tests/sandboxes-browser.mjs`
-**Gap.** None for current named-person doors; ACCESS-001 inherits group shares
+**Evidence.** `tests/sandboxes.test.mjs`; `tests/sandboxes-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Creates a contributor's private scenario; point 1: asserts 404 for another contributor; point 1: a viewer; point 1: unshared finance across reads/comparisons/CSV/Excel/branches; point 1: shares read-only with the viewer; point 1: compares exact cells; point 1: refuses edits; point 1: exercises edit shares with current department/pay restrictions; point 1: revocation; point 1: stale sharing/submission; point 1: changed contributor scope; point 2: Exact copied/submitted proposals with an unchanged private original; point 2: promotion fences; point 2: official metadata without arithmetic changes; point 2: hidden Activity/comments/open-export rows; point 2: every visible manifest digest; point 3: Creates; point 3: edits; point 3: shares; point 3: compares; point 3: downloads; point 3: submits; point 3: designates cases at 1440/390 with no page overflow. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CYCLE-005 — Quarterly reforecasts and version comparison
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-MAIL-001 · Rules D-1, D-2
 
-**Requirement.** Besides the approved budget and the rolling forecast, finance saves named reforecast versions (for example Q2 reforecast), each frozen like a budget. Reports and variances can compare actual, budget, each reforecast and the current forecast. Finance saves the exact reviewed revision of a working forecast or scenario without changing its source. Names are trimmed and unique without regard to case among saved reforecasts. Each version retains its metadata, model structure, inputs and saved arithmetic through later edits, month closes, deletion of its working source and export/restore. Plan and comparison reports, monthly variances and published review packs use those saved figures. For a closed month, the current forecast includes accepted actuals. Version variance is actual minus version in integer minor units; a period outside a version's horizon has no amount or variance, and differing currencies have no variance.
+**Requirement.** Finance saves named frozen reforecasts at reviewed revisions and compares actual, budget, each reforecast and working forecast without changing the source. [Detailed semantics](docs/planning-semantics.md#cycle-005).
 
 **Acceptance.**
-1. the named `CYCLE-005` API journey freezes Q2 and Q3 reforecasts at their reviewed source revisions, refuses a stale revision and duplicate names, closes a month, and asserts actual against budget, both named reforecasts and the current forecast for the same line.
-2. It asserts every captured model and calculation remains unchanged after source edits, live metadata changes and source deletion; frozen edits are refused, and reads and exports retain existing role filtering.
-3. Named tests assert report and published-pack Excel formulas, HTML and CSV saved values, differing horizons and currency semantics.
-4. The real CLI export/restore journey retains exact snapshot bodies and SHA-256 values and refuses tampered lineage or arithmetic.
-5. A `CYCLE-005` browser journey at 1440 and 390 saves versions, edits the working forecast, closes, reads frozen plans and comparisons, and downloads the variance report as finance and a viewer.
+1. Q2 and Q3 saves retain reviewed source revisions; stale saves and duplicate trimmed case-insensitive names are refused.
+2. After close, the same line compares actual, budget, both named reforecasts and the current forecast.
+3. Source edits, live metadata changes and source deletion leave captured model definitions, inputs and calculations unchanged; frozen edits are refused.
+4. Filtered HTML, CSV, report Excel and published-pack Excel retain the saved amounts; uncovered periods and differing currencies have no invented variance.
+5. Installation export/restore retains exact snapshot bodies and digests and refuses tampered lineage or arithmetic.
+6. At desktop and phone widths, finance and a viewer save or read the permitted versions, comparisons and variance workbook.
 
-**Evidence.** `src/easel/reforecasts.ts` `src/easel/version-comparison.ts` `tests/reforecasts.test.mjs` `tests/reforecasts-browser.mjs` `tests/restore-flow.mjs`
-**Gap.** Exact-revision named frozen models, every-version reports and immutable pack exports; native-role filtering, differing horizons/currencies, source deletion and real CLI restore
+**Evidence.** `src/easel/reforecasts.ts`; `src/easel/version-comparison.ts`; `tests/reforecasts.test.mjs`; `tests/reforecasts-browser.mjs`; `tests/restore-flow.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Q2; point 1: Q3 saves retain reviewed source revisions; point 1: stale saves; point 1: duplicate trimmed case-insensitive names are refused; point 2: After close; point 2: the same line compares actual; point 2: budget; point 2: both named reforecasts; point 2: the current forecast; point 3: Source edits; point 3: live metadata changes; point 3: source deletion leave captured model definitions; point 3: inputs; point 3: calculations unchanged; point 3: frozen edits are refused; point 4: Filtered HTML; point 4: CSV; point 4: report Excel; point 4: published-pack Excel retain the saved amounts; point 4: uncovered periods; point 4: differing currencies have no invented variance; point 5: Installation export/restore retains exact snapshot bodies; point 5: digests; point 5: refuses tampered lineage or arithmetic; point 6: At desktop; point 6: phone widths; point 6: finance; point 6: a viewer save or read the permitted versions; point 6: comparisons; point 6: variance workbook. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### CYCLE-006 — Long-range plan linked to the operating plan
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-MAIL-001 · Rules D-1
 
-**Requirement.** A 3-to-5-year annual plan holds top-down targets (revenue growth, margin, headcount, cash). Year one comes from the operating budget, and later years come from annual drivers. A reconciliation shows where the bottom-up budget misses the long-range target. Finance saves named plans linked to the operating budget at the reviewed budget and annual-plan revisions. Year one is the first twelve budget months: revenue, operating costs and profit sum those months, while headcount and cash use the final month. Working-budget edits flow through; an approved budget uses its saved arithmetic and snapshot digest. Annual periods start in the budget’s first fiscal month. Later years apply entered revenue growth, operating margin, whole-person headcount change and an explicit net cash change independent of profit. Money is integer minor units; divisions round half away from zero once. Revenue growth cannot be below −100%, margin cannot exceed 100%, and projected headcount cannot be negative. Revenue targets compound the entered prior-year revenue by the target growth rate (including year one); profit targets apply the target operating margin to target revenue. Headcount and cash targets are fixed year-end targets for each year. Gaps are budget or projection minus target. Members read aggregate plans and Excel exports; existing finance authority governs edits, and no position-level pay data is included.
-
-**Acceptance.**
-1. `tests/long-range.test.mjs` (`CYCLE-006`) sets a five-year plan with a 40% growth target and asserts year one equals the twelve-month operating budget, every later annual driver, all four target gaps, three-year editing, exact rounding, stale-save refusal, existing role filtering and approved-budget immutability.
-2. Its Excel formulas independently evaluate to the API’s amounts and gaps.
-3. `tests/long-range-browser.mjs` (`CYCLE-006`) creates plans and reads the reconciliation and Excel download as finance and board at 1440 and 390 without page overflow.
-
-**Evidence.** `src/easel/long-range.ts`, `src/ui/long-range.tsx`, `tests/long-range.test.mjs`, `tests/long-range-browser.mjs`
-**Gap.** Named 3–5-year plans link operating-budget arithmetic, annual drivers and four target reconciliations; exact-revision saves, aggregate member reads and formula Excel at desktop/phone widths
-
-#### CYCLE-007 — Per-department ordered approval chains
-
-Core · target · **done**
-
-**Requirement.** Finance can give any department an ordered approval chain: one or more review steps that a requested submission (`EASEL-009`) passes, in order, before it counts as submitted for budget approval (`EASEL-010`). Finance here means a native owner or admin, or a person holding the `approvals` capability with full company scope (`ACCESS-001`). Each step names one or more eligible reviewers: named active members, an `ACCESS-001` group, or both. Any one eligible reviewer completes the step. Departments without a chain keep today's single finance step unchanged.
-
-Reviewer authority is live. When a reviewer acts, they must be an active finance person or contributor (never a viewer) and still eligible for that step. Under their current `ACCESS-001` grants (evaluated per grant and unioned) they must be able to read every source of that department in the budget. They also need Pay detail wherever the department's submission includes positions they would review (`PEOPLE-005`). A step never grants edit, Pay detail, the global `approvals` or `publishing` capability, or any other access. Removing a person from the chain, from a group or from the department ends their authority on their next request. A step with no currently eligible reviewer is shown as blocked, with the reason. It is never skipped or auto-approved.
-
-Order and exact content. Steps act strictly in order. A step reviewer approves only the department's exact submitted content: the department's budget inputs (scenario revision plus a digest of that department's inputs) as submitted. If those inputs change by any route, every completed step for that pass is voided and the chain restarts at step one. Changes to other departments don't void it. A later step cannot act before an earlier step completes, and a step cannot act twice in one pass. While its chain is in progress the department stays locked to contributors, as under `EASEL-009`.
-
-Return and resubmission. Any reviewer at the current or an earlier completed step can return the submission with a reason, and so can finance at any point. Return reopens the department to its contributors under `EASEL-009`. The voided decisions stay in history, and resubmission starts again at step one. The full request, submit, step-approve, return and restart history is kept with each actor, time, step, chain version and the exact content reviewed.
-
-Chain versions. Saving a chain creates a new version through the fenced model revision. Each submission records the chain version current when it was submitted and completes on that version. A later version applies to the next submission. Finance may explicitly restart an in-flight submission on the current version, which voids its completed steps and keeps them in history. Deleting a department's chain applies the same rule.
-
-Relationship to global approval and publication. `EASEL-010` approval also requires every requested department with a chain to have completed every step of its recorded version on the exact content now in the budget. Otherwise approval names the waiting department and step and refuses (409). Global approval, month close and publication keep their `ACCESS-001` rule (the capability plus full company scope); completing a chain step confers none of them. The approval snapshot captures each department's chain version and step decisions. A step pending its reviewers is a `CYCLE-003` pending-approval event for that step's current eligible reviewers. Step review inherits `MOBILE-001` (390 pixels) and `AUDIT-001`. Chain configuration and history travel through `EASEL-016` export and restore and `PORT-001` open exports under existing filtering. Agents act only as a signed-in person and cannot approve a step (`AGENT-011`, `API-003`). Easel sets no thresholds, amounts, step counts or reviewer quotas.
+**Requirement.** Finance links a three-to-five-year annual target plan to the operating budget and reads top-down gaps. [Detailed semantics](docs/planning-semantics.md#cycle-006).
 
 **Acceptance.**
-1. `tests/approval-chains.test.mjs` (`CYCLE-007`): finance gives Sales a two-step chain (step one a department-head group, step two a named finance planner) and leaves Engineering without a chain.
-2. Sales submits.
-3. Step two is refused before step one.
-4. A step-one reviewer approves the exact content.
-5. A finance edit to a Sales input voids step one, and an Engineering edit does not.
-6. Step two returns with a reason, the contributor revises and resubmits, and the chain restarts at step one with history kept.
-7. Assert: - global approval is refused, naming Sales and the waiting step, until both steps complete, then succeeds, and its snapshot records the chain version and decisions; - a reviewer removed from the group, a viewer and a reviewer whose grant omits a Sales dimension member are refused; - a step with no eligible reviewer is shown as blocked; - a chain version saved mid-flight leaves the in-flight submission on its recorded version until finance explicitly restarts it; - completing a step grants no edit, Pay detail, global approval or publishing; - a pending-step notice reaches only that step's eligible reviewers; - export and restore keep the chain and history.
-8. `tests/approval-chains-browser.mjs` (`CYCLE-007`): finance configures the chain, and the reviewers approve and return in order, at 1440 and 390 pixels without page overflow.
+1. For a five-year plan with forty-percent growth, year one equals the twelve-month operating budget.
+2. Later-year growth, margin, headcount and cash drivers and all four target gaps have exact values.
+3. Three-year edits, stale-save refusal and approved-budget immutability retain the reviewed source relation.
+4. Excel independently evaluates to the same annual amounts and gaps.
+5. Finance and board read the reconciliation and workbook at desktop and phone widths without page overflow.
 
-**Evidence.** `tests/approval-chains.test.mjs` — “CYCLE-007 ordered department reviews bind live authority, exact content, versions, history, notifications and portable records”: two-step Sales beside chainless Engineering; early/duplicate-step refusal; Sales changes void decisions while Engineering changes preserve them; return/revision/resubmission retains history; global approval names the waiting department/step and captures completed versions/decisions; removed group members, viewers, incomplete dimension grants and missing Pay detail are refused; empty eligibility is blocked; recorded versions remain until explicit restart; steps grant no edit, Pay detail, global approval or publishing; pending notices reach eligible reviewers only; open export and actual CLI export/restore retain chain/history. `tests/approval-chains.test.mjs` — “CYCLE-007 grid undo, proposal promotion, chain deletion and live reviewer removal preserve exact review boundaries”: grid undo, proposal promotion, deletion/restart, department removal and queued-notice revocation. `tests/approval-chains-browser.mjs` — CYCLE-007 native finance configuration, ordered review, return, resubmission, retained history and no page overflow at 1440 and 390.
-**Gap.** None.
+**Evidence.** `src/easel/long-range.ts`; `src/ui/long-range.tsx`; `tests/long-range.test.mjs`; `tests/long-range-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: For a five-year plan with forty-percent growth; point 1: year one equals the twelve-month operating budget; point 2: Later-year growth; point 2: margin; point 2: headcount; point 2: cash drivers; point 2: all four target gaps have exact values; point 3: Three-year edits; point 3: stale-save refusal; point 3: approved-budget immutability retain the reviewed source relation; point 4: Excel independently evaluates to the same annual amounts; point 4: gaps; point 5: Finance; point 5: board read the reconciliation; point 5: workbook at desktop; point 5: phone widths without page overflow. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### CYCLE-007 — Department review-chain configuration
+
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-MAIL-001
+
+**Requirement.** Finance assigns versioned ordered department chains to named reviewers and groups without changing global approval authority. [Detailed semantics](docs/planning-semantics.md#cycle-007).
+
+**Acceptance.**
+1. Sales receives two steps, a department-head group then a named finance planner; Engineering without a chain retains its single finance step.
+2. Current finance or contributor reviewers must cover every department source and required Pay detail; removed members, viewers and incomplete dimension grants cannot act.
+3. A step with no eligible reviewer is visibly blocked with its reason.
+4. A step grants no edit, Pay detail, global approval or publishing permission.
+5. At desktop and phone widths, finance configures the chain without page overflow.
+
+**Evidence.** `tests/approval-chains.test.mjs`; `tests/approval-chains-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Sales receives two steps; point 1: a department-head group then a named finance planner; point 1: Engineering without a chain retains its single finance step; point 2: Current finance or contributor reviewers must cover every department source; point 2: required Pay detail; point 2: removed members; point 2: viewers; point 2: incomplete dimension grants cannot act; point 3: A step with no eligible reviewer is visibly blocked with its reason; point 4: A step grants no edit; point 4: Pay detail; point 4: global approval or publishing permission; point 5: At desktop; point 5: phone widths; point 5: finance configures the chain without page overflow. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### CYCLE-009 — Exact department-review passes
+
+Core · target · **partial** · From CYCLE-007 · Cites BASE-ROLE-001, BASE-MAIL-001
+
+**Requirement.** Department review decisions bind the submitted department content in strict order. [Detailed semantics](docs/planning-semantics.md#cycle-007).
+
+**Acceptance.**
+1. Step two is refused before step one, and one step cannot complete twice in the same pass.
+2. A Sales-input change by any route voids completed Sales decisions and restarts at step one; an Engineering-only change preserves Sales decisions.
+3. A current or earlier reviewer, or finance, can return the submission with a reason; contributor revision and resubmission start a new pass.
+4. Request, submit, step approval, return and restart history retain actor, time, step, chain version and reviewed content.
+5. Global budget approval names the waiting department and step until all recorded steps complete, then captures their versions and decisions.
+6. Reviewers approve and return in order at desktop and phone widths without page overflow.
+7. An agent's review decision carries commitment; the company's policy decides the call, with truthful attribution instead of a person's confirmation.
+
+**Evidence.** `tests/approval-chains.test.mjs`; `tests/approval-chains-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Step two is refused before step one; point 1: and one step cannot complete twice in the same pass; point 2: A Sales-input change by any route voids completed Sales decisions; point 2: restarts at step one; point 2: an Engineering-only change preserves Sales decisions; point 3: A current or earlier reviewer; point 3: or finance; point 3: can return the submission with a reason; point 3: contributor revision; point 3: resubmission start a new pass; point 4: Request; point 4: submit; point 4: step approval; point 4: return; point 4: restart history retain actor; point 4: time; point 4: step; point 4: chain version; point 4: reviewed content; point 5: Global budget approval names the waiting department; point 5: step until all recorded steps complete; point 5: then captures their versions; point 5: decisions; point 6: Reviewers approve; point 6: return in order at desktop; point 6: phone widths without page overflow; point 7: An agent's review decision carries commitment; point 7: the company's policy decides the call; point 7: with truthful attribution instead of a person's confirmation. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### CYCLE-010 — Review-chain versions and delivery
+
+Core · target · **partial** · From CYCLE-007 · Cites BASE-ROLE-001, BASE-MAIL-001
+
+**Requirement.** A submission retains the chain version it entered, and pending review reaches only eligible reviewers. [Detailed semantics](docs/planning-semantics.md#cycle-007).
+
+**Acceptance.**
+1. A new chain saved mid-flight applies to the next submission; the current submission stays on its recorded version.
+2. An explicit restart on the latest chain or chain deletion voids completed steps while keeping their history.
+3. A pending-step notification reaches only that step's currently eligible reviewers.
+4. Installation export/restore and filtered open exports retain chain configuration and history.
+
+**Evidence.** `tests/approval-chains.test.mjs`; `tests/approval-chains-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A new chain saved mid-flight applies to the next submission; point 1: the current submission stays on its recorded version; point 2: An explicit restart on the latest chain or chain deletion voids completed steps while keeping their history; point 3: A pending-step notification reaches only that step's currently eligible reviewers; point 4: Installation export/restore; point 4: filtered open exports retain chain configuration; point 4: history. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Reporting
 
-#### REPORT-001 — Report builder
+#### REPORT-001 — Saved report builder
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001 · Rules D-1
 
-**Requirement.** Finance and permitted members build reports. Rows are lines, dimensions or hierarchies. Columns are months, quarters, years, year-to-date or trailing twelve months, across versions (actual, prior-year actual, budget, each reforecast and the forecast), with variance and year-over-year change in dollars and percent. Filters by any dimension member and conditional highlighting (for example a variance over 10% in red) are available. Reports are saved, shared, and scheduled for email delivery to named people daily, weekly or monthly in the company's time zone. They are always role-filtered on the server, and each recipient of a scheduled report gets the copy they would see if they opened it.
-
-Before saved reports ship, REPORT-001 inherits REPORT-002 dashboard tables/charts over saved reports, with personal layouts, audience filtering and aggregate Excel exports.
-
-Before this capability ships, REPORT-001 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
+**Requirement.** Permitted planners build saved, shared numeric reports over lines, dimensions, hierarchies, periods and planning versions. [Detailed semantics](docs/planning-semantics.md#report-001).
 
 **Acceptance.**
-1. in the browser at 1440, build a department-by-quarter report of actual against budget with year-to-date, trailing-twelve-month, prior-year actual and year-over-year % columns, a department filter and a highlight rule; save it, share it with a viewer, and confirm through the API that the viewer's copy omits restricted detail.
-2. Year-to-date and trailing-twelve-month cells equal the sum of their months, and year-over-year % equals (actual − prior-year actual) ÷ prior-year actual, to the cent.
-3. With a mail fake and a fake clock, schedule the report weekly for Monday 8:00 Eastern to finance and a viewer: on Monday each receives one email, and the viewer's copy omits restricted detail.
-4. Current report semantics: money is integer minor units; percentage changes are half-away rounded basis points, unavailable when the denominator is zero.
-5. Months/quarters/years, fiscal YTD and TTM sum the selected source cells; missing or blocked actuals and out-of-horizon version months stay unavailable.
-6. Rows may use departments, lines, custom members including descendants, or account hierarchies; overlapping rollups are labelled non-additive.
-7. Reports compare the current source with selected official working/frozen versions and retain the captured structure of frozen versions.
-8. Native finance and contributors build reports under their existing authority; contributors author only their own current department and private/department audiences, and only the creator changes the definition. Every reader and export uses current scenario, department, dimension and Pay detail filtering. Personal table/chart layouts are separate from the shared definition. Finance explicitly names active account/member recipients and saves a daily, weekly or monthly company-zone schedule. Each attempt rebuilds the recipient's current permitted aggregate report, rechecks the active native finance author and recipient membership, and persists the intent before contacting mail. One recipient/date/schedule delivery key prevents duplicates. Known refusals remain pending for explicit finance retry with the same body/key; a changed report or audience blocks that retry. Accepted, sending and uncertain outcomes never resend automatically. Local suppression is labelled as not sent. The delivery view records the saved IANA zone, scheduled instant and actual dispatch instant, including DST transitions. REPORT-003/004/007 inherit current saved-report source, audience and formula-export semantics when their new doors ship.
+1. At desktop width, build and save a department-by-quarter actual-versus-budget report with YTD, trailing-twelve-month, prior-year and year-over-year percentage columns, a department filter and a highlight rule.
+2. A shared viewer's copy omits restricted detail through the API.
+3. YTD and trailing-twelve-month values equal their component months, and year-over-year percentage equals actual minus prior-year divided by prior-year.
+4. Saved reports feed dashboard tables and charts with personal layouts, audience filtering and aggregate formula Excel.
 
-**Evidence.** `tests/saved-reports.test.mjs` (REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes; Report authors stay within their department and scheduled copies follow current recipients and company DST; Saved report dimension and account hierarchies preserve source cuts, frozen versions and blocked-cell availability); `tests/saved-reports-browser.mjs` (native quarter builder, filter/highlight, share, personal table/chart dashboard, Excel and named schedule at 1440/390)
-**Gap.** None for current report doors; REPORT-003/004/007 inherit their new report surfaces
+**Evidence.** `tests/saved-reports.test.mjs`; `tests/saved-reports-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: At desktop width; point 1: build; point 1: save a department-by-quarter actual-versus-budget report with YTD; point 1: trailing-twelve-month; point 1: prior-year; point 1: year-over-year percentage columns; point 1: a department filter; point 1: a highlight rule; point 2: A shared viewer's copy omits restricted detail through the API; point 3: YTD; point 3: trailing-twelve-month values equal their component months; point 3: and year-over-year percentage equals actual minus prior-year divided by prior-year; point 4: Saved reports feed dashboard tables; point 4: charts with personal layouts; point 4: audience filtering; point 4: aggregate formula Excel. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
+
+#### REPORT-008 — Scheduled report delivery
+
+Core · target · **partial** · From REPORT-001 · Cites BASE-ROLE-001
+
+**Requirement.** Named recipients receive daily, weekly or monthly report copies in the saved company time zone. [Detailed semantics](docs/planning-semantics.md#report-001).
+
+**Acceptance.**
+1. A Monday-eight-AM Eastern weekly schedule sends finance and a viewer exactly one copy each under fake clock and mail edges.
+2. Each recipient receives only the detail their current report grants permit.
+3. The saved IANA zone, daylight-saving transition and scheduled versus actual dispatch instants are visible.
+
+**Evidence.** `tests/saved-reports.test.mjs`; `tests/saved-reports-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A Monday-eight-AM Eastern weekly schedule sends finance; point 1: a viewer exactly one copy each under fake clock; point 1: mail edges; point 2: Each recipient receives only the detail their current report grants permit; point 3: The saved IANA zone; point 3: daylight-saving transition; point 3: scheduled versus actual dispatch instants are visible. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### REPORT-002 — Dashboards
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001 · Rules D-1, D-2
 
-**Requirement.** Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width.
-
-Ct approved the current-capability DONE boundary on 19 October (14:21Z). Finance creates and edits its own dashboards over company-visible plans; sandboxes and proposals cannot be sources. A private dashboard is creator-only. Leadership means current finance, board means current viewers, and a named department means its current contributors; the creator retains access while an active member. Every list, read, layout save and Excel download rechecks membership and source access. Sharing grants no input/pay access. A department dashboard fixes its department and shows no invented department cash, burn or runway. Shared definitions and per-person widget order/display use exact reviewed revisions and native session/model fences. A changed shared definition resets the effective layout to that definition until the person saves a new arrangement; it never changes another person's layout. Private dashboards and other people's layout contents are omitted from finance Activity and open export; the owner CLI backup remains whole-installation custody.
-
-Current metrics are monthly revenue, gross margin (revenue less cost of sales, an amount), planned headcount, net cash burn, closing cash, runway and planned ARR. Money is integer minor units, headcount whole people, runway hundredths of months. Runway uses closing cash divided by the current and up to two preceding months' average net burn, rounded half away from zero; non-burning cash is labeled, exhausted cash is zero runway. ARR is current recurring customer/seat driver revenue × 12, identified by each source rather than the entire revenue line; other forms never count. Closed-month actuals lack subscription classification and have no ARR value. Missing or incomplete actuals are blocked, never zero. Frozen plans use captured inputs and calculations. Tiles show the ending month, charts and tables the full horizon. Aggregate Excel repeats authorization and has live margin, ARR and period-total formulas; flow totals sum months, headcount is the final month. Before shipping, REV-001 inherits dashboard pipeline coverage, REV-002 imported ARR and REPORT-001 saved-report dashboard tables/charts, under the same filtering, sharing, layouts and exports.
+**Requirement.** Dashboards hold KPI tiles, charts and tables from saved reports and metrics, such as revenue, gross margin, burn, runway, ARR, headcount and pipeline coverage. Layouts are saved per person and shared per audience (leadership, board, departments) and work at phone width. [Detailed semantics](docs/planning-semantics.md#report-002). REV-001 carries pipeline coverage, REV-002 imported ARR and REPORT-001 saved-report widgets.
 
 **Acceptance.**
-1. `tests/dashboards.test.mjs` and `tests/dashboards-browser.mjs` (REPORT-002): at 1440/390 finance creates runway, ARR and headcount tiles, saves and shares with board; rendered numbers equal API metrics.
+1. At 1440/390 finance creates runway, ARR and headcount tiles, saves and shares with board; rendered numbers equal API metrics.
 2. Readers independently reorder/change tile/chart/table displays and reload saved personal layouts.
-3. Assert every current metric's hand calculation, subscription-only ARR on mixed revenue lines, closed actual ARR unavailability, immutable frozen values, unavailable department cash, live membership/audience revocation, stale revision refusal, private Activity/open-export filtering and independently evaluated Excel formulas.
-4. REV-001 carries the future pipeline coverage widget, REV-002 imported ARR and REPORT-001 saved-report widgets before shipping.
+3. Every current metric's hand calculation, subscription-only ARR on mixed revenue lines, closed actual ARR unavailability, immutable frozen values, unavailable department cash, live membership/audience revocation, stale revision refusal, private Activity/open-export filtering and independently evaluated Excel formulas.
 
-**Evidence.** `src/easel/dashboards.ts` `tests/dashboards.test.mjs` `tests/dashboards-browser.mjs`
-**Gap.** None.
+**Evidence.** `src/easel/dashboards.ts`; `tests/dashboards.test.mjs`; `tests/dashboards-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: At 1440/390 finance creates runway; point 1: ARR; point 1: headcount tiles; point 1: saves; point 1: shares with board; point 1: rendered numbers equal API metrics; point 2: Readers independently reorder/change tile/chart/table displays; point 2: reload saved personal layouts; point 3: Every current metric's hand calculation; point 3: subscription-only ARR on mixed revenue lines; point 3: closed actual ARR unavailability; point 3: immutable frozen values; point 3: unavailable department cash; point 3: live membership/audience revocation; point 3: stale revision refusal; point 3: private Activity/open-export filtering; point 3: independently evaluated Excel formulas. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### REPORT-003 — Board pack
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001 · Rules D-2
 
-**Requirement.** A board pack template contains statements, KPIs, charts, variance commentary, decisions and appendix tables. It is generated for a closed month or quarter, refreshed until published, and published as an immutable snapshot (as in `EASEL-014`). It exports as PDF, PowerPoint (.pptx) and Excel, and can be saved to [Chest](https://github.com/just-every/run-chest), Google Drive or SharePoint. Refreshing keeps the commentary that people wrote.
+**Requirement.** A board pack template contains statements, KPIs, charts, variance commentary, decisions and appendix tables. It is generated for a closed month or quarter, refreshed until published, and published as an immutable snapshot (as in `EASEL-014`). It exports as PDF, PowerPoint (.pptx) and Excel, and can be saved to [Chest](https://github.com/just-every/run-chest), Google Drive or SharePoint. Refreshing keeps the commentary that people wrote. [Detailed semantics](docs/planning-semantics.md#report-003).
 
 **Acceptance.**
-1. generate a quarter pack in the browser, refresh it after a late adjustment with commentary kept, publish, download PDF, .pptx and .xlsx, and confirm through the API that the published numbers do not change after a later refresh; save the published pack to a Chest folder, a Google Drive folder and a SharePoint library through fakes, each holding a PDF with the same digest.
-2. Current semantics (sx-easel-c41).
-3. A template (`pack-template-save`, finance with the publishing permission) names a non-empty subset of six sections: statements, KPIs, charts, variance commentary, decisions and appendix tables; the built-in `default` holds all six.
-4. `pack-create` takes `{month}` for a closed month or `{period: 'quarter', month, template}` for the complete closed fiscal quarter (the fiscal calendar's quarter, including 4-4-5 and 5-4-4) containing that month; the draft binds its template's sections.
-5. Quarter figures are exact sums of the quarter's closed months in integer minor units, year-to-date runs to the quarter's last month, explanations are the confirmed monthly ones joined with their month, and version comparisons sum each version's months, unavailable if any month is.
-6. `GET /api/easel/pack/:id/preview` shows a draft's live numbers and whether they moved since generation; `pack-refresh` re-reads them after a late adjustment to a closed month, records the refresh and never touches explanations, which live with each variance line.
-7. `pack-publish` freezes the numbers into an immutable snapshot and refuses with 409 when the caller's reviewed `fingerprint` no longer matches; a published pack is never refreshed, so a new draft for the period shows later changes while the published snapshot, its PDF and its PowerPoint stay byte-identical.
-8. The snapshot renders as HTML, CSV, Excel (live subtotal, profit, variance and KPI-difference formulas), PDF and PowerPoint through one door that applies the same role, dimension-scope and Pay-detail rules as the existing downloads. The PDF is written deterministically (no timestamps) so its SHA-256 is stable. Chest, Google Drive and SharePoint are connected by finance from a signed-in session (`/api/easel/connections/pack-stores/:store/:op`): credentials are sealed, never archived or returned; Drive and SharePoint use fixed provider origins and Chest an owner-entered address under ct's EGRESS RULE; a finance save (`POST /api/easel/pack/:id/save`) uploads the published PDF once per pack and store, verifies the store's reported size (and digest where the store returns one) and records the SHA-256 and the store's receipt.
+1. Generate a quarter pack in the browser, refresh it after a late adjustment with commentary kept, publish, download PDF, .pptx and .xlsx, and confirm through the API that the published numbers do not change after a later refresh; save the published pack to a Chest folder, a Google Drive folder and a SharePoint library through fakes, each holding a PDF with the same digest.
 
-**Evidence.** `src/easel/pack-body.ts` `src/easel/pack-template.ts` `src/easel/pack-pdf.ts` `src/easel/pack-pptx.ts` `src/easel/pack-store.ts` `src/easel/review.ts` `src/ui/pack-tools.tsx` `tests/board-pack.test.mjs` `tests/board-pack-browser.mjs`
-**Gap.** Templates, closed-quarter packs, refresh keeping commentary, immutable publication, PDF, PowerPoint and Excel exports and Drive, SharePoint and Chest saves ship; Gap: Chest's owner-entered address lacks Base's resolved-address egress door (CYCLE-001/003 gate)
+**Evidence.** `src/easel/pack-body.ts`; `src/easel/pack-template.ts`; `src/easel/pack-pdf.ts`; `src/easel/pack-pptx.ts`; `src/easel/pack-store.ts`; `src/easel/review.ts`; `src/ui/pack-tools.tsx`; `tests/board-pack.test.mjs`; `tests/board-pack-browser.mjs`
+**Gap.** Quarter packs and immutable provider-edge saves are delivered. Qualified Base resolved-address and pinned-egress for Chest destinations remains required.
 
 #### REPORT-004 — Linked PowerPoint and Word reporting
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001
 
-**Requirement.** PowerPoint and Word add-ins insert Easel tables, charts and single numbers into a deck or memo, and refresh them in place from a chosen version and period, under the person's role filtering.
+**Requirement.** PowerPoint and Word add-ins insert Easel tables, charts and single numbers into a deck or memo, and refresh them in place from a chosen version and period, under the person's role filtering. [Detailed semantics](docs/planning-semantics.md#report-004).
 
 **Acceptance.**
-1. an Office.js test host inserts a table and a number into a .pptx, refreshes after an Easel change, and sees the new values.
-2. Current doors: the installation's Word and PowerPoint manifests open the ordinary Reports page.
-3. A saved report supplies its chosen source version and through month; the operator selects a period, table/chart/number and aggregate value.
-4. Insertion is explicit, with a document-sharing reminder.
-5. Links persist selectors and stable shape/content-control identifiers only, never credentials or authority.
-6. Refresh reads every report under the current person's audience, Pay and source availability rules before any document changes; it refuses missing or duplicated targets, unavailable rows/periods, changed source/horizon and changed table dimensions.
-7. It preserves target identifiers and layout.
-8. Charts are labeled PNG snapshots with unavailable values distinguished from zero. Existing exported Office values cannot be recalled by later Easel revocation. The linked report Excel door carries the existing aggregate saved-report formulas. `tests/saved-reports.test.mjs` — “Linked Office reports insert a native table and number into a pptx and refresh in place under live report authority” (implemented by `tests/office-report-flow.mjs`) proves insertion into a native OOXML table/text shape, refresh after a real Easel edit, stable targets/reopened links, Word table/number refresh, formula Excel, missing/duplicated targets and current audience refusal. `tests/office-reports-browser.mjs` supplies the corresponding native report controls and chart path at 1440/390.
+1. An Office.js test host inserts a table and a number into a .pptx, refreshes after an Easel change, and sees the new values.
 
-**Evidence.** `tests/saved-reports.test.mjs` (Linked Office reports insert a native table and number into a pptx and refresh in place under live report authority), `tests/office-report-flow.mjs`, `tests/office-reports-browser.mjs`
-**Gap.** None; HTTP/Office.js host insertion and in-place table/number/chart refresh, Word, stable targets, live audience/Pay and formula Excel, plus native installation and report controls at 1440/390 passed
+**Evidence.** `tests/saved-reports.test.mjs`; `tests/office-report-flow.mjs`; `tests/office-reports-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: An Office.js test host inserts a table; point 1: a number into a .pptx; point 1: refreshes after an Easel change; point 1: and sees the new values. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### REPORT-005 — Department budget-owner reporting
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-MAIL-001, BASE-ROLE-001
 
-**Requirement.** Each department owner gets a monthly actual-against-budget statement for their department after close. It includes their top variances, the rows behind them, open tasks and explanations to confirm, by email and in the app, and never includes other departments' detail. Current owners are all active contributors assigned to that department (ct, 19 October); finance can inspect every statement, while a contributor must still belong to its department on every read/export. A close queues one persisted statement per department and one delivery record per then-active contributor, in the same fenced save. Preparation captures actual/budget values and every accepted source row after close; the app overlays current explanation and open-task states. The email captures that scoped content on its first attempt, lists up to five variances in descending absolute amount, and links to the authenticated app statement. Recipient membership and native account are rechecked before every attempt. A provider acceptance is labeled only as acceptance; local development suppresses email and says so. Refused/rate-limited or unconfigured mail stays pending for explicit finance retry with the same message and delivery key; accepted mail is never resent. An uncertain or interrupted attempt remains visibly unresolved and is never blindly retried. ACCESS-001 inherits future custom ownership/group grants and statement recipient/read filtering before it ships. Current open tasks include department metric tasks, outstanding department submissions and department-tagged published pack actions; CYCLE-001 inherits future generic department tasks. Pack decisions may carry an explicit department; finance can classify an older published action through separate metadata without changing its captured pack. Unclassified actions stay in the company pack with a finance reminder and never enter a department email; no department is inferred from free-text ownership.
+**Requirement.** Each department owner receives a monthly actual-against-budget statement after close, with source rows and current follow-up. [Detailed semantics](docs/planning-semantics.md#report-005).
 
 **Acceptance.**
-1. close a month in the API journey with mail fakes; the engineering contributor receives a statement for Engineering only, and a link opens their variances.
+1. After a month closes, Engineering's contributor receives only Engineering's statement and a link to its variances.
+2. The statement includes top variances, accepted rows, open tasks and explanations to confirm in the app and email.
+3. Current department and Pay detail grants filter app reads, workbooks and each email recipient.
+4. The captured statement and delivery records retain their closed-month values while current explanations and open-task states overlay app reads.
 
-**Evidence.** `src/easel/department-statements.ts`, `tests/department-statements.test.mjs`, `tests/department-statements-browser.mjs`
-**Gap.** Scoped close-triggered statements, complete source rows, current tasks/confirmations, explicit pack-action departments, durable honest mail states, finance retry, authenticated app links and formula Excel
+**Evidence.** `src/easel/department-statements.ts`; `tests/department-statements.test.mjs`; `tests/department-statements-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: After a month closes; point 1: Engineering's contributor receives only Engineering's statement; point 1: a link to its variances; point 2: The statement includes top variances; point 2: accepted rows; point 2: open tasks; point 2: explanations to confirm in the app; point 2: email; point 3: Current department; point 3: Pay detail grants filter app reads; point 3: workbooks; point 3: each email recipient; point 4: The captured statement; point 4: delivery records retain their closed-month values while current explanations; point 4: open-task states overlay app reads. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### REPORT-006 — Scheduled cash alerts
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001 · Rules D-1
 
-**Requirement.** Finance sets cash alerts: forecast lowest cash below the floor (`FIN-005`), actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged.
-
-Before this capability ships, REPORT-006 inherits US-001: schedules use the saved IANA company zone (America/New_York for new companies), including daylight saving time, with the zone visible and scheduled versus actual dispatch times recorded.
-
-Current semantics (sx-easel-r31). Finance alone creates, revises, disables and reads cash alert rules and reads and acknowledges their alerts. Every rule checks the operating forecast in the reporting currency, in integer cents. *Forecast cash below the floor* uses the `FIN-005` agreed floor: it breaches when any month after the latest closed month closes strictly below the floor (equality meets it), and names that crossing month and the lowest forecast month and amount. *Actual cash below plan* compares the latest closed month's closing cash in the forecast, which is on accepted actuals (ledger figures, not bank balances), with the approved budget's closing cash for that month; it breaches when the shortfall is strictly more than the rule's amount, or strictly more than its percent of a positive plan (a nonpositive plan has no percentage and is reported as not assessed). *Runway below N months* uses `FIN-005`'s exact unrounded ratio at the earliest month after the latest closed month; non-burning positive cash never breaches. Rules are checked after every accepted or undone actuals file, every month close, every cash-floor or rule save and finance's explicit check, and once a day at 08:00 in the saved company zone (daylight saving included); each scheduled check is recorded with its zone and its scheduled and actual times, and the scheduled run acts as `scheduler:cash-alerts` for the still-active owner or admin who last saved an enabled rule. A breach opens one alert and sends it once to every active finance owner and admin by their `CYCLE-003` preference (immediate email by default, the daily digest, or chat only); the email carries the numbers, the cause (the person and event, or the scheduled check, that found it) and a link to the alert. An open alert sends again only when it worsens (an earlier crossing or breach month, lower lowest cash, a larger shortfall, or runway lower in hundredths of a month than at its last send) or when a check falls on a company-zone date at least the rule's interval (1 to 365 days, seven by default) after its last send's date. A check that finds no breach ends the alert without a message, and revising or disabling a rule ends its open alert, so the next breach opens a new one. Acknowledgment records the finance person and time against the latest send, once per send, and does not change when the alert sends again. No approved budget, no agreed floor, an import in progress, a reporting-currency change, incomplete cash, a budget without that month or no closed month is shown as the rule's reason it was not checked, never as zero. Under `MOBILE-001`, the Overview tab's Cash alerts card shows rules, alerts, sends, causes and acknowledgment at 1440 and 390 pixels without page overflow. Bank-balance rules now use CONNECT-009's fresh aggregate and its conservative finance audience pending ct approval. Shared chat follows `CYCLE-003`'s approved generic sign-in notice and retains its qualified Base egress gap. The AGENT-003 private Slack route now carries the numbers, crossing month, cause and authenticated alert link only to an explicitly mapped and consenting current native finance recipient, with live identity/authority checks and no fallback. Ct approval of that private identity/consent/custody default is pending; shared channels receive no financial detail. The shared Slack fake now proves once-per-breach, worsening and interval generic notices without financial detail. `tests/plaid-cash.test.mjs` proves the bank-fake amount and percentage acceptance, including the $60,000 shortfall, no-change and worsening refreshes and acknowledgment.
+**Requirement.** Finance sets cash alerts: forecast lowest cash below the floor, actual or bank cash below plan by an amount or percent, and runway below N months. They are checked after every refresh and on a schedule. Each alert is sent once per breach by email and chat with the numbers, the cause and a link. It re-alerts only on worsening or after a set interval, and records when it was acknowledged. [Detailed semantics](docs/planning-semantics.md#report-006).
 
 **Acceptance.**
-1. with a fake clock, a bank fake and mail and Slack fakes: a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month; bank cash $60,000 below plan under a $50,000 rule sends one alert, and a 10% rule fires the same way; runway falling to 11 months under a 12-month rule sends one alert; a second refresh with no change sends none; a refresh that worsens the breach re-alerts once; an unchanged breach re-alerts after the set interval (for example seven days) on the fake clock; and acknowledgment is recorded.
-2. `tests/cash-alerts.test.mjs` (REPORT-006) closes a January $60,000 below plan with mail fakes and a fake clock: one alert each for the floor (crossing month December), the $50,000 and 10% below-plan rules and runway falling to 11 months under a 12-month rule; a no-change refresh and an explicit check send none; a worsening refresh re-alerts each once with its cause; the scheduled check runs at 08:00 company time across the daylight-saving change with scheduled and actual times recorded, and an unchanged breach re-alerts after seven days; acknowledgment is recorded once at the exact revision; recovery ends every alert; contributors and viewers are refused.
-3. `tests/notifications.test.mjs`, “Private Slack notifications require the mapped native person’s consent and recheck exact human, team, private IM and live authority without fallback”, proves private floor numbers, crossing month, cause and link, deduplicated rechecks and revoked/current-authority refusal.
-4. `tests/cash-alerts-browser.mjs` (REPORT-006) adds a floor rule in the app, reads the alert's numbers and cause and acknowledges it at 1440, reads it at 390, and a board viewer sees no alert card, without page overflow.
+1. With a fake clock, a bank fake and mail and Slack fakes: a refresh that drops forecast lowest cash below the floor sends one alert with the crossing month; bank cash $60,000 below plan under a $50,000 rule sends one alert, and a 10% rule fires the same way; runway falling to 11 months under a 12-month rule sends one alert
+2. A second refresh with no change sends none
+3. A refresh that worsens the breach re-alerts once
+4. An unchanged breach re-alerts after the set interval (for example seven days) on the fake clock
+5. acknowledgment is recorded.
 
-**Evidence.** `tests/cash-alerts.test.mjs` (REPORT-006 cash alerts: floor, below-plan and runway rules alert once per breach on refresh, re-alert on worsening or after the interval on the company-zone schedule, and record acknowledgment) `tests/plaid-cash.test.mjs` (FIN-007 CONNECT-009 native finance reads sealed Plaid cash once into weekly estimates and source-labeled cash alerts without changing the plan) `tests/cash-alerts-browser.mjs` `tests/notifications.test.mjs` (Private Slack notifications require the mapped native person’s consent and recheck exact human, team, private IM and live authority without fallback) `tests/private-slack-browser.mjs`
-**Gap.** Floor, bank/ledger shortfall, runway, deduplication/re-alert, DST, acknowledgment and private financial Slack proven; ct private identity/consent/custody approval and qualified Base egress for owner-entered shared webhooks remain
+**Evidence.** `tests/cash-alerts.test.mjs`; `tests/plaid-cash.test.mjs`; `tests/cash-alerts-browser.mjs`; `tests/notifications.test.mjs`; `tests/private-slack-browser.mjs`
+**Gap.** Forecast, actual and reviewed bank alerts are delivered. Qualified Base resolved-address/pinned-egress and complete scheduled provider-source qualification remain incomplete; bank audience follows CONNECT-009.
 
-#### REPORT-007 — BI and warehouse feeds
+#### REPORT-007 — Read-only warehouse driver inputs
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001
 
-**Requirement.** Operational metrics flow in from Snowflake, BigQuery or Databricks as driver actuals (for example active users or shipments), by a read-only query that finance reviews. Easel's actuals, plans and versions flow out to Power BI, Looker and Tableau through a read-only, role-scoped dataset endpoint and scheduled CSV or Parquet drops.
+**Requirement.** Reviewed Snowflake, BigQuery and Databricks metrics become driver actuals. RL-104 requires both dialect-aware query validation and a provider-enforced read-only role, with qualified Base resolved-address egress before external connections ship. [Detailed semantics](docs/planning-semantics.md#report-007).
 
 **Acceptance.**
-1. a warehouse fake supplies a monthly metric that drives a revenue line; a BI client fake reads the dataset endpoint with a scoped token and receives no pay detail; a scheduled nightly drop writes CSV and Parquet files to a storage fake whose rows equal the dataset endpoint's, with no pay detail.
-2. Current semantics (sx-easel-c41).
-3. Warehouse inputs: finance connects Snowflake, BigQuery or Databricks from a signed-in session (credentials sealed, never archived or returned; BigQuery uses its fixed host with a bigquery.readonly grant, Snowflake and Databricks hosts are owner-entered but must be vendor-owned domains).
-4. Finance saves one query per metric (one SELECT returning `period` as YYYY-MM and `value`, at most two decimals), previews its result without changing anything and approves the exact query text with the result fingerprint it reviewed; editing the text withdraws approval.
-5. A refresh runs only the approved text and stores the monthly values; a usage revenue driver bound to the metric (`warehouseMetric`) uses the measured quantity for each month that has one and grows from it afterwards, with the trace naming the metric and the approved query.
-6. The local query policy parses the warehouse dialect and permits one SELECT with named tables, parsed subqueries and supported scalar or aggregate functions; writes, comments, INTO, unknown syntax, unknown functions and external table functions are refused before provider contact, including on previously saved queries.
-7. Databricks accepts the intersection of Spark SQL validation and the Hive SELECT grammar.
-8. Finance must supply a read-only role or grant; Easel does not yet verify that credential boundary. Responses are streamed with a 4 MB ceiling, at most 600 monthly rows, complete inline results and a 25-second deadline covering response-body consumption and, for BigQuery, both the grant and query calls. Refusal preserves prior metrics, approvals and plan values. BI dataset: `GET /api/easel/dataset/:dashboard?format=json|csv|parquet|xlsx` returns one row per saved-report row, month and series (actual, source version, comparison, saved versions) in integer minor units with unavailable values empty or null (the xlsx format is the saved report's own formula workbook), built through the saved report, so every REPORT-001 rule applies to the reader's token or session: current audience and department grants, no individual compensation detail, read scope only. Drops: finance schedules (`bi-drop-save`) a nightly company-zone CSV and Parquet drop of one saved report to a connected Chest, Google Drive or SharePoint store for a named audience account whose current access is rechecked every run; files never carry Pay detail whatever that account's grant; a run records per-file receipts and SHA-256 digests, retries only unfinished files and stops after three attempts for the day. Stage-based and other pipeline metrics inherit onto REV-001. Ct approval, 22 October 2026 at 18:31 UTC, remains subject to its riders: dialect-parsed single SELECT with prohibited forms refused; a read-only credential boundary and refusal of detectable write capability; timeout, row, byte and cost ceilings; HTTPS vendor hosts without redirects or private resolution, with connect-time address checks; the current named audience, never Pay detail; and no query results retained beyond the pack. Local query and response proof: `tests/bi-feeds.test.mjs` — “REPORT-007 a reviewed warehouse query drives a revenue line and a scoped BI token and the nightly CSV and Parquet drop carry the same pay-free dataset rows” asserts supported Snowflake, BigQuery and Databricks SELECTs, pre-contact policy refusals, the 600-row boundary, declared and streamed 4 MB overflow, a stalled response-body deadline, retained prior metrics and unchanged plans through query save, preview and refresh. `tests/bi-feeds-browser.mjs` asserts native query review and approval, streamed overflow and unsafe-function errors with retained metrics and plan at 1440; warehouse errors and BI dataset screens are captured at 1440 and 390.
+1. A warehouse-edge fixture supplies a monthly metric that drives an exact revenue-line amount.
+2. Query validation and provider authority both establish read-only access; textual SELECT filtering alone is insufficient.
+3. Credential custody, named audience, row/byte/time/provider-cost bounds and qualified connect-time egress retain the warehouse boundary.
 
-**Evidence.** `src/easel/warehouse.ts` `src/easel/warehouse-provider.ts` `src/easel/warehouse-query-policy.ts` `src/easel/dataset.ts` `src/easel/bi-drops.ts` `tests/bi-feeds.test.mjs` (reviewed warehouse query and bounded failure behavior) `tests/bi-feeds-browser.mjs` (native warehouse refusal and retained plan)
-**Gap.** Qualified Base resolved-address and pinned-egress enforcement (gr-base-285) for owner-entered warehouse hosts and Chest drops; connect-time address enforcement; read-only credential verification and detectable write-capability refusal; provider cost ceilings; required real-provider receipts. These held points remain unproved; no egress qualification is claimed.
+**Evidence.** `src/easel/warehouse.ts`; `src/easel/warehouse-provider.ts`; `src/easel/warehouse-query-policy.ts`; `src/easel/dataset.ts`; `src/easel/bi-drops.ts`; `tests/bi-feeds.test.mjs`; `tests/bi-feeds-browser.mjs`
+**Gap.** Validated warehouse queries and bounded previews are delivered. Provider-enforced read-only credential verification, detectable write-capability refusal, cost ceilings, connect-time resolution and qualified Base pinned-egress remain unproved; RL-104 does not waive these.
+
+#### REPORT-009 — BI datasets and scheduled drops
+
+Core · target · **partial** · From REPORT-007 · Cites BASE-ROLE-001
+
+**Requirement.** Power BI, Looker and Tableau consume role-scoped planning datasets and scheduled CSV or Parquet drops. RL-104 requires each Pay-free export to recheck its named audience. [Detailed semantics](docs/planning-semantics.md#report-007).
+
+**Acceptance.**
+1. A scoped BI client receives actuals, plans and versions without Pay detail.
+2. A nightly storage-edge drop contains CSV and Parquet rows equal to the dataset's rows, with no Pay detail.
+3. Each export rechecks the named audience; credentials remain outside archives and owner-entered destinations require qualified Base egress.
+
+**Evidence.** `src/easel/warehouse.ts`; `src/easel/warehouse-provider.ts`; `src/easel/warehouse-query-policy.ts`; `src/easel/dataset.ts`; `src/easel/bi-drops.ts`; `tests/bi-feeds.test.mjs`; `tests/bi-feeds-browser.mjs`
+**Gap.** Scoped datasets and CSV/Parquet fixtures are delivered. Qualified external-drop egress, full named-provider qualification and the adopted live audience on every delivery remain incomplete under RL-104.
 
 ### Access, audit and governance
 
 #### ACCESS-001 — Groups and per-dimension permissions
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-SIGNIN-001
 
-**Requirement.** Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario (`CYCLE-004`) and by capability: compensation (`PEOPLE-005`), connections, model structure, approvals and publishing. Every server route enforces the grants, and an access report shows who can see what. Before groups ship, ACCESS-001 inherits CYCLE-004: scenario read/edit group shares use current group membership on every read, comparison, export and write; membership removal ends access immediately. Before shipping, ACCESS-001 inherits REPORT-005: its ownership and group grants govern department-statement recipients, reads and exports, with recipient access rechecked before delivery.
+**Requirement.** Finance creates groups (for example FP&A team, department heads, board) and grants read or edit by dimension member (department, entity, region), by scenario and by capability: compensation, connections, model structure, approvals and publishing. An access report shows who can see what. Before groups ship, ACCESS-001 inherits CYCLE-004: scenario read/edit group shares use current group membership on every read, comparison, export and write; membership removal ends access immediately. Before shipping, ACCESS-001 inherits REPORT-005: its ownership and group grants govern department-statement recipients, reads and exports, with recipient access rechecked before delivery. [Detailed semantics](docs/planning-semantics.md#access-001).
 
 **Acceptance.**
-1. the API journey makes a group with edit on two departments and no pay access, adds a person, and confirms reads, writes and exports respect it; the access report lists it.
-2. Ct batch-8 ruling E, 22 October 2026: native owner/admin sessions administer groups; only the signed-in owner grants group Pay detail or changes membership of a pay-enabled group.
-3. Groups never elevate a person's planner/viewer role.
-4. Department grants union with existing assignments unless finance explicitly selects group-only authority; Each grant (a group grant or a direct assignment) is evaluated alone: its departments and every dimension it constrains intersect, including current descendants, and a source untagged in a constrained dimension is denied.
-5. Authority is the union of a person's grants, so combining grants never creates a pairing no single grant allows and never narrows another grant.
-6. Scenario shares use live memberships.
-7. Tokens intersect current authority with their issuance ceiling, including dimensions/members, capabilities, private shares and pay; later grants never expand a token.
-8. Global approvals and publishing require both the capability and visibility across every department and dimension member. Unsupported scoped cash/balance/headcount and unattributed discussions, tasks and explanations are unavailable rather than inferred. Gauge connection custody retains ct's 19 October native-finance session boundary; the connections capability confers nothing beyond the native-finance Gauge boundary. ACCESS-002 inherits these live group semantics for SCIM; ENTITY-001 inherits entity-member authority; REPORT-001 inherits current author and recipient filtering.
+1. Makes a group with edit on two departments and no pay access, adds a person, and confirms reads, writes and exports respect it
+2. The access report lists it.
 
-**Evidence.** `tests/groups.test.mjs` (Independent grants preserve department and dimension pairings across reads, writes, reports, exports and token ceilings; ACCESS-001 group department and dimension authority, scenario shares, capability and pay grants retain live token ceilings; ACCESS-001 statement ownership groups determine recipients and revoke app, workbook and pending email access); `tests/groups-browser.mjs` (native group administration, tagged planner entry, group sharing and Excel at 1440/390); `tests/api-tokens.test.mjs`, `tests/compensation-access.test.mjs`, `tests/gauge-utilization.test.mjs` (existing token/pay/custody boundaries)
-**Gap.** None; ct batch-8 ruling E approved per-grant composition, native administration and Gauge custody. `tests/entities.test.mjs` (ENTITY-001 local entity plans translate independently and eliminate reviewed source-backed charges, balances and settlements) proves whole-entity and workbook refusal for crossed department/entity grants; the statement ownership test proves per-department slices and captured-email audience fencing even when navigation summaries are unrestricted. Independent paired-grant HTTP assertions cover cross-product refusal, exact CSV/Excel/report totals, non-expanding token ceilings, unrestricted grants and separately listed access-report grants
+**Evidence.** `tests/groups.test.mjs`; `tests/groups-browser.mjs`; `tests/api-tokens.test.mjs`; `tests/compensation-access.test.mjs`; `tests/gauge-utilization.test.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Makes a group with edit on two departments; point 1: no pay access; point 1: adds a person; point 1: and confirms reads; point 1: writes; point 1: exports respect it; point 2: The access report lists it. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### ACCESS-002 — SSO and SCIM
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-SIGNIN-001, BASE-ROLE-001
 
-**Requirement.** Easel is a SAML 2.0 and OIDC relying party for Okta, Microsoft Entra ID, Google Workspace and [Auth](https://github.com/just-every/run-auth), and a SCIM 2.0 server that provisions and deprovisions people and group membership. Deprovisioning ends the person's sessions at once and keeps their historical attribution.
+**Requirement.** SAML and OIDC sign-in and SCIM provisioning support Okta, Microsoft Entra ID, Google Workspace and Auth. RL-101 requires explicit configured identity associations and current native privilege grants; SCIM grants ordinary membership only, deprovisioning promptly removes live authority, and history retains attribution without restoring credentials. [Detailed semantics](docs/planning-semantics.md#access-002).
 
 **Acceptance.**
-1. with an IdP fake, sign in one person by SAML and another by OIDC; provision a person and a group by SCIM, add the person to the group by a SCIM group update and see the group's grants (`ACCESS-001`) apply, remove them and see the grants end; deprovision the person and see their session refused on the next request while their past submissions still show their name.
-2. Adopted conservative implementation default, pending ct approval: enterprise identity is off without explicit installation configuration.
-3. SAML uses a pinned IdP certificate/issuer, signed response and assertion, exact audience/destination/recipient, expiring one-use browser-bound request and server-owned subject-to-existing-account associations.
-4. OIDC uses Base's pinned presets, PKCE/state/nonce and the same explicit existing-account association.
-5. No JIT sign-in account creation or email-claim auto-linking occurs.
-6. A separately configured SCIM bearer acts only while its configured native owner remains active; it creates ordinary viewer/contributor members and groups without grants.
-7. Native finance assigns group grants.
-8. SCIM cannot create/promote owner/admin/finance roles, grant Pay detail or change membership of a pay-enabled group. Live native group grants, role/token ceilings and connection custody remain authoritative. Deprovisioning fences the native account, revokes its sessions, links and API credentials and keeps attribution. Enterprise configuration, machine associations and transaction custody are archive-excluded; identity erasure removes provider associations. Future AGENT-011 governance inherits this machine-authority boundary before managing enterprise provisioning. `tests/groups.test.mjs` — “ACCESS-002 fake SAML and OIDC HTTP sign-ins, SCIM live group grants and immediate deprovision preserve submission attribution” covers the original sign-in/provision/group-add/remove/deprovision/history points; its “Enterprise SAML refuses unverified, unassociated, expired and misdirected assertions; OIDC refuses invalid nonce and unknown subjects” exercises the protocol refusal boundary. The named HTTP flows pass; `tests/enterprise-identity-browser.mjs` proves native sign-in, explicit confirmation and a real cross-site HTTPS signed SAML return into the authenticated built app at 1440/390.
+1. An identity-provider fake signs in one explicitly associated person by SAML and another by OIDC.
+2. SCIM provisions an ordinary person and group; adding and removing membership changes ACCESS-001 group grants.
+3. Deprovisioning refuses the person's next request while their past submissions retain their name.
+4. Neither just-in-time linking nor provisioning grants privileged native authority; configured identity associations and current native grants are required.
+5. SAML/OIDC protocol refusals, archive-excluded identity custody, provider-association erasure and the ACCESS-001 grant intersections preserve the documented identity boundary.
 
-**Evidence.** `tests/groups.test.mjs` (ACCESS-002 fake SAML and OIDC HTTP sign-ins, SCIM live group grants and immediate deprovision preserve submission attribution; Enterprise SAML refuses unverified, unassociated, expired and misdirected assertions; OIDC refuses invalid nonce and unknown subjects), `tests/enterprise-identity-browser.mjs` (native cross-site HTTPS SAML sign-in at 1440/390)
-**Gap.** All requested fake-provider sign-in/provision/group-add/remove/deprovision/history points pass; ct approval of explicit association/provisioning/custody/deprovisioning defaults remains
+**Evidence.** `tests/groups.test.mjs`; `tests/enterprise-identity-browser.mjs`
+**Gap.** SAML/OIDC/SCIM fixtures and current group changes are delivered. All named IdP journeys, native-privilege/custody outcomes and the complete RL-101 boundary remain to be asserted and rejudged; the ruling is settled.
 
 #### AUDIT-001 — Model audit trail
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-AUDIT-001 · Rules D-1
 
-**Requirement.** Every change to setup, inputs, formulas, mappings, connections, permissions, submissions, approvals, closes and packs is recorded with actor (person or agent), time, record, scenario, revision before and after, and the changed values. Finance filters the trail by person, record, scenario and date, and exports it. The trail is append-only and survives `rer export` and restore.
+**Requirement.** Planning changes retain actor, scenario, record, revisions before and after and changed values within the shared searchable audit. [Detailed semantics](docs/planning-semantics.md#audit-001).
 
 **Acceptance.**
-1. through the API, make changes as three people, filter the trail by one person and one scenario, export it as CSV, and confirm the database refuses to update or delete a trail row.
+1. Changes by three people to setup, inputs, formulas, mappings, connections, permissions, submissions, approvals, closes and packs identify the planning record, scenario, before/after revisions and changed values.
+2. Filtering by one person and scenario and exporting CSV retains those planning-specific fields.
 
-**Evidence.** `src/easel/audit.ts` `src/easel/audit-write.ts` `tests/audit.test.mjs` `tests/restore-flow.mjs`
-**Gap.** Atomic before/after values for native and imported records, person or agent attribution, finance filters and complete CSV export; append-only database guards and real CLI restore preserve the trail
+**Evidence.** `src/easel/audit.ts`; `src/easel/audit-write.ts`; `tests/audit.test.mjs`; `tests/restore-flow.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Changes by three people to setup; point 1: inputs; point 1: formulas; point 1: mappings; point 1: connections; point 1: permissions; point 1: submissions; point 1: approvals; point 1: closes; point 1: packs identify the planning record; point 1: scenario; point 1: before/after revisions; point 1: changed values; point 2: Filtering by one person; point 2: scenario; point 2: exporting CSV retains those planning-specific fields. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### ERASE-001 — Person erasure
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-DATA-003, BASE-DATA-006 · Rules D-2
 
-**Requirement.** Finance can erase a former member's personal data: their name, email and membership details, and, for an employee record from `PEOPLE-*`, their name and identifiers. Planning amounts stay, attributed to a stable pseudonym. Immutable snapshots keep their recorded digest, and every read and export of them shows the pseudonym in place of the erased name. The erasure returns a receipt with counts and time, and the audit trail records it without the erased data. Erasing the last finance member is refused. The member must first be deactivated, and the installation owner cannot be erased. The stable pseudonym is an HMAC of the installation-local person id under a dedicated installation erasure key, never the session secret; that key is excluded from archives. The durable map contains identity hashes and the pseudonym, with no plaintext erased identity, and is carried in archives. Erasure revokes the former member's native sessions, sign-in links and API credentials in the same revision-fenced save. Ct approved the native export policy on 20 October 09:40Z: `rer export` maps every row and snapshot payload at export time; stored snapshot bytes and hashes stay unchanged. The archive manifest names `easel-erasure-v1`, the erasure receipt ids, and original/exported snapshot digests; exported reference digests follow the transformed payloads so restore verifies them. The same map filters app/API/MCP reads, open exports and pack downloads. Current CSV and XLSX original text and encoded journals are transformed before export; a binary original containing a recoverable erased identity refuses export rather than publishing those bytes. Future employee/provider/import record kinds inherit the same identity-map obligation before shipping (PEOPLE-001 to PEOPLE-004, PEOPLE-007, MOVE-001 to MOVE-003, ACCESS-002).
+**Requirement.** Erasing a former member pseudonymizes their planning history without losing financial amounts or the integrity of captured planning decisions. [Detailed semantics](docs/planning-semantics.md#erase-001).
 
 **Acceptance.**
-1. through the API, erase a contributor who submitted and commented; their name is absent from live views, pack downloads and `rer export`, their submissions show the pseudonym, the snapshot digest is unchanged, and the receipt and audit row exist.
+1. After a contributor who submitted and commented is erased, their name is absent from live views, pack downloads and installation export.
+2. Submissions and immutable-snapshot reads show the stable pseudonym while planning amounts and stored snapshot digests remain unchanged.
+3. The receipt includes erased planning-record counts and time.
+4. The last finance member and installation owner cannot be erased; the member must first be deactivated.
+5. Provider-scoped identities, payroll originals and restore use the documented erasure map without restoring credentials or recoverable erased personal data.
 
-**Evidence.** `tests/erasure.test.mjs` `tests/erasure-portability.test.mjs` `tests/erasure-browser.mjs`
-**Gap.** —
+**Evidence.** `tests/erasure.test.mjs`; `tests/erasure-portability.test.mjs`; `tests/erasure-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: After a contributor who submitted; point 1: commented is erased; point 1: their name is absent from live views; point 1: pack downloads; point 1: installation export; point 2: Submissions; point 2: immutable-snapshot reads show the stable pseudonym while planning amounts; point 2: stored snapshot digests remain unchanged; point 3: The receipt includes erased planning-record counts; point 3: time; point 4: The last finance member; point 4: installation owner cannot be erased; point 4: the member must first be deactivated; point 5: Provider-scoped identities; point 5: payroll originals; point 5: restore use the documented erasure map without restoring credentials or recoverable erased personal data. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### API-001 — Public API with scoped tokens
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-INPUT-001
 
-**Requirement.** The HTTP API (`API.md`) is available to integrations through personal and service tokens with read or write scopes, the issuing person's role and an expiry. Requests are rate-limited, every write is fenced by revision as today, and token use enters the audit trail.
+**Requirement.** Integrations use scoped, expiring personal or service credentials to read and revise planning records within the issuing person's planning authority. [Detailed semantics](docs/planning-semantics.md#api-001).
 
 **Acceptance.**
-1. issue a read-only token, read a scenario, be refused a write, revoke the token and be refused a read.
+1. A read-only credential reads a scenario and cannot write it.
+2. Revoking that credential prevents its next read.
+3. A write requires the current planning revision and token scope, and credential use appears in the planning audit.
 
-**Evidence.** `src/easel/token-admin.ts` `src/easel/token-auth.ts` `tests/api-tokens.test.mjs` `API.md`
-**Gap.** Personal and named service bearers use Base credentials, read/write scopes, expiry, revocation, issuer role and department ceilings, durable rate limits, atomic write fences and token-use audit events; credentials stay out of exports
+**Evidence.** `src/easel/token-admin.ts`; `src/easel/token-auth.ts`; `tests/api-tokens.test.mjs`; `API.md`
+**Gap.** Carried evidence establishes 5 audited outcomes. Complete assertion mapping remains owed for point 1: A read-only credential reads a scenario. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### API-002 — Webhooks and automation apps
 
-Core · target · **missing**
+Core · target · **missing** · Cites BASE-ROLE-001
 
-**Requirement.** Signed webhooks fire on approval, close, publish, refresh failure, alert and task events. Published apps for [Crank](https://github.com/just-every/run-crank), Zapier and Make expose those triggers and the proposal and comment actions.
+**Requirement.** Signed webhooks fire on approval, close, publish, refresh failure, alert and task events. Published apps for [Crank](https://github.com/just-every/run-crank), Zapier and Make expose those triggers and the proposal and comment actions. [Detailed semantics](docs/planning-semantics.md#api-002).
 
 **Acceptance.**
-1. register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID.
+1. Register a webhook receiver fake, approve a budget, and receive one signed event with a verifiable signature; replaying it is detectable by its ID.
 2. The Crank, Zapier and Make apps each run against a running Easel in that platform's developer test tooling (a local Crank installation, the Zapier Platform CLI, and a Make custom app in a test organization): a trigger receives an approval event, and a create-proposal action creates a proposal bound to the revision.
 
 **Evidence.** None.
@@ -1378,15 +1479,16 @@ Core · target · **missing**
 
 #### API-003 — MCP endpoint for outside agents
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-AGENT-002, BASE-AGENT-005, BASE-AGENT-007, BASE-ROLE-001
 
-**Requirement.** An MCP endpoint exposes Easel's reads (scenarios, comparisons, variances, metrics) and its proposal, comment and explanation commands to the person's own agent (for example Claude). It uses that person's authority and filtering, and it can never approve, close, publish or promote.
+**Requirement.** The person's outside agent reads scenarios, comparisons, variances and metrics and performs planning actions through Easel's tool registry. Draft and comment work carries standard, outside contact external and binding approval, close, publication or promotion commitment; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#api-003).
 
 **Acceptance.**
-1. an MCP client signed in as a contributor lists tools, reads a variance, creates a proposal, and is refused the approve and promote tools.
+1. A contributor's MCP client lists the planning tools, reads a variance and creates a proposal within that contributor's departments.
+2. Under a company policy holding commitment calls, approval and promotion produce no effect until that policy's decision permits them.
 
-**Evidence.** `tests/mcp.test.mjs` (API-003)
-**Gap.** None.
+**Evidence.** `tests/mcp.test.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A contributor's MCP client lists the planning tools; point 1: reads a variance; point 1: creates a proposal within that contributor's departments; point 2: Under a company policy holding commitment calls; point 2: approval; point 2: promotion produce no effect until that policy's decision permits them. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Entities, currency and US defaults
 
@@ -1394,435 +1496,401 @@ Core · target · **done**
 
 Core · target · **partial**
 
-**Requirement.** A company plans several entities (for example a US C-corp and a services subsidiary), each with its own ledger connection (`CONNECT-001` to `CONNECT-004`, `CONNECT-011`), or several entities from one connection: a Sage Intacct multi-entity shared company (`CONNECT-011`) or NetSuite subsidiaries (`CONNECT-003`). Easel shows consolidated P&L, balance sheet and cash with intercompany balances and charges eliminated by rules finance sets. Entity-level access uses `ACCESS-001`.
+**Requirement.** A company plans several entities (for example a US C-corp and a services subsidiary), each with its own ledger connection (`CONNECT-001` to `CONNECT-004`, `CONNECT-011`), or several entities from one connection: a Sage Intacct multi-entity shared company or NetSuite subsidiaries. Easel shows consolidated P&L, balance sheet and cash with intercompany balances and charges eliminated by rules finance sets. Entity-level access uses `ACCESS-001`. [Detailed semantics](docs/planning-semantics.md#entity-001).
 
 **Acceptance.**
-1. two entities with an intercompany management fee; the API journey reads entity and consolidated statements in which the fee and the intercompany balance are eliminated and consolidated totals equal the sum less eliminations; the same holds when both entities arrive from one Sage Intacct multi-entity connection fake (`CONNECT-011`).
-2. Current native management-consolidation semantics: a native owner/admin session binds each entity to its own official working source plan and fixed local currency, and assigns the entities to an explicit reporting-currency group.
-3. Derived proposals, branches, approved budgets and kept forecasts retain their entity/currency boundary.
-4. A newly bound copied template receives its own entity member and keeps its entered local amounts, without changing its source; bind an inherited template before deriving further versions.
-5. Binding a source that contains compensation requires Pay detail.
-6. Entity is a stable custom dimension member; input entry cannot relabel an input into another entity, and ordinary scenario reads, comparisons and exports check the live entity grant.
-7. Whole-entity statements require every department in that entity; narrower grants use the scoped Plan view.
-8. A reader with only some entities sees only those entities, and full consolidated totals remain unavailable. Each entity has its own budget/average/month-end rate table. Translation happens once per entity before summation; P&L uses average rates and balance sheets month-end rates with a visible translation adjustment. Local cash-flow statements retain local currency. The consolidated cash bridge uses prior month-end opening cash, average-rate receipts/payments and month-end closing cash with a separate cash translation effect. Missing rates, unbalanced or incomplete source statements, and stale/overlapping eliminations make the affected consolidated month unavailable. Finance explicitly reviews both input origins and local charge, receivable/payable and settlement amounts; each side must agree after translation and cannot exceed the selected source or aggregate outstanding balance. No matching or amounts are inferred. Workbook totals use the same authorized sum-less-elimination formulas.
+1. Two entities with an intercompany management fee
+2. Reads entity and consolidated statements in which the fee and the intercompany balance are eliminated and consolidated totals equal the sum less eliminations
+3. The same holds when both entities arrive from one Sage Intacct multi-entity connection fake.
 
-**Evidence.** `tests/entities.test.mjs` (ENTITY-001 local entity plans translate independently and eliminate reviewed source-backed charges, balances and settlements); `tests/entities-browser.mjs` (native entity binding, separate rates, reviewed charge/balance elimination, local and consolidated statements, formula Excel and unavailable months at 1440/390)
-**Gap.** Native entity plans, per-entity translation, exact reviewed eliminations and live entity/department authority are proven. BLOCKED: CONNECT-011 account-blocked Sage Intacct adapter for the required multi-entity connection-fake journey; all ledger entity sources and entity-scoped actual close remain unavailable. ACCESS-001 composition follows ct batch-8 ruling E
+**Evidence.** `tests/entities.test.mjs`; `tests/entities-browser.mjs`
+**Gap.** Native entity translation and consolidation are delivered. Provider-bound entity actuals and the Sage Intacct shared-company fixture require CONNECT-003/CONNECT-011; bound-source close still refuses an unpartitioned ledger.
 
 #### ENTITY-002 — Multi-currency planning
 
-Core · target · **done**
+Core · target · **partial**
 
-**Requirement.** An entity plans in its local currency and reports in USD, using rate tables that finance keeps (budget rate, monthly average and month-end rates). Profit and loss converts at average rates, the balance sheet at month-end rates, and the translation difference is shown. Constant-currency comparisons are available.
-
-Current semantics (sx-easel-r31). This installation's plan is the entity: its plan currency is the local currency, and finance names one reporting currency (USD by default; never the plan currency). Finance keeps one rate row per month with a budget, an average and a month-end rate, each the reporting-currency amount of one unit of plan currency, a decimal above zero with at most six places, stored as integer millionths. Rates are read when a view is built, so revising a rate changes every scenario view (working or frozen) but never rewrites a stored calculation, approved budget, kept forecast or published pack. Every amount is translated once from the plan's own integer cents, rounding half away from zero, and totals are sums of translated parts, so each statement foots. Profit and loss translates each month at that month's average rate. The balance sheet translates every line at the month-end rate; opening equity at the month-end rate of the month before the plan; retained earnings as the running sum of translated monthly profit; contributed equity as the running sum of each month's change at that month's average rate. The translation adjustment is translated assets minus liabilities minus equity, less the plan's own balance difference (which is translated and carried visibly, never absorbed), shown as a running balance and as the month's movement. A month lacking the rate it needs (average for profit, month-end for the balance sheet, the month-end before the plan for opening equity, or an earlier average for the running sums) is listed as unavailable with the missing rate and is never zero or guessed. Cash-flow statements are not translated. For a closed month the constant-currency variance translates the approved budget at the budget rate and actual at the average rate and again at the budget rate: variance = actual − budget, constant-currency variance = actual at the budget rate − budget, and currency effect = actual − actual at the budget rate, so variance = constant-currency variance + currency effect; totals are profit (revenue minus costs) from rounded rows. A reader sees translated amounts only from the same scenario and variance views their role already reads; only finance edits rates, and the rate table is in the open export. Plan-currency changes after rates are entered mark the table as for another currency until finance enters new rates. ENTITY-001 inherits a rate table per entity, and each entity's translated statements before consolidation ships.
+**Requirement.** An entity plans in its local currency and reports in USD, using rate tables that finance keeps (budget rate, monthly average and month-end rates). Profit and loss converts at average rates, the balance sheet at month-end rates, and the translation difference is shown. Constant-currency comparisons are available. [Detailed semantics](docs/planning-semantics.md#entity-002).
 
 **Acceptance.**
-1. a CAD entity with budget and actual rates; the API journey reads USD statements, a translation adjustment, and a constant-currency variance.
-2. `tests/translation.test.mjs` (ENTITY-002) sets CAD rates through the finance-only door (refusing contributors, viewers, the plan currency, zero, over-precise and empty entries), reads average-rate profit and loss, month-end balance sheets, the translation adjustment checked by hand from the plan's equity, unavailable months, the closed-month constant-currency variance with its currency effect, frozen snapshots unchanged by a rate revision, and viewer/contributor reads.
-3. `tests/translation-browser.mjs` (ENTITY-002) enters rates in the app and reads the tables and the Review variance as finance and a board viewer at 1440/390 without page overflow.
+1. A CAD entity with budget and actual rates
+2. Reads USD statements, a translation adjustment, and a constant-currency variance.
 
-**Evidence.** `src/easel/translation.ts` `src/easel/currency-rates.ts` `tests/translation.test.mjs` `tests/translation-browser.mjs`
-**Gap.** None.
+**Evidence.** `src/easel/translation.ts`; `src/easel/currency-rates.ts`; `tests/translation.test.mjs`; `tests/translation-browser.mjs`
+**Gap.** Carried evidence establishes 2 audited outcomes. Complete assertion mapping remains owed for point 2: Reads USD statements; point 2: a translation adjustment; point 2: and a constant-currency variance. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### US-001 — US defaults
 
-Core · target · **done**
+Core · target · **partial** · Rules D-1
 
-**Requirement.** A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYYY dates, a January fiscal year with any other start month available, US time zones for schedules and reminders, and the US payroll and tax assumptions of `FIN-006` and `PEOPLE-004`. Files with US date and number formats import without extra choices.
-
-Current capabilities complete US-001 under ct's 19 October ruling. Finance can change the reporting currency, fiscal start, English locale (US, UK or Australia), date display (MM/DD/YYYY, DD/MM/YYYY or ISO) and IANA company time zone. New companies use America/New_York, including daylight saving time when scheduled capabilities ship. Native date controls follow the browser/OS picker while transport dates remain ISO; app dates follow the saved display preference. Existing captured amounts and digests are unchanged. FIN-006 and PEOPLE-004 provide their inherited US statutory payroll and tax defaults, with effective-year assumptions and retained finance overrides. CONNECT-005, CYCLE-001, CYCLE-003, REPORT-001 and REPORT-006 inherit using the saved company zone for scheduled refreshes, reminders, digests, reports and alerts before they ship; no delivery is claimed by setting a zone.
+**Requirement.** A new company defaults to USD with `$1,234.56` formatting, US English, MM/DD/YYYY dates, a January fiscal year with any other start month available, US time zones for schedules and reminders, and the US payroll and tax assumptions of `FIN-006` and `PEOPLE-004`. Files with US date and number formats import without extra choices. [Detailed semantics](docs/planning-semantics.md#us-001).
 
 **Acceptance.**
-1. `tests/us-defaults.test.mjs` and `tests/us-defaults-browser.mjs` (US-001): create a company without changing defaults and assert USD/$ formatting, en-US, MM/DD/YYYY, January and America/New_York; import a CSV with US dates and dollar/grouped/parenthesized amounts without extra format choices, preview without writes, commit and reload exact cents.
+1. Create a company without changing defaults and assert USD/$ formatting, en-US, MM/DD/YYYY, January and America/New_York; import a CSV with US dates and dollar/grouped/parenthesized amounts without extra format choices, preview without writes, commit and reload exact cents.
 2. At 1440/390 inspect setup, the populated planning/review screens, department statements and the downloaded pack, then change and reload the owner-controlled preferences and prove date rendering follows them.
-3. The HTTP journey also sets a July fiscal start and an alternative currency/US zone.
+3. Also sets a July fiscal start and an alternative currency/US zone.
 4. FIN-006/PEOPLE-004 carry statutory defaults and the named scheduled clauses carry actual company-zone delivery acceptance before shipping.
 
-**Evidence.** `tests/us-defaults.test.mjs` `tests/us-defaults-browser.mjs`
-**Gap.** Current default/format/import doors complete; future statutory and scheduled obligations inherited by their named clauses
+**Evidence.** `tests/us-defaults.test.mjs`; `tests/us-defaults-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: Create a company without changing defaults; point 1: assert USD/$ formatting; point 1: en-US; point 1: MM/DD/YYYY; point 1: January; point 1: America/New_York; point 1: import a CSV with US dates; point 1: dollar/grouped/parenthesized amounts without extra format choices; point 1: preview without writes; point 1: commit; point 1: reload exact cents; point 2: At 1440/390 inspect setup; point 2: the populated planning/review screens; point 2: department statements; point 2: the downloaded pack; point 2: then change; point 2: reload the owner-controlled preferences; point 2: prove date rendering follows them; point 3: Also sets a July fiscal start; point 3: an alternative currency/US zone; point 4: FIN-006/PEOPLE-004 carry statutory defaults; point 4: the named scheduled clauses carry actual company-zone delivery acceptance before shipping. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Move in and out
 
 #### MOVE-001 — Move in from Adaptive Planning
 
-Core · target · **done**
+Core · target · **partial** · Rules D-1
 
-**Requirement.** Easel imports a Workday Adaptive Planning export (levels, accounts, dimensions and attributes, versions with their data, sheet exports, and the rows of modeled sheets), together with the buyer's mapping. The rows of the personnel or workforce modeled sheet, read through `exportConfigurableModelData`, become Easel positions under `EASEL-007` and `PEOPLE-004`: employees and to-be-hired rows alike, each with its level (mapped to a department), title, start and end dates, salary or hourly rate with hours, and the row's own bonus, benefits and merit assumptions where present. The account totals that the personnel sheet calculates (from `exportData`) are the check: the imported positions' monthly cost per payroll account must equal them for the same version, and any difference is shown before anything is accepted. Pay detail on imported positions is restricted under `EASEL-007` and `PEOPLE-005` from the moment of import, the preview included. Rows of other modeled sheets (for example a capital-asset sheet) are listed, and their account totals still arrive through `exportData`. The import previews what will be created, lists everything that did not map (formulas it cannot translate, modeled-sheet columns with no Easel equivalent, other modeled-sheet rows, access rules), and lands through the journal with undo.
+**Requirement.** Easel imports a Workday Adaptive Planning export (levels, accounts, dimensions and attributes, versions with their data, sheet exports, and the rows of modeled sheets), together with the buyer's mapping. The rows of the personnel or workforce modeled sheet, read through `exportConfigurableModelData`, become Easel positions under `EASEL-007` and `PEOPLE-004`: employees and to-be-hired rows alike, each with its level (mapped to a department), title, start and end dates, salary or hourly rate with hours, and the row's own bonus, benefits and merit assumptions where present. The account totals that the personnel sheet calculates (from `exportData`) are the check: the imported positions' monthly cost per payroll account must equal them for the same version, and any difference is shown before anything is accepted. Pay detail on imported positions is restricted under `EASEL-007` and `PEOPLE-005` from the moment of import, the preview included. Rows of other modeled sheets (for example a capital-asset sheet) are listed, and their account totals still arrive through `exportData`. The import previews what will be created, lists everything that did not map (formulas it cannot translate, modeled-sheet columns with no Easel equivalent, other modeled-sheet rows, access rules), and lands through the journal with undo. [Detailed semantics](docs/planning-semantics.md#move-001).
 
 **Acceptance.**
-1. a fixture export in the shapes of Adaptive's documented API calls (`exportLevels`, `exportAccounts`, `exportDimensions`, `exportAttributes`, `exportVersions`, `exportData` and `exportConfigurableModelData` for a personnel sheet) and a sheet export; the import report lists created levels, accounts and versions and the unmapped items; budget totals equal the export's totals.
-2. The personnel-sheet fixture holds three employees and two to-be-hired rows, one row carrying a 10% bonus and a merit increase on a date, and one custom column with no Easel equivalent: the import creates five positions, two of them to be hired, whose monthly cost per payroll account equals the export's payroll-account totals for the same version to the cent, with the bonus and merit as traced components (`PEOPLE-004`); the custom column is listed as unmapped; a viewer reads headcount and payroll totals through the API without names or salaries, in the preview and after acceptance; undo removes the import, the positions included.
-3. Current move-in semantics: the native Actuals screen accepts original files plus an explicit buyer mapping through `POST /api/easel/import/incumbent/:op`.
-4. Adaptive metadata XML and completed CSV/CDATA exports, Planful segment/MTD/custom personnel-dimension exports, Anaplan lists/modules, Runway database/model CSV and Pigment flat list/view exports retain originals and source locations.
-5. Each exported version becomes a separate working scenario.
-6. Native positions, including salary/hourly pay, benefits, bonus and dated merit, supply payroll; every exported account/level/version/month reconciles in integer cents before acceptance, with no balancing schedule.
-7. Source-only attributes, formulas, modeled rows, custom columns and permissions remain listed as unmapped.
-8. A reviewed fingerprint binds the originals, buyer choices and current native structure; journal batches fence current session/Pay detail and reviewed target assumptions. Undo removes journal-owned structure and inputs, preserving later business edits/references; its own import status is administrative rather than a business dependency. Aggregate preview is available to current planning members without a fingerprint, personnel, salary fields, originals or raw diagnostics. Native finance with live Pay detail administers acceptance/resume/status/undo. Explicit employee-to-member mappings inherit ERASE-001 for current positions, retained originals, journals and portable restore; source names never establish identity and source permissions never confer native grants. The configured export profiles and primary provider documentation are in `docs/move-adaptive-format.md` and `docs/move-tabular-formats.md`. No live account is claimed or required by these fixture-only clauses.
+1. A fixture export in the shapes of Adaptive's documented API calls (`exportLevels`, `exportAccounts`, `exportDimensions`, `exportAttributes`, `exportVersions`, `exportData` and `exportConfigurableModelData` for a personnel sheet) and a sheet export
+2. The import report lists created levels, accounts and versions and the unmapped items; budget totals equal the export's totals.
+3. The personnel-sheet fixture holds three employees and two to-be-hired rows, one row carrying a 10% bonus and a merit increase on a date, and one custom column with no Easel equivalent: the import creates five positions, two of them to be hired, whose monthly cost per payroll account equals the export's payroll-account totals for the same version to the cent, with the bonus and merit as traced components
+4. The custom column is listed as unmapped
+5. A viewer reads headcount and payroll totals through the API without names or salaries, in the preview and after acceptance
+6. Undo removes the import, the positions included.
 
-**Evidence.** `tests/workbook-undo.test.mjs` (Adaptive original metadata, account data and personnel exports preview, reconcile native positions with bonus and merit, filter pay and undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (adaptive: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390)
-**Gap.** None; original-call fixtures, created metadata/versions, unmapped attributes/sheet formulas/modeled rows/custom columns, exact account and payroll costs, five positions/two to hire, viewer preview/read/Excel, erasure/restore and journal undo are proven
+**Evidence.** `tests/workbook-undo.test.mjs`; `tests/payroll-erasure.test.mjs`; `tests/move-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A fixture export in the shapes of Adaptive's documented API calls (`exportLevels`; point 1: `exportAccounts`; point 1: `exportDimensions`; point 1: `exportAttributes`; point 1: `exportVersions`; point 1: `exportData`; point 1: `exportConfigurableModelData` for a personnel sheet); point 1: a sheet export; point 2: The import report lists created levels; point 2: accounts; point 2: versions; point 2: the unmapped items; point 2: budget totals equal the export's totals; point 3: The personnel-sheet fixture holds three employees; point 3: two to-be-hired rows; point 3: one row carrying a 10% bonus; point 3: a merit increase on a date; point 3: and one custom column with no Easel equivalent: the import creates five positions; point 3: two of them to be hired; point 3: whose monthly cost per payroll account equals the export's payroll-account totals for the same version to the cent; point 3: with the bonus; point 3: merit as traced components; point 4: The custom column is listed as unmapped; point 5: A viewer reads headcount; point 5: payroll totals through the API without names or salaries; point 5: in the preview; point 5: after acceptance; point 6: Undo removes the import; point 6: the positions included. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MOVE-002 — Move in from Planful
 
-Core · target · **done**
+Core · target · **partial**
 
-**Requirement.** Planful exports of the chart of accounts, segments, scenarios and data load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo.
+**Requirement.** Planful exports of the chart of accounts, segments, scenarios and data load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo. [Detailed semantics](docs/planning-semantics.md#move-002).
 
 **Acceptance.**
-1. the `MOVE-001` journey with a fixture in Planful's documented export shapes.
+1. The `MOVE-001` journey with a fixture in Planful's documented export shapes.
 
-**Evidence.** `tests/workbook-undo.test.mjs` (Planful segment, MTD and workforce exports preserve mapped versions, payroll parity, pay filtering and undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (planful: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390)
-**Gap.** None; all documented-fixture import, created metadata/versions, unmapped items, exact account/payroll costs, five positions/two to hire, viewer previews/reads/Excel, erasure/restore and undo points proven
+**Evidence.** `tests/workbook-undo.test.mjs`; `tests/payroll-erasure.test.mjs`; `tests/move-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: The `MOVE-001` journey with a fixture in Planful's documented export shapes. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MOVE-003 — Move in from Anaplan, Runway and Pigment
 
-Core · target · **done**
+Core · target · **partial**
 
-**Requirement.** Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo.
+**Requirement.** Anaplan list and module exports, and Runway and Pigment CSV or Excel exports, load the same way as `MOVE-001`, with a report of unmapped items, totals reconciled and undo. [Detailed semantics](docs/planning-semantics.md#move-003).
 
 **Acceptance.**
-1. the `MOVE-001` journey with one fixture per product in its documented export shape.
+1. The `MOVE-001` journey with one fixture per product in its documented export shape.
 
-**Evidence.** `tests/workbook-undo.test.mjs` (Anaplan, Runway and Pigment original configurable exports retain structure, reconciled personnel, filtered previews and journal undo); `tests/payroll-erasure.test.mjs` (Explicit incumbent employee associations erase positions, provider originals and retained journals without changing costs or defeating undo); `tests/move-browser.mjs` (anaplan, runway, pigment: native original-file preview/reconciliation, accepted positions, viewer and undo at 1440/390)
-**Gap.** None; each documented fixture proves metadata/versions, unmapped items, exact account/payroll costs, five positions/two to hire, viewer previews/reads/Excel, erasure/restore and undo
+**Evidence.** `tests/workbook-undo.test.mjs`; `tests/payroll-erasure.test.mjs`; `tests/move-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: The `MOVE-001` journey with one fixture per product in its documented export shape. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MOVE-004 — A parallel month against the old tool
 
-Core · target · **done**
+Core · target · **partial** · Rules D-1, D-2
 
-**Requirement.** For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools.
+**Requirement.** For one closed month, Easel compares its actuals, budget and forecast with the buyer's old tool or spreadsheet for the same month, line by line. Each difference is classified (mapping, timing, formula or source data), and finance signs the comparison off before switching. Finance alone creates, reads, classifies and signs these comparison records (ct, 19 October). A normalized CSV uses existing planning line and department IDs and natural-sign decimal actual, budget and forecast amounts in the reporting currency; a blank department is allowed. Easel compares the union of line/department rows, treating an absent side as zero, to accepted actuals, the approved budget and the forecast kept before close. Finance supplies each classification and its explanation; Easel does not infer the cause. Preview writes nothing and save checks the reviewed content digest. Saved comparisons capture their values; signing checks the exact revision and SHA-256 and requires every difference to be classified, then freezes the values, classifications, original CSV and source digest with the signer and time. Later model edits do not alter the sign-off. The sign-off records finance's decision before an external switch; Easel does not switch tools. [Detailed semantics](docs/planning-semantics.md#move-004).
 
 **Acceptance.**
-1. `tests/parallel-month.test.mjs` and `tests/parallel-month-browser.mjs` (`MOVE-004`): with a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off.
+1. With a fixture month from the old tool that differs on one mapping and one formula, the comparison lists exactly those two differences and records finance's sign-off.
 2. The API asserts actual, budget and kept-forecast amounts, zero/missing rows, all four explicit classifications with explanations, no-write preview, exact digest/revision fences, restricted access, and signed persistence after model edits.
 3. Finance uploads, previews, classifies and signs at 1440 and 390, then reloads the frozen record with source/comparison digests and attribution.
 
-**Evidence.** `tests/parallel-month.test.mjs` `tests/parallel-month-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/parallel-month.test.mjs`; `tests/parallel-month-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: With a fixture month from the old tool that differs on one mapping; point 1: one formula; point 1: the comparison lists exactly those two differences; point 1: records finance's sign-off; point 2: The API asserts actual; point 2: budget; point 2: kept-forecast amounts; point 2: zero/missing rows; point 2: all four explicit classifications with explanations; point 2: no-write preview; point 2: exact digest/revision fences; point 2: restricted access; point 2: and signed persistence after model edits; point 3: Finance uploads; point 3: previews; point 3: classifies; point 3: signs at 1440; point 3: 390, then reloads the frozen record with source/comparison digests; point 3: attribution. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### PORT-001 — An export a buyer can open without Easel
 
-Core · target · **done**
+Core · target · **done** · Cites BASE-DATA-001 · Rules D-1, D-2
 
-**Requirement.** Besides the `rer export` archive (`EASEL-016`), finance can download the whole plan as open files: one CSV per table, an .xlsx per scenario with formulas (`SHEET-004`), the model definition as JSON, and every snapshot and original file, with a manifest of digests.
+**Requirement.** Besides the `rer export` archive, finance can download the whole plan as open files: one CSV per table, an.xlsx per scenario with formulas, the model definition as JSON, and every snapshot and original file, with a manifest of digests. [Detailed semantics](docs/planning-semantics.md#port-001).
 
 **Acceptance.**
-1. download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's.
+1. Download the open export, unzip it in the test, check every manifest digest, and open a scenario workbook whose totals equal Easel's.
 
-**Evidence.** `src/easel/open-export.ts`, `tests/open-export.test.mjs`, `tests/open-export-browser-journey.mjs`
-**Gap.** Finance downloads product and import-journal table CSVs, scenario formula workbooks, model JSON, every immutable snapshot and retained original, with digest manifest; existing credential exclusions preserved
+**Evidence.** `src/easel/open-export.ts`; `tests/open-export.test.mjs`; `tests/open-export-browser-journey.mjs`
+**Gap.** None.
 
 ### Anywhere
 
 #### MOBILE-001 — Review and approve at phone width
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-ACCESSIBILITY-001, BASE-ROLE-001 · Register R-1, R-2
 
-**Requirement.** Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001` to `CYCLE-007`, `REPORT-001` to `REPORT-007`, `AGENT-001` to `AGENT-011`) inherit the same 390-pixel obligation before they ship.
+**Requirement.** Every review, approval, submission, comment, explanation, dashboard and alert works in the browser at 390 pixels without horizontal scrolling. That includes approving a budget and promoting a proposal. This applies to every capability that exists today; future review, approval, submission, comment, explanation, dashboard and alert capabilities (`CYCLE-001` to `CYCLE-007`, `REPORT-001` to `REPORT-007`, `AGENT-001` to `AGENT-011`) inherit the same 390-pixel obligation before they ship. [Detailed semantics](docs/planning-semantics.md#mobile-001).
 
 **Acceptance.**
-1. the browser journeys at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page.
+1. S at 390 move in actuals, close a month and confirm an explanation (as today), and also submit a department, approve the budget, promote a proposal and read a dashboard, with an overflow check on every page.
 
-**Evidence.** `tests/mobile.mjs` and `tests/browser-journey.mjs` (MOBILE-001): complete planning/review journeys at 390, persisted exact-revision approval/promotion, dashboard cash equals API, page overflow checks
-**Gap.** None.
+**Evidence.** `tests/mobile.mjs`; `tests/browser-journey.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: S at 390 move in actuals; point 1: close a month; point 1: confirm an explanation (as today); point 1: and also submit a department; point 1: approve the budget; point 1: promote a proposal; point 1: read a dashboard; point 1: with an overflow check on every page. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### MOBILE-002 — Native iOS and Android apps
 
-Core · target · **partial**
+Core · target · **partial** · Cites BASE-ROLE-001, BASE-ACCESS-002, BASE-ACCESSIBILITY-001 · Register R-4
 
-**Requirement.** Native iOS and Android apps sign in as the person and show dashboards, alerts, tasks, approvals and comments. Push notifications cover alerts (`REPORT-006`), tasks (`CYCLE-001`, `CYCLE-002`), approvals and mentions. The apps hold no data offline beyond what the person may read, and sign-out wipes it.
+**Requirement.** Native iOS and Android clients provide sign-in, dashboards, alerts, tasks, approvals and comments. Under RL-103, opted-in devices bind the exact live native session and current record rights, send generic notices without financial contents, exclude device credentials from archives and erase local data and authority on sign-out. [Detailed semantics](docs/planning-semantics.md#mobile-002).
 
 **Acceptance.**
-1. a native test build on an iOS simulator and an Android emulator signs in against a running Easel, receives a push for a cash alert through a push fake, and approves a pending proposal.
-2. `native/android/app/src/androidTest/java/com/runeditrun/easel/NativeJourney.java` (NativeJourney.journey), run by `tests/native-mobile-journey.mjs` at 390 and 1440, proves Android native sign-in, dashboards, alerts, calendar tasks, proposal review and exact-revision promotion, comments, cash-alert push receipt, viewer filtering, background erasure and sign-out wiping memory, notifications and persistent storage.
-3. `tests/native-mobile-fixture.mjs` (proveEndState) asserts the promoted proposal and exact resulting cash through public reads.
-4. `tests/notifications.test.mjs`, “Native push consent binds the exact session, delivers generic Apple and Firebase events once and suppresses stale authority, revoked sessions and devices”, proves alert, calendar and metric-task, approval and mention delivery, both provider signatures, consent refusal, live authority, revocation, durable deduplication, unknown outcomes and archive exclusions.
+1. An iOS simulator and Android emulator each sign in against Easel and display the native planning journey.
+2. Each receives a cash-alert push from a provider fake and reviews and approves a pending proposal.
+3. Opt-in and exact session/record authority gate alert, task, approval and mention delivery; generic notices contain no financial data.
+4. Device credentials are sealed and archive-excluded, and sign-out removes local data, notifications and authority.
 
-**Evidence.** `native/android/app/src/androidTest/java/com/runeditrun/easel/NativeJourney.java` (NativeJourney.journey), run by `tests/native-mobile-journey.mjs` at 390 and 1440, proves Android native sign-in, dashboards, alerts, calendar tasks, proposal review and exact-revision promotion, comments, cash-alert push receipt, viewer filtering, background erasure and sign-out wiping memory, notifications and persistent storage. `tests/native-mobile-fixture.mjs` (proveEndState) asserts the promoted proposal and exact resulting cash through public reads. `tests/notifications.test.mjs`, “Native push consent binds the exact session, delivers generic Apple and Firebase events once and suppresses stale authority, revoked sessions and devices”, proves alert, calendar and metric-task, approval and mention delivery, both provider signatures, consent refusal, live authority, revocation, durable deduplication, unknown outcomes and archive exclusions.
-**Gap.** the iOS client is held outside this candidate pending its required 1440-point native proof; the single permitted resumed run stopped before sign-in at a 750-point floating window, and the prepared fullscreen correction needs another authorized native run; ct approval of the adopted mobile policy: explicit audited opt-in, exact native-session binding, current record authority, generic notices without financial data, zero provider offline retention, sealed archive-excluded device custody, and unconditional local erasure on sign-out.
+**Evidence.** `native/android/app/src/androidTest/java/com/runeditrun/easel/NativeJourney.java`; `tests/native-mobile-journey.mjs`; `tests/native-mobile-fixture.mjs`; `tests/notifications.test.mjs`
+**Gap.** Android and both server push adapters are delivered. The complete iOS native sign-in/push/approval run remains missing; RL-103 settles device policy without changing status.
 
 #### HOST-001 — Hosted operation on the buyer's Cloudflare account
 
-Core · target · **done**
+Core · target · **partial** · Cites BASE-INSTALL-001, BASE-BACKUP-001, BASE-OPS-001 · Rules D-2
 
-**Requirement.** `rer deploy` puts Easel on the buyer's own Cloudflare account with D1, the scheduled refresh handler, encrypted connector secrets and real mail delivery. Hosted health, backups and restore are documented and exercised.
+**Requirement.** Easel's hosted installation runs its planning loop, source scheduler and mail integration on the buyer's Cloudflare resources. [Detailed semantics](docs/planning-semantics.md#host-001).
 
 **Acceptance.**
-1. a deploy to a test Cloudflare account, a health check, a scheduled refresh run, a delivered invite email and a restore from backup.
-2. `tests/hosted-deploy.mjs` (deployHosted) deployed real disposable Easel installations with D1 on the authorized Cloudflare test account.
-3. `tests/hosted.mjs` (Hosted health) checked the deployed health receipt, unsigned refusal and native owner session.
-4. Its Real scheduled refresh persisted assertions observed an actual provider cron at `2026-10-26T06:00:00.000Z`, persisted at `2026-10-26T06:00:54.924Z`: 3,600 approved seconds from the real Gauge source, matching capacity, scheduler attribution and unchanged frozen snapshots.
-5. No direct scheduled invocation was used.
-6. `tests/hosted-mail.mjs` (acceptHostedInvite) proved delivered mail and consumed its native recipient sign-in link: receiver receipt `63e20619-b650-4ad2-9189-188665c4323c`, received `2026-10-26T05:29:24.018Z`, DMARC pass.
-7. These four points passed in the 26 October 2026 local sandbox run before an additional disconnect expectation stopped that journey.
-8. The source key was explicitly revoked and every disposable Worker and database was removed with provider absence checks. Hosted setup, sign-in, model, approvals, published packs and connection screens were personally inspected at 1440 and 390. `tests/hosted-backup.mjs` (Hosted backup and restore passed) completed the fifth point in a second real hosted sandbox run on 26 October 2026: `rer export --target remote`, refusal of a populated destination without changing it, refusal of malformed input, and a successful clean hosted import. Native application reads matched the original model, approvals, calculations, actuals, immutable snapshots and published pack exactly. Restored model, approvals, packs and settings were personally inspected at 1440 and 390. Both additional Workers and databases were removed and their absence confirmed. The temporary Cloudflare token was revoked after cleanup.
+1. A disposable Cloudflare deployment with D1 runs Easel's native planning loop.
+2. Its scheduled source refresh retains scheduler attribution without changing frozen planning values.
+3. An invited recipient receives the planning invitation and completes native sign-in.
+4. After hosted backup and restore, Easel's model, approvals, actuals, calculations, packs and snapshots agree with the source installation.
 
-**Evidence.** Deploy: `tests/hosted-deploy.mjs` (deployHosted); health: `tests/hosted.mjs` (Hosted health); scheduled refresh: `tests/hosted.mjs` (Real scheduled refresh persisted); delivered invitation and native recipient sign-in: `tests/hosted-mail.mjs` (acceptHostedInvite); hosted backup and exact native restore: `tests/hosted-backup.mjs` (Hosted backup and restore passed). Live sandboxes: 26 October 2026; receipt details in the clause above.
-**Gap.** —
+**Evidence.** `tests/hosted-deploy.mjs`; `tests/hosted.mjs`; `tests/hosted-mail.mjs`; `tests/hosted-backup.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A disposable Cloudflare deployment with D1 runs Easel's native planning loop; point 2: Its scheduled source refresh retains scheduler attribution without changing frozen planning values; point 3: An invited recipient receives the planning invitation; point 3: completes native sign-in; point 4: After hosted backup; point 4: restore; point 4: Easel's model; point 4: approvals; point 4: actuals; point 4: calculations; point 4: packs; point 4: snapshots agree with the source installation. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Agents that keep the plan feasible
 
 #### AGENT-001 — Constraint watch
 
-Core · push-further · **partial**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** *What the agent does:* after every refresh and every promoted change, it recalculates the official forecast and checks each constraint finance agreed: the cash floor, runway minimum, covenant tests (`FIN-003`) and department budget limits. When a constraint breaks, it opens a decision item. The item names the crossing month, the size of the gap, and the source changes that caused it: a slipped deal, a hire starting early, a late customer payment or an unplanned vendor. Each cause is traced to its rows.
-
-*Data:* refreshed actuals and bank balances (`CONNECT-*`), pipeline (`REV-001`), roster and requisitions (`PEOPLE-*`), committed spend (`SPEND-001`) and the official scenarios.
-
-*Human control:* finance defines constraints and who owns each one. The agent only opens items and notifies their owners, and it changes nothing in the plan.
+**Requirement.** The planning watch detects breaches of agreed cash, runway, covenant and department limits and opens source-backed decisions without revising the forecast. A response that changes a binding planning decision carries commitment, decided by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-001).
 
 **Acceptance.**
-1. with provider fakes, a refresh that slips a large deal by two quarters breaks the cash floor; one decision item names the crossing month and cites the deal ID and stage change; the plan's revision is unchanged.
-2. Current native constraint semantics (sx-easel-c46-r1).
-3. After every accepted or undone actuals file, month close, promoted proposal, Plaid refresh, change to the agreed cash floor or runway minimum and explicit `constraint-check`, the official working forecast is recalculated and each breached agreed constraint opens one decision item (`GET /api/easel/constraints`, finance): the first crossing month, the gap (floor shortfall or runway) and, from a comparison with the last kept forecast or else the approved budget, the input rows added, removed or changed since then (by origin: a hire that now starts earlier, a contract that moved, a new vendor), without pay detail for readers who may not see it.
-4. The owner who agreed the constraint is notified once when the item opens; the item refreshes while the breach persists, clears when it ends and stays rejected until it clears if the owner rejected every response.
-5. The watch changes nothing in the plan.
-6. Native FIN-003 minimum cash, minimum liquidity and maximum leverage tests now open one item per financing source and test, with the first future crossing month, exact gap and native source trace.
-7. Finance saves monthly department spending limits through `department-limit-save`; cost of sales and operating expense cells, including aggregate payroll, are compared at integer cents, and the saving finance person owns the item.
-8. Equality passes. Removed rules clear existing items. These checks and limit saves never revise the forecast. Covenant and department items require ordinary human-reviewed proposals; automatic response search remains confined to cash and runway. Deal IDs and stage changes still need REV-001.
+1. A provider-fake refresh slipping a large deal by two quarters breaks the cash floor and opens one decision item.
+2. The decision names the crossing month and cites the deal ID and stage change.
+3. The watch leaves the plan revision unchanged.
 
-**Evidence.** `src/easel/agents/constraint-watch.ts` `src/easel/agents/agent-evaluate.ts` `tests/constraint-responses.test.mjs` `tests/constraint-responses-browser.mjs`
-**Gap.** Native cash, runway, FIN-003 covenants and department limits open cited owned decision items without plan edits; remaining Gap: deal ID and stage-change causes require REV-001
+**Evidence.** `src/easel/agents/constraint-watch.ts`; `src/easel/agents/agent-evaluate.ts`; `tests/constraint-responses.test.mjs`; `tests/constraint-responses-browser.mjs`
+**Gap.** Native cash/runway/covenant/department watches are delivered. Deal-ID and stage-change cause tracing needs REV-001; company-policy class computation and decisions remain unimplemented.
 
 #### AGENT-002 — Feasible responses for the owner to choose
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** *What the agent does:* for an open decision item, it searches the levers finance has marked as adjustable, such as hire start dates by role, discretionary spend lines, collection terms, a credit-line draw and price changes. It returns three to five responses that restore the constraint, each with the least change it needs. Each response is a proposal bound to the forecast revision (`EASEL-012`), with its changed inputs, moved cells, the new lowest cash and runway, and what it costs (for example revenue forgone by a delayed sales hire).
-
-*Data:* the model, the levers and bounds finance set, and the constraint.
-
-*Human control:* the owner picks a response or rejects them all with a reason. Finance promotes the chosen proposal at its exact revision. Levers that are not marked adjustable are never touched.
+**Requirement.** The specialist searches only owner-designated adjustable levers and ranks feasible planning responses with their impact and trade-offs. Drafting carries standard; promotion carries commitment, whose disposition is set by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-002).
 
 **Acceptance.**
-1. for the `AGENT-001` item, the agent returns at least three proposals that each satisfy the floor in a recalculation; a lever not marked adjustable is unchanged in all of them; promotion of one goes through `EASEL-012`.
-2. Current semantics (sx-easel-c41).
-3. Finance (approvals permission) marks levers adjustable with a bound on the official working forecast: delay a not-yet-started hire by up to N months (needs Pay detail), cut a recurring or one-off expense by up to N percent, or collect a contract N days sooner.
-4. Only those inputs, found by origin and only while they have not started, are ever changed.
-5. `constraint-respond {item, revision}` searches single levers (smallest change that restores the constraint on a recalculation of the whole forecast), then combinations of the levers that cannot do it alone, keeps one response per set of levers, ranks by total change then revenue forgone and creates up to five draft proposals bound to the forecast revision; each states its changes, the new lowest cash and shortest runway, the revenue forgone and its moved cells.
-6. A response must restore the cash floor and the runway minimum in every forecast month.
-7. `constraint-reject {item, reason}` closes the drafts with the owner's reason; promotion of the chosen proposal is the ordinary `proposal-submit` and `proposal-promote` at its exact revision, after which the item clears.
-8. The agent calls no model and writes only draft proposals. Credit-line draw levers inherit onto FIN-003 and price levers onto REV-001.
+1. For a breached constraint, at least three proposals each restore the cash floor on full recalculation.
+2. Every lever not designated adjustable is unchanged in every proposal.
+3. The chosen response is promoted at the proposal and target revisions required by EASEL-012.
 
-**Evidence.** `src/easel/agents/levers.ts` `src/easel/agents/constraint-responses.ts` `src/ui/constraints.tsx` `tests/constraint-responses.test.mjs` `tests/constraint-responses-browser.mjs`
-**Gap.** Adjustable levers with bounds; three to five recalculated draft proposals per item with new lowest cash, runway and revenue forgone; promotion through exact-revision proposals; credit-draw and price levers inherit onto FIN-003 and REV-001
+**Evidence.** `src/easel/agents/levers.ts`; `src/easel/agents/constraint-responses.ts`; `src/ui/constraints.tsx`; `tests/constraint-responses.test.mjs`; `tests/constraint-responses-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: For a breached constraint; point 1: at least three proposals each restore the cash floor on full recalculation; point 2: Every lever not designated adjustable is unchanged in every proposal; point 3: The chosen response is promoted at the proposal; point 3: target revisions required by EASEL-012. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-003 — Asking owners for uncertain assumptions
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** *What the agent does:* when a response or forecast depends on an uncertain input (a deal's close date, a hire's start, a large customer's payment date or a vendor renewal), it asks the input's owner a structured question by email, Slack or [Nook](https://github.com/just-every/run-nook), for example "Will Acme sign before 30 November? Yes, No or a new date". It records the answer as a sourced assumption with the person and time, and recalculates.
-
-*Data:* the deal, position or invoice behind the input, and its owner from the CRM, HRIS or ledger.
-
-*Human control:* the answer is the owner's. Finance can override it with a note, and unanswered questions escalate to finance after a set time and never default to an answer.
+**Requirement.** The specialist asks source owners about uncertain assumptions and retains sourced answers, alternatives and escalation. Outside questions carry external, applying an internal assumption standard and a binding forecast decision commitment; the company's policy decides each. [Detailed semantics](docs/planning-semantics.md#agent-003).
 
 **Acceptance.**
-1. with a Slack fake, the agent asks the deal owner, the answer "new date 15 January" becomes an assumption with its source, and the forecast moves; an unanswered question escalates without changing the assumption.
-2. Current native-input semantics (sx-easel-c42, ct approved 22 October 2026 at 21:32 UTC).
-3. Finance with company-wide approval authority enables questions explicitly (off by default), binds an active permitted person to an explicit contract-start, hire-start or one-off vendor-payment date and records the reviewed ownership source, question and escalation instant.
-4. Shared chat keeps CYCLE-003's approved generic sign-in notice; email carries the structured question.
-5. Only the bound owner answers in a native session; Yes retains the date, No supplies no date, and a new date is validated against the forecast horizon and closed periods.
-6. The answer retains source, authenticated person and UTC time; finance overrides only with a note.
-7. A finance-requested recalculated draft proposal carries that evidence and the exact source and forecast revision.
-8. The official forecast changes only through ordinary submission and exact-revision finance promotion. A named scheduler escalates an unanswered question once at its saved deadline without answering it or changing an assumption. Finance can stop questions or cancel a stale question with a reason. Native source ownership is explicitly reviewed, never inferred from a historical deal name or email. REV-001, PEOPLE-001/002/003 and REV-002 inherit provider-derived owners and dated deal, hire and invoice questions before their adapters ship; AGENT-011 inherits the local switch, scheduler labels and audit trail into its global governance. Current private Slack semantics (sx-easel-c42, ct approved 22 October 2026 at 21:32 UTC). A native finance owner or admin explicitly connects a sealed, archive-excluded workspace bot and maps an active native person to an exact Slack human profile with the same email and workspace. That person alone consents to their exact identity, connection and mapping revision. Only structured owner questions and cash alerts use this private route. Every send rechecks current native authority, bot and human identity and a single-person private conversation through Slack's fixed API host. A durable intent captures the exact identity; changed or revoked consent, missing custody and changed authority block rather than choosing another route. Unknown sends are never retried. A disconnect attempts key revocation and deletes local custody even when remote revocation is unconfirmed. Shared chat stays generic under the existing CYCLE-003 ruling. `tests/forecast-learning.test.mjs`, “Owner questions preserve sourced answers, recalculate reviewed proposals, and escalate unanswered inputs without inventing an answer”, proves the attributed 15 January answer, unchanged forecast until finance promotion, one unanswered escalation, override-note and authority/revision/stop refusals. `tests/notifications.test.mjs`, “Private Slack notifications require the mapped native person’s consent and recheck exact human, team, private IM and live authority without fallback”, proves the structured Slack question with its source, current date, Yes/No/new-date instructions and authenticated record link, exact private delivery, no shared detail, consent/identity/authority refusals, durable identity capture, refused versus uncertain outcomes and archive-excluded custody. `tests/owner-questions-browser.mjs` and `tests/private-slack-browser.mjs` prove native ask/answer/override/proposal/escalation and private mapping/consent/question/stop at 1440/390. Provider-derived owners remain with the named source adapters.
+1. A Slack-fake question to the deal owner retains its source and the answer 'new date 15 January'.
+2. Under the held company policy, the sourced assumption reaches the forecast through the reviewed proposal and exact-revision promotion.
+3. An unanswered question escalates without inventing an answer or changing the assumption.
+4. An owner can answer Yes, No or a new date, override with a recorded note, or stop a stale question with a reason.
 
-**Evidence.** `tests/forecast-learning.test.mjs` (Owner questions preserve sourced answers, recalculate reviewed proposals, and escalate unanswered inputs without inventing an answer) `tests/owner-questions-browser.mjs` `tests/notifications.test.mjs` (Private Slack notifications require the mapped native person’s consent and recheck exact human, team, private IM and live authority without fallback) `tests/private-slack-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/forecast-learning.test.mjs`; `tests/owner-questions-browser.mjs`; `tests/notifications.test.mjs`; `tests/private-slack-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A Slack-fake question to the deal owner retains its source; point 1: the answer 'new date 15 January'; point 2: Under the held company policy; point 2: the sourced assumption reaches the forecast through the reviewed proposal; point 2: exact-revision promotion; point 3: An unanswered question escalates without inventing an answer or changing the assumption; point 4: An owner can answer Yes, No or a new date; point 4: override with a recorded note; point 4: or stop a stale question with a reason. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-004 — Learning from the company's own forecast errors
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · Rules D-2
 
-**Requirement.** *What the agent does:* it compares every kept forecast with actual results by driver and period. It separates timing differences from permanent ones and from driver error, measures how this company's assumptions miss (stage probabilities, close-date slippage, hire slippage, collection lags, churn), and suggests revised assumptions with a backtest. The backtest shows how the revision would have performed on the last six to twelve kept forecasts.
-
-*Data:* kept forecasts (`EASEL-013`), actuals, deal history, roster history and confirmed variance explanations.
-
-*Human control:* finance approves each assumption change as a versioned proposal after seeing the backtest. Kept forecasts and snapshots stay reproducible.
+**Requirement.** The specialist compares kept forecasts with actuals, separates timing, permanent and driver errors, and backtests revised stage probabilities, close-date and hire slippage, collection lag and churn assumptions. Drafts carry standard and adopted planning decisions commitment; the company's policy decides their disposition. [Detailed semantics](docs/planning-semantics.md#agent-004).
 
 **Acceptance.**
-1. a fixture history in which deals close on average 34 days late; the agent proposes a slippage assumption of about 34 days with a backtest showing lower error on past kept forecasts; nothing changes until finance promotes it.
-2. Current semantics (sx-easel-c41; Easel calls no model, every figure is integer arithmetic over reviewed rows).
-3. Deal history is a finance-only reviewed door (`deal-outcomes-save`, `GET /api/easel/deal-history`): each deal has an ID, name, expected and actual close dates and, optionally, a linked contract origin, invoice date, paid date and invoice amount; there is no CRM pull until REV-001.
-4. The agent reads a working forecast with a closed month through `GET /api/easel/forecast-learning/:scenario` (finance only; pay-detail readers see payroll rows and hire slippage, finance without pay detail see neither).
-5. Each kept forecast is compared with the months that closed after it, by line, department, driver sources and month, carrying confirmed explanations.
-6. The error (actual minus kept) is split exactly: timing is twice the amount that offsets itself across the closed months for one line and department; driver is the part of the remaining net error that the measured revisions below would have removed; permanent is the rest.
-7. Three assumptions are measured: close-date slippage (mean whole days, half away from zero, from deal history), hire slippage (mean days between planned and actual start in accepted roster history) and collection lag (observed days from invoice to payment less the linked contract's planned DSO).
-8. A measure needs at least three observations, a non-zero mean and at least six kept forecasts that still recalculate to their stored cells; a backtest uses the last up to twelve, revises only inputs that had not started when the forecast was kept, and compares summed absolute error against what actually closed (collection lag compares monthly collections of the linked invoices). A suggestion is made only when the revision lowers that error. `learning-propose` creates a draft proposal from the current forecast that cites the backtest and moves only inputs that have not started; the forecast, kept forecasts and snapshots change only when finance submits and promotes that exact proposal revision through the ordinary doors. Stage probabilities inherit onto REV-001 (stages and probabilities) and churn onto REV-002 (subscription churn): until those drivers exist there is nothing to measure, and the view says so.
+1. A history whose deals close thirty-four days late produces a proposal for approximately thirty-four days of slippage.
+2. The backtest over the last six to twelve kept forecasts shows lower error for the proposed assumption.
+3. Under the held company policy, forecast changes await the exact-revision planning decision; kept forecasts and snapshots remain reproducible.
 
-**Evidence.** `src/easel/agents/forecast-learning.ts` `src/easel/agents/learning-measures.ts` `src/easel/agents/learning-backtest.ts` `src/easel/agents/learning-commands.ts` `src/easel/agents/deal-outcomes.ts` `src/ui/forecast-learning.tsx` `tests/forecast-learning.test.mjs` `tests/forecast-learning-browser.mjs`
-**Gap.** Kept-forecast error split into timing, driver and permanent; close-date, hire and collection-lag misses measured from reviewed history; six-to-twelve-forecast backtests; draft proposals promoted only by finance; stage probabilities and churn wait on REV-001 and REV-002 drivers
+**Evidence.** `src/easel/agents/forecast-learning.ts`; `src/easel/agents/learning-measures.ts`; `src/easel/agents/learning-backtest.ts`; `src/easel/agents/learning-commands.ts`; `src/easel/agents/deal-outcomes.ts`; `src/ui/forecast-learning.tsx`; `tests/forecast-learning.test.mjs`; `tests/forecast-learning-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A history whose deals close thirty-four days late produces a proposal for approximately thirty-four days of slippage; point 2: The backtest over the last six to twelve kept forecasts shows lower error for the proposed assumption; point 3: Under the held company policy; point 3: forecast changes await the exact-revision planning decision; point 3: kept forecasts; point 3: snapshots remain reproducible. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-005 — Source-change guard
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** *What the agent does:* before a refresh completes, it detects new or renamed GL accounts, changed departments or classes, missing payroll rows, a CRM or billing feed that stopped updating, and sudden changes in a source's shape. It proposes mappings with its reasons and shows which reports, scenarios, packs and alerts would change.
-
-*Data:* refresh previews, mapping rules (`CONNECT-006`) and freshness (`CONNECT-005`).
-
-*Human control:* finance approves mappings and exclusions. Missing data blocks dependent conclusions and alerts rather than becoming zero.
+**Requirement.** Source review detects renamed or new accounts, changed dimensions, missing payroll, stale feeds and source-shape changes, showing reasoned mapping proposals and their impacts. Mapping and exclusion calls carry standard, whose disposition is set by the company's policy; incomplete source data cannot support conclusions. [Detailed semantics](docs/planning-semantics.md#agent-005).
 
 **Acceptance.**
-1. a refresh with a new account named like an existing software line and a missing payroll run; the agent proposes the mapping with its reason, lists the affected reports, and the cash alert for that month is held as blocked rather than computed.
-2. Current source-door semantics (sx-easel-c42; pattern 1).
-3. Finance with company-wide source-review and Pay detail authority stages a named one-month ledger observation through `source-guard-stage`; ordinary actuals previews remain write-free.
-4. Staging derives the actual CSV preview, records the exact file fingerprint and complete observed account-name/type, department/class/tracking and column metadata, explicit source observation/next-update times, and finance-declared expected payroll dates and employee-row counts.
-5. New unresolved accounts propose matching planning-line names with an explicit reason and never apply themselves.
-6. Repeated observations surface renamed accounts, changed source dimensions and column shape; overdue observations are stale on reads and cash checks.
-7. Missing payroll requires accepted register evidence for that provider/date/count, or an explicit finance exclusion with person/time/reason.
-8. Mapping approvals use the existing mapping commands. Every decision is fenced on the reviewed source revision and fingerprint; changed files in a tracked period cannot bypass staging through ordinary CSV acceptance. An accepted file completes the matching source review in the fenced acceptance save. The impact view lists currently permitted working scenarios, reports, packs and alert rules; another person's private report never becomes visible through a stored impact list. Unresolved or not-yet-accepted observations hold dependent working calculations and cash alerts, with no replacement amount or new alert send. Earlier sends are labeled historical, and accepted refreshes show resumed dependency states. Published packs and frozen calculations retain their captured values. Current GL and payroll sources are reviewed files, not live provider pulls. CONNECT-001/002/003/004/011, PEOPLE-001/002, REV-001/002 and CONNECT-005 inherit these change-preview, coverage, mapping, impact and stale-source guard obligations for their future live source adapters; their unfinished adapters are not claimed here. `tests/mapping-rules.test.mjs`, “Source refresh proposes a reasoned mapping and exact impacts, blocks incomplete payroll cash, and accepts only finance-reviewed source decisions”, proves the new Software account proposal and reason, missing payroll, affected report/scenario/pack/alert IDs, blocked conclusions without an alert amount, stale-review/authority refusal, explicit approval/exclusion, guarded CSV completion, resumed states, and immutable published capture. Its “Repeated source observations detect metadata, shape and dimension changes; real payroll evidence resolves a missing run” proves rename/shape/dimension changes, accepted register evidence and stale-source blocking. `tests/source-guard-browser.mjs` proves native staging, held alerts, mapping/exclusion review and ordinary CSV acceptance at 1440/390.
+1. A refresh with a new software-like account proposes a mapping with its reason.
+2. A missing payroll run appears in the review alongside the affected reports, scenarios, packs and alerts.
+3. The dependent cash alert is visibly unavailable instead of being computed as zero or sent.
+4. Under the held company policy, reviewed source decisions resolve the guard before normal conclusions resume.
 
-**Evidence.** `tests/mapping-rules.test.mjs` (Source refresh proposes a reasoned mapping and exact impacts, blocks incomplete payroll cash, and accepts only finance-reviewed source decisions; Repeated source observations detect metadata, shape and dimension changes; real payroll evidence resolves a missing run) `tests/source-guard-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/mapping-rules.test.mjs`; `tests/source-guard-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A refresh with a new software-like account proposes a mapping with its reason; point 2: A missing payroll run appears in the review alongside the affected reports; point 2: scenarios; point 2: packs; point 2: alerts; point 3: The dependent cash alert is visibly unavailable instead of being computed as zero or sent; point 4: Under the held company policy; point 4: reviewed source decisions resolve the guard before normal conclusions resume. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-006 — Following decisions through to results
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · Rules D-2
 
-**Requirement.** *What the agent does:* it links each published decision and action (`EASEL-014`) to its forecast effect, owner and due date. It chases updates before the due date, and after the period closes it compares the realized cash, revenue, headcount and capacity with the assumption that was approved.
-
-*Data:* packs, decisions, actions, later actuals and the proposals that implemented them.
-
-*Human control:* owners can revise or stop an action, with a reason. Finance approves any change to a decision, and salary detail stays role-restricted.
+**Requirement.** Decision follow-up links a published action to its forecast effect, owner and due date and compares approved assumptions with realized cash, revenue, headcount and capacity. Outside chases carry external and changes to binding decisions commitment, decided by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-006).
 
 **Acceptance.**
-1. a decision to delay two hires to July is published; the agent chases the hiring manager before the due date, and after July closes it reports the realized payroll saving against the approved assumption.
-2. Current doors: a decision recorded in a draft review pack may cite one proposal promoted into that pack's forecast.
-3. Promotion captures, for every plan month whose payroll, revenue, headcount or capacity moved, the forecast just before promotion and as promoted, in integer cents and counts: payroll is payroll-line cells plus position costs on other lines; revenue is profit-and-loss revenue; cash is closing cash, unavailable when that month's cash is incomplete; headcount is planned positions; capacity is active positions in each services driver's department × its monthly available hours, in hundredths of an hour.
-4. Promotions made before this capture cannot be cited, and a cited promotion cannot be deleted.
-5. The scheduled run acts as `scheduler:actions` for the first still-active owner or admin who published a pack.
-6. It chases each open action whose owner is recorded as the email of a person who can still read the action's department: one CYCLE-003 notification ("Update due on your action", by that person's email, digest or chat preference) per due date, from 3 calendar days before the due date in the saved company zone until the day before it.
-7. Done or stopped actions are never chased; a revised due date is chased again; an owner recorded only as a name is never chased and only finance follows that action up.
-8. Only the action's owner or finance revises its due date or stops it, always with a reason. A proposed change to a decision's text or cited promotion, by its owner or finance, stays pending until finance approves or rejects it. Follow-up is recorded beside the published pack; the pack snapshot never changes. `GET /api/easel/decisions` reports, per effect month, the before, approved and realized values once the month closes: realized payroll, revenue and cash come from the forecast's closed months on accepted actuals (ledger figures, not bank balances); realized headcount comes only from reviewed roster files (`PEOPLE-006`) and realized capacity only from accepted Gauge available time on every services driver (`REV-003`), otherwise each is unavailable, never zero. The payroll saving is before minus approved (approved) and before minus realized (realized), summed over the months whose payroll moved, compared through the closed months and complete once all of them have closed. Every member reads decisions and these aggregate amounts as in the pack; position titles and salaries are never included. Easel calls no model for this follow-up. Under MOBILE-001, the Review tab's Decision follow-up card shows every published decision's chases, history, pending changes and before, approved and realized results, with the owner's revise, stop and change forms and finance's approve and reject, at 1440 and 390 pixels without page overflow.
+1. A published decision delaying two hires to July retains the approved forecast effect.
+2. The hiring manager receives a chase before the due date.
+3. After July closes, follow-up reports realized payroll saving against the approved assumption.
+4. Owners may revise or stop actions with a reason; under the held company policy a decision change follows its commitment decision.
+5. Follow-up never changes the published pack, and aggregate results reveal no position titles or salaries.
 
-**Evidence.** `src/easel/decision-followup.ts` `src/ui/decision-followup.tsx` `tests/decision-followup.test.mjs` `tests/decision-followup-browser.mjs`
-**Gap.** Decisions cite captured promotion effects; company-zone chases before due dates; reasoned owner revisions and stops; finance-approved decision changes; realized payroll, revenue and cash against the approved assumption, with roster headcount and Gauge capacity unavailable unless reviewed
+**Evidence.** `src/easel/decision-followup.ts`; `src/ui/decision-followup.tsx`; `tests/decision-followup.test.mjs`; `tests/decision-followup-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A published decision delaying two hires to July retains the approved forecast effect; point 2: The hiring manager receives a chase before the due date; point 3: After July closes; point 3: follow-up reports realized payroll saving against the approved assumption; point 4: Owners may revise or stop actions with a reason; point 4: under the held company policy a decision change follows its commitment decision; point 5: Follow-up never changes the published pack; point 5: and aggregate results reveal no position titles or salaries. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ### Agents that explain and model
 
 #### AGENT-007 — Variance commentary grounded in sources
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · Rules D-2
 
-**Requirement.** *What the agent does:* after close, it drafts an explanation for each material variance. Each draft cites ledger rows, deals, roster changes, vendor bills and committed spend, and labels each claim as evidence-backed or a hypothesis.
-
-*Data:* the variance view (`EASEL-013`) and connected sources, under the department's filtering.
-
-*Human control:* drafts are drafts. The department owner confirms or rewrites each one, and finance publishes. An unconfirmed draft never appears in a published pack. Structured `citationIds` on an explanation name accepted ledger rows in that same month, planning line and department, visible to the writer through the variance door. The server checks them on save, confirmation and publication; duplicate IDs are retained once. Human text can omit the list. These checks establish the cited rows, not the truth of a narrative claim. New published packs capture only confirmed non-pay explanations; later confirmation never changes an earlier pack.
+**Requirement.** The specialist explains material closed-month variances using visible ledger, deal, roster, bill and committed-spend evidence, separating evidence-backed claims from hypotheses. Drafting carries standard; a binding confirmation or publication carries commitment, whose disposition is set by the company's policy. [Detailed semantics](docs/planning-semantics.md#agent-007).
 
 **Acceptance.**
-1. with a model fake at the API edge, the agent drafts an explanation that cites row IDs that exist; a citation to a row that does not exist is refused by the server; an unconfirmed draft is absent from the published pack.
-2. Current model door (sx-easel-c42; ct approved 22 October 2026 at 21:32 UTC).
-3. Model drafting is off and stopped by default.
-4. Native finance configures an owner-chosen OpenAI model, declared input and output USD rates and a monthly UTC budget; native finance with Connections permission explicitly consents to sealing an owner-provided key.
-5. It is never returned or archived and must be re-entered after restore.
-6. The existing variance writer previews one visible non-pay variance and its accepted-row whitelist, then explicitly consents to that exact fingerprinted request.
-7. Dimension-scoped readers who cannot use the native variance door cannot bypass it through this door.
-8. No position data, pay row, other department, prior narrative or model tool reaches the request. The sole endpoint is OpenAI's fixed HTTPS Responses API, redirects refused, `store: false`, a strict claims schema and no tools; no provider retention or training claim is made. Before the single call, a native-session-fenced intent and a conservative USD allowance are committed: complete UTF-8 request bytes plus envelope overhead bound input tokens, with the configured output cap and declared rates. Every attempt retains its reservation, including refused or unknown outcomes; an exact consumed request is never retried automatically. This is an allowance, not provider-reported cost. Current sources, settings/key revisions and the live person are rechecked before egress and draft acceptance. Each evidence claim needs permitted existing row IDs; hypotheses are labeled, and unknown/foreign citations refuse the draft. Only an ordinary unconfirmed explanation is saved, labeled with agent/model/run; existing human confirmation and finance publication remain mandatory. A local stop prevents accepting an in-flight response. AGENT-011 inherits this provider custody, per-agent stop, allowance and audit machinery into its full global governance; future CONNECT, REV and PEOPLE source adapters inherit their scoped evidence before reaching commentary. `tests/variance-commentary.test.mjs`, “AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation”, uses a model API-edge fake and proves exact preview/egress equality, filtered pay/department payloads, pre-call durable reservation, valid sourced draft, refused invented row, unconfirmed exclusion from publication, no automatic retry, consent/stale-preview/budget/stop/current-scope refusal and sealed archive-excluded custody. The existing “AGENT-007 accepted citations stay in their visible variance and unconfirmed commentary never publishes” retains human-write/confirmation/publication citation checks. `tests/commentary-model-browser.mjs` proves configuration, reviewed request, draft, confirmation, immutable pack and local stop at 1440/390.
+1. A model-edge fixture returns an explanation citing existing visible row IDs.
+2. An invented, out-of-month, out-of-line or out-of-department citation is refused.
+3. Under the held company policy, an unconfirmed draft is absent from a published pack.
+4. A later confirmation leaves an earlier published pack unchanged.
 
-**Evidence.** `tests/variance-commentary.test.mjs` (AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation; AGENT-007 accepted citations stay in their visible variance and unconfirmed commentary never publishes) `tests/commentary-model-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/variance-commentary.test.mjs`; `tests/commentary-model-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A model-edge fixture returns an explanation citing existing visible row IDs; point 2: An invented; point 2: out-of-month; point 2: out-of-line or out-of-department citation is refused; point 3: Under the held company policy; point 3: an unconfirmed draft is absent from a published pack; point 4: A later confirmation leaves an earlier published pack unchanged. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-008 — Modeler agent
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011 · Rules D-1
 
-**Requirement.** *What the agent does:* it turns a request in plain language ("add a second sales team in the Southeast ramping from April", "model a 5% price increase on annual plans from January") into a proposal. The proposal carries a structure and input diff, formulas (`MODEL-004`), the cells that move and a short test of expected values.
-
-*Data:* the model and its scenarios, under the requester's authority.
-
-*Human control:* the result is always a proposal. Finance promotes it at its exact revision (`EASEL-012`), and model-structure changes need a person with the model-structure permission (`ACCESS-001`).
+**Requirement.** The modeler turns a natural-language request into a separate planning proposal, with structure/input diffs, formulas, moved cells and expected-value checks. Drafting carries standard, payroll data adds sensitive and promotion carries commitment; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#agent-008).
 
 **Acceptance.**
-1. with a model fake, the request produces a proposal whose diff adds the named positions and drivers; promotion by a person without model-structure permission is refused.
-2. Current reviewed-modeler semantics (sx-easel-c42, ct approved 22 October 2026 at 21:32 UTC).
-3. Native company-wide finance with Pay detail and model-structure permission explicitly enables and resumes this agent (off and stopped by default), consents to reusing the owner-chosen model/key/rates and sets a separate monthly conservative USD allowance.
-4. Review configures the shared sealed, archive-excluded key; Scenarios previews the exact model and natural-language request, including permitted pay assumptions, and needs explicit per-call consent.
-5. One fixed OpenAI Responses request uses a strict schema, no tools and no automatic retry.
-6. A durable intent reserves allowance before egress; every outcome retains it.
-7. Current person, key and settings, source revision and fingerprint and stop are checked before send and acceptance.
-8. The safe output is limited to planned salary positions, volume revenue drivers and native formulas using existing permitted lines/departments. Ordinary native commands build a separate draft in an isolated context. The server recalculates its actual input/cell differences and requires exact decimal expected-value checks for every moved line and every formula; unsupported operations or failed checks save no partial proposal or inputs. The proof labels agent work, reused structure and added formula definitions, moved inputs/cells and actual checked values; a changed source or proposal is visibly stale. The official scenario stays unchanged until ordinary submission and exact-revision human promotion, which independently requires model-structure permission. No agent approves, closes, publishes, promotes, connects, pays or hires. AGENT-011 inherits the chosen-provider custody, local budget/stop, named authority and audit machinery into its global governance. `tests/structure-versions.test.mjs`, “AGENT-008 reviewed model requests create only atomic tested draft proposals with exact diffs and independent promotion authority”, proves the model-edge request, named positions/revenue drivers/formula, source/input/cell differences and exact expected-value checks; the official forecast is unchanged, malformed and bogus expectations create no partial proposal, and an approvals-only person receives a model-structure refusal from ordinary promotion. It also proves exact consent, stale-source/budget/stop/current-Pay/unknown-outcome refusals and no automatic retry. `tests/modeler-browser.mjs` proves native configuration/request/proposal proof/ordinary comparison and stop at 1440/390.
+1. A model-edge request adds the named positions and drivers to a separate proposal with the corresponding differences and checked values.
+2. Promotion by a person without model-structure permission is refused.
+3. Under the held company policy, official scenarios change only after the commitment decision on the exact proposal revision.
 
-**Evidence.** `tests/structure-versions.test.mjs` (AGENT-008 reviewed model requests create only atomic tested draft proposals with exact diffs and independent promotion authority) `tests/modeler-browser.mjs`
-**Gap.** None.
+**Evidence.** `tests/structure-versions.test.mjs`; `tests/modeler-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A model-edge request adds the named positions; point 1: drivers to a separate proposal with the corresponding differences; point 1: checked values; point 2: Promotion by a person without model-structure permission is refused; point 3: Under the held company policy; point 3: official scenarios change only after the commitment decision on the exact proposal revision. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-009 — Analyst with cited answers
 
-Core · push-further · **done**
+Core · push-further · **done** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** *What the agent does:* it answers questions about the plan and actuals ("why is Q3 burn higher than budget?", "what happens to runway if we lose our largest customer?"). Each answer cites cells, rows and deals, and a what-if becomes a private scenario (`CYCLE-004`).
-
-*Data:* everything the asker may read, and nothing else.
-
-*Human control:* the answer is read-only. What-ifs stay private until the asker shares or submits them, and a salary the asker cannot see never reaches the answer.
+**Requirement.** The analyst answers questions using visible cells, rows and deals and makes what-ifs as private scenarios. Read-only analysis and reversible what-ifs carry standard, regulated payroll data adds sensitive and outside sharing external; the company's policy decides each call. [Detailed semantics](docs/planning-semantics.md#agent-009).
 
 **Acceptance.**
-1. with a model fake, a viewer asks about payroll by department and receives totals only; a planted salary is absent from the request sent to the model fake and from the answer.
-2. Current aggregate analyst semantics (sx-easel-c46-r1; ct approved 23 October 2026 at 11:18 UTC).
-3. A native member explicitly previews and consents to each request.
-4. The fixed chosen-model endpoint receives whitelisted visible monthly cells and available aggregate cash only, without positions, source traces, original rows or compensation inputs.
-5. The model selects citations; the server validates them against that exact request and renders native totals, discarding all provider prose.
-6. Requests reserve the shared monthly allowance before egress, never retry automatically, and recheck source, live authority, key and governance revisions before acceptance.
-7. Output is labeled agent work and remains read-only.
-8. An optional equally visible reference scenario supplies native integer-cent differences, with both cell citations; these explain the arithmetic without claiming a cause. The shared key grants no additional source authority. A planner explicitly chooses an expense amount or a customer revenue source to remove, then `/api/easel/analyst/what-if` creates a private CYCLE-004 sandbox and applies only that native edit under the requester’s live permissions. Viewers cannot edit, stale analyses refuse, the official source is unchanged and the result returns native cash citations. Ordinary sandbox sharing and submission remain deliberate human actions. Future REV-001 and REV-002 sources inherit the same visibility, exact consent and validated citation boundary. `tests/agent-governance.test.mjs`, “Analyst sends only viewer-visible department totals, validates cited cells and discards private model prose with live stop and allowance fences”, proves viewer totals, absent planted salaries at the model edge and answer, invented citation refusal, unchanged plan, stop and budget. `tests/agent-governance-browser.mjs` covers the native reviewed request and cited answer at 1440 and 390.
+1. A viewer asking about payroll by department receives only visible totals.
+2. A planted salary is absent from both the model-edge request and the rendered answer.
+3. A what-if becomes a private sandbox under CYCLE-004 without changing the official source, and restricted salaries remain outside the answer.
 
-**Evidence.** `tests/agent-governance.test.mjs` (Analyst sends only viewer-visible department totals, validates cited cells and discards private model prose with live stop and allowance fences; Cited reference differences and private expense what-ifs retain live authority and leave the official plan unchanged) `tests/agent-governance-browser.mjs`
-**Gap.** Ct approved 23 Oct 11:18 UTC; aggregate-only cited explanations, reference differences and explicit private native what-ifs; viewer privacy and current authority proved
+**Evidence.** `tests/agent-governance.test.mjs`; `tests/agent-governance-browser.mjs`
+**Gap.** None.
 
 #### AGENT-010 — Recurring missions
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-002, BASE-AGENT-007, BASE-AGENT-008, BASE-AGENT-011
 
-**Requirement.** *What the agent does:* a validated analysis (for example a weekly cash brief, a month-end flux review or a pipeline coverage check) is saved as a mission that runs on a schedule and delivers its result to named people. The result carries the same citations and labels as `AGENT-009`.
-
-*Data:* as `AGENT-009`, under the mission owner's authority.
-
-*Human control:* finance approves each mission and its audience. A mission whose sources are stale (`CONNECT-005`) says so instead of reporting.
+**Requirement.** A recurring mission runs a saved analysis on its schedule and delivers cited, labeled results to its named audience. Internal analysis carries standard and outside recipients add external; the company's policy decides mission creation, audience and delivery. [Detailed semantics](docs/planning-semantics.md#agent-010).
 
 **Acceptance.**
-1. with a fake clock, mail and model fakes, a weekly cash brief runs Monday, is delivered to two people, and reports stale sources when a connector is stale.
-2. Current weekly semantics (sx-easel-c46-r1; ct approved 23 October 2026 at 11:18 UTC).
-3. Native company-wide finance approves a previously answered analysis and an exact audience of active native finance people.
-4. The saved scenario, analysis month and question run Monday at 08:00 in the saved company zone, under the still-active approving person's scheduler authority.
-5. Each occurrence and each mail intent is durable before egress, with no automatic retry of unknown outcomes.
-6. Current recipient authority, mission enablement and global stop are rechecked before sends.
-7. Existing Gauge, Gusto and Plaid connection observations are read without refreshing them; previously connected sources that are disconnected, lack their excluded key, have errors, no refresh, future observations or observations older than 24 hours produce a stale notice instead of a model report.
-8. This conservative observation cutoff does not implement CONNECT-005 scheduling. Agent and model labels and cell citations travel in the result. `tests/agent-governance.test.mjs`, “Approved Monday missions use named finance authority, deliver once to two current people and replace stale connector analysis with a notice under a fake clock”, proves Sunday and pre-08:00 refusal, Monday delivery to two people, deduplication, Plaid freshness after a native fake-provider refresh, stale notice without model egress, audience refusal and mission stop. `tests/agent-governance-browser.mjs` covers native approval and stop at 1440 and 390.
+1. With fake clock, mail and model edges, a weekly cash brief runs on Monday and reaches two named recipients.
+2. A stale connector produces a stale-source notice instead of a model report.
+3. The result retains the same citations, agent labels and reader visibility as AGENT-009.
 
-**Evidence.** `tests/agent-governance.test.mjs` (Approved Monday missions use named finance authority, deliver once to two current people and replace stale connector analysis with a notice under a fake clock) `tests/agent-governance-browser.mjs`
-**Gap.** Ct approved 23 Oct 11:18 UTC; approved Monday 08:00 company-local missions to named finance people; fresh and stale source outcomes, durable no-retry deliveries and daylight saving proved
+**Evidence.** `tests/agent-governance.test.mjs`; `tests/agent-governance-browser.mjs`
+**Gap.** Carried evidence establishes 6 audited outcomes. Complete assertion mapping remains owed for point 3: The result retains the same citations; point 3: agent labels; point 3: reader visibility as AGENT-009. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 #### AGENT-011 — Agent governance
 
-Core · push-further · **done**
+Core · push-further · **partial** · Cites BASE-AGENT-007, BASE-AGENT-009, BASE-AGENT-011, BASE-AGENT-002, BASE-AGENT-008
 
-**Requirement.** *What the agent does:* every in-product agent runs under a named person's or service's authority and filtering. It uses the owner's chosen model provider and key, within a monthly USD budget, and every action and model call is recorded in the audit trail (`AUDIT-001`). Agent output is labeled as agent work.
-
-*Data:* the audit trail and agent settings.
-
-*Human control:* finance enables each agent, sets its budget and can stop all agents at once. Agents can never approve, close, publish, promote, connect, pay or hire.
-
-AGENT-006's deterministic action chases ship before this clause: they call no model, act as `scheduler:actions` for a still-active owner or admin who published a pack, and are recorded in Activity. Before shipping, AGENT-011 inherits them: per-agent enablement, the stop switch and agent labels cover those chases as well.
+**Requirement.** Planning agents use the company-selected model and credential through the shared policy and planning audit. Their seed-specific activity includes constraint work, source review, questions, learning, commentary, modeling, analyses, missions and action chases; the company's policy decides each tool's declared classes. [Detailed semantics](docs/planning-semantics.md#agent-011).
 
 **Acceptance.**
-1. with a model fake, an agent run is recorded with its person, model and cost; at the budget, further runs are refused; the stop switch ends a running agent; an agent call to approve or promote is refused by the server.
-2. Current global governance slice (sx-easel-c44; ct approved 23 October 2026 at 11:18 UTC).
-3. Native company-wide finance controls enablement for the current agent catalogue, a shared monthly USD ceiling in addition to existing individual model allowances, and one global stop.
-4. Existing agents retain their shipped native enabling rules until finance changes governance; new Analyst and Recurring missions start disabled.
-5. The model, fixed endpoint and sealed archive-excluded owner key remain the AGENT-007 provider configuration.
-6. A reservation is an audited conservative allowance rather than provider-reported cost, and attempts retain it on unknown or refused outcomes.
-7. Changing governance invalidates outstanding model previews and results, including a stop followed by resume.
-8. The stop covers current commentary, modeler, analyst, missions, MCP calls, constraint watch and responses, owner questions, learning, source staging and scheduled action chases; passive source safety holds remain enforced. Agents cannot exercise approval, publication or connection administration, and the closed MCP catalogue refuses approve, close, publish, promote, connect, pay and hire operations. Supporting work still checks the current grant and its original token ceiling: a service credential may edit a working forecast horizon, and a previously reviewed Sheets schedule may read its saved range and submit a proposal. Neither can approve or promote it, and the schedule cannot administer connection credentials. Later agent doors inherit these same checks before shipping. `tests/variance-commentary.test.mjs`, “AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation”, proves audited person, model and reserved cost basis, shared budget refusal, individual disablement, global stop during a model call including resume before its return, and machine action refusals. `tests/agent-governance.test.mjs` additionally proves direct service-token approval and promotion refusal and the global stop for those clients. `tests/decision-followup.test.mjs`, “AGENT-006 follows a published hiring delay: promoted forecast effect, chase before the due date, owner revision and stop, finance-approved change and the realized payroll saving after July closes”, proves chase enablement and global stop. `tests/structure-versions.test.mjs` retains the isolated modeler and independent promotion proof. `tests/api-tokens.test.mjs`, “API-001 scoped personal and service credentials expire, revoke, retain issuer permissions and fence writes”, proves permitted working-horizon edits and exact revision refusal. `tests/workbook-undo.test.mjs`, “Scheduled Google Sheets ranges submit exact changed-cell proposals and refuse missing or reshaped sources with sealed native custody”, proves reviewed scheduled proposals, unchanged working targets, live Pay revocation and native-only credential administration. `tests/agent-governance-browser.mjs` covers finance controls and global stop at 1440 and 390.
+1. A model-edge planning run records the sponsoring person, chosen model and reserved provider-cost basis.
+2. Under a company policy setting a provider budget, exhausting it prevents another cost-bearing call.
+3. A person's stop action ends in-flight planning work and scheduled action chases.
+4. Under a company policy holding commitment calls, an approval or promotion has no effect before that policy's approval.
 
-**Evidence.** `tests/variance-commentary.test.mjs` (AGENT-007 opt-in model drafts reserve budget before one fixed-endpoint call and require human confirmation: person, model, cost reservation, budget and in-flight stop; MCP approval and promotion refusal) `tests/agent-governance.test.mjs` (Analyst sends only viewer-visible department totals, validates cited cells and discards private model prose with live stop and allowance fences: service-token approval and promotion refusal) `tests/decision-followup.test.mjs` (AGENT-006 follows a published hiring delay: promoted forecast effect, chase before the due date, owner revision and stop, finance-approved change and the realized payroll saving after July closes) `tests/agent-governance-browser.mjs` (finance controls and stop at 1440 and 390)
-**Gap.** None.
+**Evidence.** `tests/variance-commentary.test.mjs`; `tests/agent-governance.test.mjs`; `tests/decision-followup.test.mjs`; `tests/agent-governance-browser.mjs`
+**Gap.** Carried evidence establishes 0 audited outcomes. Complete assertion mapping remains owed for point 1: A model-edge planning run records the sponsoring person; point 1: chosen model; point 1: reserved provider-cost basis; point 2: Under a company policy setting a provider budget; point 2: exhausting it prevents another cost-bearing call; point 3: A person's stop action ends in-flight planning work; point 3: scheduled action chases; point 4: Under a company policy holding commitment calls; point 4: an approval or promotion has no effect before that policy's approval. See docs/contract/DONE-AUDIT.md; no requirement is narrowed.
 
 ## Agent surface
 
-None.
+### Agent surface
+
+#### SURFACE-001 — Planning registry and public job parity
+
+Agent surface · target · **partial** · From new · Cites BASE-AGENT-002, BASE-AGENT-006, BASE-AGENT-013 · Register R-7
+
+**Requirement.** The planning registry covers this section's tool table and the stated import, connector, device, screen and installation exceptions.
+
+**Acceptance.**
+1. The discovered catalogue maps every Core clause to the corresponding planning tool or its stated non-tool reason, with the same possible risk classes as this table.
+2. For a planning input, comparison, submission and published-pack fixture, tool results agree with the corresponding browser actions and the documented output shape.
+3. A registry change updates the on-site specialist instructions and planning prompts together.
+
+**Evidence.** `tests/mcp.test.mjs`
+**Gap.** Existing MCP reads, proposal edits and native planning actions are delivered. The complete namespaced registry, Core mapping, public schemas, class metadata and shared two-policy harness remain missing.
+
+#### SURFACE-002 — Planning and exposure class fixtures
+
+Agent surface · target · **missing** · From new · Cites BASE-AGENT-006, BASE-AGENT-007
+
+**Requirement.** Easel classifies planning work from the target records and their audiences.
+
+**Acceptance.**
+1. An internal reversible draft, grid edit, model parameter or private what-if carries standard with the affected item count.
+2. A message, report drop or newly visible share outside the company adds external with recipient count and known, new or public counterparty; moving content into an externally visible destination has the same result.
+3. A budget approval, close, publication, sign-off, proposal promotion or department review decision carries commitment with the exact decision revision and planning value.
+4. A financial forecast, debt plan or tax estimate carries no money class merely because its numbers describe money; Easel executes no payment, transfer or payroll run.
+5. An argument or imported text claiming that an outside recipient is internal leaves those planning classifications unchanged.
+
+**Evidence.** None.
+**Gap.** No complete seed-specific conformance journey is implemented.
+
+#### SURFACE-003 — Authority, credential and regulated-data class fixtures
+
+Agent surface · target · **missing** · From new · Cites BASE-AGENT-005, BASE-AGENT-006, BASE-AGENT-008
+
+**Requirement.** The specialist's administrative and regulated-data actions retain the planning-specific facts needed for the shared policy decision.
+
+**Acceptance.**
+1. Changing planning membership, Pay detail, scenario shares, group grants or integration authority carries access with affected people and whether authority widens or narrows.
+2. Connecting or rotating provider credentials or changing protective identity settings carries security with the named provider or setting.
+3. Erasing a former member's eligible identity carries destructive with its record count; touching regulated payroll, bank or identity records adds sensitive with kind and count.
+4. An outside provider's personal OAuth consent, identity verification or hosted personal step adds gated naming the provider and step; a brokered company API route is classified on its actual facts instead.
+
+**Evidence.** None.
+**Gap.** No complete seed-specific conformance journey is implemented.
+
+#### SURFACE-004 — Planning records, handoffs and specialist instructions
+
+Agent surface · target · **missing** · From new · Cites BASE-AGENT-003, BASE-AGENT-010, BASE-AGENT-013
+
+**Requirement.** Planning records and change events provide the finance specialist's source context without manufacturing an answer from an untrusted narrative.
+
+**Acceptance.**
+1. Resources cover scenarios, actual batches, positions, reports, review packs, tasks, decisions, connections and source observations at the corresponding templates below.
+2. A closed-month event links the immutable planning version; a source-change event links its reviewed source observation and the affected planning records.
+3. The planning prompts describe month close, budget preparation, source review and a cash-constraint response using the mapped Core jobs.
+4. A source handoff from Pantry, Orbit, Willow, Lodge, Nectar, Gauge, Purse or Coaster retains the external record URI and results in a typed planning event for the receiving specialist.
+
+**Evidence.** None.
+**Gap.** No complete seed-specific conformance journey is implemented.
+
+#### SURFACE-005 — A stranger specialist runs a planning week
+
+Agent surface · target · **missing** · From new · Cites BASE-AGENT-007, BASE-AGENT-012, BASE-AGENT-013
+
+**Requirement.** A stranger given Easel's URL completes a seeded finance week entirely through the planning door under two named company policies.
+
+**Acceptance.**
+1. The week reviews ledger and roster arrivals, prepares a budget, requests department work, compares a cash-floor response, closes a month and publishes its source-backed review pack.
+2. Under the all-autonomous company policy, every declared class runs without a person waiting on or deciding a call, and the finished numbers reconcile to the fixture.
+3. Under the held company policy, standard calls enter review and the other declared classes await the policy's named approver; the signed-in test person decides those saved revisions.
+4. The resulting budget, source provenance, scenario comparisons, notifications and immutable pack match the same week's expected planning outcomes under both policies.
+5. Repeating an interrupted import or planning decision yields one intended effect, and another department's payroll never appears in the specialist's results.
+6. Provider failures leave the prior planning values available and report the affected source or conclusion explicitly.
+
+**Evidence.** None.
+**Gap.** No complete seed-specific conformance journey is implemented.
 
 ## Later
 
@@ -1830,4 +1898,12 @@ None.
 
 ## Field proof register
 
-No field proof is recorded yet.
+| ID | Proof | Clauses | State | Date | Receipt |
+| --- | --- | --- | --- | --- | --- |
+| R-1 | Human screen-reader pass on the planning and public journeys | EASEL-017, MOBILE-001 | not run | | |
+| R-2 | Independent VPAT for the planning and public journeys | EASEL-017, MOBILE-001 | not run | | |
+| R-3 | Recorded Excel-on-the-web tenant run of live workbook functions and write-back | SHEET-001 | not run | | |
+| R-4 | iOS and Android store approval/listing receipts | MOBILE-002 | not run | | |
+| R-5 | Recorded Xero live demo-company tenant qualification | CONNECT-002 | not run | | |
+| R-6 | Recorded Google Workspace test-domain qualification | SHEET-002 | not run | | |
+| R-7 | Outside-agent client receipts in Claude, ChatGPT, Codex and Copilot | SURFACE-001 | not run | | |

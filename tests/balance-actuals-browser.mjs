@@ -1,4 +1,4 @@
-// CONNECT-007: native finance mapping/import/reconciliation at desktop and phone widths.
+// CONNECT-007, CONNECT-012: native finance mapping/import/reconciliation at desktop and phone widths.
 import assert from 'node:assert/strict'
 import { mkdir, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'

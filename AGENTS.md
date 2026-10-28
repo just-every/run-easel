@@ -36,8 +36,11 @@ Use the setup prompt or the documented `--owner-email` flag for the real owner m
 
 ## Agents doing planning work
 
-Agents act as a signed-in person through `API.md`, with that person's authority. For "Delay the two sales hires until July": create a proposal from the forecast (`proposal-create`), change the positions in it, read `GET /api/easel/compare` for the changed cells, submit it, and leave promotion of that exact revision to finance. For "Explain the cloud-spend variance": read `GET /api/easel/variance/:month` (accepted rows and budget sources per line, hypotheses marked), write the explanation with citations, and leave confirmation to the department and publication to finance.
+Agents act for a named person through the shared planning registry and the company's risk policy. Drafting an alternative is standard; binding a budget, closing, publishing or promoting is commitment; outside messages are external and regulated payroll adds sensitive. The company's policy decides what runs, is reviewed, awaits approval or is off. For “Delay the two sales hires until July”, prepare the alternative and compare its exact revisions; a held company policy routes promotion to its named approver. For “Explain cloud-spend variance”, use accepted source citations and label hypotheses. See the Agent surface in CONTRACT.md.
 
 ## Tests
 
 `pnpm test:easel` runs one flow test per `CONTRACT.md` clause through the HTTP API on real workerd and D1. `node tests/browser.mjs` is the full proof from a fresh clone: journeys at 1440 and 390, setup rerun, build, preview, deploy dry run, export and restore. Run the tests of what you touch plus `pnpm typecheck`; CI runs the full wall. Keep tests to flows a person would notice breaking.
+
+Lander-Regenerate: node src/base/contract-docs.mjs write
+Lander-Regenerate: node scripts/edition-authoring/cli.mjs lock

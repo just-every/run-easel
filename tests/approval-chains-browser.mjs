@@ -1,4 +1,4 @@
-// CYCLE-007: emitted production Worker, real D1 and native sign-in. Mail alone
+// CYCLE-007, CYCLE-009, CYCLE-010: emitted production Worker, real D1 and native sign-in. Mail alone
 // is a network-edge fake; every configuration and decision uses the built UI.
 import assert from 'node:assert/strict'
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare'

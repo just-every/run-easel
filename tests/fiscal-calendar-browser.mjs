@@ -1,4 +1,4 @@
-// MODEL-001: native setup, horizon edits and exact fiscal totals at desktop/phone widths.
+// MODEL-001, MODEL-010: native setup, horizon edits and exact fiscal totals at desktop/phone widths.
 import assert from 'node:assert/strict'
 import { mkdir, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'

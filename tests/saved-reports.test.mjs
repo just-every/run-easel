@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { readWorkbook, proveFormulas, evaluate } from './spreadsheet-proof.mjs'
 
-// REPORT-001: one real user flow covers saved numeric comparisons and the
+// REPORT-001, REPORT-008: one real user flow covers saved numeric comparisons and the
 // existing dashboard share boundary.
-test('REPORT-001 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes', async t => {
+test('REPORT-001, REPORT-008 saved reports compare fiscal periods, YTD, TTM and prior-year actuals without compensation detail or invented zeroes', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Report comparisons', planStart: '2026-10', fiscalYearStart: 10, horizon: 24 })
  const sales = await h.command('department', { name: 'Sales' })

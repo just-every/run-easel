@@ -37,6 +37,8 @@
       "id": "budget-cycle",
       "clauses": [
         "CYCLE-007",
+        "CYCLE-009",
+        "CYCLE-010",
         "EASEL-009",
         "EASEL-010"
       ]
@@ -155,7 +157,8 @@
     {
       "id": "metric-triggered-tasks",
       "clauses": [
-        "CYCLE-002"
+        "CYCLE-002",
+        "CYCLE-008"
       ]
     },
     {
@@ -179,7 +182,8 @@
     {
       "id": "debt-and-financing",
       "clauses": [
-        "FIN-003"
+        "FIN-003",
+        "FIN-010"
       ]
     },
     {
@@ -257,13 +261,16 @@
     {
       "id": "fiscal-calendar",
       "clauses": [
-        "MODEL-001"
+        "MODEL-001",
+        "MODEL-010"
       ]
     },
     {
       "id": "compensation-estimates",
       "clauses": [
-        "PEOPLE-004"
+        "PEOPLE-004",
+        "PEOPLE-008",
+        "PEOPLE-009"
       ]
     },
     {
@@ -287,13 +294,15 @@
     {
       "id": "saved-numeric-reports",
       "clauses": [
-        "REPORT-001"
+        "REPORT-001",
+        "REPORT-008"
       ]
     },
     {
       "id": "custom-model-dimensions",
       "clauses": [
-        "MODEL-003"
+        "MODEL-003",
+        "MODEL-011"
       ]
     },
     {
@@ -311,7 +320,8 @@
     {
       "id": "background-model-calculation",
       "clauses": [
-        "MODEL-007"
+        "MODEL-007",
+        "MODEL-012"
       ]
     },
     {

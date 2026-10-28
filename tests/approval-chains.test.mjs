@@ -6,7 +6,7 @@ import { restoreModelRecords } from './restore-flow.mjs'
 import { createPortability } from '@runeditrun/rer/modules/portability'
 import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
 
-test('CYCLE-007 ordered department reviews bind live authority, exact content, versions, history, notifications and portable records', async t => {
+test('CYCLE-007, CYCLE-009, CYCLE-010 ordered department reviews bind live authority, exact content, versions, history, notifications and portable records', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Synthetic Easel review', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const sales = await h.command('department', { name: 'Sales' }), eng = await h.command('department', { name: 'Engineering' })
@@ -140,7 +140,7 @@ test('CYCLE-007 ordered department reviews bind live authority, exact content, v
  await restoreModelRecords(h, ['approval-chain', 'approval-chain-version', 'approval-content', 'submission'])
 })
 
-test('CYCLE-007 grid undo, proposal promotion, chain deletion and live reviewer removal preserve exact review boundaries', async t => {
+test('CYCLE-007, CYCLE-009, CYCLE-010 grid undo, proposal promotion, chain deletion and live reviewer removal preserve exact review boundaries', async t => {
  let now = '2026-10-26T15:00:00.000Z'
  const h = await harness({ now: () => now }); t.after(() => h.close())
  await h.command('workspace', { name: 'Synthetic Easel review changes', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })

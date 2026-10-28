@@ -27,7 +27,7 @@ function reconcile(v) {
  }
 }
 
-test('MODEL-001: October 36-month budgets reconcile monthly, fiscal-quarter and annual cents, with fixed frozen horizons and editable 12–60-month plans',async t=>{
+test('MODEL-001, MODEL-010: October 36-month budgets reconcile monthly, fiscal-quarter and annual cents, with fixed frozen horizons and editable 12–60-month plans',async t=>{
  const h=await harness();t.after(()=>h.close())
  const settings={name:'Ridgeline Advisory',currency:'USD',fiscalYearStart:10,planStart:'2026-10',horizon:36}
  await h.command('workspace',settings)
@@ -94,7 +94,7 @@ test('MODEL-001: October 36-month budgets reconcile monthly, fiscal-quarter and 
  }
 })
 
-test('MODEL-001: real 4-4-5 and 5-4-4 accounting dates drive imports, contract recognition, settlement and exact fiscal roll-ups',async t=>{
+test('MODEL-001, MODEL-010: real 4-4-5 and 5-4-4 accounting dates drive imports, contract recognition, settlement and exact fiscal roll-ups',async t=>{
  for(const calendar of ['4-4-5','5-4-4']) {
   const h=await harness()
   try {

@@ -1,4 +1,4 @@
-// PEOPLE-004: explicit REV-004 booking commission planning estimates only.
+// PEOPLE-004, PEOPLE-008, PEOPLE-009: explicit REV-004 booking commission planning estimates only.
 import { cents, percentBps, formatBps, formatMoney, mulDiv } from './units'
 import { requireThat, type Data } from './types'
 

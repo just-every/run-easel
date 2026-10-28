@@ -164,7 +164,7 @@ test('CONNECT-006 exact overrides, agreeing rules, ambiguity and reviewed rule c
  assert.equal(month(reconciliation, '2026-01').costs, -2000)
 })
 
-test('CONNECT-007 accepts attributed balance-sheet journals with reusable targets and a true zero-sum trial balance', async t => {
+test('CONNECT-007, CONNECT-012 accepts attributed balance-sheet journals with reusable targets and a true zero-sum trial balance', async t => {
  const { balanceSource, seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
  const h = await harness(); t.after(() => h.close())
  const { revenue, expense, receivables } = await seedBalanceActuals(h.command)
@@ -250,7 +250,7 @@ test('CONNECT-007 accepts attributed balance-sheet journals with reusable target
 })
 
 
-test('CONNECT-007 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
+test('CONNECT-007, CONNECT-012 FIN-004 actual openings replace estimates and explicitly attributed prepaid, payroll, deferred and asset schedules reconcile, freeze and export', async t => {
  const { seedBalanceActuals } = await import('./balance-actuals-fixture.mjs')
  for(const sourceKind of ['file','pantry','qbo','xero']) {
  const {pantryProvider,pantryGrant}=await import('./pantry-provider.mjs'),provider=pantryProvider()

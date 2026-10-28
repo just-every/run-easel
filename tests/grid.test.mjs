@@ -4,7 +4,7 @@ import JSZip from 'jszip'
 import { harness } from './harness.mjs'
 import { acceptHistory, historyFile } from './history-fixture.mjs'
 
-test('MODEL-008: exact grid operations, preview, split custody, revisions, traces and undo through HTTP', async () => {
+test('MODEL-008, MODEL-013: exact grid operations, preview, split custody, revisions, traces and undo through HTTP', async () => {
  const h = await harness()
  try {
   await h.command('workspace', { name: 'Ridgeline Planning', currency: 'USD', fiscalYearStart: 1, planStart: '2025-01' })

@@ -7,7 +7,7 @@ import { readWorkbook } from './spreadsheet-proof.mjs'
 
 const csvRows = text => text.trim().split('\r\n').slice(1).map(line => line.split(',').map(v => v === '' ? null : v))
 
-test('REPORT-007 a reviewed warehouse query drives a revenue line and a scoped BI token and the nightly CSV and Parquet drop carry the same pay-free dataset rows', async t => {
+test('REPORT-007, REPORT-009 a reviewed warehouse query drives a revenue line and a scoped BI token and the nightly CSV and Parquet drop carry the same pay-free dataset rows', async t => {
  let now = '2026-03-10T15:00:00.000Z'
  const remote = providerFakes()
  let responseOverride

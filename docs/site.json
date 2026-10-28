@@ -97,6 +97,35 @@
           "summary": "Check a deployment locally, then put Easel on your own account for the people who plan with you."
         }
       ]
+    },
+    {
+      "title": "Contract and calculation reference",
+      "pages": [
+        {
+          "slug": "planning-semantics",
+          "title": "Planning calculation and door semantics",
+          "file": "planning-semantics.md",
+          "summary": "Exact arithmetic, source mapping, custody and planning behavior."
+        },
+        {
+          "slug": "product-scope",
+          "title": "Buyer and scope",
+          "file": "product-scope.md",
+          "summary": "Named incumbent journeys, source systems and neighboring products."
+        },
+        {
+          "slug": "claims",
+          "title": "Homepage claims",
+          "file": "CLAIMS.md",
+          "summary": "Claims and the status of their supporting clauses."
+        },
+        {
+          "slug": "contract-audit",
+          "title": "Carried-done evidence audit",
+          "file": "contract/DONE-AUDIT.md",
+          "summary": "Point-by-point assertion references and remaining proof gaps."
+        }
+      ]
     }
   ]
 }

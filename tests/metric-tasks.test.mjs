@@ -4,7 +4,7 @@ import { harness } from './harness.mjs'
 import { seedParallelMonth } from './parallel-month-fixture.mjs'
 
 const list = '/api/easel/metric-tasks'
-test('CYCLE-002 closed-month overspend and runway create cited assigned tasks on refresh/close, deduplicate open work and enforce live authority', async t => {
+test('CYCLE-002, CYCLE-008 closed-month overspend and runway create cited assigned tasks on refresh/close, deduplicate open work and enforce live authority', async t => {
  const h = await harness(); t.after(() => h.close())
  let planner, other, viewer, rule, body, elsewhere
  const f = await seedParallelMonth(h.command, p => h.get(`/api/easel/${p}`), (op, b) => h.kit('actuals', op, b), {

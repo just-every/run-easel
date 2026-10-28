@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { readWorkbook, proveFormulas } from './spreadsheet-proof.mjs'
 
-test('PEOPLE-004 REV-004 linked commission planning estimates round once, follow payroll cash/taxes, preserve captures and enforce PEOPLE-005', async t => {
+test('PEOPLE-004, PEOPLE-008, PEOPLE-009 REV-004 linked commission planning estimates round once, follow payroll cash/taxes, preserve captures and enforce PEOPLE-005', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Commission planning', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const sales = await h.command('department', { name: 'Sales' }), other = await h.command('department', { name: 'Other' })
@@ -123,7 +123,7 @@ test('PEOPLE-004 REV-004 linked commission planning estimates round once, follow
 })
 
 
-test('PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through taxes, payroll timing, proposals, captures and PEOPLE-005', async t => {
+test('PEOPLE-004, PEOPLE-008, PEOPLE-009 hourly pay, benefits and 401(k) estimates reconcile through taxes, payroll timing, proposals, captures and PEOPLE-005', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Base compensation estimates', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const dept = await h.command('department', { name: 'Engineering' })
@@ -212,7 +212,7 @@ test('PEOPLE-004 hourly pay, benefits and 401(k) estimates reconcile through tax
  assert.equal(priorView.calculation.workingCapital.opening.accruedLiabilities, 667200)
 })
 
-test('PEOPLE-004 dated merit, March salary bonus, captured department defaults and marginal quota accelerators reach every compensation component through HTTP', async t => {
+test('PEOPLE-004, PEOPLE-008, PEOPLE-009 dated merit, March salary bonus, captured department defaults and marginal quota accelerators reach every compensation component through HTTP', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Complete compensation planning', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const dept = await h.command('department', { name: 'Engineering', onCostDefaultPercent: '12' })
@@ -299,7 +299,7 @@ test('PEOPLE-004 dated merit, March salary bonus, captured department defaults a
  }
 })
 
-test('PEOPLE-004 merit uses inclusive leap/retail days, half-away cents and prior-service cash without rewriting captures', async t => {
+test('PEOPLE-004, PEOPLE-008, PEOPLE-009 merit uses inclusive leap/retail days, half-away cents and prior-service cash without rewriting captures', async t => {
  for (const retail of [false,true]) {
   const h=await harness(); t.after(()=>h.close())
   await h.command('workspace',{name:'Dated compensation bounds',currency:'USD',fiscalYearStart:1,planStart:'2028-01',...(retail?{calendar:'4-4-5',retailStartDate:'2028-01-02'}:{})})

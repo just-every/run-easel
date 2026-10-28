@@ -1,4 +1,4 @@
-// PEOPLE-004: entered compensation planning assumptions, never payroll execution.
+// PEOPLE-004, PEOPLE-008, PEOPLE-009: entered compensation planning assumptions, never payroll execution.
 import { cents, hundredths, percentBps, formatMoney, formatHundredths, formatBps, mulDiv } from './units'
 import { periodForKey, type CalendarWorkspace } from './fiscal-calendar'
 import { choice, requireThat, type Data } from './types'

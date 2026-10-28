@@ -1,4 +1,4 @@
-// REPORT-007 warehouse inputs. Snowflake and Databricks hosts are owner
+// REPORT-007, REPORT-009 warehouse inputs. Snowflake and Databricks hosts are owner
 // entered but confined to the vendors' own domains; BigQuery uses its fixed
 // host with a read-only OAuth grant. Finance's query is the only statement
 // ever sent; the service role or grant must itself be read-only, and this

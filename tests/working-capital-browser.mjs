@@ -1,4 +1,4 @@
-// FIN-002: native entry of collections, vendor terms, prepaids and earned/pay schedules.
+// FIN-002, FIN-008, FIN-009: native entry of collections, vendor terms, prepaids and earned/pay schedules.
 import assert from 'node:assert/strict'
 import { cp, mkdtemp, mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

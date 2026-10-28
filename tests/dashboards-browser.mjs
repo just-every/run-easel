@@ -84,7 +84,7 @@ try {
   assert.ok(definition, 'UI-created dashboard is persisted')
   assert.equal(definition.audience, 'board')
   assert.equal(definition.scenario, fixture.budget.id)
-  // REPORT-001 saved numeric definitions share the existing dashboard audience.
+  // REPORT-001, REPORT-008 saved numeric definitions share the existing dashboard audience.
   await call('command/dashboard-save', { ...definition, report: { row: 'department', period: 'quarter', through: '2026-03', lines: [fixture.revenue.id], highlightBps: 1000 } })
   await page.reload(); await tab(page)
   await page.getByLabel('Dashboard', { exact: true }).selectOption(definition.id)

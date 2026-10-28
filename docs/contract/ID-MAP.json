@@ -147,9 +147,10 @@
       ]
     },
     "CONNECT-007": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "CONNECT-007"
+        "CONNECT-007",
+        "CONNECT-012"
       ]
     },
     "CONNECT-008": {
@@ -171,9 +172,10 @@
       ]
     },
     "MODEL-001": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "MODEL-001"
+        "MODEL-001",
+        "MODEL-010"
       ]
     },
     "MODEL-002": {
@@ -183,9 +185,10 @@
       ]
     },
     "MODEL-003": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "MODEL-003"
+        "MODEL-003",
+        "MODEL-011"
       ]
     },
     "MODEL-004": {
@@ -207,15 +210,17 @@
       ]
     },
     "MODEL-007": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "MODEL-007"
+        "MODEL-007",
+        "MODEL-012"
       ]
     },
     "MODEL-008": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "MODEL-008"
+        "MODEL-008",
+        "MODEL-013"
       ]
     },
     "MODEL-009": {
@@ -231,15 +236,18 @@
       ]
     },
     "FIN-002": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "FIN-002"
+        "FIN-002",
+        "FIN-008",
+        "FIN-009"
       ]
     },
     "FIN-003": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "FIN-003"
+        "FIN-003",
+        "FIN-010"
       ]
     },
     "FIN-004": {
@@ -285,9 +293,11 @@
       ]
     },
     "PEOPLE-004": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "PEOPLE-004"
+        "PEOPLE-004",
+        "PEOPLE-008",
+        "PEOPLE-009"
       ]
     },
     "PEOPLE-005": {
@@ -375,9 +385,10 @@
       ]
     },
     "CYCLE-002": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "CYCLE-002"
+        "CYCLE-002",
+        "CYCLE-008"
       ]
     },
     "CYCLE-003": {
@@ -405,15 +416,18 @@
       ]
     },
     "CYCLE-007": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "CYCLE-007"
+        "CYCLE-007",
+        "CYCLE-009",
+        "CYCLE-010"
       ]
     },
     "REPORT-001": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "REPORT-001"
+        "REPORT-001",
+        "REPORT-008"
       ]
     },
     "REPORT-002": {
@@ -447,9 +461,10 @@
       ]
     },
     "REPORT-007": {
-      "how": "kept",
+      "how": "split",
       "to": [
-        "REPORT-007"
+        "REPORT-007",
+        "REPORT-009"
       ]
     },
     "ACCESS-001": {

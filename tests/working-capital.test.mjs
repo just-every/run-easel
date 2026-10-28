@@ -20,7 +20,7 @@ const reconcile = calculation => {
  }
 }
 
-test('FIN-002 day-based revenue and vendor terms, annual deferrals, prepaid amortization, earned payroll and quarterly bonuses reconcile with traces, proposals and frozen Excel', async t => {
+test('FIN-002, FIN-008, FIN-009 day-based revenue and vendor terms, annual deferrals, prepaid amortization, earned payroll and quarterly bonuses reconcile with traces, proposals and frozen Excel', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Working capital studio', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Operations' })
@@ -103,7 +103,7 @@ test('FIN-002 day-based revenue and vendor terms, annual deferrals, prepaid amor
  assert.doesNotMatch(JSON.stringify(book.worksheets.map(s => s.getSheetValues())), /Private annual insurance|Private payroll holder/)
 })
 
-test('FIN-002 opening estimates, cent conservation, DPO, clamped pay dates and closed recognition discrepancies remain explicit through public scenario commands', async t => {
+test('FIN-002, FIN-008, FIN-009 opening estimates, cent conservation, DPO, clamped pay dates and closed recognition discrepancies remain explicit through public scenario commands', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Exact working capital', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Operations' }), budget = (await h.get('/api/easel/state')).scenarios[0]

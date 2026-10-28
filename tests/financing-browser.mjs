@@ -1,4 +1,4 @@
-// FIN-003: finance plans borrowing/equity; members inspect aggregate outcomes.
+// FIN-003, FIN-010: finance plans borrowing/equity; members inspect aggregate outcomes.
 import assert from 'node:assert/strict'
 import { mkdir, readFile, rm } from 'node:fs/promises'
 import { resolve, join } from 'node:path'

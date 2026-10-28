@@ -1,4 +1,4 @@
-// PEOPLE-004: native commission planning estimates and inherited PEOPLE-005/MOBILE-001 doors.
+// PEOPLE-004, PEOPLE-008, PEOPLE-009: native commission planning estimates and inherited PEOPLE-005/MOBILE-001 doors.
 import assert from 'node:assert/strict'
 import { mkdir, readFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
