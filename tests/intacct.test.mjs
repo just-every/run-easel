@@ -108,6 +108,7 @@ test('CONNECT-011 recorded Web Services history, reviewed entity corrections, na
  const pick=(entity,target,period,opening=false)=>selections[entity.id].filter(r=>r.target===target&&r.period===period&&r.opening===opening).map(r=>r.id)
  const elimination={name:'Reviewed provider management fee and balances',month:'2026-01',group:f.first.id,fromEntity:f.ca.id,toEntity:f.eu.id,fromAmount:'100',toAmount:'80',receivable:'100',payable:'80',cashReceived:'100',cashPaid:'80',reviewed:true,ledgerSources:{from:{charge:pick(f.ca,f.revenue.id,'2026-01'),receivable:pick(f.ca,'bs:receivables','2023-12',true),cash:pick(f.ca,'cash','2026-01')},to:{charge:pick(f.eu,f.expense.id,'2026-01'),payable:pick(f.eu,'bs:payables','2023-12',true),cash:pick(f.eu,'cash','2026-01')}}}
  await h.command('entity-elimination-save',{...elimination,toAmount:'81'},h.owner,409)
+ await h.command('entity-elimination-save',{...elimination,ledgerSources:{...elimination.ledgerSources,from:{...elimination.ledgerSources.from,cash:pick(f.ca,'cash','2023-12',true)}}},h.owner,409)
  const savedElimination=await h.command('entity-elimination-save',elimination)
  await h.command('entity-elimination-save',elimination,h.owner,409)
  const consolidated=await h.get(groupPath),january=consolidated.consolidated[0]

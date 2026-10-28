@@ -69,7 +69,7 @@ export async function variance(c: Context, month: string,scenario?:string) {
   const v = a - bud
   const revenue = l?.type === 'revenue'
   const payroll = l?.payroll === true || (planned.get(k)?.sources ?? []).some(source => source.kind === 'position')
-  const detail = seesDepartmentDetail(c.x, department) && (!payroll || seesPayDetail(c.x, department))
+  const detail = c.x.role!=='viewer' && seesDepartmentDetail(c.x, department) && (!payroll || seesPayDetail(c.x, department))
   const citations = detail ? (await rowsFor(c.db,s,month,line,department,entity,c.x)) : []
   const planSources = detail ? (planned.get(k)?.sources ?? []).map(x => x.trace) : []
   // A budgeted item in the neighbouring month that matches the difference

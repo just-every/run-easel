@@ -46,6 +46,10 @@ export function validateElimination(c: Context, rule: Data, from: Data, to: Data
   requireThat(rule.receivable<=total('from','receivable',1)&&rule.payable<=total('to','payable',-1),'Eliminated balances exceed selected accepted ledger sources',409)
   requireThat(rule.cashReceived<=total('from','cash',1)&&rule.cashPaid<=total('to','cash',-1),'Eliminated settlements exceed selected accepted ledger sources',409)
   requireThat(current.from.charge.every((row:Data)=>row.target===rule.revenueLine)&&current.to.charge.every((row:Data)=>row.target===rule.expenseLine),'The reviewed source charge line changed',409)
+  const leftBalance=left.balanceSheet?.find(row=>row.month===rule.month),rightBalance=right.balanceSheet?.find(row=>row.month===rule.month)
+  requireThat(leftBalance&&rightBalance&&!leftBalance.incompleteReasons?.length&&!rightBalance.incompleteReasons?.length&&!leftBalance.balanceDifference&&!rightBalance.balanceDifference,'Review both entity statement differences before eliminating accepted balances',409)
+  const periodRules=[...peers.filter(peer=>peer.id!==rule.id&&peer.month===rule.month),rule]
+  requireThat(periodRules.filter(peer=>peer.fromEntity===from.id).reduce((n,peer)=>n+peer.receivable,0)<=leftBalance.receivables&&periodRules.filter(peer=>peer.toEntity===to.id).reduce((n,peer)=>n+peer.payable,0)<=rightBalance.payables,'Eliminated balances exceed current entity receivables or payables',409)
   return{charge:fromCharge,receivable,payable,cashReceived,cashPaid}
  }
  const rules = [...peers.filter(r => r.id !== rule.id && r.month === rule.month), rule]

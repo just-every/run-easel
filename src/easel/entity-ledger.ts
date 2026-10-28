@@ -22,7 +22,7 @@ export function ledgerEliminationSources(rows:Data[],selection:Data,month:string
  return Object.fromEntries(fields.map(field=>{
   const ids=selection[field];requireThat(Array.isArray(ids)&&ids.length<=5000&&ids.every(id=>typeof id==='string'),'Choose accepted source identities')
   const selected=ids.map(id=>{const row=rows.find(r=>r.id===id);requireThat(row&&!seen.has(id),'Ledger source is missing or repeated',409);seen.add(id)
-   requireThat(field==='charge'?row.period===month:row.period<=month,'Ledger source period is outside the reviewed elimination',409)
+   requireThat(field==='charge'||field==='cash'?row.period===month&&!row.opening:row.period<=month,'Ledger source period is outside the reviewed elimination',409)
    requireThat(field==='receivable'?row.target==='bs:receivables':field==='payable'?row.target==='bs:payables':field==='cash'?row.target==='cash':row.target&&!String(row.target).startsWith('bs:')&&row.target!=='cash'&&row.target!=='excluded','Ledger source mapping is not appropriate for this elimination',409)
    return{id:row.id,digest:row.digest,amount:row.amount,target:row.target}
   });return[field,selected]
