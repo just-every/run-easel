@@ -107,7 +107,7 @@ export async function intacctImport(c: Context, env: Bindings, op: string, b: Da
    requireThat(b.sourceFingerprint === digest, 'Intacct changed after preview; review again', 409)
    assertSourceGuardAcceptance(c,digest,[source.month],binding.entity)
    recordMonth(c)
-   completeSourceGuards(c,{sha256:digest})
+   completeSourceGuards(c,{sha256:digest,entity:binding.entity})
   }
   if(op==='stage')return{result:stageProviderSource(c,{...b,source:monthId,scenario:all(c.s,'entity').find(e=>e.id===binding.entity)?.forecast??binding.scenario,entity:binding.entity},{accounts:[],departments:[],dimensionExceptions:[],sha256:digest,sourceFingerprint:digest},{headers:['intacct-normalized-ledger-v1'],accounts:source.chart.map(a=>({account:a.code,name:a.name,types:[a.type],category:a.category,normalBalance:a.normalBalance,closingType:a.closingType,closingAccount:a.closingAccount})),dimensions:source.dimensions,coverage:{month:source.month,opening:b.includeOpening}})}
   return { result: { source: sourceSummary, sourceFingerprint: digest, changedRows: 0, changedTransactions:0, unchanged: true, accepted: op === 'commit' } }

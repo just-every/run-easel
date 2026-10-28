@@ -54,7 +54,7 @@ export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data,through?:str
 }
 /** Called after actuals journal completion, in the same fenced save as batch acceptance. */
 export function completeSourceGuards(c:Context,batch:Data) {
- for(const g of all(c.s,'source-guard').filter(g=>g.sha256===batch.sha256 && (g.entity??'')===(batch.netsuiteSource?.entity??'') && g.status!=='completed')) {
+ for(const g of all(c.s,'source-guard').filter(g=>g.sha256===batch.sha256 && g.entity===batch.entity && g.status!=='completed')) {
   requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
   put(c.s,'source-guard',g.id,{...g,status:'completed',completedAt:c.now,revision:g.revision+1})
   c.activity.push({action:'source-guard-completed',record:g.id})
@@ -133,7 +133,7 @@ export function stageNetSuiteSource(c:Context,input:Data){
  const issues=sourceChanges(c,input.preview,input.metadata,prior)
  const impacts=sourceImpacts(c,input.month)
  impacts.scenarios=impacts.scenarios.filter(sc=>ledgerScope(c.s,sc.id)===input.entity)
- const guard={...input,id:input.source,issues,decisions:[],impacts,observedAt:c.now,nextExpectedAt:new Date(Date.parse(c.now)+86400000).toISOString(),stagedAt:c.now,stagedBy:c.x.actor.email,revision:(prior?.revision??0)+1,status:issues.length?'review':'ready',history:prior?[...(prior.history??[]),{...prior,history:undefined}]:[]}
+ const guard={...input,provider:'netsuite',id:input.source,issues,decisions:[],impacts,observedAt:c.now,nextExpectedAt:new Date(Date.parse(c.now)+86400000).toISOString(),stagedAt:c.now,stagedBy:c.x.actor.email,revision:(prior?.revision??0)+1,status:issues.length?'review':'ready',history:prior?[...(prior.history??[]),{...prior,history:undefined}]:[]}
  const fingerprint=digest(JSON.parse(JSON.stringify(guard)))
  put(c.s,'source-guard',input.source,{...guard,fingerprint})
  c.activity.push({action:'netsuite-source-staged',record:input.source,scenario:input.scenario,detail:{month:input.month,entity:input.entity,issues:issues.length}})

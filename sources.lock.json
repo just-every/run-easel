@@ -1079,7 +1079,7 @@
       "executable": false
     },
     "src/easel/actuals.ts": {
-      "sha256": "4b05a1e65cf4b13ad317d0fa6e1769af7f9bb47483f572befd23024fed7691b8",
+      "sha256": "4da96f6c5f0c866cf8ef259b690e0016285f7858d9a08a7aed26ba24162443f0",
       "executable": false
     },
     "src/easel/agents/agent-evaluate.ts": {
@@ -1203,7 +1203,7 @@
       "executable": false
     },
     "src/easel/agents/source-guard.ts": {
-      "sha256": "db819854ac2c4b83f1a690253ae64bbe96e943ce74bb0478c9d02c4a816ecb68",
+      "sha256": "49b1a0d22e293329fd23ef8de3eab347fea9dde2055b7d42976de4314a8df737",
       "executable": false
     },
     "src/easel/api.ts": {
@@ -1499,7 +1499,7 @@
       "executable": false
     },
     "src/easel/entity-ledger-evidence.ts": {
-      "sha256": "e8bd13d04598f92138103a67440b0895da86b6a65f01dc8447cc9909f80961f2",
+      "sha256": "c7ffd1e8180a5109453648556c7445a9b8337180fcc0344495864f8b1fef2178",
       "executable": false
     },
     "src/easel/entity-ledger.ts": {
@@ -1519,7 +1519,7 @@
       "executable": false
     },
     "src/easel/entity.ts": {
-      "sha256": "e4a0ecb57d3e485764527fa57e456c2cfc72409cd0373e35c3614fdc71faad30",
+      "sha256": "3faaa51828187e1ffbe1abdd6e157f8dba990750ad20d07fa7ed208851afeb0f",
       "executable": false
     },
     "src/easel/erasure-archive/journals.mjs": {
@@ -1655,7 +1655,7 @@
       "executable": false
     },
     "src/easel/grid.ts": {
-      "sha256": "1db7400e23c677a961450fe88b1a59e6f280673429096be179a5c800a725cd31",
+      "sha256": "dbbde3b443da141fd18d8ca0ef021da989eb957484ff687cffce3fef09baf619",
       "executable": false
     },
     "src/easel/group-projections.ts": {
@@ -1711,7 +1711,7 @@
       "executable": false
     },
     "src/easel/intacct-import.ts": {
-      "sha256": "a41c2ec78b38b0034c72e524fd97621df10258b23f936ce6400fb22206fae8d8",
+      "sha256": "aa4218f28314e71b4400ba3d7b0e1627a0b9119f2f22225a370f595910544629",
       "executable": false
     },
     "src/easel/intacct-links.ts": {
@@ -2183,7 +2183,7 @@
       "executable": false
     },
     "src/easel/structure-versions.ts": {
-      "sha256": "d7cea3f5c9d64c0fa05cdc1c949bb87ba9a8fb37a22239dcd7374b13d83f6916",
+      "sha256": "573ae69bbe5fa268f2100e16075f56ea76cedee119fb257d9780f7cfdcb0f16a",
       "executable": false
     },
     "src/easel/tax-calculation.ts": {
@@ -2223,7 +2223,7 @@
       "executable": false
     },
     "src/easel/version-comparison.ts": {
-      "sha256": "8323092b97125194f11dfd8e26148511acea3a2026d7c02fd85e741c8b788db7",
+      "sha256": "44881090b14352df4324db997a762adcb9f385c38f93954d3c40836bfe3692aa",
       "executable": false
     },
     "src/easel/views.ts": {
@@ -4231,7 +4231,7 @@
       "executable": false
     },
     "src/ui/actuals.tsx": {
-      "sha256": "6ef63119ec7bbe845fd2610a815d129a66935831b2146101ca1286e0313a1352",
+      "sha256": "5d42e3acc6b6853bb762f228ee34c2a5a17ddcbb0ac6b9d6ca7293a47447867b",
       "executable": false
     },
     "src/ui/agent-governance.tsx": {
@@ -4511,7 +4511,7 @@
       "executable": false
     },
     "src/ui/review.tsx": {
-      "sha256": "3c483a8a439fe40076935a9890ec7bc4b513246b96316ca601157a40377e75d8",
+      "sha256": "4fa1c79a01f849dba71793e3fbaabc19c0a1c37562a8d34d3116251d5a8c5bb3",
       "executable": false
     },
     "src/ui/sandboxes.tsx": {

@@ -48,7 +48,7 @@ export function Actuals({ state, refresh }: Shared) {
    </Table>
   </section>
   {reconciliation && <section className="card">
-   <h2>Reconciliation</h2>
+   <h2>Reconciliation</h2><label>Actuals ledger<select aria-label="Actuals ledger" value={entity} onChange={e=>setEntity(e.target.value)}><option value="">Installation ledger</option>{entities.map(e=><option key={e.id} value={e.id}>{e.name} · {e.currency}</option>)}</select></label>
    <p><a href={`/api/easel/actuals.xlsx${entity?'?entity='+encodeURIComponent(entity):''}`} download>Download reconciliation (Excel)</a></p>
    <p className="muted">Every imported amount is mapped to a planning line, excluded, held as cash or another balance-sheet line, or shown here as unmapped. Amounts are debit-positive as imported.</p>
    <Table caption="Reconciliation by month" heads={['Month', 'Rows', 'Imported net', 'Mapped', 'Excluded', 'Cash', 'Other balance sheet', 'Unmapped', 'Revenue', 'Costs', 'Balanced', 'Mapping status']}>

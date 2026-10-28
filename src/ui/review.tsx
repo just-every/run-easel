@@ -48,7 +48,7 @@ export function Review({ state, refresh }: Shared) {
   {me.role === 'finance' && <><AgentGovernance /><SpendReview state={state} refresh={refresh} /></>}
   <Analyst state={state} refresh={refresh} />
   <section className="card">
-   <h2>Monthly review</h2>
+   <h2>Monthly review</h2><label>Review forecast<select aria-label="Review forecast" value={forecast?.id??''} onChange={e=>{if(e.target.value!==forecast?.id){setForecast(e.target.value);setMonth('')}}}>{forecasts.map((s:D)=><option key={s.id} value={s.id}>{s.name} · {s.currency??state.workspace.currency}</option>)}</select></label>
    {forecasts.length>1&&<label>Entity forecast<select aria-label="Review entity forecast" value={forecast?.id??''} onChange={e=>{if(e.target.value!==forecast?.id){setForecast(e.target.value);setMonth('')}}}>{forecasts.map((s:D)=><option key={s.id} value={s.id}>{s.name} · {s.currency??state.workspace.currency}</option>)}</select></label>}
    {v && <p><a href={`/api/easel/variance/${month}/document.xlsx?scenario=${encodeURIComponent(forecast.id)}`} download>Download variances (Excel)</a></p>}
    {!forecast && <p>The forecast opens when the budget is approved.</p>}

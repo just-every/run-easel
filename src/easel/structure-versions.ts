@@ -1,4 +1,3 @@
-import { ledgerScope } from './ledger-scope'
 import { DIMENSION_KINDS, dimensionStructure } from './dimensions'
 import { dimensionVersionCells } from './dimensions-report'
 import { nativeRevisions } from './native-revisions'

@@ -1,4 +1,3 @@
-import { ledgerScope } from './ledger-scope'
 import { entityDimensions } from './entity-scope'
 import { requireDimensionAccess } from './dimensions'
 import { requireMember, requirePayDetail } from './access'

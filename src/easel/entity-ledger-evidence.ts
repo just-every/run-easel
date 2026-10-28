@@ -2,11 +2,12 @@ import { canonicalJson,sha256 } from '../modules/import-kit/src/d1/index'
 import { resolveAccount } from './account-rules'
 import type { Context } from './context'
 import { resolveDimensions } from './dimension-mapping'
-import { ledgerPredicate } from './ledger-scope'
+import { acceptedLedgerFilter,ledgerPredicate } from './ledger-scope'
 import { all,find,requireThat,type Data } from './types'
 /** Explicit selectable net postings, with immutable entity and source identities. */
 export async function entityLedgerEvidence(c:Context,entity:Data,through:string){
- const result=await c.db.prepare(`SELECT value FROM e_actuals WHERE ${ledgerPredicate} AND period<=? ORDER BY destination,id`).bind(entity.id,through).all<{value:string}>()
+ const accepted=acceptedLedgerFilter(c.s)
+ const result=await c.db.prepare(`SELECT value FROM e_actuals WHERE ${ledgerPredicate} AND period<=? AND ${accepted.sql} ORDER BY destination,id`).bind(entity.id,through,...accepted.params).all<{value:string}>()
  const rows=new Map<string,Data>()
  for(const item of result.results){const v=JSON.parse(item.value);if(!v.netsuiteAccount)continue;const id=v.netsuiteAttribution;requireThat(id&&v.currency===entity.currency,'Entity ledger provenance is incomplete',409)
   const before=rows.get(id);rows.set(id,{id,account:v.account,accountType:v.accountType,month:v.period,transaction:v.netsuiteTransactionId,sourceLine:v.netsuiteSourceLine,description:v.description,amount:(before?.amount??0)+v.amount,department:v.department,sourceDimensions:v.sourceDimensions})}
