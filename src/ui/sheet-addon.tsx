@@ -16,7 +16,9 @@ export function SheetAddon() {
   {error && <p role="alert" className="error">{error}</p>}
   <Action label="Refresh add-on status" kind="quiet" run={load} />
   <Form submit="Create spreadsheet connection" onSubmit={async (values, form) => {
-   setConfirmation(''); const result = await api('connections/sheets-addon/connect', values); form.reset(); setConfirmation(result.confirmationPath); await load()
+   setConfirmation(''); const result = await api('connections/sheets-addon/connect', values); form.reset()
+   // Publish the confirmation link together with the refreshed connection status.
+   await load(); setConfirmation(result.confirmationPath)
   }}>
    <Field label="Add-on connection name" name="label" />
    <Field label="Easel person email" name="person" type="email" hint="This person must already have signed in. Their current role, departments, dimensions and pay permissions are the maximum authority of this key." />
