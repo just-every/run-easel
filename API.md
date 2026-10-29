@@ -801,18 +801,19 @@ Each HRIS employee mapping optionally binds `ownerEmployeeId` (an explicitly rev
 
 ## Webhooks and automation apps (API-002)
 
-Native finance with company-wide access administers receivers. Configure
+Native finance with company-wide access inspects and revokes receivers; only a
+native owner registers an outbound destination, as CYCLE-001 requires. Configure
 `EASEL_WEBHOOK_HOSTS` with the comma-separated exact public HTTPS hostnames the
 installation owner has reviewed. Receivers cannot use IP literals, internal
 names, URL credentials, query strings, fragments or nonstandard ports. Redirects
-are refused. The hosting network must also prevent allowed names from resolving
-to private infrastructure. A receiver URL's path and its signing key are sealed
+are refused. The deployment-owned pinned gateway below resolves every DNS answer and rejects
+private/reserved addresses at connection time; there is no direct-fetch fallback. A receiver URL's path and its signing key are sealed
 under the installation secret and are excluded from every export and restore.
 Changing that secret requires registering receivers again.
 
 | Door | Request / result |
 | --- | --- |
-| `POST /api/easel/webhooks/register` | Native session and exact Origin; `{label,url,events:["approval","close","publish","refresh-failure","alert","task"],secret?}`. Returns `{id,label,host,events,secret}`; retain the secret now. An omitted secret generates 32 random bytes as hex. A supplied shared secret must contain 32–200 letters, digits, underscores or hyphens. At most 20 active receivers. |
+| `POST /api/easel/webhooks/register` | Native owner session and exact Origin; `{label,url,events:["approval","close","publish","refresh-failure","alert","task"],secret?}`. Returns `{id,label,host,events,secret}`; retain the secret now. An omitted secret generates 32 random bytes as hex. A supplied shared secret must contain 32–200 letters, digits, underscores or hyphens. At most 20 active receivers. |
 | `GET /api/easel/webhooks` | Native finance only; receiver metadata and the latest 100 delivery outcomes, without URL paths or keys. |
 | `POST /api/easel/webhooks/revoke` | Native session; `{id}`. Deletes local sealed custody, blocks pending sends and prevents new deliveries. A send already in flight cannot be recalled. Rotate by revoking and registering again. |
 | `GET /api/easel/automation/events` | Company-wide finance session or scoped read/write token. Ascending events after `?after=0`, optionally `type=approval`. Returns `{events,cursor,next}`. Follow non-null `next` with `after=next`; persist `cursor` after consuming the page. `recent=true` returns the latest 100 matches newest first for platform polling. |
@@ -859,3 +860,38 @@ claims at most 20 intents atomically, rechecking the authorizing native finance
 account, version, full scope, receiver revocation and configured host before egress.
 Event history, receiver custody and delivery queues are installation-bound and
 excluded from open and portable archives so restoration never resends old events.
+
+
+### Pinned egress inherited from CYCLE-001
+
+Webhook registration fails closed until `EASEL_WEBHOOK_EGRESS_URL` and
+`EASEL_WEBHOOK_EGRESS_TOKEN` identify the installation's enforcing gateway.
+The URL is its fixed HTTPS `/send` endpoint, with no URL credentials, query,
+fragment or nonstandard port. Use a random 32-byte hex authentication secret,
+configured privately in both Easel and the gateway. It is never an API token,
+never returned by these doors, and never included in archives.
+
+`integrations/egress/server.mjs` supplies that gateway using the pinned Base
+`NodePinnedTransport` from `@runeditrun/rer`. Build a standalone Node artifact:
+
+```sh
+pnpm exec esbuild integrations/egress/server.mjs --bundle --platform=node --format=esm --target=node22 --outfile=.rer/local/webhook-egress.mjs
+node .rer/local/webhook-egress.mjs
+```
+
+Configure its `EASEL_WEBHOOK_EGRESS_TOKEN`, exact `EASEL_WEBHOOK_HOSTS` and optional
+`EASEL_EGRESS_PORT` through private deployment settings. The listener binds to
+127.0.0.1 (8080 by default); place it behind verified HTTPS termination reachable
+from the Worker. Do not expose an unauthenticated generic proxy. It accepts only
+bounded webhook frames and the four fixed signing/content headers, and returns
+only receiver status and sanitized Retry-After, never receiver response content.
+
+Base resolves once, validates **every** answer, pins the chosen public address to
+that TLS connection, verifies TLS/SNI against the original hostname, bounds the
+response and refuses redirects. This is the inherited resolved-address egress
+door; a DNS preflight followed by an ordinary receiver fetch is never used.
+Workers fetch is used only to the fixed authenticated gateway. Missing, refused,
+redirected or malformed gateway outcomes never cause a direct receiver request.
+They remain uncertain for owner review. Hosted gateway operation requires the
+owner's deployment account; local journeys replace only its final receiver
+DNS/TLS network edge and exercise the actual authenticated gateway HTTP door.

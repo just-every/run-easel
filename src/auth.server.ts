@@ -17,6 +17,8 @@ export interface Bindings {
  HRIS_ADP_MTLS?: Fetcher
  /** Explicit public receiver hosts reviewed by the installation owner. */
  EASEL_WEBHOOK_HOSTS?: string
+ EASEL_WEBHOOK_EGRESS_URL?: string
+ EASEL_WEBHOOK_EGRESS_TOKEN?: string
  GAUGE_ORIGIN?: string
  PANTRY_ORIGIN?: string
  PURSE_ORIGIN?: string

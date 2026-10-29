@@ -1,4 +1,5 @@
 import { runtimeBindings, type Bindings } from '../auth.server'
+import { webhookGateway, sendWebhook } from './webhook-transport'
 import { access, requireCapability, requireFinance } from './access'
 import { hasFullScope } from './access-grants'
 import { AUTOMATION_EVENTS } from './automation-events'
@@ -40,6 +41,8 @@ export async function webhookAdmin(c: Context, env: Bindings, op: string, b: Dat
  const id = op === 'register' ? crypto.randomUUID() : text(b.id, 'Webhook ID', 100)
  let result: Data
  if (op === 'register') {
+  requireThat(c.x.actor.baseRole === 'owner', 'Only the signed-in owner registers a receiver destination', 403)
+  webhookGateway(env)
   const url = endpoint(b.url, env), label = text(b.label, 'Receiver label', 100)
   requireThat(Array.isArray(b.events) && b.events.length > 0 && b.events.length <= AUTOMATION_EVENTS.length, 'Choose at least one event type')
   const events = [...new Set(b.events.map((v: unknown) => choice(v, AUTOMATION_EVENTS, 'event type')))]
@@ -98,15 +101,15 @@ export async function runWebhooks(original: Bindings) {
   const timestamp = String(Math.floor(Date.parse(now) / 1000))
   let status = 'uncertain', httpStatus: number | null = null, nextAt = now
   try {
-   const response = await fetch(receiver.url, { method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(10000), headers: { 'content-type': 'application/json', 'x-easel-event-id': row.event, 'x-easel-timestamp': timestamp, 'x-easel-signature': `v1=${await webhookSignature(receiver.secret, timestamp, event!.body)}` }, body: event!.body })
+   const response = await sendWebhook(env, { url: receiver.url, headers: { 'content-type': 'application/json', 'x-easel-event-id': row.event, 'x-easel-timestamp': timestamp, 'x-easel-signature': `v1=${await webhookSignature(receiver.secret, timestamp, event!.body)}` }, body: event!.body })
+   if (!response) throw new Error('Webhook gateway outcome unknown')
    httpStatus = response.status
-   status = response.ok ? 'delivered' : 'failed'
+   status = response.status >= 200 && response.status < 300 ? 'delivered' : 'failed'
    if ((response.status === 429 || response.status >= 500) && claimed.attempts < 5) {
-    const retry = response.headers.get('retry-after') ?? ''
+    const retry = response.retryAfter
     const wait = /^\d+$/.test(retry) ? Number(retry) * 1000 : Math.max(0, Date.parse(retry) - Date.parse(now)) || 0
     status = 'pending'; nextAt = new Date(Date.parse(now) + Math.max(30000 * 2 ** (claimed.attempts - 1), Math.min(wait, 86400000))).toISOString()
    }
-   await response.body?.cancel()
   } catch { /* Unknown receiver outcome: preserve the ID, do not retry. */ }
   await db.batch([
    db.prepare("UPDATE e_webhook_deliveries SET status=?,http_status=?,next_at=?,completed_at=? WHERE subscription=? AND event=? AND status='sending'").bind(status, httpStatus, nextAt, status === 'pending' ? null : now, row.subscription, row.event),
