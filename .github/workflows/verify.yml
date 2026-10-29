@@ -73,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [types-site, domain-1, domain-2, runtime]
+        shard: [types-site, domain-1, domain-2, domain-3, domain-4, runtime]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -90,12 +90,12 @@ jobs:
       - name: Types and run site
         if: matrix.shard == 'types-site'
         run: pnpm typecheck && pnpm exec rer build --site
-      - name: Domain flows (1 of 2)
-        if: matrix.shard == 'domain-1'
-        run: node --test --test-concurrency=1 --test-shard=1/2 tests/*.test.mjs
-      - name: Domain flows (2 of 2)
-        if: matrix.shard == 'domain-2'
-        run: node --test --test-concurrency=1 --test-shard=2/2 tests/*.test.mjs
+      - name: Domain flows
+        if: startsWith(matrix.shard, 'domain-')
+        env:
+          TEST_SHARD: ${{ matrix.shard }}
+        # Keep every flow while leaving room for the full-history provider journeys.
+        run: node --test --test-concurrency=1 --test-shard="${TEST_SHARD#domain-}/4" tests/*.test.mjs
       - name: Built runtime
         if: matrix.shard == 'runtime'
         run: pnpm exec rer build
