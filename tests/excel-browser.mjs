@@ -78,7 +78,11 @@ try {
  const token = new URL(message.text.match(/https:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
  const contributor = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 } })
  assert.equal((await contributor.request.post(`${server.origin}/auth/confirm`, { headers: { origin: server.origin }, data: { token }, maxRedirects: 0 })).status(), 303)
- const setup = await owner.newPage(); await setup.goto(`${server.origin}/setup`); await setup.getByRole('checkbox').check(); await setup.getByRole('button', { name: 'Finish setup' }).click(); await setup.close()
+ const setup = await owner.newPage(); await setup.goto(`${server.origin}/setup`); await setup.getByRole('checkbox').check(); await setup.getByRole('button', { name: 'Finish setup' }).click()
+ // click() waits for navigation commit, not document load. Closing mid-load
+ // can strand Chromium's target-close command on a slower runner.
+ await setup.waitForURL(server.origin + '/app', { waitUntil: 'load', timeout: 30000 })
+ await setup.close()
  await cmd('request-submissions', { scenario, departments: [dept.id] })
  const before = await api(contributor, server.origin, `scenario/${scenario}`)
  const direct = await api(contributor, server.origin, 'command/excel-write', { scenario, revision: before.scenario.revision, schedule: row.id, month: '2026-01', value: '150' })
