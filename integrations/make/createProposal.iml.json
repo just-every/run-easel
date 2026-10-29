@@ -1,0 +1,9 @@
+{
+ "name": "createProposal",
+ "label": "Create revision-bound proposal",
+ "type": "action",
+ "connection": "easel",
+ "expect": [ { "name": "from", "type": "text", "label": "Working scenario ID", "required": true }, { "name": "revision", "type": "number", "label": "Reviewed source revision", "required": true }, { "name": "name", "type": "text", "required": true }, { "name": "request", "type": "text", "required": true } ],
+ "communication": { "url": "/automation/proposals", "method": "POST", "body": { "from": "{{parameters.from}}", "revision": "{{parameters.revision}}", "name": "{{parameters.name}}", "request": "{{parameters.request}}" }, "response": { "output": "{{body}}" } },
+ "interface": [ { "name": "id", "type": "text" }, { "name": "proposalStatus", "type": "text" }, { "name": "branchedFrom", "type": "collection", "spec": [ { "name": "scenario", "type": "text" }, { "name": "revision", "type": "number" } ] } ]
+}

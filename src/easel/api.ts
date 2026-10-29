@@ -1,3 +1,4 @@
+import { automationAccess, automationEvents, webhookAdmin, runWebhooks } from './webhooks'
 import { intacctConnection,intacctStatus } from './intacct-connection'
 import { intacctImport } from './intacct-import'
 import { netsuiteConnection,netsuiteStatus } from './netsuite-connection'
@@ -160,6 +161,22 @@ api.use('/api/easel/*', async (c, next) => {
  } catch (e) { status = e instanceof Fault ? e.status : 500; throw e }
  finally { await tokenUse(c.env.DB, person, c.req.raw, status) }
 })
+api.use('/api/easel/*', async (c, next) => {
+ await next()
+ if (c.req.method === 'POST' && c.res.status < 400) {
+  try { await runWebhooks(c.env) } catch { console.error('Webhook delivery deferred to scheduler') }
+ }
+})
+api.post('/api/easel/automation/proposals', async c => {
+ const ctx = await open(c), b = await body(c)
+ requireThat(Number.isSafeInteger(b.revision) && b.revision > 0, 'An exact reviewed source revision is required')
+ return executeCommand(c, ctx, 'proposal-create', b)
+})
+api.post('/api/easel/automation/dispatch', c => read(c, async ctx => { automationAccess(ctx); return { scheduled: true } }))
+api.get('/api/easel/automation/events', c => read(c, ctx => automationEvents(ctx, c.req.query())))
+api.get('/api/easel/webhooks', async c => c.json(await webhookAdmin(await open(c), c.env, 'list', {})))
+api.post('/api/easel/webhooks/:op', async c => c.json(await webhookAdmin(await open(c), c.env, c.req.param('op'), await body(c))))
+
 api.onError((e, c) => {
  if (e instanceof CalculationPending) return e.job ? c.json({ calculationJob: e.job }, 202) : c.json({ error: e.message, calculation: { scenarios: e.scenarios, status: 'awaiting-continuation' } }, 425)
  if (e instanceof Fault) return c.json({ error: e.message }, e.status as 400)
@@ -182,7 +199,7 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
 async function commit(ctx: Awaited<ReturnType<typeof open>>, structureBefore = ctx.before, structureRevision = ctx.revision) {
  const changed = ctx.activity.length > 0 || ctx.snapshots.length > 0 || [...ctx.s].some(([k, r]) => ctx.before.get(k)?.revision !== r.revision) || [...ctx.before.keys()].some(k => !ctx.s.has(k))
  if (changed) await versionStructure(ctx, structureBefore, structureRevision)
- if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance', ctx.extra ?? [])
+ if (changed) await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, ctx.snapshots, ctx.x.role === 'finance', ctx.extra ?? [], ctx.now)
  else await readFence(ctx.db, ctx.x.actor, ctx.revision)
 }
 
