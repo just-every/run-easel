@@ -11,6 +11,19 @@ import { build } from 'esbuild'
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare'
 import { unstable_splitSqlQuery } from 'wrangler'
 
+
+// Shared-door wire arguments; these helpers grant no application authority.
+const agentNames = {
+ scenarios:'easel.scenarios.list', scenario:'easel.scenarios.read', compare:'easel.scenarios.compare', variance:'easel.variance.read', metrics:'easel.metrics.read', calculation_status:'easel.calculations.status',
+ 'proposal-create':'easel.proposals.create','proposal-submit':'easel.proposals.submit', revenue:'easel.revenue.update',position:'easel.positions.update',expense:'easel.expenses.update',schedule:'easel.schedules.update',formula:'easel.formulas.update',
+ 'asset-category':'easel.asset_categories.update',asset:'easel.assets.update',allocation:'easel.allocations.update',debt:'easel.debt.update','tax-policy':'easel.taxes.update',equity:'easel.equity.update','input-delete':'easel.inputs.delete',comment:'easel.comments.create',explanation:'easel.explanations.draft',
+}
+export const agentName = name => agentNames[name] ?? name
+export function agentMessage(body) {
+ if (body?.method !== 'tools/call') return body
+ return { ...body, params: { ...body.params, name: agentName(body.params.name), arguments: { ...body.params.arguments, idempotency_key: body.params.arguments?.idempotency_key ?? crypto.randomUUID() } } }
+}
+
 const freePort = async () => { const s = createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r)); const p = s.address().port; await new Promise(r => s.close(r)); return p }
 
 export async function harness(options = {}) {
@@ -49,7 +62,8 @@ export async function harness(options = {}) {
   for (const file of (await readdir('migrations/core')).filter(f => f.endsWith('.sql')).sort()) await db.batch(unstable_splitSqlQuery(await readFile(`migrations/core/${file}`, 'utf8')).map(sql => db.prepare(sql)))
 
   const send = async (path, body, cookie = '', method) => {
-   const r = await mf.dispatchFetch(origin + path, { method: method ?? (body === undefined ? 'GET' : 'POST'), headers: { host: new URL(origin).host, origin, 'content-type': 'application/json', cookie }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual' })
+   if (path === '/api/easel/mcp') body = agentMessage(body)
+   const r = await mf.dispatchFetch(origin + path, { method: method ?? (body === undefined ? 'GET' : 'POST'), headers: { host: new URL(origin).host, origin, 'content-type': 'application/json', cookie, ...(path === '/api/easel/mcp' ? { 'mcp-protocol-version': '2025-11-25' } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual' })
    const text = await r.text()
    let value; try { value = JSON.parse(text) } catch { value = text }
    return { status: r.status, value, text, cookie: r.headers.get('set-cookie')?.split(';')[0], headers: r.headers }
@@ -57,6 +71,8 @@ export async function harness(options = {}) {
   const boot = await send('/auth/bootstrap', { token: 'synthetic-local-test-bootstrap-token-0123456789', displayName: 'Fran Finance' })
   assert.equal(boot.status, 303, JSON.stringify(boot.value))
   const owner = boot.cookie
+  const policy = await send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: 'all', class: '*', do: 'autonomous' }], spend: { none: true } } }, owner, 'PUT')
+  assert.equal(policy.status, 200, 'The native owner selects the test company policy')
 
   const expect = async (r, status, label) => { assert.equal(r.status, status, `${label}: ${JSON.stringify(r.value)}`); return r.value }
   const command = async (op, body, cookie = owner, status = 200) => expect(await send(`/api/easel/command/${op}`, body, cookie), status, op)
