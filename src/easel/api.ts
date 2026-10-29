@@ -107,7 +107,6 @@ import { evaluateCashAlerts, needsCashAlertCheck } from './cash-alert-check'
 import { evaluateMetricTasks, needsMetricRefresh } from './metric-tasks'
 import { longRange, longRangeList, longRangeView } from './long-range'
 import { longRangeWorkbook } from './long-range-workbook'
-import { handleMcp } from './mcp'
 import { PACK_TYPES, packFileName, renderPack, type PackFormat } from './pack-formats'
 import { packPreview } from './pack-preview'
 import { biDropCommands, biDropList } from './bi-drops'
@@ -520,7 +519,6 @@ api.post('/api/easel/gauge/:op', async c => {
  return c.json(publicLedger(await erasedView(ctx.db, result)))
 })
 
-api.all('/api/easel/mcp', c => handleMcp(c.req.raw, c.env, c.executionCtx))
 
 api.get('/api/easel/long-range', c => read(c, longRangeList))
 api.get('/api/easel/long-range/:id', c => read(c, ctx => longRangeView(ctx, c.req.param('id'))))
