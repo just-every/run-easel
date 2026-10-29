@@ -5,6 +5,9 @@ import { createPortability } from '@runeditrun/rer/modules/portability'
 import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
 import { automationEdge } from './automation-edge.mjs'
 import { harness } from './harness.mjs'
+import { spendProvider, spendKeys } from './spend-fixture.mjs'
+import { greenhouseGrant, greenhouseProvider } from './greenhouse-flow.mjs'
+import { grant, hrisProvider } from './hris-fixture.mjs'
 
 // Two public-door journeys. Fakes are confined to HTTPS provider/receiver edges.
 test('API-002 signed durable events cover the planning loop, delivery recovery and live authority without exposing private data', async t => {
@@ -16,7 +19,15 @@ test('API-002 signed durable events cover the planning loop, delivery recovery a
   return { status: receiverStatus, headers: { 'retry-after': '60' }, body: '' }
  }); t.after(() => edge.close())
  await edge.assertRefused(assert)
- const h = await harness({ now: () => now, bindings: { ...edge.bindings, EASEL_WEBHOOK_HOSTS: 'receiver.example.com', GAUGE_ORIGIN: 'https://gauge.example.test' }, outbound: edge.outbound }); t.after(() => h.close())
+ const spend = spendProvider(), greenhouse = greenhouseProvider(), hris = hrisProvider()
+ let malformedGreenhouse = false, malformedHris = false
+ const h = await harness({ now: () => now, bindings: { ...edge.bindings, EASEL_WEBHOOK_HOSTS: 'receiver.example.com,router.home.arpa,home.arpa,printer.local,router.lan,receiver.test,receiver.invalid,receiver.alt,receiver.example', GAUGE_ORIGIN: 'https://gauge.example.test' }, outbound: request => {
+  const host = new URL(request.url).hostname
+  if (host === 'api.ramp.com') return spend.outbound(request)
+  if (host === 'harvest.greenhouse.io') return malformedGreenhouse ? Response.json({ unexpected: 'PRIVATE ATS RESPONSE' }) : greenhouse.outbound(request)
+  if (host === 'rest.ripplingapis.com') return malformedHris ? new Response('not-json') : hris.outbound(request)
+  return edge.outbound(request)
+ } }); t.after(() => h.close())
  const register = async (body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/webhooks/register', body, cookie); assert.equal(r.status, status, JSON.stringify(r.value)); return r.value }
  const hook = { label: 'Planning automation', url: 'https://receiver.example.com/events', events: ['approval', 'close', 'publish', 'refresh-failure', 'alert', 'task'] }
  await h.command('workspace', { name: 'Harbour', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
@@ -24,7 +35,7 @@ test('API-002 signed durable events cover the planning loop, delivery recovery a
  const line = await h.command('line', { name: 'Operating costs', type: 'operating-expense' })
  const viewer = await h.person('board@example.test', 'viewer')
  await register(hook, 403, viewer)
- for (const url of ['http://receiver.example.com/events','https://127.0.0.1/events','https://receiver.example.com/events?token=secret','https://elsewhere.example.test/events','https://user:password@receiver.example.com/events','broken']) await register({ ...hook, url }, url.includes('elsewhere') ? 403 : 400)
+ for (const url of ['http://receiver.example.com/events','https://127.0.0.1/events','https://receiver.example.com/events?token=secret','https://elsewhere.example.com/events','https://user:password@receiver.example.com/events','https://receiver.example.com/events#fragment','https://router.home.arpa/events','https://HOME.ARPA/events','https://printer.local/events','https://router.lan/events','https://receiver.test/events','https://receiver.invalid/events','https://receiver.alt/events','https://receiver.example/events','broken']) await register({ ...hook, url }, url.includes('elsewhere') ? 403 : 400)
  const subscription = await register(hook)
  assert.equal(received.length, 0, 'Registration does not invent an event')
  const budget = (await h.get('/api/easel/state')).scenarios[0]
@@ -65,6 +76,64 @@ test('API-002 signed durable events cover the planning loop, delivery recovery a
  assert.deepEqual(new Set(feed.events.map(e => e.id)), new Set(received.map(r => JSON.parse(r.body).id)))
  assert.deepEqual((await h.get(`/api/easel/automation/events?after=${feed.cursor}`)).events, [])
  assert.equal((await h.get('/api/easel/automation/events?type=approval&recent=true')).events.length, 1)
+
+ // Provider refresh health, including malformed HTTP 200 responses, is an
+ // outcome rather than an HTTP-status guess. Keep the official plan intact.
+ const official = await h.get(`/api/easel/scenario/${forecast.id}`)
+ const post = async (path, body, status = 200) => { const r = await h.send('/api/easel/' + path, body, h.owner); assert.equal(r.status, status, r.text); return r.value }
+ const failures = () => received.filter(r => JSON.parse(r.body).type === 'refresh-failure')
+ const verifyFailure = async (operation, record) => {
+  const before = failures().length
+  await operation()
+  // A failed HTTP operation preserves its error response; the durable intent
+  // is sent by the next explicit dispatch or scheduler pass.
+  await post('automation/dispatch', {})
+  assert.equal(failures().length, before + 1, `${record} failure delivers exactly one event`)
+  const message = failures().at(-1), event = JSON.parse(message.body)
+  assert.equal(event.data.record, record)
+  assert.equal(message.headers['x-easel-signature'], 'v1=' + createHmac('sha256', subscription.secret).update(`${message.headers['x-easel-timestamp']}.${message.body}`).digest('hex'))
+  await post('automation/dispatch', {})
+  await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' })
+  assert.equal(failures().length, before + 1, 'Dispatch and scheduling do not duplicate a delivered failure')
+  assert.deepEqual(await h.get(`/api/easel/scenario/${forecast.id}`), official, 'A failed provider read preserves the official source')
+ }
+ await post('connections/spend/ramp/connect', { key: spendKeys.ramp, consent: true })
+ const spendInput = { month: '2026-01', providers: ['ramp'] }
+ await post('spend/sources', spendInput)
+ spend.state.status = 500
+ await verifyFailure(() => post('spend/sources', spendInput, 502), 'spend')
+ assert.ok((await h.get('/api/easel/connections/spend/ramp')).error)
+ spend.state.status = 200
+ const afterSpend = failures().length
+ await post('spend/sources', spendInput)
+ assert.equal(failures().length, afterSpend, 'Successful spend reads do not emit failures')
+ await post('connections/greenhouse/connect', greenhouseGrant)
+ await post('connections/greenhouse/check', {})
+ const healthyAts = await h.get('/api/easel/connections/greenhouse')
+ for (const mode of ['http', 'shape']) {
+  greenhouse.failure = mode === 'http' ? 500 : 200; malformedGreenhouse = mode === 'shape'
+  await verifyFailure(() => post('connections/greenhouse/check', {}), 'greenhouse')
+  const status = await h.get('/api/easel/connections/greenhouse')
+  assert.ok(status.error); assert.equal(status.lastRefresh, healthyAts.lastRefresh); assert.equal(status.rowCount, healthyAts.rowCount)
+ }
+ greenhouse.failure = 200; malformedGreenhouse = false
+ await post('connections/greenhouse/check', {})
+ assert.equal((await h.get('/api/easel/connections/greenhouse')).error, null)
+ await post('connections/hris/rippling/connect', grant('rippling'))
+ const healthyHris = await h.get('/api/easel/connections/hris/rippling')
+ for (const mode of ['http', 'json', 'shape']) {
+  hris.status = mode === 'http' ? 500 : 200; malformedHris = mode === 'json'; hris.mode = mode === 'shape' ? 'missing-comp' : ''
+  await verifyFailure(() => post('connections/hris/rippling/check', {}), 'hris:rippling')
+  const status = await h.get('/api/easel/connections/hris/rippling')
+  assert.ok(status.error); assert.equal(status.lastRefresh, healthyHris.lastRefresh); assert.equal(status.rowCount, healthyHris.rowCount)
+ }
+ hris.status = 200; malformedHris = false; hris.mode = ''
+ const beforeHealthy = failures().length
+ await post('connections/hris/rippling/check', {})
+ await post('connections/greenhouse/check', {})
+ assert.equal(failures().length, beforeHealthy, 'Recovered provider checks emit no refresh-failure')
+ assert.equal((await h.get('/api/easel/connections/hris/rippling')).error, null)
+ assert.doesNotMatch(JSON.stringify(received), /PRIVATE ATS RESPONSE|synthetic-hris-read-only|Private Morgan|synthetic-easel-820/)
 
  // Bounded retry of a known refusal uses the same event ID and signed bytes.
  receiverStatus = 503
