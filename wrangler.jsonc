@@ -18,5 +18,9 @@
       "database_id": "local-easel-only",
       "migrations_dir": "migrations/core"
     }
-  ]
+  ],
+  "vars": {
+    "MAIL_FROM": "Easel <noreply@run-easel.com>",
+    "MAIL_PROVIDER": "resend"
+  }
 }

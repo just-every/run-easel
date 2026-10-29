@@ -3,5 +3,21 @@
   "projectId": "just-every/run-easel",
   "name": "Easel",
   "sourceRepository": "https://github.com/just-every/run-easel",
-  "license": "MIT"
+  "license": "MIT",
+  "deployment": {
+    "target": "cloudflare-workers",
+    "artifactFile": "rer-worker-artifact.json"
+  },
+  "operations": {
+    "setup": "pnpm install --frozen-lockfile",
+    "build": "pnpm exec rer build",
+    "verify": "pnpm exec rer verify",
+    "artifact": "node scripts/build-delivery-artifact.mjs",
+    "recovery": "Restore a native Easel export into an empty installation of the same release, then upgrade in place."
+  },
+  "verifyWorkflow": "Verify",
+  "setup": {
+    "path": "rer-setup.json",
+    "sha256": "a881b06d2799b7e488e5541abfee4367d30e90be8dddfaf7e3dc309aa3485b3b"
+  }
 }

@@ -59,7 +59,10 @@ export function planningTools(): ToolDefinition[] {
  } : {}),
  async run(args, ctx) {
   try {
-   const { result } = await nativeAction(tool.nativeName, args, ctx, true, admitted(ctx, tool.name))
+   // Approved reads run again on later requests; re-read native authority and
+   // fence that current view instead of depending on an earlier request's map.
+   const admission = tool.readOnly ? nativeAdmission(await nativeContext(ctx)) : admitted(ctx, tool.name)
+   const { result } = await nativeAction(tool.nativeName, args, ctx, true, admission)
    return { result }
   } finally { admissions.delete(key(ctx, tool.name)) }
  },

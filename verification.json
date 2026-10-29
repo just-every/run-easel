@@ -56,6 +56,15 @@
         "node tests/bi-feeds-browser.mjs --existing-build",
         "node tests/pipeline-browser.mjs --existing-build"
       ]
+    },
+    {
+      "name": "agent-door",
+      "browser": true,
+      "commands": [
+        "pnpm exec rer build",
+        "pnpm typecheck",
+        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs"
+      ]
     }
   ],
   "nightly": [

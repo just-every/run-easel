@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "project": {
+    "schema": 1,
+    "projectId": "just-every/run-easel",
+    "name": "Easel",
+    "sourceRepository": "https://github.com/just-every/run-easel",
+    "license": "MIT",
+    "verifyWorkflow": "Verify",
+    "deployment": {
+      "target": "cloudflare-workers",
+      "artifactFile": "rer-worker-artifact.json"
+    },
+    "operations": {
+      "setup": "pnpm install --frozen-lockfile",
+      "build": "pnpm exec rer build",
+      "verify": "pnpm exec rer verify",
+      "artifact": "node scripts/build-delivery-artifact.mjs",
+      "recovery": "Restore a native Easel export into an empty installation of the same release, then upgrade in place."
+    }
+  },
+  "managed": {
+    "workflowRef": "runeditrun/delivery/.github/workflows/trusted-build.yml@ff70d729948753ffdcceeca94aad063af2dcd979",
+    "artifactFile": "rer-worker-artifact.json",
+    "buildProfile": "project",
+    "verificationProfiles": [
+      "full"
+    ]
+  },
+  "setup": {
+    "manifestFile": "rer-setup.json"
+  },
+  "artifact": {
+    "specInputs": {
+      "publicVariableNames": [
+        "MAIL_FROM",
+        "MAIL_PROVIDER",
+        "AUTH_ORIGIN",
+        "AUTH_LOCAL"
+      ],
+      "secretNames": [
+        "OWNER_EMAIL",
+        "SESSION_SECRET",
+        "SETUP_TOKEN",
+        "MAIL_API_KEY"
+      ],
+      "optionalSecretNames": [
+        "GAUGE_ORIGIN"
+      ],
+      "healthPath": "/health",
+      "recovery": "Restore a native Easel export into an empty installation of the same release, then upgrade in place.",
+      "providerEffects": [
+        "outbound-mail"
+      ],
+      "mail": {
+        "providers": [
+          "resend"
+        ]
+      },
+      "surfaces": {
+        "app": {
+          "path": "/",
+          "originVariable": "AUTH_ORIGIN",
+          "signIn": {
+            "path": "/login",
+            "loginHint": false,
+            "ownerSignIn": "/auth/owner-signin"
+          }
+        }
+      }
+    }
+  }
+}

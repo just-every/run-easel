@@ -299,17 +299,6 @@
         "AGENT-007",
         "API-003"
       ]
-    },
-    {
-      "name": "easel.events.list",
-      "scope": "events:read",
-      "readOnly": true,
-      "classes": [
-        "standard"
-      ],
-      "clauses": [
-        "BASE-AGENT-010"
-      ]
     }
   ],
   "notTools": [
@@ -1010,18 +999,6 @@
           "pointer": "/id"
         },
         "summary": "Synthetic proposal prepared for native finance review."
-      },
-      "expect": [
-        {
-          "class": "standard"
-        }
-      ]
-    },
-    {
-      "id": "events",
-      "tool": "easel.events.list",
-      "args": {
-        "limit": 200
       },
       "expect": [
         {

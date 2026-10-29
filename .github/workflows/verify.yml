@@ -122,6 +122,11 @@ jobs:
             timeout 420 "$RUNNER_TEMP/easel-browser/node_modules/.bin/playwright" install-deps chromium
             node scripts/ci/chromium-probe.mjs
           }
+      - name: Hosted core agent-door conformance
+        if: matrix.shard == 'runtime'
+        env:
+          SEED_VERIFY_SHARD: agent-door
+        run: pnpm exec rer verify
       - name: Native approvals and connected actuals
         if: matrix.shard == 'runtime'
         run: |

@@ -15,3 +15,6 @@ exports/
 
 .rer/demo/
 .rer/demo-host/
+
+.rer/delivery-candidate/
+delivery-artifact/

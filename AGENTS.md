@@ -49,3 +49,11 @@ Lander-Regenerate: node scripts/contract-docs.mjs write
 `CONTRACT.md` is the acceptance and Status source. Lander-Regenerate for a touched clause is `node scripts/contract-docs.mjs write --clauses SPEND-001`, followed by `node scripts/contract-docs.mjs check --clauses SPEND-001`; use a comma-separated clause list when needed. This updates the selected acceptance rows, summary counts and the generated claims index. Legacy acceptance prose outside those rows is preserved. With no clause argument, the command selects previously generated acceptance rows.
 
 Resolve the contract source first after a merge, keeping newer main judgments, then regenerate its views. Stage all intended files before `node node_modules/@runeditrun/rer/edition-authoring/cli.mjs lock`; run `node node_modules/@runeditrun/rer/edition-authoring/cli.mjs check` afterward. Generate the source lock last, and commit it with the source and generated views.
+
+## Agent door verification
+
+`SEED_VERIFY_SHARD=agent-door pnpm exec rer verify` builds production, checks types,
+runs the native MCP and audit flows, and then runs the CLI's hosted conformance
+against the actual migrations. The ordinary `rer verify` runs every declared
+verification shard before the same hosted checks. CI retains every existing
+shard and browser journey and also runs the focused hosted conformance.
