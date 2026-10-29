@@ -45,7 +45,14 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  await accept(pipelineInput(f,await source(),(await view()).scenario.revision))
  let journalView=await h.get(`/api/easel/pipeline/${f.scenario}`),latestImport=journalView.imports.at(-1)
  // Use the highest accepted plan revision; import IDs need no ordering.
- latestImport=(await h.db.prepare("SELECT id FROM e_records WHERE kind='pipeline-import' ORDER BY json_extract(value,'$.acceptedRevision') DESC LIMIT 1").first()).id
+ latestImport=journalView.imports.sort((a,b)=>b.acceptedRevision-a.acceptedRevision)[0].id
+ const targetEdit={...pipelineInput(f,await source(),journalView.revision),coverageTarget:'2000'}
+ await accept(targetEdit)
+ await post('pipeline/undo',{id:latestImport,revision:(await view()).scenario.revision},h.owner,409)
+ const targetJournal=await h.get(`/api/easel/pipeline/${f.scenario}`)
+ const targetImport=targetJournal.imports.filter(i=>i.status==='accepted').sort((a,b)=>b.acceptedRevision-a.acceptedRevision)[0]
+ await post('pipeline/undo',{id:targetImport.id,revision:targetJournal.revision})
+ journalView=await h.get(`/api/easel/pipeline/${f.scenario}`)
  await post('pipeline/undo',{id:latestImport,revision:journalView.revision},finance,403)
  await post('pipeline/undo',{id:latestImport,revision:journalView.revision-1},h.owner,409)
  const undone=await post('pipeline/undo',{id:latestImport,revision:journalView.revision})
@@ -260,7 +267,7 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  await post('pipeline/stage',closedBody)
  await post('pipeline/accept',{...closedBody,digest:closedPreview.digest,reason:'Review required'},h.owner,409)
  await post('pipeline/accept',{...closedBody,digest:closedPreview.digest,reason:'Reviewed corrected CRM booking and its future planning effects',reviewedClosedChanges:true})
- const lastJournal=(await h.db.prepare("SELECT id FROM e_records WHERE kind='pipeline-import' AND json_extract(value,'$.scenario')=? ORDER BY json_extract(value,'$.acceptedRevision') DESC LIMIT 1").bind(f.scenario).first()).id
+ const lastJournal=(await h.get(`/api/easel/pipeline/${f.scenario}`)).imports.filter(i=>i.status==='accepted').sort((a,b)=>b.acceptedRevision-a.acceptedRevision)[0].id
  await post('pipeline/undo',{id:lastJournal,revision:(await view()).scenario.revision},h.owner,409)
  const corrected=await view()
  assert.equal(cell(corrected,f.revenue.id,'2026-05').amount,cell(beforeCorrection,f.revenue.id,'2026-05').amount)

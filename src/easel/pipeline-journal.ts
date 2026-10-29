@@ -124,6 +124,7 @@ export async function pipelineJournal(c:Context,op:string,b:Data):Promise<KitSte
  const latest=all(c.s,'pipeline-import').filter(i=>i.scenario===entry.scenario&&i.provider===entry.provider&&i.status==='accepted').sort((a,b)=>b.acceptedRevision-a.acceptedRevision)[0]
  requireThat(entry.status==='undoing'||latest?.id===entry.id,'Undo the latest pipeline import first',409)
  requireThat(!sc.actualsThrough||![...entry.before,...entry.after].some((r:Row)=>r.value.start<=sc.actualsThrough),'This pipeline import touches a closed period; accept a reviewed correction instead of undoing',409)
+ requireThat(sc.pipelineCoverageTargetCents===entry.result.assumptions.coverageTargetCents,'The pipeline target changed after import; undo cannot overwrite a later finance edit',409)
  const current=rawRows(c.s,sc.id,entry.provider)
  requireThat(entry.status==='undoing'&&job.state==='undone'||canonicalJson(current.map(strip).sort((a,b)=>a.id.localeCompare(b.id)))===canonicalJson([...entry.after].sort((a:Row,b:Row)=>a.id.localeCompare(b.id))),'Pipeline rows changed after import; undo cannot overwrite later edits',409)
  put(c.s,'pipeline-import',entry.id,{...entry,status:'undoing'})
