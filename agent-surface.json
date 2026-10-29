@@ -88,6 +88,18 @@
       ]
     },
     {
+      "name": "easel.calendar.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "MODEL-002",
+        "API-003"
+      ]
+    },
+    {
       "name": "easel.proposals.create",
       "scope": "planning:write",
       "readOnly": false,
@@ -369,6 +381,13 @@
       "bindings": {
         "SESSION_SECRET": "sessionSecret"
       }
+    },
+    "replayAdmission": {
+      "prepare": [
+        "list",
+        "read",
+        "window"
+      ]
     }
   },
   "escalations": [],
@@ -412,7 +431,41 @@
             "kind": "payroll"
           }
         }
-      ]
+      ],
+      "target": {
+        "kind": "scenario",
+        "id": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      }
+    },
+    {
+      "id": "window",
+      "tool": "easel.calendar.update",
+      "args": {
+        "scenario": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        },
+        "revision": {
+          "$from": "read",
+          "pointer": "/scenario/revision"
+        },
+        "months": "12"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ],
+      "target": {
+        "kind": "scenario",
+        "id": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      }
     },
     {
       "id": "metrics",
@@ -468,7 +521,14 @@
             "kind": "payroll"
           }
         }
-      ]
+      ],
+      "target": {
+        "kind": "scenario",
+        "id": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      }
     },
     {
       "id": "position",
@@ -932,7 +992,14 @@
             "kind": "payroll"
           }
         }
-      ]
+      ],
+      "target": {
+        "kind": "position",
+        "id": {
+          "$from": "temporary-position",
+          "pointer": "/id"
+        }
+      }
     },
     {
       "id": "submit",

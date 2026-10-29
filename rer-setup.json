@@ -53,7 +53,7 @@
       "label": "Setup token",
       "kind": "secret",
       "required": true,
-      "ownerVisible": false,
+      "ownerVisible": true,
       "generate": "hex",
       "group": "owner"
     }
@@ -65,8 +65,7 @@
     },
     {
       "type": "owner-claim",
-      "mode": "signed",
-      "path": "/auth/owner-claim",
+      "mode": "setup-token",
       "emailField": "OWNER_EMAIL",
       "tokenField": "SETUP_TOKEN"
     }

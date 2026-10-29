@@ -6,7 +6,7 @@ import { agentEnabled } from '../easel/agents/governance'
 import { load, readFence, save } from '../easel/store'
 import { versionStructure } from '../easel/structure-versions'
 import { erasedView } from '../easel/erasure'
-import { Fault, type Actor, type Data } from '../easel/types'
+import { Fault, find, type Actor, type Data } from '../easel/types'
 import type { Context } from '../easel/context'
 import { invokeNative } from '../easel/agent-actions'
 
@@ -34,11 +34,27 @@ export async function nativeContext(ctx: ToolContext | ResourceContext): Promise
  try { requireMember(current) } catch { throw new ToolRefusal('forbidden') }
  return { db: ctx.db, s: state, before: new Map(state), revision, x: current, activity: [], snapshots: [], now: new Date().toISOString() }
 }
-export async function nativeAction(name: string, args: Data, ctx: ToolContext, persist: boolean) {
+export type NativeAdmission = { revision: number; person: string; version: number; role: Actor['baseRole'] }
+export const nativeAdmission = (c: Awaited<ReturnType<typeof nativeContext>>): NativeAdmission => ({ revision: c.revision, person: c.x.actor.id, version: c.x.actor.version, role: c.x.actor.baseRole })
+
+export async function nativeAction(name: string, args: Data, ctx: ToolContext, persist: boolean, expected?: NativeAdmission) {
  const c = await nativeContext(ctx)
  try {
+  if (expected && (c.revision !== expected.revision || c.x.actor.id !== expected.person || c.x.actor.version !== expected.version || c.x.actor.baseRole !== expected.role)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
+  let proposed = args
+  if (!persist && args.revision !== undefined && ctx.idempotencyKey) {
+   // A completed effect advances its own native revision. Re-admit its receipt
+   // under today's native grants, without treating that advancement as a stale
+   // first execution. The actual write always keeps the original precondition.
+   const written = await ctx.db.prepare(`SELECT 1 FROM e_activity WHERE
+    json_extract(detail,'$.authority.id')=? AND json_extract(detail,'$.authority.for.id')=?
+    AND json_extract(detail,'$.authority.idempotencyKey')=? LIMIT 1`)
+    .bind(ctx.agent.id, ctx.person.id, ctx.idempotencyKey).first()
+   const scenario = written && typeof args.scenario === 'string' ? find(c.s, 'scenario', args.scenario) : null
+   if (scenario) proposed = { ...args, revision: typeof args.revision === 'string' ? String(scenario.revision) : scenario.revision }
+  }
   // Match the native HTTP boundary: optional undefined fields are not JSON values.
-  const result = JSON.parse(JSON.stringify(await erasedView(c.db, await invokeNative(c, name, args)))) as Data
+  const result = JSON.parse(JSON.stringify(await erasedView(c.db, await invokeNative(c, name, proposed)))) as Data
   if (persist) {
    if (c.activity.length || c.snapshots.length) {
     await versionStructure(c, c.before, c.revision)

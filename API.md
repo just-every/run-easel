@@ -72,7 +72,7 @@ The rolling window keeps that many future months after the last close. Closed mo
 
 ## MCP
 
-Company agents use the shared [MCP door](docs/mcp.md) at `POST /mcp` (also `/api/easel/mcp`) under the signed company policy and the sponsor's native planning grants. The namespaced catalogue supports filtered reads and draft proposals, comments and explanations. Approval, close, publication and promotion retain their native human lifecycle.
+Company agents use the shared [MCP door](docs/mcp.md) at `POST /mcp` (also `/api/easel/mcp`) under the signed company policy and the sponsor's native planning grants. The namespaced catalogue supports filtered reads, draft proposals, comments, explanations and the already permitted working forecast-window update. Approval, close, publication and promotion retain their native human lifecycle.
 
 ## Model audit trail (AUDIT-001)
 
@@ -108,7 +108,7 @@ Finance downloads `GET /api/easel/export` as a ZIP of CSVs for all product and i
 
 Create a non-cash expense line with the normal `line` command (`nonCash: true`). The `asset-category` command accepts `scenario`, `name`, and whole `usefulLifeMonths`; its `originId` is the `asset` command's `category`. Asset inputs accept `name`, `department`, the non-cash expense `line`, `kind` (`purchase` or `existing`), `cost`, `start`, optional purchase `paymentMonth`, and optional `disposalMonth`/`disposalProceeds`. Existing assets start at the first plan month and additionally accept `openingAccumulated` and `remainingLifeMonths`. Money inputs use decimal currency strings. Updates use `id`; deletion is `input-delete` with `kind`. A used category cannot be deleted. All normal scenario edit and department fences apply; category changes require finance.
 
-Scenario reads include `calculation.assets`: each asset/month's pre-depreciation book value, depreciation, disposed book value, closing book value, capex cash, disposal cash and non-cash expense. Exact cent rounding and disposal-month semantics are in CONTRACT.md. Asset details use the same department filtering as other inputs. MCP offers `asset-category` and `asset` only inside the caller's own draft proposals; promotion remains a human finance action.
+Scenario reads include `calculation.assets`: each asset/month's pre-depreciation book value, depreciation, disposed book value, closing book value, capex cash, disposal cash and non-cash expense. Exact cent rounding and disposal-month semantics are in CONTRACT.md. Asset details use the same department filtering as other inputs. MCP offers `easel.asset_categories.update` and `easel.assets.update` only inside the caller's own draft proposals; promotion remains a human finance action.
 
 ### Native formulas and driver lines (MODEL-004)
 
@@ -148,7 +148,7 @@ Scenario reads expose filtered `inputs.formula` definitions and
 `value` and exact `trace`. Output sources also appear in ordinary planning
 cells. Formula cells are read-only in the grid. Changes enter the existing
 structure-version trail and proposal comparison; approved and saved versions
-retain their captured definitions and arithmetic. The MCP `formula` tool uses
+retain their captured definitions and arithmetic. The MCP `easel.formulas.update` tool uses
 the same fields, with revision as a string, inside the caller's own draft
 proposal. Existing department, Pay detail and scenario authority apply to
 both destinations and referenced sources.
