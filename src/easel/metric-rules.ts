@@ -2,6 +2,7 @@
 import { requireFinance, requireMember } from './access'
 import type { Context } from './context'
 import { workspace } from './model'
+import { pipelineBlock } from './pipeline'
 import { cents, hundredths, percentBps } from './units'
 import { all, choice, find, get, integer, put, requireThat, text, uid, type Data } from './types'
 
@@ -20,7 +21,8 @@ export function seesMetricTask(c: Context, task: Data) {
 
 export async function metricTaskList(c: Context) {
  requireMember(c.x)
- return { rules: c.x.role === 'finance' ? all(c.s, 'metric-rule') : [], tasks: all(c.s, 'metric-task').filter(t => seesMetricTask(c, t)).sort((a, b) => a.due.localeCompare(b.due) || a.id.localeCompare(b.id)) }
+ const tasks=all(c.s,'metric-task').filter(t=>seesMetricTask(c,t)).map(t=>t.evidence.kind==='pipeline-coverage'?{...t,blocked:pipelineBlock(c,get(c.s,'scenario',t.scenario),t.department)}:t)
+ return { rules: c.x.role === 'finance' ? all(c.s, 'metric-rule') : [], tasks: tasks.sort((a, b) => a.due.localeCompare(b.due) || a.id.localeCompare(b.id)) }
 }
 
 export async function metricRules(c: Context, op: string, b: Data): Promise<Data | undefined> {
@@ -35,10 +37,10 @@ export async function metricRules(c: Context, op: string, b: Data): Promise<Data
   requireFinance(c.x)
   const prior = b.id ? get(c.s, 'metric-rule', b.id, 'metric rule') : null
   requireThat(!prior || prior.revision === Number(b.revision), 'The rule changed; reload before saving', 409)
-  const kind = choice(b.kind, ['overspend', 'runway'] as const, 'metric rule')
-  const department = kind === 'overspend' ? get(c.s, 'department', b.department).id : ''
+ const kind = choice(b.kind, ['overspend', 'runway', 'pipeline-coverage'] as const, 'metric rule')
+ const department = kind === 'overspend' || kind === 'pipeline-coverage' ? get(c.s, 'department', b.department).id : ''
   const rule: Data = { name: text(b.name, 'Rule name'), kind, department, owner: text(b.owner, 'Task owner').toLowerCase(), dueDays: integer(b.dueDays, 'Days until due', 0, 365), enabled: b.enabled !== false, currency: workspace(c.s).currency,
-   ...(kind === 'overspend' ? { percentBps: percentBps(b.percent, 'Overspend percent', 10000), amountCents: cents(b.amount, 'Minimum overspend') } : { runwayHundredths: hundredths(b.runway, 'Runway threshold') }),
+   ...(kind === 'overspend' ? { percentBps: percentBps(b.percent, 'Overspend percent', 10000), amountCents: cents(b.amount, 'Minimum overspend') } : kind === 'pipeline-coverage' ? {coverageBps:percentBps(b.coveragePercent,'Pipeline coverage threshold',10000)} : { runwayHundredths: hundredths(b.runway, 'Runway threshold') }),
    revision: (prior?.revision ?? 0) + 1, updatedBy: c.x.actor.email, updatedAt: c.now,
   }
   requireThat(await validMetricOwner(c, rule), kind === 'overspend' ? 'Choose an active contributor in this department' : 'Choose an active finance owner or admin')

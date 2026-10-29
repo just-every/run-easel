@@ -7,8 +7,10 @@ import { datePeriod } from '../fiscal-calendar'
 import type { Calculation } from '../engine'
 import type { Data } from '../types'
 import { daysBetween } from './deal-outcomes'
+import { mulDiv } from '../units'
+import { contractPeriod } from '../contract-revenue'
 
-export type MeasureKey = 'close-slippage' | 'hire-slippage' | 'collection-lag'
+export type MeasureKey = 'close-slippage' | 'hire-slippage' | 'collection-lag' | `stage-probability:${string}`
 export const MEASURES: { key: MeasureKey; label: string; unit: string }[] = [
  { key: 'close-slippage', label: 'Deal close-date slippage', unit: 'days' },
  { key: 'hire-slippage', label: 'Hire start-date slippage', unit: 'days' },
@@ -28,6 +30,14 @@ const medianDays = (values: number[]) => { const v = [...values].sort((a, b) => 
 const spread = (values: number[]) => ({ samples: values.length, meanDays: meanDays(values), medianDays: medianDays(values), minDays: Math.min(...values), maxDays: Math.max(...values) })
 
 export type Observed = { key: MeasureKey; samples: number; meanDays: number; medianDays: number; minDays: number; maxDays: number; evidence: string }
+export function stageProbabilities(outcomes:Data[]):Observed[]{
+ const groups=new Map<string,Data[]>()
+ for(const row of outcomes){const key=`stage-probability:${row.provider}:${encodeURIComponent(row.stage)}`;groups.set(key,[...(groups.get(key)??[]),row])}
+ return [...groups].map(([key,rows])=>({key:key as MeasureKey,...spread(rows.map(r=>r.outcomeBps-r.probabilityBps)),evidence:`${rows.length} reviewed ${rows[0].provider} closed deals from ${rows[0].stageName}: actual won/lost outcomes minus the probability captured while open; deal IDs ${rows.map(r=>r.deal).join(', ')}`}))
+}
+export function measureMeta(key:MeasureKey){
+ return MEASURES.find(m=>m.key===key) ?? {key,label:`Stage probability ${decodeURIComponent(key.split(':').slice(2).join(':'))}`,unit:'basis points'}
+}
 
 export function closeSlippage(deals: Data[]): Observed | null {
  const days = deals.map(d => daysBetween(d.plannedClose, d.actualClose))
@@ -56,11 +66,18 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 export function revise(key: MeasureKey, days: number, inputs: Data, workspace: Data, firstOpen: string): { inputs: Data; changes: Change[] } {
  const changes: Change[] = []
  const revised = { ...inputs }
+ if(key.startsWith('stage-probability:'))revised.revenue=(inputs.revenue??[]).map((r:Data)=>{
+  if(!r.pipeline || r.pipeline.closed || r.start<firstOpen || `stage-probability:${r.pipeline.provider}:${encodeURIComponent(r.pipeline.stage)}`!==key)return r
+  const probabilityBps=clamp(r.pipeline.probabilityBps+days,0,10000)
+  if(probabilityBps===r.pipeline.probabilityBps)return r
+  changes.push({kind:'revenue',originId:r.originId,name:r.name,field:'stage probability basis points',from:r.pipeline.probabilityBps,to:probabilityBps})
+  return {...r,contractValueCents:mulDiv(r.pipeline.sourceAmountCents,probabilityBps,10000),pipeline:{...r.pipeline,probabilityBps,mode:'override',learningBasis:key,assumptionVersion:`${r.pipeline.assumptionVersion}:learned:${days}`}}
+ })
  if (key === 'close-slippage') revised.revenue = (inputs.revenue ?? []).map((r: Data) => {
   if (r.kind !== 'contract' || r.start < firstOpen) return r
-  const startDate = addDays(r.startDate, days), start = datePeriod(workspace as any, startDate)
+  const startDate = addDays(r.startDate, days), start = contractPeriod(r,startDate,workspace as any)
   changes.push({ kind: 'revenue', originId: r.originId, name: r.name, field: 'startDate', from: r.startDate, to: startDate })
-  return { ...r, startDate, start }
+  return { ...r, startDate, start,...(r.pipeline?{pipeline:{...r.pipeline,fiscalPeriod:r.pipeline.fiscalPeriods?.find((p:Data)=>p.month===start)??null,dateRevision:{from:r.startDate,days,to:startDate}}}:{}) }
  })
  if (key === 'hire-slippage') revised.position = (inputs.position ?? []).map((p: Data) => {
   if (p.start < firstOpen) return p

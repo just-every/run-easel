@@ -11,7 +11,7 @@ import { formatMoney } from '../units'
 import { get, put, requireThat, text, type Data } from '../types'
 import { dealOutcomes } from './deal-outcomes'
 import { forecastLearning } from './forecast-learning'
-import { MEASURES, revise, type MeasureKey } from './learning-measures'
+import { revise } from './learning-measures'
 
 export async function learningCommands(c: Context, op: string, b: Data): Promise<Data | undefined> {
  const deals = dealOutcomes(c, op, b)
@@ -19,17 +19,16 @@ export async function learningCommands(c: Context, op: string, b: Data): Promise
  if (op !== 'learning-propose') return undefined
  requireAgent(c, 'learning')
  requireFinance(c.x)
- const key = MEASURES.find(m => m.key === b.measure)?.key as MeasureKey | undefined
- requireThat(key, 'Choose a measured assumption')
  const analysis = await forecastLearning(c, b.scenario)
- const measure = analysis.measures.find(m => m.key === key)
+ const measure = analysis.measures.find(m => m.key === b.measure)
  requireThat(measure, 'No history measures this assumption yet', 409)
+ const key=measure.key
  requireThat(measure.suggestion.eligible, `Not suggested: ${measure.suggestion.reasons.join('; ')}`, 409)
  requireThat(b.evidence === measure.evidenceSha, 'The evidence changed since you reviewed the backtest; review it again', 409)
  const forecast = get(c.s, 'scenario', analysis.scenario.id)
  const { days } = measure.suggestion, money = (n: number) => formatMoney(n, analysis.currency)
- const request = text(`${measure.label}: ${days > 0 ? '+' : ''}${days} days from ${measure.samples} reviewed observations (${measure.evidence}). Backtest on ${measure.backtest.keptForecasts} kept forecasts: absolute error ${money(measure.backtest.baselineError)} before, ${money(measure.backtest.revisedError)} with this revision; lower on ${measure.backtest.lowerOn}, higher on ${measure.backtest.worseOn}. ${measure.suggestion.affectedCount} input(s) that have not started move.`, 'Request', 2000)
- const proposal = (await plan(c, 'proposal-create', { from: forecast.id, name: `Learned: ${measure.label} ${days > 0 ? '+' : ''}${days} days`.slice(0, 200), request }))!
+ const request = text(`${measure.label}: ${days > 0 ? '+' : ''}${days} ${measure.unit} from ${measure.samples} reviewed observations (${measure.evidence}). Backtest on ${measure.backtest.keptForecasts} kept forecasts: absolute error ${money(measure.backtest.baselineError)} before, ${money(measure.backtest.revisedError)} with this revision; lower on ${measure.backtest.lowerOn}, higher on ${measure.backtest.worseOn}. ${measure.suggestion.affectedCount} input(s) that have not started move.`, 'Request', 2000)
+ const proposal = (await plan(c, 'proposal-create', { from: forecast.id, name: `Learned: ${measure.label} ${days > 0 ? '+' : ''}${days} ${measure.unit}`.slice(0, 200), request }))!
  const inputs = { revenue: scenarioInputs(c.s, proposal.id, 'revenue'), position: scenarioInputs(c.s, proposal.id, 'position') }
  const revised = revise(key, days, inputs, model(c.s, proposal.id).workspace, addMonths(forecast.actualsThrough, 1))
  const byOrigin = new Map(revised.changes.map(x => [x.originId, x]))

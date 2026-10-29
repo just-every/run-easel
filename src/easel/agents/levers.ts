@@ -10,10 +10,10 @@ import { addMonths } from '../months'
 import { all, choice, get, integer, put, remove, requireThat, text, uid, type Data } from '../types'
 import { mulDiv } from '../units'
 
-export const LEVER_KINDS = ['hire-start', 'spend-cut', 'collection-days'] as const
+export const LEVER_KINDS = ['hire-start', 'spend-cut', 'collection-days','pipeline-price'] as const
 export type LeverKind = typeof LEVER_KINDS[number]
-export const LEVER_UNIT: Record<LeverKind, string> = { 'hire-start': 'months', 'spend-cut': 'percent', 'collection-days': 'days' }
-const LIMIT: Record<LeverKind, number> = { 'hire-start': 12, 'spend-cut': 100, 'collection-days': 120 }
+export const LEVER_UNIT: Record<LeverKind, string> = { 'hire-start': 'months', 'spend-cut': 'percent', 'collection-days': 'days','pipeline-price':'percent' }
+const LIMIT: Record<LeverKind, number> = { 'hire-start': 12, 'spend-cut': 100, 'collection-days': 120,'pipeline-price':100 }
 
 export type Applied = { inputs: Data; change: string }
 
@@ -24,6 +24,7 @@ function target(inputs: Data, lever: Data, firstOpen: string): { kind: 'position
  if (!row || row.start < firstOpen) return null
  if (lever.kind === 'spend-cut' && (!['recurring', 'one-off'].includes(row.kind) || !(row.amountCents > 0))) return null
  if (lever.kind === 'collection-days' && (row.kind !== 'contract' || !(row.dsoDays > 0))) return null
+ if(lever.kind==='pipeline-price' && (!row.pipeline || row.pipeline.closed || !row.contractValueCents))return null
  return { kind, row }
 }
 
@@ -45,6 +46,10 @@ export function applyLever(inputs: Data, lever: Data, level: number, firstOpen: 
   const amountCents = mulDiv(t.row.amountCents, 100 - level, 100)
   row = { ...row, amountCents }
   change = `${lever.label}: cut ${level}%`
+ } else if(lever.kind==='pipeline-price'){
+  const amount=mulDiv(row.pipeline.sourceAmountCents,100+level,100)
+  row={...row,contractValueCents:mulDiv(amount,row.pipeline.probabilityBps,10000),pipeline:{...row.pipeline,sourceAmountCents:amount,priceChangePercent:level}}
+  change=`${lever.label}: planning price +${level}%; CRM deal ${row.pipeline.deal} is unchanged`
  } else {
   const dsoDays = Math.max(0, t.row.dsoDays - level)
   row = { ...row, dsoDays }
