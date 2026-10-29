@@ -30,8 +30,12 @@ let generatedAcceptance = acceptance
 for (const id of selected) {
  const clause = contract.clauses.find(c => c.id === id)
  const lines = generatedAcceptance.split('\n'), matches = lines.map((line,i) => line.startsWith(`| \`${id}\` — `) ? i : -1).filter(i => i >= 0)
- if (matches.length !== 1) throw Error(`Expected one acceptance row for ${id}`)
- lines[matches[0]] = projection(clause)
+ if (matches.length > 1) throw Error(`Expected at most one acceptance row for ${id}`)
+ if (matches.length) lines[matches[0]] = projection(clause)
+ else {
+  if (!lines.includes('## Adopted agent door clauses')) lines.push('', '## Adopted agent door clauses', '', '| Clause | Status | Acceptance |', '| --- | --- | --- |')
+  lines.push(projection(clause))
+ }
  generatedAcceptance = lines.join('\n')
 }
 const target = counts.get('Target and push further')
