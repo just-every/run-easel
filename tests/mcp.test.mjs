@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { harness } from './harness.mjs'
+import { harness, agentMessage, agentName } from './harness.mjs'
 
 test('API-003 a contributor uses MCP for filtered reads and proposals, never financial approvals', async t => {
  const h = await harness()
@@ -26,9 +26,10 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  await h.kit('actuals', 'commit', { ...source, fingerprint: preview.fingerprint })
  await cmd('close-month', { scenario: forecast.id, month: '2026-01' })
 
+ await h.agentPolicy()
  let nextId = 1
  const rpc = async (method, params, cookie = contributor, headers = {}, notification = false) => {
-  const r = await h.mf.dispatchFetch(`${h.origin}/api/easel/mcp`, { method: 'POST', headers: { origin: h.origin, cookie, 'content-type': 'application/json', accept: 'application/json, text/event-stream', ...headers }, body: JSON.stringify({ jsonrpc: '2.0', ...(notification ? {} : { id: nextId++ }), method, params }) })
+  const r = await h.mf.dispatchFetch(`${h.origin}/api/easel/mcp`, { method: 'POST', headers: { origin: h.origin, cookie, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25', accept: 'application/json, text/event-stream', ...headers }, body: JSON.stringify(agentMessage({ jsonrpc: '2.0', ...(notification ? {} : { id: nextId++ }), method, params })) })
   return { status: r.status, headers: r.headers, body: r.status === 202 ? null : await r.json() }
  }
  const call = async (name, args = {}, cookie = contributor) => {
@@ -37,18 +38,18 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
   return r.body.result
  }
  const ok = result => { assert.ok(!result.isError, JSON.stringify(result)); return result.structuredContent }
- const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'public-door-client', version: '1' } })
+ const init = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'public-door-client', version: '1' } })
  assert.equal(init.status, 200)
- assert.equal(init.body.result.protocolVersion, init.headers.get('MCP-Protocol-Version'))
+ assert.equal(init.body.result.protocolVersion, '2025-11-25')
  assert.equal((await rpc('notifications/initialized', {}, contributor, {}, true)).status, 202)
- assert.deepEqual((await rpc('ping')).body.result, {})
+ assert.equal((await rpc('server/discover')).body.result._meta['io.modelcontextprotocol/serverInfo'].name, 'Easel')
  assert.equal((await rpc('tools/list', {}, contributor, { 'MCP-Protocol-Version': 'unsupported' })).status, 400)
  assert.equal((await rpc('tools/list', {}, '')).status, 401)
  assert.equal((await rpc('tools/list', {}, contributor, { origin: 'https://other.example' })).status, 403)
- assert.equal((await rpc('tools/call', { name: 'scenario', arguments: { scenario: 123 } })).body.error.code, -32602)
+ assert.equal((await rpc('tools/call', { name: 'scenario', arguments: { scenario: 123 } })).body.result._meta['com.runeditrun/error'].code, 'invalid_arguments')
  const listed = (await rpc('tools/list')).body.result.tools
- assert.ok(listed.some(tool => tool.name === 'variance'))
- assert.ok(listed.some(tool => tool.name === 'proposal-create'))
+ assert.ok(listed.some(tool => tool.name === agentName('variance')))
+ assert.ok(listed.some(tool => tool.name === agentName('proposal-create')))
  const variance = ok(await call('variance', { month: '2026-01' }))
  assert.equal(variance.month, '2026-01')
  assert.ok(variance.rows.some(row => row.line === revenue.id && row.actual === 100000))
@@ -88,5 +89,5 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  const audit = await h.db.prepare("SELECT actor FROM e_activity WHERE action='proposal-create' AND record=?").bind(proposal.id).first()
  assert.equal(audit.actor, 'planner@example.test')
  await cmd('member', { email: 'planner@example.test', name: 'planner', role: 'contributor', departments: [sales.id], active: false })
- assert.equal((await rpc('tools/list')).status, 403)
+ assert.equal((await rpc('tools/list')).status, 401)
 })

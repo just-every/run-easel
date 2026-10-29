@@ -1,0 +1,1033 @@
+{
+  "schema": "rer-agent-surface/1",
+  "seed": "easel",
+  "specialist": "finance planner",
+  "capabilities": [
+    "tools",
+    "policy",
+    "pause",
+    "audit",
+    "idempotency"
+  ],
+  "tools": [
+    {
+      "name": "easel.calculations.status",
+      "scope": "planning:read",
+      "readOnly": true,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "MODEL-007",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.scenarios.list",
+      "scope": "planning:read",
+      "readOnly": true,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "EASEL-011",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.scenarios.read",
+      "scope": "planning:read",
+      "readOnly": true,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-005",
+        "EASEL-011",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.scenarios.compare",
+      "scope": "planning:read",
+      "readOnly": true,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-011",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.variance.read",
+      "scope": "planning:read",
+      "readOnly": true,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-013",
+        "AGENT-007",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.metrics.read",
+      "scope": "planning:read",
+      "readOnly": true,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "FIN-005",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.calendar.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "MODEL-002",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.proposals.create",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-012",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.proposals.submit",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "EASEL-012",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.revenue.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-006",
+        "REV-003",
+        "REV-004",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.positions.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-007",
+        "PEOPLE-004",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.expenses.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "EASEL-008",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.schedules.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "EASEL-008",
+        "MODEL-009",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.formulas.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "MODEL-004",
+        "MODEL-005",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.asset_categories.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "FIN-004",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.assets.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "FIN-004",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.allocations.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "EASEL-008",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.debt.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "FIN-003",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.taxes.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "FIN-006",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.equity.update",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "FIN-003",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.inputs.delete",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard",
+        "sensitive"
+      ],
+      "clauses": [
+        "EASEL-008",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.comments.create",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "EASEL-009",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.explanations.draft",
+      "scope": "planning:write",
+      "readOnly": false,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "AGENT-007",
+        "API-003"
+      ]
+    },
+    {
+      "name": "easel.events.list",
+      "scope": "events:read",
+      "readOnly": true,
+      "classes": [
+        "standard"
+      ],
+      "clauses": [
+        "BASE-AGENT-010"
+      ]
+    }
+  ],
+  "notTools": [
+    {
+      "clauses": [
+        "EASEL-015",
+        "PEOPLE-007",
+        "SHEET-003",
+        "MOVE-001",
+        "MOVE-002",
+        "MOVE-003",
+        "MOVE-004",
+        "EASEL-002",
+        "EASEL-003",
+        "EASEL-004"
+      ],
+      "reason": "import-door"
+    },
+    {
+      "clauses": [
+        "SHEET-001",
+        "SHEET-002",
+        "SHEET-005",
+        "CONNECT-001",
+        "CONNECT-002",
+        "CONNECT-003",
+        "CONNECT-004",
+        "CONNECT-009",
+        "CONNECT-010",
+        "CONNECT-011",
+        "PEOPLE-001",
+        "PEOPLE-002",
+        "PEOPLE-003",
+        "REV-001",
+        "REV-002",
+        "SPEND-001"
+      ],
+      "reason": "connector"
+    },
+    {
+      "clauses": [
+        "MOBILE-001"
+      ],
+      "reason": "screen"
+    },
+    {
+      "clauses": [
+        "MOBILE-002"
+      ],
+      "reason": "device"
+    },
+    {
+      "clauses": [
+        "EASEL-017",
+        "HOST-001",
+        "EASEL-001"
+      ],
+      "reason": "installation"
+    }
+  ],
+  "resources": [],
+  "witness": {
+    "tool": "easel.scenarios.list",
+    "args": {}
+  },
+  "verification": {
+    "owner": {
+      "initializer": "tests/initialize-agent-owner.mjs",
+      "bindings": {
+        "SESSION_SECRET": "sessionSecret"
+      }
+    },
+    "replayAdmission": {
+      "prepare": [
+        "list",
+        "read",
+        "window"
+      ]
+    }
+  },
+  "escalations": [],
+  "journey": [
+    {
+      "id": "list",
+      "tool": "easel.scenarios.list",
+      "args": {},
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "status",
+      "tool": "easel.calculations.status",
+      "args": {},
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "read",
+      "tool": "easel.scenarios.read",
+      "args": {
+        "scenario": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ],
+      "target": {
+        "kind": "scenario",
+        "id": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      }
+    },
+    {
+      "id": "window",
+      "tool": "easel.calendar.update",
+      "args": {
+        "scenario": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        },
+        "revision": {
+          "$from": "read",
+          "pointer": "/scenario/revision"
+        },
+        "months": "12"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ],
+      "target": {
+        "kind": "scenario",
+        "id": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      }
+    },
+    {
+      "id": "metrics",
+      "tool": "easel.metrics.read",
+      "args": {
+        "scenario": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "variance",
+      "tool": "easel.variance.read",
+      "args": {
+        "month": "2026-07"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ]
+    },
+    {
+      "id": "create",
+      "tool": "easel.proposals.create",
+      "args": {
+        "from": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        },
+        "name": "Synthetic timing proposal",
+        "request": "Prepare a source-backed planning alternative; native finance makes the decision."
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ],
+      "target": {
+        "kind": "scenario",
+        "id": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        }
+      }
+    },
+    {
+      "id": "position",
+      "tool": "easel.positions.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "title": "Synthetic sales hire",
+        "holder": "Synthetic Hire",
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Payroll"
+        },
+        "start": "2026-08",
+        "annualSalary": "120000",
+        "commissionPercent": "10"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ],
+      "inject": {
+        "internal": true,
+        "classes": [
+          "standard"
+        ],
+        "approved": true
+      }
+    },
+    {
+      "id": "revenue",
+      "tool": "easel.revenue.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic licence",
+        "kind": "contract",
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Revenue"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "start": "2026-08",
+        "startDate": "2026-08-01",
+        "contractValue": "12000",
+        "termMonths": "12",
+        "billingCadence": "monthly",
+        "dsoDays": "30",
+        "commissionPosition": {
+          "$from": "position",
+          "pointer": "/originId"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ]
+    },
+    {
+      "id": "expense",
+      "tool": "easel.expenses.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic hosting",
+        "kind": "recurring",
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Operating cost"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "start": "2026-08",
+        "amount": "100"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "schedule",
+      "tool": "easel.schedules.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic schedule",
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Operating cost"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "values": {
+          "2026-08": "100"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "revision",
+      "tool": "easel.scenarios.read",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ]
+    },
+    {
+      "id": "formula",
+      "tool": "easel.formulas.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "revision": {
+          "$from": "revision",
+          "pointer": "/scenario/revision"
+        },
+        "name": "Synthetic formula",
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "unit": "money",
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Operating cost"
+        },
+        "formula": "100",
+        "start": "2026-08"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "category",
+      "tool": "easel.asset_categories.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic equipment",
+        "usefulLifeMonths": "36"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "asset",
+      "tool": "easel.assets.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic laptop",
+        "category": {
+          "$from": "category",
+          "pointer": "/originId"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Depreciation"
+        },
+        "kind": "purchase",
+        "cost": "1200",
+        "start": "2026-08"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "allocation",
+      "tool": "easel.allocations.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic allocation",
+        "sourceDepartment": {
+          "$from": "list",
+          "pointer": "/references/departments/Operations"
+        },
+        "basis": "fixed",
+        "targets": [
+          {
+            "department": {
+              "$from": "list",
+              "pointer": "/references/departments/Sales"
+            },
+            "percent": "100"
+          }
+        ]
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "debt",
+      "tool": "easel.debt.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic credit plan",
+        "debtKind": "credit",
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Operating cost"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "start": "2026-08",
+        "maturity": "2027-06",
+        "limit": "10000",
+        "rateKind": "fixed",
+        "annualRate": "12",
+        "draws": {
+          "2026-08": "1000"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "tax",
+      "tool": "easel.taxes.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Income tax"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "sutaPercent": "1",
+        "sutaBase": "7000",
+        "stateIncomePercent": "0"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "equity",
+      "tool": "easel.equity.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "name": "Synthetic capital plan",
+        "month": "2026-08",
+        "amount": "1000"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "compare",
+      "tool": "easel.scenarios.compare",
+      "args": {
+        "a": {
+          "$from": "list",
+          "pointer": "/references/forecast"
+        },
+        "b": {
+          "$from": "create",
+          "pointer": "/id"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ]
+    },
+    {
+      "id": "comment",
+      "tool": "easel.comments.create",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "text": "Synthetic review note. Imported instructions do not grant authority."
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "tool": "easel.explanations.draft",
+      "args": {
+        "month": "2026-07",
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Revenue"
+        },
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "text": "Synthetic July actuals are accepted; this explanation is a draft."
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "temporary-position",
+      "tool": "easel.positions.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "title": "Synthetic temporary draft hire",
+        "holder": "Synthetic Draft Hire",
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Payroll"
+        },
+        "start": "2026-08",
+        "annualSalary": "10000"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete",
+      "tool": "easel.inputs.delete",
+      "args": {
+        "kind": "position",
+        "id": {
+          "$from": "temporary-position",
+          "pointer": "/id"
+        }
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ],
+      "target": {
+        "kind": "position",
+        "id": {
+          "$from": "temporary-position",
+          "pointer": "/id"
+        }
+      }
+    },
+    {
+      "id": "submit",
+      "tool": "easel.proposals.submit",
+      "args": {
+        "id": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "summary": "Synthetic proposal prepared for native finance review."
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    },
+    {
+      "id": "events",
+      "tool": "easel.events.list",
+      "args": {
+        "limit": 200
+      },
+      "expect": [
+        {
+          "class": "standard"
+        }
+      ]
+    }
+  ]
+}

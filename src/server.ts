@@ -9,6 +9,7 @@ import { seedDemo } from './demo'
 import start from '@tanstack/react-start/server-entry'
 import { dispatch } from './base/dispatch'
 import { authResponse, runtimeBindings, type Bindings } from './auth.server'
+import { agentResponse } from './agent-door/index.ts'
 import { api } from './easel/api'
 import { staticAssetResponse } from './base/static-assets'
 import { lobbyResponse } from './base/lobby'
@@ -20,6 +21,8 @@ import { runCashAlertSchedule } from './easel/cash-alert-schedule'
 
 export default withDemo({
   async fetch(request, env, execution) {
+    const agent = await agentResponse(request, env)
+    if (agent) return agent
     const asset = await staticAssetResponse(request, env)
     if (asset) return asset
     const auth = await authResponse(request, env)

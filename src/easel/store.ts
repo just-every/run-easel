@@ -21,13 +21,33 @@ export async function actor(request: Request, original: Bindings): Promise<Actor
 }
 
 /** SQL that is true only while the actor's session and operator are still current. */
-export function authority(a: Actor, finance = false) {
+function nativeAuthority(a: Actor, finance = false) {
  if (a.token) return tokenAuthority(a, finance)
  if (a.scheduler) return { sql: "EXISTS(SELECT 1 FROM oa_operators o WHERE o.id=? AND o.status='active' AND o.role IN ('owner','admin'))", params: [a.scheduler.operator] }
  return {
   sql: `EXISTS(SELECT 1 FROM oa_sessions se JOIN oa_operators o ON o.id=se.operator_id WHERE se.id=? AND o.id=? AND o.version=se.operator_version AND o.version=? AND o.role=? AND o.status='active' AND se.revoked_at IS NULL AND se.expires_at>unixepoch()*1000${finance ? " AND o.role IN ('owner','admin')" : ''})`,
   params: [a.session, a.id, a.version, a.baseRole],
  }
+}
+
+export function authority(a: Actor, finance = false) {
+ const original = a.door && !a.session && !a.token ? {
+  sql: "EXISTS(SELECT 1 FROM oa_operators WHERE id=? AND version=? AND role=? AND status='active')",
+  params: [a.id, a.version, a.baseRole],
+ } : nativeAuthority(a, finance)
+ if (!a.door) return original
+ const gate = {
+  sql: `EXISTS(SELECT 1 FROM oa_operators o WHERE o.id=? AND o.version=? AND o.role=? AND o.status='active'${finance ? " AND o.role IN ('owner','admin')" : ''})
+   AND NOT EXISTS(SELECT 1 FROM agent_door_agents WHERE id=? AND revoked=1)
+   AND (? IS NULL OR EXISTS(SELECT 1 FROM bs_settings WHERE singleton=1 AND stopped=0 AND owner_id IS NOT NULL))
+   AND NOT EXISTS(SELECT 1 FROM agent_door_state WHERE id=1 AND (local_paused=1 OR json_extract(envelope,'$.paused')=1
+    OR json_extract(envelope,'$.exp')*1000<=unixepoch()*1000
+    OR EXISTS(SELECT 1 FROM json_each(envelope,'$.revoked.agents') WHERE value=?)
+    OR EXISTS(SELECT 1 FROM json_each(envelope,'$.revoked.consents') WHERE value=?)))
+   AND NOT EXISTS(SELECT 1 FROM e_records WHERE kind='agent-governance' AND id='main' AND (json_extract(value,'$.stopped')=1 OR json_extract(value,'$.agents.mcp')=0))`,
+  params: [a.id, a.version, a.baseRole, a.door.agent, a.door.consent, a.door.agent, a.door.consent],
+ }
+ return { sql: `(${original.sql}) AND (${gate.sql})`, params: [...original.params, ...gate.params] }
 }
 
 export async function load(db: D1Database) {

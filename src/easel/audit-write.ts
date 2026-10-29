@@ -10,6 +10,7 @@ const auditValue = (row?: Row) => row?.kind === 'dashboard-layout'
  : row?.value ?? null
 
 export function actorAuthority(actor: Actor) {
+ if (actor.agent?.sponsor) return { type: 'agent', name: actor.agent.name, id: actor.agent.id, via: actor.agent.via, for: actor.agent.sponsor, label: `${actor.agent.name} for ${actor.agent.sponsor.name}`, approvers: actor.agent.approvers ?? [], idempotencyKey: actor.agent.idempotencyKey ?? null, operationId: actor.agent.operationId ?? null }
  if (actor.scheduler) return { type: 'scheduler', name: actor.email, via: 'schedule', attributedTo: actor.scheduler.email }
  return { type: actor.agent ? 'agent' : 'person', name: actor.agent?.name ?? actor.name, via: actor.token ? 'api-token' : actor.agent?.via ?? 'session', ...(actor.token ? { tokenId: actor.token.id } : {}) }
 }

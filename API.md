@@ -72,7 +72,7 @@ The rolling window keeps that many future months after the last close. Closed mo
 
 ## MCP
 
-Agents can use the native-session [MCP endpoint](docs/mcp.md) at `POST /api/easel/mcp` for filtered reads and proposal, comment and explanation tools. Approval, close, publication and promotion stay with people.
+Company agents use the shared [MCP door](docs/mcp.md) at `POST /mcp` (also `/api/easel/mcp`) under the signed company policy and the sponsor's native planning grants. The namespaced catalogue supports filtered reads, draft proposals, comments, explanations and the already permitted working forecast-window update. Approval, close, publication and promotion retain their native human lifecycle.
 
 ## Model audit trail (AUDIT-001)
 
@@ -90,7 +90,7 @@ A signed-in member manages their own tokens through these session-only routes:
 
 Issuance uses Base's fresh identity proof. If it returns `step_up_required`, request `POST /auth/step-up` with `{ "action": "credentials:mint", "returnTo": "/app" }`, follow and confirm the emailed link in the same browser session, then issue again. Key-gated local developer sessions already satisfy this proof.
 
-Integrations send `Authorization: Bearer <token>` to the existing Easel read and command/import routes. They do not send session cookies or an `Origin` header. Read tokens cannot make POST requests. A supplied invalid bearer is refused even if the request also carries a valid session. Token administration, invitations and MCP require the native signed-in session; MCP's proposal-only tools remain documented separately in `docs/mcp.md`.
+Integrations send `Authorization: Bearer <token>` to the existing Easel read and command/import routes. They do not send session cookies or an `Origin` header. Read tokens cannot make POST requests. A supplied invalid bearer is refused even if the request also carries a valid session. Token administration and invitations require the native signed-in session. The shared MCP door preserves each credential's original scopes and grant ceiling; its proposal tools are documented separately in `docs/mcp.md`.
 
 Tokens retain the issuer's role at issuance, intersect their original departments with today's grants, and resolve current membership on every request. A role change, deactivation, native operator-version change, expiry or revocation removes access; later department additions never expand an existing token. Named service tokens are labelled as agent work under their issuer's authority. They may edit a working forecast horizon under the issuer's current company-wide planning grant and original token ceiling; approval, month close, publication, promotion and connection administration remain refused to agents. Writes and import journal batches recheck the live credential and revision fence atomically, so stale revisions still return 409.
 
@@ -108,7 +108,7 @@ Finance downloads `GET /api/easel/export` as a ZIP of CSVs for all product and i
 
 Create a non-cash expense line with the normal `line` command (`nonCash: true`). The `asset-category` command accepts `scenario`, `name`, and whole `usefulLifeMonths`; its `originId` is the `asset` command's `category`. Asset inputs accept `name`, `department`, the non-cash expense `line`, `kind` (`purchase` or `existing`), `cost`, `start`, optional purchase `paymentMonth`, and optional `disposalMonth`/`disposalProceeds`. Existing assets start at the first plan month and additionally accept `openingAccumulated` and `remainingLifeMonths`. Money inputs use decimal currency strings. Updates use `id`; deletion is `input-delete` with `kind`. A used category cannot be deleted. All normal scenario edit and department fences apply; category changes require finance.
 
-Scenario reads include `calculation.assets`: each asset/month's pre-depreciation book value, depreciation, disposed book value, closing book value, capex cash, disposal cash and non-cash expense. Exact cent rounding and disposal-month semantics are in CONTRACT.md. Asset details use the same department filtering as other inputs. MCP offers `asset-category` and `asset` only inside the caller's own draft proposals; promotion remains a human finance action.
+Scenario reads include `calculation.assets`: each asset/month's pre-depreciation book value, depreciation, disposed book value, closing book value, capex cash, disposal cash and non-cash expense. Exact cent rounding and disposal-month semantics are in CONTRACT.md. Asset details use the same department filtering as other inputs. MCP offers `easel.asset_categories.update` and `easel.assets.update` only inside the caller's own draft proposals; promotion remains a human finance action.
 
 ### Native formulas and driver lines (MODEL-004)
 
@@ -148,7 +148,7 @@ Scenario reads expose filtered `inputs.formula` definitions and
 `value` and exact `trace`. Output sources also appear in ordinary planning
 cells. Formula cells are read-only in the grid. Changes enter the existing
 structure-version trail and proposal comparison; approved and saved versions
-retain their captured definitions and arithmetic. The MCP `formula` tool uses
+retain their captured definitions and arithmetic. The MCP `easel.formulas.update` tool uses
 the same fields, with revision as a string, inside the caller's own draft
 proposal. Existing department, Pay detail and scenario authority apply to
 both destinations and referenced sources.

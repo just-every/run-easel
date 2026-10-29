@@ -83,7 +83,7 @@ test('MODEL-005 structure versions retain exact definitions, readable diffs and 
  const proposal = await h.command('proposal-create', { from: forecast.id, name: 'Retainer upside', request: 'Increase renewal rate' }, planner)
  const proposalInput = (await h.get(`/api/easel/scenario/${proposal.id}`, planner)).inputs.revenue[0]
  const mcp = await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'revenue', arguments: { ...driver, scenario: proposal.id, id: proposalInput.id, rate: '1300' } } }, planner)
- assert.equal(mcp.status, 200); assert.equal(mcp.value.result.isError, undefined)
+ assert.equal(mcp.status, 200); assert.equal(mcp.value.result.isError, false)
  assert.equal((await versions())[0].detail.authority.type, 'agent')
  assert.equal((await versions())[0].detail.changes[0].after.rateCents, 130000)
  assert.ok((await h.get(`/api/easel/activity?action=structure-version&scenario=${proposal.id}`)).every(e => e.detail.scenarios.some(sc => sc.id === proposal.id)))

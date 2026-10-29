@@ -103,7 +103,7 @@ test('REV-003 fixed revenue forms trace exact cells, cash timing, proposals and 
  const proposalInputs = (await h.get(`/api/easel/scenario/${proposal.id}`, planner)).inputs.revenue
  const proposalMilestones = proposalInputs.find(r => r.kind === 'milestones')
  const mcp = await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'revenue', arguments: { ...bodies.milestones, collectionLag: '1', scenario: proposal.id, id: proposalMilestones.id } } }, planner)
- assert.equal(mcp.status, 200); assert.equal(mcp.value.result.isError, undefined, 'MCP accepts the typed milestone array in an owned proposal')
+ assert.equal(mcp.status, 200); assert.equal(mcp.value.result.isError, false, 'MCP accepts the typed milestone array in an owned proposal')
  const proposalSeats = proposalInputs.find(r => r.kind === 'seats')
  await h.command('revenue', { ...bodies.seats, scenario: proposal.id, id: proposalSeats.id, price: '30' }, planner)
  const comparison = await h.get(`/api/easel/compare?a=${forecast.id}&b=${proposal.id}`, planner)
