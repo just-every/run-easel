@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "8d4592e67e8c699ad63949206814d4ffa40117dac621edb458f410f75a42b0d8",
+      "sha256": "5f1753a00e8ddc7dee4b67cf1cc7471f610b8eb920d8aaa40b6ea07d52cc47d6",
       "executable": false
     },
     "base-copies.json": {
@@ -2059,7 +2059,7 @@
       "executable": false
     },
     "src/easel/pipeline-journal.ts": {
-      "sha256": "d72035212a6f84487b1f24149ca8194ba1b6ee78785e710c9242c0d8d3a56e2b",
+      "sha256": "93986991a028d07c2f21c347e24d0795f2c214a9b8a9453d88ce08721c0af88f",
       "executable": false
     },
     "src/easel/pipeline-provider.ts": {
@@ -5335,7 +5335,7 @@
       "executable": false
     },
     "tests/pipeline.test.mjs": {
-      "sha256": "513d483965b9998f198ebb69b341f156a3bfca897d201855c7110cb3cb443bcb",
+      "sha256": "f5b6bca2ab6ee3d6705281b8a849ba6e5ac1529bce3a773a12e6d29d1a443738",
       "executable": false
     },
     "tests/plaid-cash-browser.mjs": {
