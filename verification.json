@@ -5,7 +5,7 @@
       "browser": false,
       "commands": [
         "node scripts/contract-docs.mjs check",
-        "node scripts/edition-authoring/cli.mjs check",
+        "node node_modules/@runeditrun/rer/edition-authoring/cli.mjs check",
         "pnpm exec rer check",
         "pnpm typecheck",
         "pnpm exec rer build --site"

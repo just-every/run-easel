@@ -6,7 +6,7 @@ const allowed = path => documents.has(path) || path === 'sources.lock.json'
  || /^(?:evidence|\.artifacts)\/.+\.(?:md|txt|png|jpe?g|pdf)$/.test(path);
 const relative = path => typeof path === 'string' && path.length > 0 && !path.startsWith('/')
  && !path.includes('\\') && !path.split('/').some(part => !part || part === '.' || part === '..');
-const checks = new Set(['node scripts/contract-docs.mjs check', 'node scripts/edition-authoring/cli.mjs check',
+const checks = new Set(['node scripts/contract-docs.mjs check', 'node node_modules/@runeditrun/rer/edition-authoring/cli.mjs check',
  'pnpm exec rer check', 'pnpm typecheck', 'pnpm exec rer build', 'pnpm exec rer build --site']);
 
 // The reader table records reviewed dependencies on the light allowlist. A new
@@ -17,7 +17,7 @@ export async function lightReaders(files, { cwd = process.cwd(), plan } = {}) {
   if (!/^tests\/[A-Za-z0-9_./-]+\.mjs$/.test(path) || !relative(path)
    || !Array.isArray(dependencies) || !dependencies.every(relative)) return;
  }
- for (const path of ['edition.json', 'sources.lock.json', 'scripts/edition-authoring/cli.mjs', 'scripts/contract-docs.mjs']) await access(join(cwd, path));
+ for (const path of ['edition.json', 'sources.lock.json', 'node_modules/@runeditrun/rer/edition-authoring/cli.mjs', 'scripts/contract-docs.mjs']) await access(join(cwd, path));
  const changed = new Set(files), commands = new Set();
  for (const shard of [...plan.push, ...plan.nightly]) for (const command of shard.commands) {
   if (checks.has(command)) continue;
