@@ -19,7 +19,7 @@ published package using bare `rer` verbs. They are not byte-equal Base copies.
 Dependency linking is not enabled. Signed owner claims use the existing module when trusted claim bindings are provisioned.
 
 The CLI and onboarding implementation come from the published `@runeditrun/rer`
-package, pinned exactly to `0.2.86` in `package.json` and `pnpm-lock.yaml`. The Base
+package, pinned exactly to `0.2.88` in `package.json` and `pnpm-lock.yaml`. The Base
 `--to-package` converter removed the vendored CLI and onboarding implementation
 and rewrote their callers to package exports. `rer check` verifies the command
 contract and operator-auth copy. `scripts/installer` contains only Easel adapters,
@@ -52,11 +52,11 @@ header contracts while avoiding overlapping regex scans, and carry Base
 outside the byte-equal Base inventory; `edition.json` records their public Easel
 baseline and mappings. The remaining mail files retain their recorded Base pin.
 
-Agent-door adoption uses released `@runeditrun/rer` 0.2.86. Its release tag is
-identical to Base `f96363bf919ea3e7ed1837daba6894810a50e4a6`. Agent door, Business
+Agent-door adoption uses released `@runeditrun/rer` 0.2.88. Its release tag is
+identical to Base `114ef7a61f080da053af783c5fbe06f625d692cc`. Agent door, Business
 settings, operator-auth and the settings theme/icon dependency are recorded at
 that immutable source in `base-copies.json`; other copies retain their previous
-origins. The source was acquired as an authenticated archive. Runtime sources
+origins. The source was acquired from the immutable Base Git commit. Runtime sources
 exclude upstream tests and fixtures. New migrations add Business settings,
 Business person bindings, door state and last-sign-in tracking. Earlier applied
 migrations remain unchanged. `docs/mcp.md` states the declared subset and gaps.

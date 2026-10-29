@@ -3,7 +3,7 @@
 Discover Easel at `/.well-known/oauth-protected-resource/mcp`, then use `POST /mcp`.
 `POST /api/easel/mcp` reaches the same door. The shared runtime supports MCP
 2025-11-25 and 2026-07-28; use the method, name and protocol metadata required by
-that version. `server/discover`, `tools/list` and `prompts/list` describe the
+that version. `server/discover` and `tools/list` describe the
 installation's current catalogue. `agent-surface.json` is its executable declaration.
 
 Business access tokens require the installation's existing owner-claim trust,
@@ -24,7 +24,7 @@ the sponsor's planning permissions. Native governance Stop also stops these call
 
 ## Supported planning work
 
-Specialist tools use `planning:read` or `planning:write`; the built-in events tool uses `events:read`. The native sponsor still needs
+Specialist tools use `planning:read` or `planning:write`. The native sponsor still needs
 membership, department/dimension grants and separate Pay detail where applicable.
 
 | Tools | Native job | Classes | Clauses |
@@ -42,7 +42,6 @@ membership, department/dimension grants and separate Pay detail where applicable
 | `easel.debt.update`, `easel.equity.update`, `easel.taxes.update` | Financing and tax estimates | standard | FIN-003, FIN-006 |
 | `easel.inputs.delete` | Remove an input from the sponsor's own draft | standard; payroll adds sensitive | EASEL-008 |
 | `easel.comments.create`, `easel.explanations.draft` | Internal comments and unconfirmed cited explanations | standard | EASEL-009, AGENT-007 |
-| `easel.events.list` | Shared door's built-in retained events | standard | BASE-AGENT-010 |
 
 Every specialist tool also cites API-003. Sensitive is computed from native
 payroll records and proposed effects; caller labels cannot reduce it. Returned
@@ -75,11 +74,15 @@ activity remains in the planning archive; live shared-door audit is retained.
 
 This adoption declares the core families: tools, policy, pause, audit and
 idempotency. It retains current native principal authorization and owner-bound
-tokens. It does not declare resource catalogues/refresh, native event handoffs or
-subscriptions, multiple verification sponsors, or provider/mail edges. The
-runtime's built-in events tool is included because this Base pin registers it.
-The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
-is not evidence for those optional families.
+tokens. Resources, events, prompts and subscriptions are undeclared: their
+listings are empty, they are absent from discovery, and attempts return
+`capability_not_declared` with the family name. The built-in `easel.events.list`
+is therefore absent. Unknown native tools return `tool_not_found`.
+
+Resource refresh, multiple verification sponsors, provider/mail edges, timed and
+queued lifecycle, dual-host and owner-native administration remain unscoped by
+Base's subset switch and unproved here. The corresponding BASE-AGENT clause gaps
+remain partial; the subset does not remove principal or approval security.
 
 The unmerged ct surface at `0fdce273b4c78b98414fdc780b8160950e4fbfb5`
 is a broader target. Administrative access/security changes, connectors, erasure,
@@ -94,7 +97,7 @@ the journey uses `spend: {none:true}`. Large/background work retains native
 capacity limits; an uncertain receipt must be inspected, never blindly resent.
 
 Runtime and CLI are pinned separately: this adoption uses Base
-`f96363bf919ea3e7ed1837daba6894810a50e4a6` and released `@runeditrun/rer` 0.2.86.
+`114ef7a61f080da053af783c5fbe06f625d692cc` and released `@runeditrun/rer` 0.2.88.
 The release tag resolves to that same Base commit. Verification follows the existing setup-token step in `rer-setup.json` through
 production `/auth/bootstrap`, then uses the native planning and reviewed import
 lifecycle. Provisioned installations also retain their existing signed
