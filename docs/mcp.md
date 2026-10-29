@@ -24,14 +24,14 @@ the sponsor's planning permissions. Native governance Stop also stops these call
 
 ## Supported planning work
 
-All tools use `planning:read` or `planning:write`. The native sponsor still needs
+Specialist tools use `planning:read` or `planning:write`; the built-in events tool uses `events:read`. The native sponsor still needs
 membership, department/dimension grants and separate Pay detail where applicable.
 
 | Tools | Native job | Classes | Clauses |
 | --- | --- | --- | --- |
 | `easel.scenarios.list`, `.read`, `.compare` | Visible scenarios, inputs and comparisons | standard; sensitive for payroll detail | EASEL-005, EASEL-011 |
 | `easel.metrics.read`, `easel.variance.read` | Cash/profit/headcount and closed-month evidence | standard; variance adds sensitive for payroll | FIN-005, EASEL-013, AGENT-007 |
-| `easel.calculations.status` | Visible native calculation receipts, or a known job | standard | MODEL-007 |
+| `easel.calculations.status` | Visible native calculation metadata, or a known job; contents use the separately classified planning reads | standard | MODEL-007 |
 | `easel.proposals.create`, `.submit` | Prepare and submit the sponsor's own draft proposal | standard; copying payroll adds sensitive | EASEL-012 |
 | `easel.revenue.update` | Revenue and contract schedules | standard; linked compensation adds sensitive | EASEL-006, REV-003, REV-004 |
 | `easel.positions.update` | Planned salary, merit, bonus and commission | standard, sensitive | EASEL-007, PEOPLE-004 |
@@ -57,6 +57,20 @@ existing human lifecycle. For “Explain cloud-spend variance”, read the close
 month, draft the explanation with visible accepted-row citations, and leave
 confirmation and publication to finance.
 
+`easel.calendar.update` also sets the working forecast window through the existing
+company-wide planning grant (MODEL-002), at its exact native scenario revision.
+It changes planning assumptions; it does not approve a budget or close a month.
+
+Approved deletion retries use the original native before-image, bound to the same
+agent, native sponsor and idempotency key. Current proposal, department, dimension
+and Pay detail checks run again before the retained receipt can be returned.
+A new key cannot use a deleted record's receipt.
+
+Business bindings, signed policy, pending approvals and shared-door receipts stay
+with their installation and are excluded from portable planning archives. Restore
+retains the destination's own policy and identity bindings. Native planning
+activity remains in the planning archive; live shared-door audit is retained.
+
 ## Declared subset and current limits
 
 This adoption declares the core families: tools, policy, pause, audit and
@@ -81,7 +95,8 @@ capacity limits; an uncertain receipt must be inspected, never blindly resent.
 
 Runtime and CLI are pinned separately: this adoption uses Base
 `f96363bf919ea3e7ed1837daba6894810a50e4a6` and released `@runeditrun/rer` 0.2.86.
-The release tag resolves to that same Base commit. Verification initializes the
-owner with a signed claim through production `/auth/owner-claim`, then uses the
-native planning and reviewed import lifecycle. No declared planning tool reaches
+The release tag resolves to that same Base commit. Verification follows the existing setup-token step in `rer-setup.json` through
+production `/auth/bootstrap`, then uses the native planning and reviewed import
+lifecycle. Provisioned installations also retain their existing signed
+`/auth/owner-claim` handler; raw setup tokens never go to that signed endpoint. No declared planning tool reaches
 an outbound provider, so no test-only provider edge is declared.

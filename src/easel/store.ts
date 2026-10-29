@@ -39,12 +39,13 @@ export function authority(a: Actor, finance = false) {
  const gate = {
   sql: `EXISTS(SELECT 1 FROM oa_operators o WHERE o.id=? AND o.version=? AND o.role=? AND o.status='active'${finance ? " AND o.role IN ('owner','admin')" : ''})
    AND NOT EXISTS(SELECT 1 FROM agent_door_agents WHERE id=? AND revoked=1)
+   AND (? IS NULL OR EXISTS(SELECT 1 FROM bs_settings WHERE singleton=1 AND stopped=0 AND owner_id IS NOT NULL))
    AND NOT EXISTS(SELECT 1 FROM agent_door_state WHERE id=1 AND (local_paused=1 OR json_extract(envelope,'$.paused')=1
     OR json_extract(envelope,'$.exp')*1000<=unixepoch()*1000
     OR EXISTS(SELECT 1 FROM json_each(envelope,'$.revoked.agents') WHERE value=?)
     OR EXISTS(SELECT 1 FROM json_each(envelope,'$.revoked.consents') WHERE value=?)))
    AND NOT EXISTS(SELECT 1 FROM e_records WHERE kind='agent-governance' AND id='main' AND (json_extract(value,'$.stopped')=1 OR json_extract(value,'$.agents.mcp')=0))`,
-  params: [a.id, a.version, a.baseRole, a.door.agent, a.door.agent, a.door.consent],
+  params: [a.id, a.version, a.baseRole, a.door.agent, a.door.consent, a.door.agent, a.door.consent],
  }
  return { sql: `(${original.sql}) AND (${gate.sql})`, params: [...original.params, ...gate.params] }
 }

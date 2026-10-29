@@ -32,7 +32,7 @@ const fields: Record<string, Data> = {
 }
 function tool(name: string, description: string, required: string[], optional: string[] = [], readOnly = false) {
  if ((INPUT_KINDS as readonly string[]).includes(name)) optional = [...optional, 'dimensions']
- return { name, description, inputSchema: { type: 'object', properties: Object.fromEntries([...required, ...optional].map(k => [k, name === 'formula' && k === 'revision' ? { type: ['string', 'integer'] } : fields[k] ?? str])), required, additionalProperties: false }, annotations: { readOnlyHint: readOnly, openWorldHint: false } }
+ return { name, description, inputSchema: { type: 'object', properties: Object.fromEntries([...required, ...optional].map(k => [k, ['formula','forecast-window'].includes(name) && k === 'revision' ? { type: ['string', 'integer'] } : fields[k] ?? str])), required, additionalProperties: false }, annotations: { readOnlyHint: readOnly, openWorldHint: false } }
 }
 export const nativeTools = [
  tool('calculation_status', 'Read a known calculation job or list currently visible native job statuses; never resubmit a pending mutation.', [], ['id'], true),
@@ -41,6 +41,7 @@ export const nativeTools = [
  tool('compare', 'Compare two visible scenarios, including changed inputs and cells.', ['a', 'b'], [], true),
  tool('variance', 'Read role-filtered variance and evidence for a closed month.', ['month'], [], true),
  tool('metrics', 'Read monthly profit, cash and department headcount for a visible scenario.', ['scenario'], [], true),
+ tool('forecast-window', 'Set the working forecast window through the current company-wide planning grant, at its exact native revision.', ['scenario','revision','months']),
  tool('proposal-create', 'Create your proposal from a visible working scenario.', ['from', 'name', 'request']),
  tool('proposal-submit', 'Submit your proposal for finance review; never promote it.', ['id'], ['summary']),
  tool('revenue', 'Add or edit a revenue driver in your working proposal: volume, customers, seats, usage, services, milestones, backlog or contract. Contract requires startDate (YYYY-MM-DD in start month), contractValue, termMonths (1–120), billingCadence (monthly/quarterly/annual upfront) and dsoDays (0–365 exact days). Services assumes all active department positions are billable. Optional collectionMethod is lag, dso or curve; collectionCurve installments carry days and percent, summing to 100%. Noncontract invoice dates are month end. Optional commissionPosition links a contract to a same-scenario active position origin using its commission planning rate; Pay detail is required. Amounts and percentages are decimal strings.', ['scenario', 'name', 'kind', 'line', 'department', 'start'], ['commissionPosition', 'collectionMethod', 'collectionCurve', 'id', 'startDate', 'contractValue', 'termMonths', 'billingCadence', 'dsoDays', 'collectionLag', 'startVolume', 'growthPercent', 'rate', 'startCustomers', 'newPerMonth', 'newPerRep', 'repDepartment', 'rampMonths', 'churnPercent', 'arpa', 'startSeats', 'expansionPercent', 'price', 'startUsage', 'unitPrice', 'monthlyHours', 'utilizationPercent', 'hourlyRate', 'milestones', 'openingBacklog', 'monthlyAdditions', 'burnPercent']),
@@ -64,10 +65,16 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
  requireThat(nativeTools.some(t => t.name === name), 'This tool is not available to agents', 403)
  if (name === 'scenarios') { const s = await stateView(c); requireThat('scenarios' in s, 'Plan access required', 403); return { scenarios: s.scenarios, lines: s.lines, departments: s.departments, workspace: s.workspace, references: { departments: Object.fromEntries(s.departments.map((d: Data) => [d.name, d.id])), lines: Object.fromEntries(s.lines.map((l: Data) => [l.name, l.id])), forecast: s.scenarios.find((sc: Data) => sc.kind === 'forecast' && sc.status === 'working')?.id } } }
  if (name === 'calculation_status') {
-  if (b.id) return readCalculationJob(c, b.id)
+  // Status is a metadata read. Planning contents use the separately classified
+  // scenario/variance tools, including their live department and Pay filters.
+  const status = async (id: string) => {
+   const value = await readCalculationJob(c, id)
+   return { calculationJob: value.calculationJob, ...(value.responseStatus === undefined ? {} : { responseStatus: value.responseStatus }) }
+  }
+  if (b.id) return status(b.id)
   const rows = (await c.db.prepare('SELECT id FROM e_calculation_jobs ORDER BY started_at,id').all<{id:string}>()).results
   const jobs = []
-  for (const row of rows) { try { jobs.push(await readCalculationJob(c, row.id)) } catch (e) { if (!(e instanceof Fault) || ![403,404].includes(e.status)) throw e } }
+  for (const row of rows) { try { jobs.push(await status(row.id)) } catch (e) { if (!(e instanceof Fault) || ![403,404].includes(e.status)) throw e } }
   return { jobs }
  }
  if (['scenario', 'metrics'].includes(name)) {
@@ -91,7 +98,7 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
   requireAgentDraft(c, proposal.id)
  }
  requireThat(!backgroundScenario(c.s, name, b), 'This change requires a native background calculation; this door does not declare queued continuation', 409)
- const result = name === 'comment' ? await cycle(c, name, b) : name === 'explanation' ? await review(c, name, b) : await plan(c, name, b)
+ const result = ['comment','forecast-window'].includes(name) ? await cycle(c, name, b) : name === 'explanation' ? await review(c, name, b) : await plan(c, name, b)
  requireThat(result !== undefined, 'Tool unavailable', 403)
  return result
 }

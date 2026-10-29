@@ -1,6 +1,7 @@
 import { nativeTools } from '../easel/agent-actions'
 
 const bindings: Record<string, [string, string[]]> = {
+ 'forecast-window': ['calendar.update', ['MODEL-002']],
  calculation_status: ['calculations.status', ['MODEL-007']],
  scenarios: ['scenarios.list', ['EASEL-011']], scenario: ['scenarios.read', ['EASEL-005','EASEL-011']],
  compare: ['scenarios.compare', ['EASEL-011']], variance: ['variance.read', ['EASEL-013','AGENT-007']], metrics: ['metrics.read', ['FIN-005']],
