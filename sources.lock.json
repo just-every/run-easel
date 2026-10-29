@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "f4b1c122040e1d796caf852ce31455db23158bd95b11fd7690143ae7fc75a8a7",
+      "sha256": "b5789a47a63129ef7130e31f9838bd96e1ddc70116e4269ff9c54f241e171e2d",
       "executable": false
     },
     "base-copies.json": {
@@ -5731,7 +5731,7 @@
       "executable": false
     },
     "tests/excel-browser.mjs": {
-      "sha256": "1280ce72c75d3cb18f47af97ce980cf223860da637a908e6160335343b7bf780",
+      "sha256": "4576cc15eb6d604e041d1edaf6c187c6a27852dbbf917a4a8cfd18c09de00b81",
       "executable": false
     },
     "tests/excel-host.mjs": {

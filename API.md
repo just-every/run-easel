@@ -833,6 +833,7 @@ Pipeline stage/date changes cite deal IDs in constraint causes. Finance can mark
 Provider qualification is separate from fake-edge proof: HubSpot needs a developer test account; Salesforce needs a Developer Edition org with readable Opportunity, OpportunityStage, OpportunityLineItem and Period records. Use a read-only Salesforce principal: OAuth's `api` scope itself does not restrict object writes. The current Orbit scoped API exposes only title, stage, amount and company; it lacks close date, owner and product. Incomplete Orbit pulls are refused, so the two-installation Orbit acceptance remains blocked on that provider read-only API extension. No native Orbit session is transferred and no missing date or identity is inferred.
 
 Stage reports use `report.row:'stage'` and expose `metric:'pipelineBookings'`: weighted booking cents in the slipped booking period, grouped by provider/stage through the existing report, dataset, CSV/Parquet and formula Excel doors. They contain no deal IDs, owners, commission links or traces; unclassified GL actuals and versions without an accepted pipeline source remain unavailable. Each observed open stage retains its reviewed probability for the eventual won/lost outcome, once per provider/deal/stage. A scenario's accepted source digest and next-update deadline remain its own; another scenario's refresh cannot clear its hold.
+
 ## Webhooks and automation apps (API-002)
 
 Native finance with company-wide access inspects and revokes receivers; only a
