@@ -13,6 +13,7 @@ export type Actor = {
  email: string
  name: string
  token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; payDetail: boolean; write: boolean; grants?: GrantCeiling }
+ sheetAddon?: { id: string; recordRevision: string; spreadsheet: string; role: Role; departments: string[]; payDetail: boolean; grants: GrantCeiling }
  agent?: { name: string; via: string }
  /** The cron scheduler acting for the owner/admin who configured it. */
  scheduler?: { operator: string; email: string }

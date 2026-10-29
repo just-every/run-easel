@@ -6,7 +6,7 @@
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
-    "sha256": "a44bae4aae36d7a2e3d5e2da4e080d3c92eb11f226f6e7322b23680f43e6f982"
+    "sha256": "5cfbabc877752218b1fdb82052bf220ee2be22ef21b573650005250661f70cd8"
   },
   "components": [
     {
@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "69b8bbdd3159f63cb56feee3bb3bddb4067916b19c1e2a33f0708c787ef11215",
+      "sha256": "2f3d05ba7124c463475f3542a19c54dd92cba787d1d134419a0205438c9b6588",
       "executable": false
     },
     ".gitignore": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "7e078617442f109649886a26ce7aadd6e932f53b1fc2367b928bb4d94553c4b3",
+      "sha256": "994c530fee9b50515bf841fd03e3ff524598eb905ac3f53252515316cfc8734f",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "5f1753a00e8ddc7dee4b67cf1cc7471f610b8eb920d8aaa40b6ea07d52cc47d6",
+      "sha256": "02d292951669d58e6cd4188461ab2f2760c689ecfdb418af0a3a17007000b0e1",
       "executable": false
     },
     "base-copies.json": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "8a103ba157bc6259028a06e72991d5ce8e5eab6f7983f09fea3512dbe55502ec",
+      "sha256": "2e8825ec5aa28bf0d8bab239930d69f5490f59736c7fa69d1433fab75c5159cf",
       "executable": false
     },
     "DEMO.md": {
@@ -200,6 +200,10 @@
     },
     "docs/getting-started.md": {
       "sha256": "044b1eb8c7b0480d4524fbb9e7ad1e549fb9061fd0049ad04c60f48f4b2c2bf4",
+      "executable": false
+    },
+    "docs/google-sheets-addon.md": {
+      "sha256": "9b4f80bebe6b38e2ccecd4dbc7d26875da6626457a675c6755d3817a33180e37",
       "executable": false
     },
     "docs/gusto-roster.md": {
@@ -792,6 +796,22 @@
     },
     "public/fonts/README.md": {
       "sha256": "db5d0854c1ce2276a7c7de9c21a769b3681f921678db9bc94d0702932e7c8523",
+      "executable": false
+    },
+    "public/google-sheets/appsscript.json": {
+      "sha256": "c0f44e08708c62d21f883748a6a784d996ae64b25a3a1d7b8fc8f6c80086d75a",
+      "executable": false
+    },
+    "public/google-sheets/Code.gs": {
+      "sha256": "b39341fe6eea771af04c115a13a4ee67730bd2a345d987801f04f9e8a47ac509",
+      "executable": false
+    },
+    "public/google-sheets/Connect.html": {
+      "sha256": "80dd1351f7ffb7863139c58101758fc2b36311bb236eeb9cd3197df64fdc58d3",
+      "executable": false
+    },
+    "public/google-sheets/Sidebar.html": {
+      "sha256": "b7151d13284e3dbbc845e68d52a081dc3c8c5237d2e0bbf4fd26c21a6406b5c8",
       "executable": false
     },
     "public/office/adapter.mjs": {
@@ -1491,7 +1511,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "5d7db52bb4bc30c31284b56fd481975e295c546aaac85f589969208c6b7f58bf",
+      "sha256": "01404e683d09d0d5c34882d8cbb968cd5bc0f96c136024283460ebcd56a7f47c",
       "executable": false
     },
     "SOURCE.md": {
@@ -1647,7 +1667,7 @@
       "executable": false
     },
     "src/easel/access.ts": {
-      "sha256": "fbb0bea83ec4b69f37b5b82b47edb2726e47994242a7825c65261f9f88c2f8d0",
+      "sha256": "209fed2fa5191bdfa2b453506c6d78dcafb8767a92cd6f649789d2af79da48c7",
       "executable": false
     },
     "src/easel/account-rules.ts": {
@@ -1791,7 +1811,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "0abe2e8ed74ba8d6f323e21118c76926a0218c45691bda83190bbf4882eeca38",
+      "sha256": "1477733590e9a61c8817746481be8ce223551d651a69eafd7b1da48141f64b6f",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1811,7 +1831,7 @@
       "executable": false
     },
     "src/easel/audit-write.ts": {
-      "sha256": "39f787bb93dce893076b9b96e9e0cbaad239d5ccc9394428620a5e2704c688ed",
+      "sha256": "6c8e11e22ae3644be6c536e2624dbbcbc8ef825a57ff0222aa174ecf36bd87f7",
       "executable": false
     },
     "src/easel/audit.ts": {
@@ -2159,7 +2179,7 @@
       "executable": false
     },
     "src/easel/excel.ts": {
-      "sha256": "8cbec3dd4e677bd19b63d5e1ddf37847656cc68ca7373aecb3abc2c1c11704b8",
+      "sha256": "2b5a9d40f5c221cb4d4ef673b9dd10fe8e9bfa5600809f0732b1aee19374ecbe",
       "executable": false
     },
     "src/easel/financing-input.ts": {
@@ -2743,7 +2763,7 @@
       "executable": false
     },
     "src/easel/scenario-access.ts": {
-      "sha256": "dfc4e748b36893a0db17f3f762667840bcca96c156da7947ecbed39eda978237",
+      "sha256": "d7e62e78c0c13d894b119651ffc708baa61af153e702e5026c6cec2e73bcd4b7",
       "executable": false
     },
     "src/easel/semantic.ts": {
@@ -2752,6 +2772,14 @@
     },
     "src/easel/setup.ts": {
       "sha256": "d821c384cc55d8b53694f39172c0edd62730729f1ef54d82ee380f7d14f6a0a4",
+      "executable": false
+    },
+    "src/easel/sheet-addon-auth.ts": {
+      "sha256": "e6e6d3e25bf5b8987c911867f2ec8977c04d29b588fcdbc6860fb7e6e77c86f0",
+      "executable": false
+    },
+    "src/easel/sheet-addon.ts": {
+      "sha256": "c0e4a840cb08b3fc01aaf54d84b4f5c98067d14515815f6dee68ea647a4ad1ac",
       "executable": false
     },
     "src/easel/sheet-connection.ts": {
@@ -2803,7 +2831,7 @@
       "executable": false
     },
     "src/easel/store.ts": {
-      "sha256": "a80622bdcbabefd13665e96c2bafc627c8439d803cf6fb19647fb66cbf010b8c",
+      "sha256": "48371604f7bcb1fcf013f375f158f3b3cb5db872178b845f3606c4df2defb0a0",
       "executable": false
     },
     "src/easel/structure-versions.ts": {
@@ -2835,7 +2863,7 @@
       "executable": false
     },
     "src/easel/types.ts": {
-      "sha256": "fbbdbfb437fe982ee965cb37d23a694c2ac5b86085568c5de198b60a5ad7f875",
+      "sha256": "39d7008839fa266d08f3ba5da40fe04170333cd999f8e02948256415593aca01",
       "executable": false
     },
     "src/easel/units.ts": {
@@ -5299,11 +5327,15 @@
       "executable": false
     },
     "src/ui/settings.tsx": {
-      "sha256": "ac351d5868bb0f5d68431b082c0b70b6617ce9fcd5d44f952505dac39dfece7b",
+      "sha256": "e8b66a907437ee2b1c299f6033653db13da55a96c706f156cf760c3876ef01a9",
       "executable": false
     },
     "src/ui/shared.tsx": {
       "sha256": "939f83584ca97a9ea5625428657af88fd7c34d63a78b755ae4bbf8d1b47e3191",
+      "executable": false
+    },
+    "src/ui/sheet-addon.tsx": {
+      "sha256": "09b2171f98c46db4fd9d0171f90915dc791ee65c318599981bfb3092c3a749ab",
       "executable": false
     },
     "src/ui/sheet-link-form.tsx": {
@@ -5728,6 +5760,22 @@
     },
     "tests/gauge-utilization.test.mjs": {
       "sha256": "bc3476f193f16ccb62f16a65eb40cd46f1fc044cd815dde40a36e25b31a7358b",
+      "executable": false
+    },
+    "tests/google-sheets-addon-browser.mjs": {
+      "sha256": "a4218c1b878ff512494de68d67da9532bd0d6941c8e69a1640cae6cb49ecea88",
+      "executable": false
+    },
+    "tests/google-sheets-addon.test.mjs": {
+      "sha256": "16aea96e4d30aeaf51923bcdcba1abfca2bbabeb4fb703b5dfe2c2f363b7cb47",
+      "executable": false
+    },
+    "tests/google-sheets-host.mjs": {
+      "sha256": "bc1f2a14415af54fdcf7d5a1ebefcdef373ce6d581646c3b819af93aeb4a5469",
+      "executable": false
+    },
+    "tests/google-sheets-worker.mjs": {
+      "sha256": "87a50d7724db9c558d1aa4bddc29ef12aca317e8f3aeab42b1d9f5243b064029",
       "executable": false
     },
     "tests/greenhouse-browser.mjs": {
