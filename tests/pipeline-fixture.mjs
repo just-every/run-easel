@@ -41,7 +41,7 @@ export function pipelineProvider(){
    if(q?.includes('FROM Period'))return list(periods)
    if(q?.includes('FROM OpportunityLineItem'))return list([
     {Id:'item-setup',OpportunityId:'sf-deal',PricebookEntry:{Product2Id:'setup',Product2:{Name:'Setup'}},Quantity:'1',UnitPrice:'100',TotalPrice:'100',Subscription_Term__c:1},
-    {Id:'item-sub',OpportunityId:'sf-deal',PricebookEntry:{Product2Id:'subscription',Product2:{Name:'Subscription'}},Quantity:'12',UnitPrice:'100',TotalPrice:'1200',Subscription_Term__c:12},
+    {Id:'item-sub',OpportunityId:'sf-deal',PricebookEntry:{Product2Id:'subscription',Product2:{Name:state.malformedProduct?undefined:'Subscription'}},Quantity:'12',UnitPrice:'100',TotalPrice:'1200',Subscription_Term__c:12},
    ])
    if(q?.includes('FROM Opportunity'))return list([{Id:'sf-deal',Name:'Custom fiscal contract',StageName:'Custom commit',Amount:'1300',OwnerId:'sf-owner',CloseDate:'2026-05-25',IsClosed:false,IsWon:false,CurrencyIsoCode:'USD'}])
   }

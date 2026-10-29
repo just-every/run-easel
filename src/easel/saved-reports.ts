@@ -89,8 +89,8 @@ export async function savedReport(c: Context, id: string) {
  const stages=[...sourceDimensions.stageCells,...(comparisonDimensions?.stageCells??[]),...versions.flatMap(v=>v.stageCells)].filter(cell=>selected.has(cell.line)&&(!d.department||cell.department===d.department))
  const dimensions: { id: string; name: string }[] = stageMetric ? [...new Map(stages.map(cell=>[cell.stage,{id:cell.stage,name:cell.stageName}])).values()].sort((a,b)=>a.id.localeCompare(b.id)) : ['dimension', 'hierarchy'].includes(definition.row) ? reportDimensionRows(definition, sourceDimensions.structure, reportLines) : definition.row === 'line' ? reportLines.map(l => ({ id: l.id, name: l.name }))
   : [...source.departments, { id: '', name: 'No department' }].filter(dep => !d.department || dep.id === d.department)
- const aggregate = (cells: Data[], periods: string[], dimension: string, available: (m: string) => boolean, structure = sourceDimensions.structure, isActual = false): number | null => {
-  if (stageMetric && isActual)return null // GL actuals have no reviewed CRM stage classification.
+ const aggregate = (cells: Data[], periods: string[], dimension: string, available: (m: string) => boolean, structure = sourceDimensions.structure, isActual = false, sources:Data=source.scenario.pipelineSources??{}): number | null => {
+  if (stageMetric && (isActual||!sources[dimension.split(':')[0]]))return null // GL actuals have no reviewed CRM stage classification.
   if (periods.some(m => !available(m))) return null
   if (isActual && dimensionalActuals.blocked.some(issue => periods.includes(issue.month) && (!issue.line || selected.has(issue.line)) && (!d.department || !issue.department || d.department === issue.department) && (!issue.dimensions.length || (definition.row === 'dimension' && issue.dimensions.some((u: Data) => u.dimension === definition.dimension)) || issue.dimensions.some((u: Data) => Object.hasOwn(definition.dimensions ?? {}, u.dimension))))) return null
   const consumed = cells.filter(cell => periods.includes(cell.month) && selected.has(cell.line) &&
@@ -98,20 +98,20 @@ export async function savedReport(c: Context, id: string) {
   if (consumed.some(cell => cell.amount === null)) return null
   return exact(consumed.map(cell => cell.amount))
  }
- const versionValues = (periods: string[], dimension: string) => Object.fromEntries(versions.map(v => [v.id, aggregate(v.cells, periods, dimension, m => v.view.calculation.months.includes(m) && (v.view.scenario.status === 'frozen' || !v.view.calculation.actualsThrough || m > v.view.calculation.actualsThrough || !unavailable.has(m)), v.structure)]))
+ const versionValues = (periods: string[], dimension: string) => Object.fromEntries(versions.map(v => [v.id, aggregate(v.cells, periods, dimension, m => v.view.calculation.months.includes(m) && (v.view.scenario.status === 'frozen' || !v.view.calculation.actualsThrough || m > v.view.calculation.actualsThrough || !unavailable.has(m)), v.structure,false,v.view.scenario.pipelineSources??{})]))
  const monthly = dimensions.flatMap(dimension => [...requested].sort().map(m => ({ row: dimension.id, name: dimension.name, month: m, versions: versionValues([m], dimension.id),
   actual: aggregate(actuals.cells, [m], dimension.id, key => !unavailable.has(key), sourceDimensions.structure, true),
   budget: aggregate(sourceDimensions.cells, [m], dimension.id, key => source.calculation.months.includes(key) &&
    (source.scenario.status === 'frozen' || !source.calculation.actualsThrough || key > source.calculation.actualsThrough || !unavailable.has(key))),
   comparison: comparison ? aggregate(comparisonDimensions!.cells, [m], dimension.id, key => comparison.calculation.months.includes(key) &&
-   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || key > comparison.calculation.actualsThrough || !unavailable.has(key))) : null,
+   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || key > comparison.calculation.actualsThrough || !unavailable.has(key)),comparisonDimensions!.structure,false,comparison!.scenario.pipelineSources??{}) : null,
  })))
  const rows = groups.flatMap(group => dimensions.map(dimension => {
   const actual = aggregate(actuals.cells, group.months, dimension.id, m => !unavailable.has(m), sourceDimensions.structure, true)
   const budget = aggregate(sourceDimensions.cells, group.months, dimension.id, m => source.calculation.months.includes(m) &&
    (source.scenario.status === 'frozen' || !source.calculation.actualsThrough || m > source.calculation.actualsThrough || !unavailable.has(m)))
   const other = comparison ? aggregate(comparisonDimensions!.cells, group.months, dimension.id, m => comparison.calculation.months.includes(m) &&
-   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || m > comparison.calculation.actualsThrough || !unavailable.has(m))) : null
+   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || m > comparison.calculation.actualsThrough || !unavailable.has(m)),comparisonDimensions!.structure,false,comparison!.scenario.pipelineSources??{}) : null
   const prior = aggregate(actuals.cells, group.months.map(m => addMonths(m, -12)), dimension.id, m => !unavailable.has(m), sourceDimensions.structure, true)
   const variance = actual === null || budget === null ? null : exact([actual, -budget])
   const yoy = actual === null || prior === null ? null : exact([actual, -prior])
