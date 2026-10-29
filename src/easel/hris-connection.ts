@@ -47,7 +47,8 @@ export async function hrisConnection(c:Context,env:Bindings,id:Hris,op:string,b:
   }catch(error){
    put(c.s,'connection',name,{...prior,lastAttempt:c.now,error:error instanceof HrisFailure?error.message:'HRIS roster is incomplete or unreadable; no observations accepted',rateLimited:error instanceof HrisFailure&&error.httpStatus===429,httpStatus:error instanceof HrisFailure?error.httpStatus:null})
   }
-  c.activity.push({action:'hris-checked',record:name,detail:{provider:id,httpStatus:get(c.s,'connection',name).httpStatus}})
+  const health=get(c.s,'connection',name)
+  c.activity.push({action:'hris-checked',record:name,detail:{provider:id,httpStatus:health.httpStatus,failed:Boolean(health.error)}})
   return []
  }
  requireThat(!prior?.connected,'Disconnect this provider before replacing its company or credentials',409)
