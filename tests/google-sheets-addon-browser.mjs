@@ -9,6 +9,7 @@ const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playw
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-google-sheets')
 await mkdir(evidence, { recursive: true })
 let server, browser
+console.log('SHEET-002 browser journey started')
 async function photo(page, name) {
  // Capture the actual viewport, including on system Chromium in cloud. Avoid
  // surface capture's large-scrolled-page GPU path; the pixels remain browser output.
@@ -30,6 +31,7 @@ try {
  } })
  browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--no-sandbox', '--ignore-certificate-errors', '--disable-gpu'] })
  const owner = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 } })
+ owner.setDefaultTimeout(30000)
  assert.equal((await owner.request.post(`${server.origin}/auth/bootstrap`, { headers: { origin: server.origin }, data: { token: server.bootstrap, displayName: 'Finance' }, maxRedirects: 0 })).status(), 303)
  const cmd = (op, body) => api(owner, server.origin, `command/${op}`, body)
  await cmd('workspace', { name: 'Synthetic Sheets company', currency: 'USD', planStart: '2026-01' })
@@ -42,8 +44,13 @@ try {
  assert.ok(message)
  const token = new URL(message.text.match(/https:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
  const contributor = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 } })
+ contributor.setDefaultTimeout(30000)
  assert.equal((await contributor.request.post(`${server.origin}/auth/confirm`, { headers: { origin: server.origin }, data: { token }, maxRedirects: 0 })).status(), 303)
- const setup = await owner.newPage(); await setup.goto(server.origin + '/setup'); await setup.getByRole('checkbox').check(); await setup.getByRole('button', { name: 'Finish setup' }).click(); await setup.close()
+ const setup = await owner.newPage(); await setup.goto(server.origin + '/setup'); await setup.getByRole('checkbox').check(); await setup.getByRole('button', { name: 'Finish setup' }).click()
+ // click() waits for navigation commit, not document load. Closing mid-load
+ // can strand Chromium's target-close command on a slower runner.
+ await setup.waitForURL(server.origin + '/app', { waitUntil: 'load', timeout: 30000 })
+ await setup.close()
  const page = await owner.newPage(); await page.goto(server.origin + '/app?tab=settings')
  const card = page.getByRole('region', { name: 'Google Sheets add-on', exact: true })
  await card.getByLabel('Add-on connection name').fill('Sales planning sheet')
