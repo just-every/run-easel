@@ -69,7 +69,8 @@ jobs:
     needs: plan
     if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 14
+    # Runtime builds the app and runs all eleven native browser journeys in sequence.
+    timeout-minutes: ${{ matrix.shard == 'runtime' && 30 || 14 }}
     strategy:
       fail-fast: false
       matrix:
