@@ -70,9 +70,6 @@ jobs:
     if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 14
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
-      NODE_OPTIONS: ${{ format('--import file://{0}/scripts/ci/playwright-register.mjs?playwright=file://{1}/easel-browser/node_modules/@playwright/test/index.mjs', github.workspace, runner.temp) }}
     strategy:
       fail-fast: false
       matrix:
@@ -82,6 +79,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.20.0
+      - name: Configure isolated current browser
+        if: matrix.shard == 'runtime'
+        run: |
+          {
+            printf 'PLAYWRIGHT_BROWSERS_PATH=%s/ms-playwright\n' "$RUNNER_TEMP"
+            printf 'NODE_OPTIONS=--import file://%s/scripts/ci/playwright-register.mjs?playwright=file://%s/easel-browser/node_modules/@playwright/test/index.mjs\n' "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
+          } >> "$GITHUB_ENV"
       - name: Install pinned dependencies
         run: |
           corepack enable

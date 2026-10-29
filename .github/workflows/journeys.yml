@@ -11,14 +11,17 @@ jobs:
   journeys:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/ms-playwright
-      NODE_OPTIONS: ${{ format('--import file://{0}/scripts/ci/playwright-register.mjs?playwright=file://{1}/easel-browser/node_modules/@playwright/test/index.mjs', github.workspace, runner.temp) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22.20.0
+      - name: Configure isolated current browser
+        run: |
+          {
+            printf 'PLAYWRIGHT_BROWSERS_PATH=%s/ms-playwright\n' "$RUNNER_TEMP"
+            printf 'NODE_OPTIONS=--import file://%s/scripts/ci/playwright-register.mjs?playwright=file://%s/easel-browser/node_modules/@playwright/test/index.mjs\n' "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
+          } >> "$GITHUB_ENV"
       - run: corepack enable && pnpm install --frozen-lockfile
       - name: Free runner disk for the local servers
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL

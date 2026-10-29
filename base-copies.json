@@ -42,7 +42,7 @@
       },
       "acknowledged": {
         ".github/workflows/verify.yml": {
-          "sha256": "f6a6a55bf5a6a09a15f93e6dc10201b5747fb930fc8267edbd70e98c421299c6",
+          "sha256": "69b8bbdd3159f63cb56feee3bb3bddb4067916b19c1e2a33f0708c787ef11215",
           "mode": "100644"
         }
       }
