@@ -21,7 +21,7 @@ import { scenarioView } from './views'
 const encoder = new TextEncoder()
 // Product and import-journal tables. Credentials and calculation receipts (each
 // a stored response for its initiating person only) follow the native backup policy.
-const excludedTables = new Set(['e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key', 'e_calculation_jobs', 'e_calculation_job_chunks'])
+const excludedTables = new Set(['e_automation_events', 'e_webhook_subscriptions', 'e_webhook_deliveries', 'e_api_tokens', 'e_api_limits', 'e_connection_secrets', 'e_erasure_key', 'e_calculation_jobs', 'e_calculation_job_chunks'])
 const identifier = (name: string) => `"${name.replaceAll('"', '""')}"`
 function portableCell(value: unknown): unknown {
  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value) || Array.isArray(value)) {

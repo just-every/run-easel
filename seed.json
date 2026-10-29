@@ -359,6 +359,12 @@
       "clauses": [
         "CONNECT-011"
       ]
+    },
+    {
+      "id": "automation-webhooks",
+      "clauses": [
+        "API-002"
+      ]
     }
   ],
   "nonGoals": [

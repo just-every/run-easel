@@ -15,6 +15,8 @@ export interface Bindings {
  ASSETS?: Fetcher
  /** Managed ADP client certificate; raw private key never enters app records or archives. */
  HRIS_ADP_MTLS?: Fetcher
+ /** Explicit public receiver hosts reviewed by the installation owner. */
+ EASEL_WEBHOOK_HOSTS?: string
  GAUGE_ORIGIN?: string
  PANTRY_ORIGIN?: string
  PURSE_ORIGIN?: string

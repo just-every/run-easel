@@ -90,6 +90,13 @@ jobs:
       - name: Types and run site
         if: matrix.shard == 'types-site'
         run: pnpm typecheck && pnpm exec rer build --site
+      - name: Automation app developer journey
+        if: matrix.shard == 'types-site'
+        run: |
+          npm ci --prefix integrations/zapier --no-audit --no-fund
+          cd integrations/zapier
+          ./node_modules/.bin/zapier-platform validate --without-style
+          ./node_modules/.bin/zapier-platform test --skip-validate
       - name: Domain flows (1 of 2)
         if: matrix.shard == 'domain-1'
         run: node --test --test-concurrency=1 --test-shard=1/2 tests/*.test.mjs

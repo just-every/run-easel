@@ -107,7 +107,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "ec31bf9c956dd259825603b990e0eb5daf6bfcd57940153ac2937ed01ee46bde",
+      "sha256": "cce02c9e9fb0529e2615b3407d6b2a19d7ccb0e6aeca61fe2135acd7bad40551",
       "executable": false
     },
     ".gitignore": {
@@ -123,7 +123,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "910503b4c4de304152066191d52cd6c201eea8ebf9307c5a0c37618fdd6b5458",
+      "sha256": "1141bb0d02a426c004bb13b4fb2e505bb5ab18e2f4beb26e107dcb59d0f9a0e9",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "78fd5e5ceaf3c7f006b7c48d72760e71e6eef0e881c9ecea887a44765553e55f",
+      "sha256": "99e6798cd6cb57b9841c71eac8c7f7c2b700926fd2b31071fee57837c24589f9",
       "executable": false
     },
     "base-copies.json": {
@@ -147,7 +147,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "1019b47be5bc34acd15ff664c316147e6bec4aed05ddcdf0df21e1c60c3fa217",
+      "sha256": "2d8abd34cb8d9c84ad8054e668dca68f6feb6893db38ae7a2a94d6707e0d820a",
       "executable": false
     },
     "DEMO.md": {
@@ -474,6 +474,58 @@
       "sha256": "d4301c22a042e907bd852de08248a39d6580defc1bc3ae885f8edca40377d75b",
       "executable": false
     },
+    "integrations/crank/index.mjs": {
+      "sha256": "d2478d348169bb3b906ffe51c5e8ef4f0218b813ad269a1c21d6b5d7e7f27cc2",
+      "executable": false
+    },
+    "integrations/crank/prove.mjs": {
+      "sha256": "379719854f346acf091d961bea17f6627a2f5eb69a52f57e2241bf8fad1ae304",
+      "executable": false
+    },
+    "integrations/make/app.json": {
+      "sha256": "a375d4deec2f6f6808499ddedb8a263fa13c13afc84c7b7dca05a3ee8ead83d3",
+      "executable": false
+    },
+    "integrations/make/base.iml.json": {
+      "sha256": "4c28b060128fd0554920a4ab4cad227bf474d39966705bf276dcc2d3565ef4b3",
+      "executable": false
+    },
+    "integrations/make/connection.iml.json": {
+      "sha256": "11b50cf8aca0ad20111a6beb89e8173a12f7eeff886c52782540b1d1489f8935",
+      "executable": false
+    },
+    "integrations/make/createComment.iml.json": {
+      "sha256": "66d196847317a0cd96b8b03f7a7e91ff6d0cd9a64547a27a44628af1f16e18ad",
+      "executable": false
+    },
+    "integrations/make/createProposal.iml.json": {
+      "sha256": "e85546075e0a77849d2450dc91a13b2b824ac8519c8c4287ea1c593689fa4e00",
+      "executable": false
+    },
+    "integrations/make/watchEvents.iml.json": {
+      "sha256": "1e00a55f8555eadc7ee25fc687a51eabc718049545f40f51d33de9cfc97fc197",
+      "executable": false
+    },
+    "integrations/README.md": {
+      "sha256": "034475997a8658b19bf40b961c7d98b6581bae87081abf1e82f038d194c39e89",
+      "executable": false
+    },
+    "integrations/zapier/index.cjs": {
+      "sha256": "9b76bc6035a896046d865d500ade6e3f97ccc49bdcc6226bde34145d32b6fd5d",
+      "executable": false
+    },
+    "integrations/zapier/package-lock.json": {
+      "sha256": "57daeabb04c320e7da9345e7fcea862d25d68a98ee50e1aa0fa69fc132cf2142",
+      "executable": false
+    },
+    "integrations/zapier/package.json": {
+      "sha256": "1e5dfa3aefed2c0bb3856a49e7eac9d1dba605516bbc7aa17df2838b58de249c",
+      "executable": false
+    },
+    "integrations/zapier/test/automation.js": {
+      "sha256": "cfba35b1a622869a19cd36cbd017b810d0fb18f79794b6e5f858a22e581d54e8",
+      "executable": false
+    },
     "LICENSE": {
       "sha256": "2f5076ef027045b9e0e72df8aa61ca8551e54b1877d531656d6e7985b2c32324",
       "executable": false
@@ -572,6 +624,10 @@
     },
     "migrations/core/0024_netsuite_actuals.sql": {
       "sha256": "540dc157b0a179cf8c0b9437cfea9fd135b02837e823b300e14e502246886c13",
+      "executable": false
+    },
+    "migrations/core/0025_automation.sql": {
+      "sha256": "046eb21bfda1e7301188fce6cc5b2fa7bb73baa6a070d2d861ba7f051bb31491",
       "executable": false
     },
     "native/android/.gitignore": {
@@ -931,7 +987,7 @@
       "executable": false
     },
     "seed.json": {
-      "sha256": "33a6a297700f5a57118d4b0c7e023b5d367de932f3802824c69eab3516841368",
+      "sha256": "9a49a72205b7c1d44169f23e7dd854247b9558c2b9ae444c6ae247fb1d893b22",
       "executable": false
     },
     "SOURCE.md": {
@@ -939,7 +995,7 @@
       "executable": false
     },
     "src/auth.server.ts": {
-      "sha256": "97c410803176057612ed9abe748b078c800d20a40fbab0af0b768f81e52a7954",
+      "sha256": "34fac9cc701e1888f3c7b6bd2a478e6467cf3c6290edc372f1f469efa28ab79b",
       "executable": false
     },
     "src/base/contract-filter.ts": {
@@ -1211,7 +1267,7 @@
       "executable": false
     },
     "src/easel/api.ts": {
-      "sha256": "5421a6e3197adb209245e889258993aa7e3bb83d7d7cd2f83fcb39ffc823c9a5",
+      "sha256": "712686e65f2c507f7c4226eee95f87077b535995d202fd121ed6239672f35342",
       "executable": false
     },
     "src/easel/approval-chains.ts": {
@@ -1236,6 +1292,10 @@
     },
     "src/easel/audit.ts": {
       "sha256": "9c9fc64aeae36e73cb2820ece7a9a52181a26dd1388a2d8d23263ae69b539e36",
+      "executable": false
+    },
+    "src/easel/automation-events.ts": {
+      "sha256": "ed59a0955a751c75bf6f31f46de53154e093e54a2bbfe6ccac9a831814ace38a",
       "executable": false
     },
     "src/easel/balance-actuals-workbook.ts": {
@@ -1551,7 +1611,7 @@
       "executable": false
     },
     "src/easel/erasure-archive/policy.mjs": {
-      "sha256": "6f7a9c8b64882b92d1b3a9770df41088af010be8b567d1f98cb02bfc89f3e676",
+      "sha256": "c22ddcb2bb78eff1b0dbb6494a71c507aa21f9c1ccbc939f8b6de23470b6df46",
       "executable": false
     },
     "src/easel/erasure-archive/prepare.d.mts": {
@@ -1935,7 +1995,7 @@
       "executable": false
     },
     "src/easel/open-export.ts": {
-      "sha256": "7537798d6f2d45247bf5306a511d6ba7b7ce66da1b0423fc8b22ab75e73e93cd",
+      "sha256": "a591bffe49874a10e96cd6438740d5e946e3f2510f3843c7365ea96a585ba745",
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
@@ -2055,7 +2115,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "39b14b35ee2bb18c32618e7b5305703734bf97a6582fc2c39923c276d2f195d4",
+      "sha256": "91294d4d45026ad7c2ea2e90d5e7bf7ddedab3632e4e35e7f87285af033b673b",
       "executable": false
     },
     "src/easel/qbo-connection.ts": {
@@ -2199,7 +2259,7 @@
       "executable": false
     },
     "src/easel/store.ts": {
-      "sha256": "a80622bdcbabefd13665e96c2bafc627c8439d803cf6fb19647fb66cbf010b8c",
+      "sha256": "b3e0f00ba4e6a55145a6337d738bf41e5c5465e1fac2511f6f944a580ed60cbb",
       "executable": false
     },
     "src/easel/structure-versions.ts": {
@@ -2264,6 +2324,10 @@
     },
     "src/easel/warehouse.ts": {
       "sha256": "dd7bc3614ccb7a4002be8931fd70d459a9b19ec7db1c3b0b1a05aab36e6322c5",
+      "executable": false
+    },
+    "src/easel/webhooks.ts": {
+      "sha256": "aff116f78f151736e14a0c976a051ad78ae8e2b328850264f05af88f7800784c",
       "executable": false
     },
     "src/easel/weekly-cash-workbook.ts": {
@@ -4015,7 +4079,7 @@
       "executable": false
     },
     "src/server.ts": {
-      "sha256": "a41e48dd4c0b9838f413e773b5ec7bcc23e5850eb7ceb2cf18255ea52bba9054",
+      "sha256": "d9cd7d94d622acc0e5592d9aa8cf9f0247d9659023c40a83317b787de9a8a561",
       "executable": false
     },
     "src/site/docs/build/manifest.ts": {
@@ -4702,6 +4766,10 @@
       "sha256": "13d87c8e91aee74fc2a5166f20b5c09b3870df744920de9e350ffcb814dff8f8",
       "executable": false
     },
+    "tests/automation.test.mjs": {
+      "sha256": "080d1f266831db600b6430a97d430c3b2e292e81ea05b69c46d07c5304e26451",
+      "executable": false
+    },
     "tests/balance-actuals-browser.mjs": {
       "sha256": "12b7142f9be921d8c4db48e1632f51269a696d3a3dadb7c00d9d539bb1866e6c",
       "executable": false
@@ -4875,7 +4943,7 @@
       "executable": false
     },
     "tests/easel-worker.ts": {
-      "sha256": "02341e05da0e6cf035a408de65b2868ed4da938bdc20ba50d68c38cab981f593",
+      "sha256": "74d612c50b230e7d28e7ffc2bfe4915d07b7bf6f35a6c74e2b13bba753ab9624",
       "executable": false
     },
     "tests/easel.test.mjs": {

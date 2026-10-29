@@ -1,0 +1,10 @@
+{
+ "name": "easel",
+ "label": "Easel scoped API token",
+ "type": "basic",
+ "parameters": [
+  { "name": "origin", "type": "url", "label": "Easel HTTPS origin", "required": true, "validate": { "pattern": "^https://[a-zA-Z0-9.-]+$" } },
+  { "name": "token", "type": "password", "label": "Company-wide finance API token", "required": true }
+ ],
+ "communication": { "url": "{{parameters.origin}}/api/easel/automation/events?recent=true", "method": "GET", "headers": { "Authorization": "Bearer {{parameters.token}}" }, "response": { "valid": "{{statusCode = 200}}" }, "log": { "sanitize": ["request.headers.authorization"] } }
+}
