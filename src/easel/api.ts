@@ -4,6 +4,7 @@ import { netsuiteConnection,netsuiteStatus } from './netsuite-connection'
 import { netsuiteImport } from './netsuite-import'
 import { spendConnection, spendStatus, spendReview, spendReviews, spendSources, spendReadFailed } from './spend'
 import { pipelineConnection, pipelineStatus } from './pipeline-connection'
+import { pipelineJournal } from './pipeline-journal'
 import { pipelineFailed, pipelinePull, pipelineView } from './pipeline'
 import { xeroConnection, xeroStatus } from './xero-connection'
 import { xeroImport } from './xero-import'
@@ -229,9 +230,11 @@ api.post('/api/easel/connections/pipeline/:provider/:op',async c=>{
 api.get('/api/easel/pipeline/:scenario',c=>read(c,async ctx=>pipelineView(ctx,c.req.param('scenario'))))
 api.post('/api/easel/pipeline/:op',async c=>{
  const ctx=await open(c),input=await body(c)
+ if(['undo','resume','status'].includes(c.req.param('op')))return executeImport(c,ctx,await pipelineJournal(ctx,c.req.param('op'),input))
  let result:Data
  try{result=await pipelinePull(ctx,c.env,c.req.param('op'),input)}
  catch(error){if(pipelineFailed(ctx,error,input.provider)){await evaluateMetricTasks(ctx);await commit(ctx)}throw error}
+ if(result.pipelineStep)return executeImport(c,ctx,result.pipelineStep)
  if(c.req.param('op')!=='sources'&&c.req.param('op')!=='preview'){await evaluateMetricTasks(ctx);if(needsConstraintCheck(ctx))await watchConstraints(ctx);await commit(ctx);await deliverNotifications(newNotifications(ctx),c.env,()=>open(c),commit)}
  else await readFence(ctx.db,ctx.x.actor,ctx.revision)
  return c.json(result)

@@ -6,6 +6,7 @@ import { commissionPosition } from './commissions'
 import { datePeriod } from './fiscal-calendar'
 import { requireEditable, scenarioInputs, workspace } from './model'
 import { month } from './months'
+import { startPipelineImport } from './pipeline-journal'
 import { bump } from './plan'
 import { pipelineAuthority, pipelineId, pipelineKey } from './pipeline-connection'
 import { PipelineFailure, pipelineProvider, readPipeline, type PipelineSource } from './pipeline-provider'
@@ -28,6 +29,7 @@ function reviewHistory(prior:Data|undefined){
 
 export function pipelineBlock(c: Context, sc: Data, department?: string) {
  if (sc.status === 'frozen') return null
+ if(all(c.s,'pipeline-import').some(i=>i.scenario===sc.id&&['importing','undoing'].includes(i.status)))return 'Complete the pipeline import or undo journal before using dependent conclusions.'
  if(all(c.s,'pipeline-observation').some(r=>r.scenario===sc.id && r.status==='pending'))return 'Observed CRM source changes await mapping and finance acceptance; dependent conclusions are unavailable.'
  const inputs = scenarioInputs(c.s,sc.id,'revenue').filter(r=>r.pipeline && (!department || r.department === department))
  const providers = new Set([...inputs.map(r=>r.pipeline.provider),...Object.keys(sc.pipelineSources??{})])
@@ -38,6 +40,8 @@ export function pipelineBlock(c: Context, sc: Data, department?: string) {
  for (const provider of providers) {
   const connection=find(c.s,'connection',pipelineId(provider)), review=all(c.s,'pipeline-review').find(r=>r.scenario===sc.id && r.provider===provider)
   if (!connection?.connected || connection.error) return 'Pipeline source is disconnected or its last read failed; dependent conclusions are unavailable.'
+  const acceptedDigest=sc.pipelineSources?.[provider]?.sourceDigest ?? review?.sourceDigest
+  if(connection.latestSourceDigest && acceptedDigest!==connection.latestSourceDigest)return 'Pipeline source changed since this scenario was accepted; review this scenario before using dependent conclusions.'
   if(connection.pendingRaw)return 'Pipeline source changes await finance acceptance; dependent conclusions are unavailable.'
   const expected=connection.nextExpectedAt ?? sc.pipelineSources?.[provider]?.nextExpectedAt ?? review?.nextExpectedAt
   if(expected && Date.parse(c.now)>Date.parse(expected))return 'Pipeline source stopped updating; refresh and review before using dependent conclusions.'
@@ -122,6 +126,23 @@ function impacts(c: Context, scenario: string) {
  return {scenarios,reports:all(c.s,'dashboard').filter(d=>canSeeDashboard(c.s,c.x,d)&&scenarios.some(s=>s.id===d.scenario)).map(d=>({id:d.id,name:d.name})),packs:all(c.s,'pack').filter(p=>scenarios.some(s=>s.id===p.forecast)).map(p=>({id:p.id,status:p.status==='published'?'published; unchanged':'draft dependency'})),alerts:all(c.s,'cash-alert-rule').filter(r=>!r.scenario||scenarios.some(s=>s.id===r.scenario)).map(r=>({id:r.id,name:r.name}))}
 }
 
+function mappingSuggestions(c:Context,source:PipelineSource,scenario:string,provider:string) {
+ const prior=find(c.s,'pipeline-review',`${scenario}:${provider}`)?.assumptions?.products??[]
+ const lines=all(c.s,'line').filter(l=>l.type==='revenue'&&!l.nonCash)
+ const departments=all(c.s,'department')
+ const normalize=(v:string)=>v.toLowerCase().replace(/[^a-z0-9]+/g,' ').replace(/\brevenue\b/g,'').trim()
+ const products=new Map<string,string>(source.deals.flatMap(d=>d.products.length?d.products.map((p:Data)=>[p.product,p.name] as [string,string]):[['*','Deal amount'] as [string,string]]))
+ return [...products].map(([product,name])=>{
+  const saved=prior.find((p:Data)=>p.product===product)
+  const matches=lines.filter(l=>normalize(l.name)===normalize(name)||normalize(l.name)===normalize(product))
+  const line=saved&&lines.some(l=>l.id===saved.line)?saved.line:matches.length===1?matches[0].id:lines.length===1?lines[0].id:null
+  const related=prior.filter((p:Data)=>p.line===line)
+  const mappedDepartments=[...new Set(related.map((p:Data)=>p.department))]
+  const department=saved?.department??(mappedDepartments.length===1?mappedDepartments[0]:departments.length===1?departments[0].id:null)
+  return {product,name,line,department,reason:saved?'Previously finance-approved mapping for this stable CRM product ID.':matches.length===1?`CRM product "${name}" matches planning line "${matches[0].name}" by normalized name.`:lines.length===1?'Only one cash revenue line is available.':'No unique planning-line match; finance must select a target.',departmentReason:department?'Retained approved product/line department, or the only planning department.':'Multiple departments are available; finance must choose.',requiresFinanceApproval:true}
+ })
+}
+
 export async function pipelinePull(c: Context, env: Bindings, op: string, b: Data) {
  pipelineAuthority(c)
  const provider=pipelineProvider(b.provider), sc=scenarioAccess(c.s,c.x,b.scenario), w=workspace(c.s)
@@ -134,15 +155,15 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
   deal.products.sort((a:Data,b:Data)=>a.id.localeCompare(b.id))
  }
  source.deals.sort((a,b)=>a.id.localeCompare(b.id));source.stages.sort((a,b)=>a.id.localeCompare(b.id));source.periods.sort((a,b)=>a.start.localeCompare(b.start))
- if(op==='sources')return source
+ if(op==='sources')return {...source,mappingSuggestions:mappingSuggestions(c,source,sc.id,provider)}
  requireThat(new TextEncoder().encode(JSON.stringify(source)).byteLength<=750000,'CRM observation is too large for one atomic review; narrow the scoped source',409)
  if(op==='observe'){
   const id=`${sc.id}:${provider}`, prior=find(c.s,'pipeline-review',id),sourceDigest=await digest(source)
   const connection=get(c.s,'connection',pipelineId(provider))
-  put(c.s,'connection',connection.id,{...connection,pendingRaw:connection.sourceDigest!==sourceDigest})
+  put(c.s,'connection',connection.id,{...connection,latestSourceDigest:sourceDigest,pendingRaw:connection.sourceDigest!==sourceDigest})
   put(c.s,'pipeline-observation',id,{scenario:sc.id,provider,sourceDigest,observedAt:c.now,observedBy:c.x.actor.email,status:prior?.sourceDigest===sourceDigest&&prior.status==='accepted'?'accepted':'pending',stages:source.stages,products:[...new Set(source.deals.flatMap(d=>d.products.map((p:Data)=>p.product)))],rows:source.deals.length,impacts:impacts(c,sc.id)})
   c.activity.push({action:'pipeline-observed',record:id,scenario:sc.id,detail:{provider,sourceDigest,rows:source.deals.length}})
-  return source
+  return {...source,mappingSuggestions:mappingSuggestions(c,source,sc.id,provider)}
  }
  // Removing a mapping also changes compensation. Recheck the previous links,
  // so omitting a position cannot bypass live Pay detail authority.
@@ -173,7 +194,7 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  const {source:_inventory,changes:_changes,bookings:_bookings,...metadata}=result
  if(op==='stage'){
   const connection=get(c.s,'connection',pipelineId(provider))
-  put(c.s,'connection',connection.id,{...connection,pendingRaw:connection.sourceDigest!==sourceDigest})
+  put(c.s,'connection',connection.id,{...connection,latestSourceDigest:sourceDigest,pendingRaw:connection.sourceDigest!==sourceDigest})
   put(c.s,'pipeline-review',id,boundedReview({...metadata,status:changes.length?'pending':'accepted',stagedBy:c.x.actor.email,stagedAt:c.now,acceptedSource:prior?.acceptedSource??null,history:reviewHistory(prior)}))
   c.activity.push({action:'pipeline-staged',record:id,scenario:sc.id,detail:{sourceDigest,changes:changes.length}})
   return result
@@ -183,14 +204,16 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  if(changes.length)text(b.reason,'Finance source-review reason',2000)
  requireThat(!closedChangeOrigins.length || b.reviewedClosedChanges===true,'Explicitly review the closed-period CRM changes before applying their future planning effects; accepted actuals and captures remain fixed',409)
  if(closedChangeOrigins.length)c.activity.push({action:'pipeline-restatement-reviewed',record:id,scenario:sc.id,detail:{sourceDigest,origins:closedChangeOrigins,actualsThrough:sc.actualsThrough,reason:b.reason,acceptedActualsAndCapturesUnchanged:true}})
+ const beforeImport=new Map(c.s),activityBefore=c.activity.length
  if(changes.length){
   const accepted=prior?.acceptedSource as PipelineSource|undefined
-  if(accepted)for(const old of accepted.deals.filter(d=>!d.closed)){
-   const closed=source.deals.find(d=>d.id===old.id && d.closed)
-   if(!closed)continue
-   const oldStage=prior!.history?.slice().reverse().find((r:Data)=>r.status==='accepted')?.assumptions.stages.find((s:Data)=>s.id===old.stage) ?? built.assumptions.stages.find((s:Data)=>s.id===old.stage)
-   const outcomeId=`${provider}:${old.id}:${old.stage}`
-   if(oldStage && !find(c.s,'pipeline-outcome',outcomeId))put(c.s,'pipeline-outcome',outcomeId,{provider,deal:old.id,stage:old.stage,stageName:oldStage.name,probabilityBps:oldStage.probabilityBps,outcomeBps:closed.won?10000:0,closedAt:closed.closeDate,observedAt:c.now,sourceDigest,reviewedBy:c.x.actor.email})
+  for(const observed of [accepted,source].filter(Boolean) as PipelineSource[])for(const deal of observed.deals.filter(d=>!d.closed)){
+   const stage=(observed===source?built.assumptions:prior?.assumptions)?.stages.find((s:Data)=>s.id===deal.stage)
+   const visitId=`${provider}:${deal.id}:${deal.stage}`
+   if(stage && !find(c.s,'pipeline-stage-visit',visitId))put(c.s,'pipeline-stage-visit',visitId,{provider,deal:deal.id,stage:deal.stage,stageName:stage.name,probabilityBps:stage.probabilityBps,observedAt:c.now,sourceDigest})
+  }
+  for(const closed of source.deals.filter(d=>d.closed))for(const visit of all(c.s,'pipeline-stage-visit').filter(v=>v.provider===provider&&v.deal===closed.id)){
+   if(!find(c.s,'pipeline-outcome',visit.id))put(c.s,'pipeline-outcome',visit.id,{...visit,outcomeBps:closed.won?10000:0,closedAt:closed.closeDate,observedAt:c.now,sourceDigest,reviewedBy:c.x.actor.email})
   }
   for(const old of previous)remove(c.s,'revenue',old.id)
   for(const input of built.inputs)put(c.s,'revenue',input.id,input)
@@ -205,9 +228,11 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  }
  put(c.s,'pipeline-review',id,boundedReview({...metadata,status:'accepted',acceptedSource:source,acceptedBy:c.x.actor.email,acceptedAt:c.now,resultingRevision:get(c.s,'scenario',sc.id).revision,history:prior?.status==='accepted'?reviewHistory(prior):prior?.history??[]}))
  put(c.s,'pipeline-observation',id,{scenario:sc.id,provider,sourceDigest,status:'accepted',observedAt:c.now,acceptedBy:c.x.actor.email})
- put(c.s,'connection',pipelineId(provider),{...get(c.s,'connection',pipelineId(provider)),lastRefresh:c.now,nextExpectedAt,sourceDigest,pendingRaw:false,rowCount:source.deals.length,error:null,rateLimit:null})
+ put(c.s,'connection',pipelineId(provider),{...get(c.s,'connection',pipelineId(provider)),lastRefresh:c.now,nextExpectedAt,sourceDigest,latestSourceDigest:sourceDigest,pendingRaw:false,rowCount:source.deals.length,error:null,rateLimit:null})
  c.activity.push({action:'pipeline-refresh',record:id,scenario:sc.id,detail:{sourceDigest,assumptionDigest,changes:changes.length}})
- return {...result,unchanged:!changes.length}
+ const acceptedResult={...result,unchanged:!changes.length}
+ if(changes.length)return {pipelineStep:await startPipelineImport(c,beforeImport,activityBefore,sc.id,provider,acceptedResult)}
+ return acceptedResult
 }
 
 export function pipelineFailed(c: Context, error: unknown, name: unknown) {
@@ -224,5 +249,6 @@ export function pipelineView(c: Context, scenario: unknown) {
  const inputs=scenarioInputs(c.s,sc.id,'revenue').filter(r=>r.pipeline && visible(r))
  return {scenario:sc.id,revision:sc.revision,blocked:pipelineBlock(c,sc),deals:inputs.map(r=>({id:r.originId,name:r.name,month:r.start,weightedCents:r.contractValueCents,provider:r.pipeline.provider,deal:r.pipeline.deal,product:r.pipeline.product,stage:r.pipeline.stageName,closed:r.pipeline.closed,closeDate:r.startDate,probabilityBps:r.pipeline.probabilityBps,mode:r.pipeline.mode,assumptionVersion:r.pipeline.assumptionVersion})),
   positions:c.x.role==='finance'?scenarioInputs(c.s,sc.id,'position').filter(p=>seesPayDetail(c.x,p.department)).map(p=>({origin:p.originId,title:p.title,department:p.department})):[],
-  reviews:c.x.role==='finance' && c.x.payDetail?all(c.s,'pipeline-review').filter(r=>r.scenario===sc.id):[]}
+  imports:c.x.role==='finance'&&c.x.payDetail?all(c.s,'pipeline-import').filter(i=>i.scenario===sc.id).map(i=>({id:i.id,provider:i.provider,status:i.status,createdAt:i.createdAt,revision:sc.revision})):[],
+  reviews:c.x.role==='finance' && c.x.payDetail?all(c.s,'pipeline-review').filter(r=>r.scenario===sc.id).map(r=>({...r,impacts:impacts(c,sc.id)})):[]}
 }
