@@ -1,4 +1,5 @@
 import { ledgerScope } from '../ledger-scope'
+import { canSeeScenario } from '../scenario-access'
 import { boundEntity } from '../entity-scope'
 import { requireAgent } from './governance'
 import { canonicalJson, sha256 } from '../../modules/import-kit/src/d1/index'
@@ -26,6 +27,7 @@ function payrollEvidence(c:Context, guard:Data, expected:Data) {
 }
 function currentIssues(c:Context,g:Data):Data[] { return Date.parse(c.now)>Date.parse(g.nextExpectedAt) && !g.issues.some((i:Data)=>i.kind==='freshness') ? [...g.issues,{id:'freshness',kind:'freshness',reason:`Source stopped updating: next update was expected ${g.nextExpectedAt}`}] : g.issues }
 function unresolved(c:Context,g:Data) {
+ if(g.status==='withdrawn')return []
  return currentIssues(c,g).filter((i:Data)=>{
   const d=[...g.decisions].reverse().find((d:Data)=>d.issue===i.id)
   if(i.kind==='payroll' && payrollEvidence(c,g,i.expected))return false
@@ -39,22 +41,23 @@ function unresolved(c:Context,g:Data) {
 
 function visibleImpacts(c:Context,g:Data) {
  const impacts:ReturnType<typeof sourceImpacts>=g.provider?structuredClone(g.impacts):sourceImpacts(c,g.month)
+ if(g.provider){const visible=sourceImpacts(c,g.month);impacts.scenarios=impacts.scenarios.filter(r=>canSeeScenario(c.x,get(c.s,'scenario',r.id)));impacts.reports=impacts.reports.filter(r=>r.id==='actuals'||r.id==='headcount:'+g.scenario||visible.reports.some(v=>v.id===r.id));impacts.packs=impacts.packs.filter(r=>visible.packs.some(v=>v.id===r.id));impacts.alerts=impacts.alerts.filter(r=>visible.alerts.some(v=>v.id===r.id))}
  if(g.status==='completed' && !unresolved(c,g).length) for(const [kind,rows] of Object.entries(impacts)) for(const row of rows) {
   if(row.status.includes('unchanged'))continue
   row.status=kind==='scenarios'?'working; source refresh accepted':kind==='reports'?'source accepted; available to refresh':kind==='packs'?'draft; accepted source available':'source accepted; ordinary rule checks resumed'
  }
  return impacts
 }
-export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g),impacts:visibleImpacts(c,g),history:(g.history ?? []).map((h:Data)=>({...h,impacts:visibleImpacts(c,h)}))})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
+export function sourceGuardView(c:Context) { authority(c); return {guards:all(c.s,'source-guard').filter(g=>!g.hris||canSeeScenario(c.x,get(c.s,'scenario',g.scenario))).map((g):Data=>({...g,issues:currentIssues(c,g),unresolved:unresolved(c,g),impacts:visibleImpacts(c,g),history:(g.history ?? []).map((h:Data)=>({...h,impacts:visibleImpacts(c,h)}))})).sort((a,b)=>b.stagedAt.localeCompare(a.stagedAt))} }
 export function sourceGuardBlock(c:Context,forecast:Data,rule?:Data,through?:string):string|null {
  if(rule?.kind==='bank-below-plan')return null
  if(forecast.status==='frozen')return null
- const guards=all(c.s,'source-guard').filter(g=>(!g.provider||!through||g.month<=through)&&(!g.entity||boundEntity(c.s,forecast)?.id===g.entity)&&(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
+ const guards=all(c.s,'source-guard').filter(g=>g.status!=='withdrawn'&&(!g.provider||!through||g.month<=through)&&(!g.entity||boundEntity(c.s,forecast)?.id===g.entity)&&(g.scenario===forecast.id || g.impacts.scenarios.some((s:Data)=>s.id===forecast.id) || g.hris&&forecast.parent===g.scenario || !g.hris&&forecast.actualsThrough && forecast.actualsThrough>=g.month) && (g.status!=='completed' || unresolved(c,g).length))
  return guards.length ? guards.map(guard=>`Source refresh ${guard.label} for ${guard.month} is blocked: ${unresolved(c,guard).map((i:Data)=>i.reason).join('; ') || 'accept the reviewed source file before dependent conclusions resume'}`).join('; ') : null
 }
 /** Called after actuals journal completion, in the same fenced save as batch acceptance. */
 export function completeSourceGuards(c:Context,batch:Data) {
- for(const g of all(c.s,'source-guard').filter(g=>g.sha256===batch.sha256 && g.entity===batch.entity && g.status!=='completed')) {
+ for(const g of all(c.s,'source-guard').filter(g=>!g.hris&&g.sha256===batch.sha256 && g.entity===batch.entity && g.status!=='completed')) {
   requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
   put(c.s,'source-guard',g.id,{...g,status:'completed',completedAt:c.now,revision:g.revision+1})
   c.activity.push({action:'source-guard-completed',record:g.id})
@@ -92,12 +95,14 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
   return {...get(c.s,'source-guard',id),unresolved:unresolved(c,guard)}
  }
  const guard=get(c.s,'source-guard',b.id)
+ if(guard.hris)requireThat(!c.x.actor.token&&!c.x.actor.agent&&!c.x.actor.scheduler,'Use a native finance session for HRIS source decisions',403)
  requireThat(guard.status!=='completed' && b.revision===guard.revision && b.fingerprint===guard.fingerprint,'The staged source or reviewed revision changed; reload and review again',409)
  requireThat(Array.isArray(b.decisions) && b.decisions.length>0,'Choose source issues to review')
  const decisions=[...guard.decisions]
  for(const decision of b.decisions) {
   const issue=currentIssues(c,guard).find((i:Data)=>i.id===decision.issue)
   requireThat(issue && (unresolved(c,guard).some((i:Data)=>i.id===issue.id) || decision.action==='evidence' && issue.kind==='payroll' && !decisions.some((d:Data)=>d.issue===issue.id)),'Choose an unresolved source issue',409)
+  requireThat(!guard.hris||!['freshness','hris-mapping','hris-read'].includes(issue.kind),'Pull a fresh roster and complete its employee mapping; this finding cannot be excluded',409)
   const reason=text(decision.reason,'Finance review reason',2000)
   if(decision.action==='map') {
    requireThat(issue.kind==='account' || issue.kind==='department','Only account and department issues use mapping approval')
@@ -120,9 +125,9 @@ export async function sourceGuardCommands(c:Context,op:string,b:Data):Promise<Da
 
 /** Before creating/applying the GL journal: missing data cannot be accepted around the guard. */
 export function assertSourceGuardAcceptance(c:Context,sha256:string,periods:string[],entity?:string) {
- const tracked=all(c.s,'source-guard').filter(g=>g.entity===entity&&periods.includes(g.month))
+ const tracked=all(c.s,'source-guard').filter(g=>!g.hris&&g.entity===entity&&periods.includes(g.month))
  requireThat(!tracked.length || tracked.some(g=>g.sha256===sha256), 'This period has a tracked source; stage the changed source file before accepting its refresh',409)
- for(const g of all(c.s,'source-guard').filter(g=>g.sha256===sha256 && g.entity===entity && g.status!=='completed')) requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
+ for(const g of all(c.s,'source-guard').filter(g=>!g.hris&&g.sha256===sha256 && g.entity===entity && g.status!=='completed')) requireThat(!unresolved(c,g).length,`Resolve source review for ${g.label} before accepting these actuals`,409)
 }
 
 /** Native provider staging reuses source proposals, explicit finance decisions and stale holds. */
@@ -159,3 +164,5 @@ export function stageProviderSource(c:Context,b:Data,preview:Data,metadata:Data)
  guard.status=unresolved(c,guard).length?'review':'ready';put(c.s,'source-guard',id,guard);c.activity.push({action:'intacct-source-staged',record:id,scenario:scenario.id,detail:{entity:b.entity,month:b.month,issues:issues.length}})
  return{...guard,unresolved:unresolved(c,guard)}
 }
+
+export { unresolved as sourceGuardIssues }

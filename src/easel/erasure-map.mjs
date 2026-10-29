@@ -15,6 +15,7 @@ export function transformPayrollIdentity(item, maps) {
   if (typeof item.employeeId === 'string' && erasedHash(item.employeeId) === scope.employeeHash) {
    result = { ...result, employeeId:map.pseudonym, ...('name' in item ? {name:map.pseudonym} : {}) }
   }
+  if (typeof item.sourceEmployeeId === 'string' && erasedHash(item.sourceEmployeeId) === scope.employeeHash) result = {...result,sourceEmployeeId:map.pseudonym,...('sourceName' in item ? {sourceName:map.pseudonym} : {})}
   for (const field of ['positionMap', 'memberMap']) if (item[field] && typeof item[field] === 'object') {
    result = { ...result, [field]:Object.fromEntries(Object.entries(result[field]).map(([key,value]) => erasedHash(key) === scope.employeeHash ? [map.pseudonym, field === 'memberMap' ? map.pseudonym : value] : [key,value])) }
   }

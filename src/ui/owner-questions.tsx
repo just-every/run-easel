@@ -1,3 +1,4 @@
+import './owner-questions.css'
 import { useEffect, useState } from 'react'
 import { Action, api, command, Field, Form, Person, useDate, type D } from './shared'
 
@@ -22,7 +23,7 @@ export function OwnerQuestions({ state, forecast, refresh }: { state: D; forecas
  useEffect(() => { let active = true; setView(null); setError(''); api(`owner-questions?scenario=${encodeURIComponent(forecast.id)}`).then(v => { if (active) setView(v) }, e => { if (active) setError(e.message) }); return () => { active = false } }, [forecast.id, forecast.revision, state])
  const run = async (op: string, body: D) => { const result = await command(op, body); await load(); await refresh(); return result }
  const candidate = view?.inputs.find((i: D) => inputKey(i) === selected)
- return <section className="card" aria-label="Owner questions">
+ return <section className="card owner-questions" aria-label="Owner questions">
   <h2>Owner questions</h2>
   <p className="muted">Ask the person responsible for an uncertain date. Their signed-in answer keeps its source and attribution. An answered date can become a recalculated draft proposal; finance reviews, submits and promotes it under Scenarios. Unanswered questions escalate to finance and keep the existing assumption.</p>
   {error && <p role="alert" className="error">{error}</p>}
@@ -39,13 +40,14 @@ export function OwnerQuestions({ state, forecast, refresh }: { state: D; forecas
      if (!input) throw new Error('Choose a current forecast input')
      const deadline = new Date(v.dueAt)
      if (!Number.isFinite(deadline.getTime())) throw new Error('Choose a valid answer deadline')
-     await run('owner-question-ask', { scenario: forecast.id, scenarioRevision: forecast.revision, kind: input.kind, originId: input.originId, field: input.field, owner: v.owner, source: v.source, question: v.question, dueAt: deadline.toISOString() })
+     await run('owner-question-ask', { scenario: forecast.id, scenarioRevision: forecast.revision, kind: input.kind, originId: input.originId, field: input.field, owner: input.providerEvidence?.ownerEmail??v.owner, source: v.source, hrisObservation:input.providerEvidence?.observation, question: v.question, dueAt: deadline.toISOString() })
      form.reset(); setSelected('')
     }}>
      <label>Uncertain input<select aria-label="Uncertain input" name="input" value={selected} required onChange={e => setSelected(e.target.value)}><option value="">Choose…</option>{view.inputs.map((i: D) => <option key={inputKey(i)} value={inputKey(i)}>{i.name} — {INPUT_LABELS[i.field] ?? i.field}</option>)}</select></label>
      {candidate && <p className="muted">Current expected date: <span className="date-token">{displayDate(candidate.value)}</span></p>}
-     <Field label="Input owner" name="owner" options={view.owners.map((o: D) => ({ value: o.email, label: `${o.name || o.email} (${o.email})` }))} />
-     <Field label="Source reference" name="source" hint="Identify the reviewed source and why this person owns the input." />
+     {candidate?.providerEvidence&&<p>Reviewed {candidate.providerEvidence.provider} owner: {candidate.providerEvidence.sourceName} → {candidate.providerEvidence.ownerEmail}, observed {candidate.providerEvidence.asOf}. This provider binding supplies the question’s source and owner.</p>}
+     <Field key={candidate?.providerEvidence?.ownerEmail??'native-owner'} defaultValue={candidate?.providerEvidence?.ownerEmail} label="Input owner" name="owner" options={view.owners.map((o: D) => ({ value: o.email, label: `${o.name || o.email} (${o.email})` }))} />
+     <Field key={candidate?.providerEvidence?.observation??'native-source'} defaultValue={candidate?.providerEvidence?`${candidate.providerEvidence.provider} accepted roster ${candidate.providerEvidence.asOf}`:''} label="Source reference" name="source" hint="Identify the reviewed source and why this person owns the input." />
      <Field label="Question for the owner" name="question" type="textarea" />
      <Field label="Answer deadline" name="dueAt" type="datetime-local" hint="Your browser’s local time; saved as an exact UTC instant." />
     </Form> : <p className="muted">No eligible dated inputs in this forecast. Enter a future contract start, planned hire start or one-off vendor payment date first.</p>}

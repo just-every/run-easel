@@ -6,7 +6,7 @@ import { erasedHash } from './erasure-map.mjs'
 export function payrollErasureScopes(records, email) {
  const mappings = records.filter(r=>r.kind === 'payroll-file-mapping').map(r=>r.value)
  const scopes = new Map()
- for (const mapping of mappings) for (const [employee, member] of Object.entries(mapping.memberMap ?? {})) {
+ for (const mapping of mappings) for (const [employee, member] of [...Object.entries(mapping.memberMap ?? {}),...(mapping.employees??[]).filter(r=>r.ownerBinding).map(r=>[r.ownerBinding.sourceEmployeeId,r.ownerBinding.ownerEmail])]) {
   if (member !== email) continue
   const providerHash = erasedHash(mapping.provider), employeeHash = erasedHash(employee)
   scopes.set(`${providerHash}:${employeeHash}`, { providerHash, employeeHash, originals:[] })
@@ -22,7 +22,7 @@ export function payrollOriginalScopes(maps, records, jobs = []) {
  const imports = records.filter(r => r.kind === 'payroll-import').map(r => r.value)
  return moveOriginalScopes(maps.map(map => ({ ...map, payrollScopes:(map.payrollScopes ?? []).map((scope) => ({ ...scope, originals: [
   ...(scope.originals ?? []),
-  ...mappings.filter(m => erasedHash(m.provider) === scope.providerHash).flatMap(m => imports.filter(i => i.destination === m.batch).map(i => ({ sha256:i.sha256, jobId:jobs.find(j=>j.destination===i.destination)?.id, columns:m.config.columns, ...(m.config.sheet ? {sheet:m.config.sheet} : {}) }))),
+  ...mappings.filter(m => erasedHash(m.provider) === scope.providerHash).flatMap(m => imports.filter(i => i.destination === m.batch).flatMap(i => { const attempts=jobs.filter(j=>j.destination===i.destination); return (attempts.length?attempts:[{}]).map(job=>({ sha256:i.sha256, jobId:job.id, columns:m.config.columns, ...(m.config.sheet ? {sheet:m.config.sheet} : {}) })) })),
  ] })) })), records, jobs)
 }
 
