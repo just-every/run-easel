@@ -147,7 +147,7 @@ jobs:
         env:
           SHARD: ${{ matrix.name }}
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-approval-chains
-          NODE_OPTIONS: ${{ matrix.browser && format('--import {0}/scripts/ci/playwright-register.mjs', github.workspace) || '' }}
+          NODE_OPTIONS: ${{ matrix.browser && format('--import file://{0}/scripts/ci/playwright-register.mjs?playwright=file://{1}/easel-browser/node_modules/@playwright/test/index.mjs', github.workspace, runner.temp) || '' }}
         run: node scripts/verify-ci.mjs "$SHARD"
       - name: Preserve installation journey evidence
         if: always() && matrix.name == 'journeys'

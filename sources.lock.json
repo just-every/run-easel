@@ -103,7 +103,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "f089d2ec900180ab3f50eef8a1f34ecef712348672999c4bbb61c76a8406b8c0",
+      "sha256": "6dddaeba8e6bceaa9719ad54d8cb6a153b2949e8ba7530ec0a0b713edbec5692",
       "executable": false
     },
     ".gitignore": {
@@ -135,7 +135,7 @@
       "executable": false
     },
     "base-copies.json": {
-      "sha256": "1cd7d284b551d817a1fdae1d616c6a4f184e2120ad3510ce8f55d9b09885de93",
+      "sha256": "fafc0e9156afcb202337e7fd62020fdddc5569a5ae9b6ba513063be73df5fd3e",
       "executable": false
     },
     "CLAUDE.md": {
@@ -823,7 +823,7 @@
       "executable": false
     },
     "scripts/ci/playwright-register.mjs": {
-      "sha256": "0476001fb5148ebf1ea41ddc5d6b82620143680b161a49ddb3f2231cdeb2c177",
+      "sha256": "8ec336d8a0063df4068d6fed65c307ab9c6424ec33d1d57cb32f0ec00db937a2",
       "executable": false
     },
     "scripts/contract-docs.mjs": {
