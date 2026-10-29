@@ -4,6 +4,8 @@
  */
 var EASEL_CACHE_ = '_Easel_Data';
 var EASEL_PROPERTY_ = 'easel.connection.';
+var EASEL_HEALTH_ = 'easel.health.';
+var EASEL_CACHE_OWNER_ = 'easel.google-sheets.cache';
 function onOpen(e) {
   SpreadsheetApp.getUi().createAddonMenu().addItem('Open Easel', 'easelShowSidebar').addItem('Refresh now', 'easelRefresh').addToUi();
 }
@@ -14,6 +16,7 @@ function easelShowSidebar() {
 function easelSettings() {
   var book = SpreadsheetApp.getActiveSpreadsheet(), connection = connection_(book.getId());
   if (!connection) return { connected: false, spreadsheet: book.getId() };
+  flushHealth_(connection);
   var status = request_(connection, 'session');
   return { connected: true, origin: connection.origin, person: status.person, role: status.role, schedule: status.schedule, writeBack: status.writeBack, spreadsheet: book.getId() };
 }
@@ -25,6 +28,7 @@ function easelConfigure(input) {
   // UserProperties are private to the effective Google user. No key is stored
   // in DocumentProperties, cache cells, formulas, logs or responses to the UI.
   PropertiesService.getUserProperties().setProperty(EASEL_PROPERTY_ + book.getId(), JSON.stringify(connection));
+  PropertiesService.getUserProperties().deleteProperty(EASEL_HEALTH_ + book.getId());
   installTriggers_(book, status);
   return { connected: true, person: status.person, schedule: status.schedule };
 }
@@ -48,14 +52,46 @@ function request_(connection, operation, body) {
   if (body !== undefined) options.payload = JSON.stringify(body);
   var response;
   try { response = UrlFetchApp.fetch(connection.origin + '/api/easel/google-sheets/' + operation, options); }
-  catch (error) { throw new Error('Easel could not be reached. Refresh explicitly after checking the connection; writes are never retried automatically.'); }
+  catch (error) { throw requestFailure_('transport', null, null, 'Easel could not be reached. Refresh explicitly after checking the connection; writes are never retried automatically.'); }
   var status = response.getResponseCode();
   if (status !== 200) {
     var reason = 'Easel refused this request (' + status + ')';
     try { reason = JSON.parse(response.getContentText()).error || reason; } catch (ignored) {}
-    throw new Error(String(reason).slice(0, 500));
+    reason = String(reason);
+    if (connection.key) reason = reason.split(connection.key).join('[redacted]');
+    throw requestFailure_('http', status, retryAfter_(response), reason.slice(0, 500));
   }
-  return JSON.parse(response.getContentText());
+  try { return JSON.parse(response.getContentText()); }
+  catch (error) { throw requestFailure_('response', null, null, 'Easel returned an unreadable response; refresh explicitly after checking the connection.'); }
+}
+function requestFailure_(failure, status, retryAfter, message) {
+  var error = new Error(message);
+  error.easelHealth = { failure: failure, status: status, retryAfter: retryAfter };
+  return error;
+}
+function retryAfter_(response) {
+  var headers = response.getAllHeaders(), value;
+  Object.keys(headers).forEach(function(key) { if (key.toLowerCase() === 'retry-after') value = headers[key]; });
+  if (Array.isArray(value)) value = value[0];
+  if (value === undefined) return null;
+  value = String(value).trim();
+  var seconds = /^\d+$/.test(value) ? Number(value) : Math.max(0, Math.ceil((Date.parse(value) - Date.now()) / 1000));
+  return isFinite(seconds) && seconds >= 0 && seconds <= 2147483647 ? Math.ceil(seconds) : null;
+}
+function flushHealth_(connection) {
+  var properties = PropertiesService.getUserProperties(), name = EASEL_HEALTH_ + connection.spreadsheet;
+  var pending = properties.getProperty(name);
+  if (!pending) return;
+  // This is a separate, sanitized health report, never a replay of a read or
+  // write. If Easel is also unreachable here, retain it until next contact.
+  try { request_(connection, 'health', JSON.parse(pending)); properties.deleteProperty(name); }
+  catch (ignored) { /* No credential, provider response or error body is logged. */ }
+}
+function reportFailure_(connection, reason, error) {
+  var health = error.easelHealth || { failure: 'spreadsheet' };
+  PropertiesService.getUserProperties().setProperty(EASEL_HEALTH_ + connection.spreadsheet,
+    JSON.stringify({ reason: reason, failure: health.failure, status: health.status, retryAfter: health.retryAfter }));
+  flushHealth_(connection);
 }
 function installTriggers_(book, status) {
   var triggers = ScriptApp.getProjectTriggers();
@@ -76,17 +112,38 @@ function easelOpenRefresh(e) {
 function easelHourlyRefresh() {
   var properties = PropertiesService.getUserProperties().getProperties();
   Object.keys(properties).filter(function(k) { return k.indexOf(EASEL_PROPERTY_) === 0; }).forEach(function(k) {
-    var connection = JSON.parse(properties[k]), book = SpreadsheetApp.openById(connection.spreadsheet);
+    var connection = JSON.parse(properties[k]), book, status;
     try {
-      var status = request_(connection, 'session');
-      if (status.schedule === 'hourly') refreshBook_(book, 'trigger');
-    } catch (ignored) { invalidate_(cache_(book)); /* No secret/error body is logged. */ }
+      book = SpreadsheetApp.openById(connection.spreadsheet);
+      flushHealth_(connection);
+      status = request_(connection, 'session');
+    } catch (error) {
+      try { var owned = book && cache_(book, false); if (owned) invalidate_(owned); } catch (ignored) {}
+      reportFailure_(connection, 'trigger', error);
+      return;
+    }
+    if (status.schedule === 'hourly') {
+      try { refreshBook_(book, 'trigger'); } catch (ignored) { /* refreshBook_ already reported the failure. */ }
+    }
   });
 }
 function easelRefresh() { return refreshBook_(SpreadsheetApp.getActiveSpreadsheet(), 'menu'); }
-function cache_(book) {
-  var sheet = book.getSheetByName(EASEL_CACHE_) || book.insertSheet(EASEL_CACHE_);
-  if (!sheet.isSheetHidden()) sheet.hideSheet();
+function cache_(book, create) {
+  // The reserved name alone proves nothing: never adopt or clear an owner's
+  // existing sheet. Metadata persists across users and closed-sheet triggers.
+  var owned = book.getSheets().filter(function(sheet) {
+    return sheet.getDeveloperMetadata().some(function(entry) { return entry.getKey() === EASEL_CACHE_OWNER_ && entry.getValue() === 'v1'; });
+  });
+  if (owned.length > 1) throw new Error('Multiple Easel cache sheets found; keep only the intended Easel cache before refreshing');
+  if (owned.length) {
+    if (owned[0].getName() !== EASEL_CACHE_) throw new Error('The Easel cache was renamed; restore its _Easel_Data name before refreshing');
+    return owned[0];
+  }
+  if (book.getSheetByName(EASEL_CACHE_)) throw new Error('Worksheet _Easel_Data already exists and is not an Easel cache. Rename that sheet before using Easel; its contents have been preserved.');
+  if (create === false) return null;
+  var sheet = book.insertSheet(EASEL_CACHE_);
+  sheet.addDeveloperMetadata(EASEL_CACHE_OWNER_, 'v1');
+  sheet.hideSheet();
   return sheet;
 }
 function invalidate_(cache) {
@@ -123,10 +180,13 @@ function bindings_(book) {
 }
 function refreshBook_(book, reason) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
-  var cache;
+  var cache, connection;
   try {
-    cache = cache_(book); invalidate_(cache);
-    var connection = requireConnection_(book), bindings = bindings_(book);
+    connection = connection_(book.getId());
+    cache = cache_(book, false);
+    connection = requireConnection_(book); flushHealth_(connection);
+    cache = cache || cache_(book); invalidate_(cache);
+    var bindings = bindings_(book);
     var result = request_(connection, 'refresh', { reason: reason, bindings: bindings });
     var rows = result.values.map(function(value) {
       var encoded = JSON.stringify(value);
@@ -137,13 +197,14 @@ function refreshBook_(book, reason) {
     cache.getRange(1, 1).setValue(Utilities.getUuid()); SpreadsheetApp.flush();
     return { refreshedAt: result.refreshedAt, person: result.person, count: rows.length, unavailable: result.values.filter(function(v) { return v.unavailable; }).length };
   } catch (error) {
-    if (cache) invalidate_(cache);
+    try { if (cache) invalidate_(cache); } catch (ignored) { /* Still report a spreadsheet failure if clearing is refused. */ }
+    if (connection) reportFailure_(connection, reason, error);
     throw error;
   } finally { lock.releaseLock(); }
 }
 function cached_(key, refresh) {
   if (!refresh) throw new Error('Insert the formula from the Easel sidebar to include its refresh dependency');
-  var cache = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(EASEL_CACHE_);
+  var cache = cache_(SpreadsheetApp.getActiveSpreadsheet(), false);
   if (!cache) throw new Error('Refresh Easel from the add-on menu');
   var rows = cache.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) if (rows[i][0] === key) {
@@ -169,7 +230,8 @@ function EASEL_REPORT(report, period, metric, refresh) {
   return cached_(JSON.stringify(['report', String(report), String(period), String(metric)]), refresh).table;
 }
 function easelInsert(input) {
-  var book = SpreadsheetApp.getActiveSpreadsheet(), cache = cache_(book), args;
+  var book = SpreadsheetApp.getActiveSpreadsheet(); requireConnection_(book);
+  var cache = cache_(book), args;
   if (!cache.getRange(1, 1).getValue()) cache.getRange(1, 1).setValue(Utilities.getUuid());
   if (input.kind === 'report') args = [input.report, input.period, input.metric || 'budget'];
   else args = [input.line, input.department, input.month, input.scenario];
@@ -189,11 +251,12 @@ function easelWrite(input) {
 function easelDisconnect() {
   var book = SpreadsheetApp.getActiveSpreadsheet();
   PropertiesService.getUserProperties().deleteProperty(EASEL_PROPERTY_ + book.getId());
+  PropertiesService.getUserProperties().deleteProperty(EASEL_HEALTH_ + book.getId());
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'easelOpenRefresh' && t.getTriggerSourceId() === book.getId()) ScriptApp.deleteTrigger(t);
   });
   var remaining = Object.keys(PropertiesService.getUserProperties().getProperties()).some(function(k) { return k.indexOf(EASEL_PROPERTY_) === 0; });
   if (!remaining) ScriptApp.getProjectTriggers().forEach(function(t) { if (t.getHandlerFunction() === 'easelHourlyRefresh') ScriptApp.deleteTrigger(t); });
-  invalidate_(cache_(book));
+  try { var cache = cache_(book, false); if (cache) invalidate_(cache); } catch (ignored) { /* Unowned or renamed sheets are preserved. */ }
   return { message: 'Local key and this user’s triggers removed. Ask finance to disconnect the Easel key, and remove Google authorization in Google Account → Security → Third-party connections.' };
 }
