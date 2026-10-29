@@ -13,8 +13,14 @@ async function photo(page, name) {
  // Capture the actual viewport, including on system Chromium in cloud. Avoid
  // surface capture's large-scrolled-page GPU path; the pixels remain browser output.
  const cdp = await page.context().newCDPSession(page)
- try { const value = await cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: false, captureBeyondViewport: false }); await writeFile(join(evidence, name), Buffer.from(value.data, 'base64')) }
- finally { await cdp.detach() }
+ let timer
+ try {
+  const value = await Promise.race([
+   cdp.send('Page.captureScreenshot', { format: 'png', fromSurface: false, captureBeyondViewport: false }),
+   new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Browser capture timed out: ${name}`)), 30000) }),
+  ])
+  await writeFile(join(evidence, name), Buffer.from(value.data, 'base64'))
+ } finally { clearTimeout(timer); await cdp.detach() }
 }
 const messages = []
 try {
@@ -97,6 +103,7 @@ try {
  assert.equal(await card.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Refreshed bindings', exact: true }) }).getByRole('cell').last().innerText(), '0')
  assert.equal((await api(owner, server.origin, 'connections/sheets-addon')).connections[0].lastRefresh, successful.lastRefresh)
  assert.doesNotMatch(await card.innerText(), /Untrusted provider body/)
+ console.log('SHEET-002 native approval, claim, entry and persisted failure display passed')
  await noOverflow(page, 'Google Sheets connection desktop'); await noOverflow(sidebar, 'Google Sheets sidebar desktop'); await noOverflow(confirmation, 'Google Sheets confirmation desktop')
  // Each proof width starts in a fresh page, avoiding viewport-change state in
  // unrelated Settings panels. Assertions above use 1440 only.
@@ -113,6 +120,7 @@ try {
   await sheet.getByText('Connected. Refresh to read current Easel values.', { exact: true }).waitFor(); await sheet.getByText('Insert a live formula', { exact: true }).click(); await sheet.getByText('Write an input for review', { exact: true }).click()
   await sheet.setViewportSize({ width, height: await sheet.evaluate(() => document.documentElement.scrollHeight + 20) }); await sheet.evaluate(() => scrollTo(0, 0))
   await photo(sheet, `google-sheets-sidebar-${width}.png`); await sheet.close()
+  console.log(`SHEET-002 ${width}: native Connections, confirmation and sidebar captured`)
  }
  const unreachable = await contributor.request.post(server.origin + '/api/easel/google-sheets/health', { headers: addonHeaders, data: { reason: 'trigger', failure: 'transport' } })
  assert.equal(unreachable.status(), 200)
@@ -126,4 +134,8 @@ try {
  await card.getByRole('button', { name: 'Disconnect add-on · Sales planning sheet' }).click(); await card.getByText(/Easel confirmed revocation of this add-on key/).waitFor()
  const refused = await contributor.request.get(server.origin + '/api/easel/google-sheets/session', { headers: { 'X-Easel-Sheets-Key': key, 'X-Easel-Spreadsheet': 'synthetic-google-spreadsheet' } }); assert.equal(refused.status(), 401)
  console.log('SHEET-002 native approval, person-only claim, direct input in Plan, persisted rate/transport failure, recovery, schedule and revocation passed; changed screens captured at 1440/390')
-} finally { await browser?.close(); await server?.close() }
+} finally {
+ try { await Promise.all((browser?.contexts() ?? []).map(context => context.close())) }
+ finally { try { await browser?.close() } finally { await server?.close() } }
+}
+console.log('SHEET-002 browser journey teardown complete')
