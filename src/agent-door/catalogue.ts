@@ -20,7 +20,7 @@ export const catalogue = nativeTools.map(tool => {
 })
 export const notTools = [
  { clauses: ['EASEL-015','PEOPLE-007','SHEET-003','MOVE-001','MOVE-002','MOVE-003','MOVE-004','EASEL-002','EASEL-003','EASEL-004'], reason: 'import-door' as const },
- { clauses: ['SHEET-001','SHEET-002','SHEET-005','CONNECT-001','CONNECT-002','CONNECT-003','CONNECT-004','CONNECT-009','CONNECT-010','CONNECT-011'], reason: 'connector' as const },
+ { clauses: ['SHEET-001','SHEET-002','SHEET-005','CONNECT-001','CONNECT-002','CONNECT-003','CONNECT-004','CONNECT-009','CONNECT-010','CONNECT-011','PEOPLE-001','PEOPLE-002','PEOPLE-003','REV-001','REV-002','SPEND-001'], reason: 'connector' as const },
  { clauses: ['MOBILE-001'], reason: 'screen' as const }, { clauses: ['MOBILE-002'], reason: 'device' as const },
  { clauses: ['EASEL-017','HOST-001','EASEL-001'], reason: 'installation' as const },
 ]

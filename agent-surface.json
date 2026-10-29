@@ -327,7 +327,13 @@
         "CONNECT-004",
         "CONNECT-009",
         "CONNECT-010",
-        "CONNECT-011"
+        "CONNECT-011",
+        "PEOPLE-001",
+        "PEOPLE-002",
+        "PEOPLE-003",
+        "REV-001",
+        "REV-002",
+        "SPEND-001"
       ],
       "reason": "connector"
     },
