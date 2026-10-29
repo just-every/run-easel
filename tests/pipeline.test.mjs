@@ -98,6 +98,18 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  const blocked=(await h.get('/api/easel/metric-tasks')).rules.find(r=>r.id===rule.id);assert.match(blocked.blocked,/Pipeline source/)
  edge.fail=false
  const recovered=await post('pipeline/sources',{provider:'hubspot',scenario:f.scenario,revision:fw.scenario.revision});await accept(pipelineInput(f,recovered,fw.scenario.revision))
+ // A changed commission assignment can affect cash, but its position links
+ // never become public constraint-cause evidence for finance without Pay.
+ await h.command('scenario-cash',{scenario:f.scenario,basis:'estimate',opening:'5000',collectionLag:0,paymentLag:0})
+ await h.command('cash-constraints',{floor:'4600',runwayMinimum:'0'})
+ const alternate=await h.command('position',{scenario:f.scenario,title:'Private alternate commission position',department:f.department.id,line:f.salary.id,start:'2026-01',annualSalary:'0',onCostPercent:'0',employmentType:'1099',commissionPercent:'100'})
+ const reassigned=pipelineInput(f,await source(),(await view()).scenario.revision);reassigned.owners[0].position=alternate.originId;await accept(reassigned)
+ const causes=(await h.get('/api/easel/constraints',finance)).items
+ assert.ok(causes.some(i=>i.constraint==='cash-floor'))
+ assert.doesNotMatch(JSON.stringify(causes),/commissionPosition|Private alternate commission position/)
+ assert.ok(!JSON.stringify(causes).includes(f.position.originId),'constraint causes omit the private prior commission link')
+ await accept(pipelineInput(f,await source(),(await view()).scenario.revision))
+ await h.command('cash-constraints',{floor:'0',runwayMinimum:'0'})
  // Provider ownership reaches the existing sourced-answer and promotion doors.
  let native=await view(),owned=pipelineInput(f,await source(),native.scenario.revision);owned.owners[0].member='sales@example.test';await accept(owned)
  native=await view();const acme=native.inputs.revenue.find(r=>r.pipeline?.deal==='deal-a')
