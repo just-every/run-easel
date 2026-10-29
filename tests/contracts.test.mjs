@@ -61,7 +61,7 @@ test('REV-004 contract bookings, upfront invoices, exact-date DSO and recognitio
  const proposal = await h.command('proposal-create', { from: forecast.id, name: 'Quarterly collection', request: 'Change upfront invoice cadence' }, planner)
  const input = (await view(proposal.id, planner)).inputs.revenue[0]
  const mcp = await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'revenue', arguments: { ...body, id: input.id, scenario: proposal.id, billingCadence: 'quarterly' } } }, planner)
- assert.equal(mcp.status, 200); assert.equal(mcp.value.result.isError, undefined)
+ assert.equal(mcp.status, 200); assert.equal(mcp.value.result.isError, false)
  const quarterly = await view(proposal.id, planner)
  assert.deepEqual(quarterly.calculation.contracts.months.map(m => m.billings), [3000000, 0, 0, 3000000, 0, 0, 3000000, 0, 0, 3000000, 0, 0])
  assert.deepEqual(quarterly.calculation.contracts.invoices.map(i => i.collectionDate), ['2026-02-15', '2026-05-16', '2026-08-15', '2026-11-15'])

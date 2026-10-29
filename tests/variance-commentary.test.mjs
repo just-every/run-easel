@@ -50,7 +50,7 @@ test('AGENT-007 accepted citations stay in their visible variance and unconfirme
  // Public MCP clients use the same source checker and cannot confirm drafts.
  const mcp = async args => (await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'explanation', arguments: args } }, author)).value
  assert.equal((await mcp({ ...explanation, citationIds: ['synthetic-invented-model-row'] })).result.isError, true)
- assert.equal((await mcp({ ...explanation, citationIds: [id] })).result.isError, undefined)
+ assert.equal((await mcp({ ...explanation, citationIds: [id] })).result.isError, false)
  // A mapping change invalidates the saved citation before confirmation.
  await h.command('account-map', { account: '500', target: travel.id })
  const remapped = await records()

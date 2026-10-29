@@ -56,6 +56,7 @@ test('AUDIT-001 three people and an agent leave immutable, filterable, exportabl
  const undone = (await h.get('/api/easel/activity')).find(r => r.detail.kind === 'actual')
  assert.equal(undone.detail.before.amount, -100000)
  assert.equal(undone.detail.after, null)
+ await h.agentPolicy()
  const response = await h.mf.dispatchFetch(`${h.origin}/api/easel/mcp`, { method: 'POST', headers: { origin: h.origin, cookie: planner, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25' }, body: JSON.stringify(agentMessage({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'comment', arguments: { scenario: budget.id, department: department.id, text: 'Prepared by the planning agent.' } } })) })
  assert.equal(response.status, 200)
  const agent = (await h.get('/api/easel/activity')).find(r => r.detail.authority?.type === 'agent')

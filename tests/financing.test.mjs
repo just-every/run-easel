@@ -144,7 +144,7 @@ test('FIN-003 debt, interest, monthly covenants and equity reconcile all stateme
  assert.equal(marRatio.ratioBps,5000);assert.equal(marRatio.status,'breach','exact bound is applied before display rounding')
  const proposal=await h.command('proposal-create',{from:upside.id,name:'Funding options',request:'Plan a later contribution'})
  const mcp=await h.send('/api/easel/mcp',{jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'equity',arguments:{scenario:proposal.id,name:'Optional contribution',month:'2026-10',amount:'100000'}}},h.owner)
- assert.equal(mcp.status,200);assert.equal(mcp.value.result.isError,undefined)
+ assert.equal(mcp.status,200);assert.equal(mcp.value.result.isError,false)
  assert.equal((await read(proposal.id)).inputs.equity[0].amountCents,10000000)
  assert.ok(h.messages.every(m => !String(m.text).includes('Private revolving facility')), 'planning never dispatches a funding or payment message')
 })
