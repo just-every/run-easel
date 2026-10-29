@@ -40,6 +40,14 @@
       "reason": "npm registry deprecation text of the already-locked third-party package glob@7.2.3; the matched address is inside that package's deprecated: string, a maintainer attribution that is not our identity",
       "reviewer": "gr lane orchestrator (publication review)",
       "date": "2026-10-27"
+    },
+    {
+      "rule": "hygiene.email",
+      "path": "pnpm-lock.yaml",
+      "blob": "a1d7bb3580e12aa3cb10aa97460c2c1bebffbf43",
+      "reason": "The only email in this dependency lock is the public glob package maintainer contact in npm deprecation metadata. No owner or user data; dependency metadata is retained verbatim.",
+      "reviewer": "ct-easel-lockreview",
+      "date": "2026-10-29"
     }
   ]
 }

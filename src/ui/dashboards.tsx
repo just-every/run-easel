@@ -6,15 +6,16 @@ import { ClosingCashChart } from './chart'
 import { Action, api, command, decimalText, Field, Form, money, monthLabel, options, Person, Table, type D } from './shared'
 import { Dots, glue } from './dots'
 
-type Metric = 'runway' | 'arr' | 'headcount' | 'revenue' | 'grossMargin' | 'burn' | 'closingCash'
+type Metric = 'runway' | 'arr' | 'headcount' | 'revenue' | 'grossMargin' | 'burn' | 'closingCash' | 'pipelineCoverage'
 type Display = 'tile' | 'chart' | 'table'
 type Widget = { metric: Metric; display: Display }
-const metrics: Record<Metric, string> = { runway: 'Runway', arr: 'ARR', headcount: 'Headcount', revenue: 'Revenue', grossMargin: 'Gross margin', burn: 'Net burn', closingCash: 'Closing cash' }
+const metrics: Record<Metric, string> = { runway: 'Runway', arr: 'ARR', headcount: 'Headcount', revenue: 'Revenue', grossMargin: 'Gross margin', burn: 'Net burn', closingCash: 'Closing cash', pipelineCoverage: 'Pipeline coverage' }
 const metricOptions = Object.entries(metrics).map(([value, label]) => ({ value, label }))
 const displays: Display[] = ['tile', 'chart', 'table']
 const audiences = [{ value: 'private', label: 'Private' }, { value: 'leadership', label: 'Leadership' }, { value: 'board', label: 'Board' }, { value: 'department', label: 'Department' }]
 
 function basis(row: D, metric: Metric) {
+ if (metric === 'pipelineCoverage') return row.pipelineCoverageBasis
  if (metric === 'arr') return row.arrBasis
  if (['runway', 'burn', 'closingCash'].includes(metric)) {
   return ({ 'not-burning': 'Not burning', 'cash-exhausted': 'Cash exhausted', 'trailing-net-burn': 'Closing cash ÷ trailing average net burn', 'Company cash only': 'Company cash unavailable in a department view' } as Record<string, string>)[row.runwayBasis] ?? row.runwayBasis
@@ -24,6 +25,7 @@ function basis(row: D, metric: Metric) {
 function valueText(row: D, metric: Metric, currency: string) {
  const value = row[metric]
  if (value === null || value === undefined) return basis(row, metric) || 'Unavailable'
+ if (metric === 'pipelineCoverage') return `${decimalText(value)}% coverage`
  if (metric === 'headcount') return `${value.toLocaleString()} people`
  if (metric === 'runway') return `${decimalText(value)} months`
  return money(value, currency)
@@ -32,7 +34,7 @@ function valueText(row: D, metric: Metric, currency: string) {
 /** Dashboard charts preserve the established chart styles and show missing months as gaps. */
 function MetricChart({ rows, metric, currency }: { rows: D[]; metric: Metric; currency: string }) {
  const complete = rows.every(row => row[metric] !== null && row[metric] !== undefined)
- if (complete && metric !== 'runway' && metric !== 'headcount') return <ClosingCashChart label={`${metrics[metric]} by month`} title={metrics[metric]} months={rows.map(r => r.month)} series={[{ name: metrics[metric], values: rows.map(r => r[metric]) }]} currency={currency} axis="quarters" ticks />
+ if (complete && metric !== 'runway' && metric !== 'headcount' && metric !== 'pipelineCoverage') return <ClosingCashChart label={`${metrics[metric]} by month`} title={metrics[metric]} months={rows.map(r => r.month)} series={[{ name: metrics[metric], values: rows.map(r => r[metric]) }]} currency={currency} axis="quarters" ticks />
  const values = rows.map(r => r[metric]).filter((v): v is number => typeof v === 'number')
  if (!values.length) return <p>{rows.length ? basis(rows[rows.length - 1], metric) || 'No values available.' : 'No months available.'}</p>
  const low = Math.min(0, ...values), high = Math.max(1, ...values)
@@ -47,7 +49,7 @@ function MetricChart({ rows, metric, currency }: { rows: D[]; metric: Metric; cu
 }
 
 function MetricTable({ rows, metric, currency }: { rows: D[]; metric: Metric; currency: string }) {
- return <Table caption={`${metrics[metric]} by month`} heads={['Month', metrics[metric], ...(metric === 'arr' || ['runway', 'burn', 'closingCash'].includes(metric) ? ['Basis'] : [])]}>{rows.map(row => <tr key={row.month}><th scope="row">{monthLabel(row.month)}</th><td className="num">{valueText(row, metric, currency)}</td>{(metric === 'arr' || ['runway', 'burn', 'closingCash'].includes(metric)) && <td className="wrap">{basis(row, metric)}</td>}</tr>)}</Table>
+ return <Table caption={`${metrics[metric]} by month`} heads={['Month', metrics[metric], ...(metric === 'arr' || metric === 'pipelineCoverage' || ['runway', 'burn', 'closingCash'].includes(metric) ? ['Basis'] : [])]}>{rows.map(row => <tr key={row.month}><th scope="row">{monthLabel(row.month)}</th><td className="num">{valueText(row, metric, currency)}</td>{(metric === 'arr' || metric === 'pipelineCoverage' || ['runway', 'burn', 'closingCash'].includes(metric)) && <td className="wrap">{basis(row, metric)}</td>}</tr>)}</Table>
 }
 
 function WidgetControls({ widgets, setWidgets, remove = false }: { widgets: Widget[]; setWidgets: (widgets: Widget[]) => void; remove?: boolean }) {

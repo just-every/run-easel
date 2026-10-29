@@ -1,3 +1,4 @@
+import { visiblePipelineMetadata } from './pipeline-visibility'
 import { dimensionAllowed } from './access'
 // Scenario sharing adds a boundary; it never replaces department/pay authority.
 import { canSeeDashboard } from './dashboard-access'
@@ -43,7 +44,7 @@ export function visibleActivity(s: State, x: Access, event: Data): Data | null {
   return { ...event, detail: { ...event.detail, before: safe(event.detail.before), after: safe(event.detail.after) } }
  }
  if (event.scenario && !visible(event.scenario)) return null
- if (event.action !== 'structure-version') return event
+ if (event.action !== 'structure-version') return String(event.detail?.kind??'').startsWith('pipeline-')?{...event,detail:visiblePipelineMetadata(s,x,event.detail)}:event
  const detail = event.detail
  const changes = (detail.changes ?? []).filter((change: Data) => {
   const ids = change.kind === 'scenario' ? [change.id] : [change.before?.scenario, change.after?.scenario].filter(Boolean)

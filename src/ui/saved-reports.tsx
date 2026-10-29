@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { Action, api, command, decimalText, Field, Form, money, options, Table, type D } from './shared'
 
-const rows = ['department', 'line', 'dimension', 'hierarchy'].map(value => ({ value, label: ({ department: 'Departments', line: 'Lines', dimension: 'Dimension members', hierarchy: 'Account hierarchy' } as D)[value] }))
+const rows = ['department', 'line', 'dimension', 'hierarchy', 'stage'].map(value => ({ value, label: ({ department: 'Departments', line: 'Lines', dimension: 'Dimension members', hierarchy: 'Account hierarchy', stage: 'Pipeline stages (weighted bookings)' } as D)[value] }))
 const periods = ['month', 'quarter', 'year'].map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))
 const audiences = [{ value: 'private', label: 'Private' }, { value: 'leadership', label: 'Leadership' }, { value: 'board', label: 'Board' }, { value: 'department', label: 'Department' }]
 const percent = (v: number | null) => v === null ? 'Unavailable' : `${decimalText(v)}%`
@@ -17,7 +17,7 @@ export function SavedReportPanel({ id }: { id: string }) {
  if (error) return <p role="alert" className="error">{error}</p>
  if (!view) return <p role="status">Loading saved report…</p>
  const values = view.rows.flatMap((r: D) => [r.actual, r.budget]).filter((v: unknown) => typeof v === 'number'), maximum = Math.max(1, ...values.map((v: number) => Math.abs(v)))
- return <><GaugeFreshness rows={view.gaugeFreshness} /><p>{view.sourceName} · {view.currency}. Unavailable periods remain blank in Excel. Hierarchy totals include their children and are not additive.</p>
+ return <>{view.metric==='pipelineBookings'&&<p>Weighted pipeline bookings by stage in the slipped booking period. GL actuals have no reviewed stage classification and remain unavailable.</p>}{!view.rows.length&&<p>No rows match this report’s selected lines and department.</p>}<GaugeFreshness rows={view.gaugeFreshness} /><p>{view.sourceName} · {view.currency}. Unavailable periods remain blank in Excel. Hierarchy totals include their children and are not additive.</p>
   <label>Report display<select aria-label="Report display" value={display} onChange={e => setDisplay(e.target.value)}><option value="table">Table</option><option value="chart">Chart and table</option></select></label><Action label="Save my report display" run={async () => { await command('report-layout', { dashboard: id, revision: view.layoutRevision, definitionRevision: view.definitionRevision, display }); const next = await api(`dashboards/${encodeURIComponent(id)}/report`); setView(next); setDisplay(next.reportDisplay) }} />
   {display === 'chart' && <figure><figcaption>Actual and source version by row and period</figcaption>{view.rows.map((r: D) => <div key={`${r.row}:${r.period}`}><strong>{r.name} · {r.period}</strong>{[['actual', 'Actual'], ['budget', view.sourceName]].map(([key, label]) => <div key={key}>{label}: {r[key] === null ? 'Unavailable' : <><meter min={-maximum} max={maximum} value={r[key]} aria-label={`${r.name} ${r.period} ${label}`} /> {money(r[key], view.currency)}</>}</div>)}</div>)}</figure>}
   <Table caption={view.name} heads={['Row', 'Period', 'Actual', view.sourceName, ...(view.comparisonName ? [view.comparisonName] : []), 'Variance', 'Variance %', 'Prior-year actual', 'YoY change', 'YoY %', ...(view.versions ?? []).map((v: D) => v.name)]}>

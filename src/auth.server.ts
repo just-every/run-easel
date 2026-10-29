@@ -16,6 +16,7 @@ export interface Bindings {
  /** Managed ADP client certificate; raw private key never enters app records or archives. */
  HRIS_ADP_MTLS?: Fetcher
  GAUGE_ORIGIN?: string
+ ORBIT_ORIGIN?: string
  PANTRY_ORIGIN?: string
  PURSE_ORIGIN?: string
  COASTER_ORIGIN?: string

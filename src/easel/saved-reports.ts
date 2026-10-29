@@ -23,7 +23,8 @@ export function reportDefinition(c: Context, value: unknown): Data | null {
  requireThat(typeof v === 'object' && !Array.isArray(v), 'Choose a report definition')
  requireThat(Array.isArray(v.lines) && v.lines.length > 0 && v.lines.length <= 200, 'Choose one to 200 report lines')
  const lines = [...new Set(v.lines.map((id: unknown) => get(c.s, 'line', id).id))]
- return { ...reportDimensionDefinition(c, v), row: choice(v.row, ['department', 'line', 'dimension', 'hierarchy'] as const, 'report rows'),
+ return { ...reportDimensionDefinition(c, v), row: choice(v.row, ['department', 'line', 'dimension', 'hierarchy', 'stage'] as const, 'report rows'),
+  metric: v.row==='stage'?'pipelineBookings':'amount',
   period: choice(v.period, ['month', 'quarter', 'year'] as const, 'report periods'),
   through: month(v.through, 'Report through'), lines,
   comparisons: reportVersionDefinition(c, v.comparisons), comparison: v.comparison ? get(c.s, 'scenario', v.comparison).id : '',
@@ -50,6 +51,8 @@ export async function savedReport(c: Context, id: string) {
  if (d.reportAuthorDepartment && c.x.role === 'contributor') requireThat(c.x.departments.includes(d.reportAuthorDepartment), 'Report not found', 404)
  const source = await scenarioView(c, d.scenario)
  const sourceDimensions = await reportDimensionSource(c, d.scenario)
+ const stageMetric=definition.row==='stage'
+ if(stageMetric)sourceDimensions.cells=sourceDimensions.stageCells as any
  const through = definition.through as string
  requireThat(source.calculation.months.includes(through), 'Report through must be inside the source version horizon', 409)
  const comparison = definition.comparison ? await scenarioView(c, definition.comparison) : null
@@ -60,6 +63,10 @@ export async function savedReport(c: Context, id: string) {
  }
  const comparisonDimensions = comparison ? await reportDimensionSource(c, definition.comparison) : null
  const versions = await reportVersions(c, definition, source)
+ if(stageMetric){
+  if(comparisonDimensions)comparisonDimensions.cells=comparisonDimensions.stageCells as any
+  for(const version of versions)version.cells=version.stageCells as any
+ }
  const elapsed = source.calculation.months.filter((m: string) => m <= through)
  const groups: { label: string; months: string[] }[] = definition.period === 'month'
   ? elapsed.map((m: string) => ({ label: m, months: [m] }))
@@ -79,9 +86,11 @@ export async function savedReport(c: Context, id: string) {
  const reportLines = source.lines.filter(l => selected.has(l.id))
  requireThat(reportLines.length === selected.size, 'A report line no longer exists in the source version', 409)
  if (d.department) requireThat(source.departments.some(dep => dep.id === d.department), 'Report department no longer exists in the source version', 409)
- const dimensions: { id: string; name: string }[] = ['dimension', 'hierarchy'].includes(definition.row) ? reportDimensionRows(definition, sourceDimensions.structure, reportLines) : definition.row === 'line' ? reportLines.map(l => ({ id: l.id, name: l.name }))
+ const stages=[...sourceDimensions.stageCells,...(comparisonDimensions?.stageCells??[]),...versions.flatMap(v=>v.stageCells)].filter(cell=>selected.has(cell.line)&&(!d.department||cell.department===d.department))
+ const dimensions: { id: string; name: string }[] = stageMetric ? [...new Map(stages.map(cell=>[cell.stage,{id:cell.stage,name:cell.stageName}])).values()].sort((a,b)=>a.id.localeCompare(b.id)) : ['dimension', 'hierarchy'].includes(definition.row) ? reportDimensionRows(definition, sourceDimensions.structure, reportLines) : definition.row === 'line' ? reportLines.map(l => ({ id: l.id, name: l.name }))
   : [...source.departments, { id: '', name: 'No department' }].filter(dep => !d.department || dep.id === d.department)
- const aggregate = (cells: Data[], periods: string[], dimension: string, available: (m: string) => boolean, structure = sourceDimensions.structure, isActual = false): number | null => {
+ const aggregate = (cells: Data[], periods: string[], dimension: string, available: (m: string) => boolean, structure = sourceDimensions.structure, isActual = false, sources:Data=source.scenario.pipelineSources??{}): number | null => {
+  if (stageMetric && (isActual||!sources[dimension.split(':')[0]]))return null // GL actuals have no reviewed CRM stage classification.
   if (periods.some(m => !available(m))) return null
   if (isActual && dimensionalActuals.blocked.some(issue => periods.includes(issue.month) && (!issue.line || selected.has(issue.line)) && (!d.department || !issue.department || d.department === issue.department) && (!issue.dimensions.length || (definition.row === 'dimension' && issue.dimensions.some((u: Data) => u.dimension === definition.dimension)) || issue.dimensions.some((u: Data) => Object.hasOwn(definition.dimensions ?? {}, u.dimension))))) return null
   const consumed = cells.filter(cell => periods.includes(cell.month) && selected.has(cell.line) &&
@@ -89,20 +98,20 @@ export async function savedReport(c: Context, id: string) {
   if (consumed.some(cell => cell.amount === null)) return null
   return exact(consumed.map(cell => cell.amount))
  }
- const versionValues = (periods: string[], dimension: string) => Object.fromEntries(versions.map(v => [v.id, aggregate(v.cells, periods, dimension, m => v.view.calculation.months.includes(m) && (v.view.scenario.status === 'frozen' || !v.view.calculation.actualsThrough || m > v.view.calculation.actualsThrough || !unavailable.has(m)), v.structure)]))
+ const versionValues = (periods: string[], dimension: string) => Object.fromEntries(versions.map(v => [v.id, aggregate(v.cells, periods, dimension, m => v.view.calculation.months.includes(m) && (v.view.scenario.status === 'frozen' || !v.view.calculation.actualsThrough || m > v.view.calculation.actualsThrough || !unavailable.has(m)), v.structure,false,v.view.scenario.pipelineSources??{})]))
  const monthly = dimensions.flatMap(dimension => [...requested].sort().map(m => ({ row: dimension.id, name: dimension.name, month: m, versions: versionValues([m], dimension.id),
   actual: aggregate(actuals.cells, [m], dimension.id, key => !unavailable.has(key), sourceDimensions.structure, true),
   budget: aggregate(sourceDimensions.cells, [m], dimension.id, key => source.calculation.months.includes(key) &&
    (source.scenario.status === 'frozen' || !source.calculation.actualsThrough || key > source.calculation.actualsThrough || !unavailable.has(key))),
   comparison: comparison ? aggregate(comparisonDimensions!.cells, [m], dimension.id, key => comparison.calculation.months.includes(key) &&
-   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || key > comparison.calculation.actualsThrough || !unavailable.has(key))) : null,
+   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || key > comparison.calculation.actualsThrough || !unavailable.has(key)),comparisonDimensions!.structure,false,comparison!.scenario.pipelineSources??{}) : null,
  })))
  const rows = groups.flatMap(group => dimensions.map(dimension => {
   const actual = aggregate(actuals.cells, group.months, dimension.id, m => !unavailable.has(m), sourceDimensions.structure, true)
   const budget = aggregate(sourceDimensions.cells, group.months, dimension.id, m => source.calculation.months.includes(m) &&
    (source.scenario.status === 'frozen' || !source.calculation.actualsThrough || m > source.calculation.actualsThrough || !unavailable.has(m)))
   const other = comparison ? aggregate(comparisonDimensions!.cells, group.months, dimension.id, m => comparison.calculation.months.includes(m) &&
-   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || m > comparison.calculation.actualsThrough || !unavailable.has(m))) : null
+   (comparison.scenario.status === 'frozen' || !comparison.calculation.actualsThrough || m > comparison.calculation.actualsThrough || !unavailable.has(m)),comparisonDimensions!.structure,false,comparison!.scenario.pipelineSources??{}) : null
   const prior = aggregate(actuals.cells, group.months.map(m => addMonths(m, -12)), dimension.id, m => !unavailable.has(m), sourceDimensions.structure, true)
   const variance = actual === null || budget === null ? null : exact([actual, -budget])
   const yoy = actual === null || prior === null ? null : exact([actual, -prior])
@@ -116,7 +125,7 @@ export async function savedReport(c: Context, id: string) {
    dimensions.some(dimension => reportDimensionMatch(c, definition, view.dimensionStructure, row, dimension.id)))
   .map((row: Data) => ({ ...row, version: view.scenario.name })))
  const layout = find(c.s, 'dashboard-layout', `${d.id}|${c.x.actor.email}`)
- return { gaugeFreshness: freshness, reportDisplay: layout?.definitionRevision === d.revision ? layout?.reportDisplay ?? 'table' : 'table', layoutRevision: layout?.revision ?? 0, definitionRevision: d.revision, name: d.name, definition, currency: source.workspace.currency, sourceName: source.scenario.name,
+ return { metric:definition.metric??'amount', gaugeFreshness: freshness, reportDisplay: layout?.definitionRevision === d.revision ? layout?.reportDisplay ?? 'table' : 'table', layoutRevision: layout?.revision ?? 0, definitionRevision: d.revision, name: d.name, definition, currency: source.workspace.currency, sourceName: source.scenario.name,
   versions: versions.map(v => ({ id: v.id, name: v.name })), comparisonName: comparison?.scenario.name ?? null, department: d.department, rows, monthly,
   missingMonths: actuals.missingMonths, blockedMonths: actuals.blockedMonths,
   units: { money: 'integer minor units', percentages: 'basis points; half away from zero; unavailable for zero denominator' } }

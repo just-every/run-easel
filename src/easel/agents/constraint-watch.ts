@@ -20,11 +20,11 @@ import { formatHundredths, formatMoney } from '../units'
 import { constraints } from './agent-evaluate'
 import { workspace } from '../model'
 
-const WATCH = new Set(['actuals-accepted', 'actuals-undone', 'close-month', 'proposal-promoted', 'cash-constraints', 'constraint-check', 'plaid-cash-refreshed', 'department-limit-save', 'department-limit-delete', 'debt-added', 'debt-changed', 'input-deleted'])
+const WATCH = new Set(['actuals-accepted', 'actuals-undone', 'close-month', 'proposal-promoted', 'cash-constraints', 'constraint-check', 'plaid-cash-refreshed', 'department-limit-save', 'department-limit-delete', 'debt-added', 'debt-changed', 'input-deleted','pipeline-refresh'])
 export const needsConstraintCheck = (c: Context) => c.activity.some(e => WATCH.has(e.action))
 export const CONSTRAINTS = { 'cash-floor': 'Cash floor', runway: 'Runway minimum' } as const
 const KINDS = ['revenue', 'position', 'expense', 'schedule', 'debt'] as const
-const IGNORED = new Set(['id', 'scenario', 'dimensions', 'revision'])
+const IGNORED = new Set(['id', 'scenario', 'dimensions', 'revision', 'commissionPosition'])
 
 const scalar = (v: unknown) => v === null || ['string', 'number', 'boolean'].includes(typeof v)
 /** Input changes since a reference model: added, removed or edited rows, by origin, without pay detail for readers who may not see it. */
@@ -37,6 +37,7 @@ export function sourceChanges(c: Context, reference: Data, current: Data): Data[
    const name = pay ? 'A planned hire' : row.title ?? row.name ?? origin
    if (!prior) { out.push({ kind, origin, name, change: 'added', fields: [] }); continue }
    const fields = Object.keys(row).filter(k => !IGNORED.has(k) && scalar(row[k]) && row[k] !== prior[k]).map(k => ({ field: k, from: pay && /salary|cents|holder|rate/i.test(k) ? null : prior[k], to: pay && /salary|cents|holder|rate/i.test(k) ? null : row[k] }))
+   if(row.pipeline && prior.pipeline)for(const field of ['stage','probabilityBps','sourceCloseDate','slippageDays'])if(row.pipeline[field]!==prior.pipeline[field])fields.push({field:`CRM deal ${row.pipeline.deal}: ${field}`,from:prior.pipeline[field],to:row.pipeline[field]})
    if (fields.length) out.push({ kind, origin, name, change: 'changed', fields })
   }
   for (const [origin, row] of before) if (!now.has(origin)) out.push({ kind, origin, name: kind === 'position' && !seesPayDetail(c.x, row.department) ? 'A planned hire' : row.title ?? row.name ?? origin, change: 'removed', fields: [] })

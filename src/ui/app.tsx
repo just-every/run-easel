@@ -7,6 +7,7 @@ import { Actuals } from './actuals'
 import { Cycle } from './cycle'
 import { Overview } from './overview'
 import { Plan } from './plan'
+import { Pipeline } from './pipeline'
 import { Review } from './review'
 import { Scenarios } from './scenarios'
 import { Settings } from './settings'
@@ -23,6 +24,7 @@ const TABS = [
  { id: 'reports', label: 'Reports', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'dashboards', label: 'Dashboards', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'plan', label: 'Plan', roles: ['finance', 'contributor'] },
+ { id: 'pipeline', label: 'Pipeline', roles: ['finance'] },
  { id: 'actuals', label: 'Actuals', roles: ['finance'] },
  { id: 'cycle', label: 'Budget cycle', roles: ['finance', 'contributor', 'viewer'] },
  { id: 'scenarios', label: 'Scenarios', roles: ['finance', 'contributor', 'viewer'] },
@@ -96,6 +98,7 @@ export function App() {
   {tab === 'reports' && <SavedReports {...shared} />}
   {tab === 'dashboards' && <Dashboards {...shared} />}
   {tab === 'plan' && <Plan {...shared} />}
+  {tab === 'pipeline' && <Pipeline {...shared} />}
   {tab === 'actuals' && <Actuals {...shared} />}
   {tab === 'cycle' && <Cycle {...shared} />}
   {tab === 'scenarios' && <Scenarios {...shared} />}

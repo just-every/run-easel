@@ -3,6 +3,9 @@ import { intacctImport } from './intacct-import'
 import { netsuiteConnection,netsuiteStatus } from './netsuite-connection'
 import { netsuiteImport } from './netsuite-import'
 import { spendConnection, spendStatus, spendReview, spendReviews, spendSources, spendReadFailed } from './spend'
+import { pipelineConnection, pipelineStatus } from './pipeline-connection'
+import { pipelineJournal } from './pipeline-journal'
+import { pipelineFailed, pipelinePull, pipelineView } from './pipeline'
 import { xeroConnection, xeroStatus } from './xero-connection'
 import { xeroImport } from './xero-import'
 import { billingConnection, billingStatus } from './billing-connection'
@@ -218,6 +221,27 @@ api.post('/api/easel/spend/:op', async c => {
 })
 api.get('/api/easel/connections/pantry', c => read(c, ctx => pantryStatus(ctx,c.env)))
 api.get('/api/easel/connections/stripe', c => read(c, billingStatus))
+api.get('/api/easel/connections/pipeline/:provider',c=>read(c,ctx=>pipelineStatus(ctx,c.req.param('provider'))))
+api.get('/api/easel/connections/pipeline/:provider/callback',async c=>{
+ const ctx=await open(c),result=await pipelineConnection(ctx,runtimeBindings(c.env),c.req.param('provider'),'complete',c.req.query())
+ ctx.extra=result.extra;await commit(ctx);return c.redirect(`/app?tab=pipeline&crm=${c.req.param('provider')}`,303)
+})
+api.post('/api/easel/connections/pipeline/:provider/:op',async c=>{
+ const ctx=await open(c),result=await pipelineConnection(ctx,runtimeBindings(c.env),c.req.param('provider'),c.req.param('op'),await body(c))
+ ctx.extra=result.extra;await commit(ctx);return c.json({...await pipelineStatus(ctx,c.req.param('provider')),...(result.authorizationUrl?{authorizationUrl:result.authorizationUrl}:{})})
+})
+api.get('/api/easel/pipeline/:scenario',c=>read(c,async ctx=>pipelineView(ctx,c.req.param('scenario'))))
+api.post('/api/easel/pipeline/:op',async c=>{
+ const ctx=await open(c),input=await body(c)
+ if(['undo','resume','status'].includes(c.req.param('op')))return executeImport(c,ctx,await pipelineJournal(ctx,c.req.param('op'),input))
+ let result:Data
+ try{result=await pipelinePull(ctx,c.env,c.req.param('op'),input)}
+ catch(error){if(pipelineFailed(ctx,error,input.provider)){await evaluateMetricTasks(ctx);await commit(ctx)}throw error}
+ if(result.pipelineStep)return executeImport(c,ctx,result.pipelineStep)
+ if(c.req.param('op')!=='sources'&&c.req.param('op')!=='preview'){await evaluateMetricTasks(ctx);if(needsConstraintCheck(ctx))await watchConstraints(ctx);await commit(ctx);await deliverNotifications(newNotifications(ctx),c.env,()=>open(c),commit)}
+ else await readFence(ctx.db,ctx.x.actor,ctx.revision)
+ return c.json(result)
+})
 api.get('/api/easel/connections/intacct',c=>read(c,intacctStatus))
 api.post('/api/easel/connections/intacct/:op',async c=>{
  const ctx=await open(c),result=await intacctConnection(ctx,runtimeBindings(c.env),c.req.param('op'),await body(c))

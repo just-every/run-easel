@@ -15,14 +15,28 @@
       "name": "domain-1",
       "browser": false,
       "commands": [
-        "node --test --test-concurrency=1 --test-shard=1/2 tests/*.test.mjs"
+        "node --test --test-concurrency=1 --test-shard=1/4 tests/*.test.mjs"
       ]
     },
     {
       "name": "domain-2",
       "browser": false,
       "commands": [
-        "node --test --test-concurrency=1 --test-shard=2/2 tests/*.test.mjs"
+        "node --test --test-concurrency=1 --test-shard=2/4 tests/*.test.mjs"
+      ]
+    },
+    {
+      "name": "domain-3",
+      "browser": false,
+      "commands": [
+        "node --test --test-concurrency=1 --test-shard=3/4 tests/*.test.mjs"
+      ]
+    },
+    {
+      "name": "domain-4",
+      "browser": false,
+      "commands": [
+        "node --test --test-concurrency=1 --test-shard=4/4 tests/*.test.mjs"
       ]
     },
     {
@@ -39,7 +53,8 @@
         "node tests/excel-browser.mjs",
         "node tests/spend-browser.mjs",
         "node tests/gauge-schedule-browser.mjs",
-        "node tests/bi-feeds-browser.mjs --existing-build"
+        "node tests/bi-feeds-browser.mjs --existing-build",
+        "node tests/pipeline-browser.mjs --existing-build"
       ]
     }
   ],
