@@ -13,7 +13,9 @@ export type Actor = {
  email: string
  name: string
  token?: { id: string; label: string; kind: 'personal' | 'service'; scope: 'read' | 'write'; role: Role; departments: string[]; payDetail: boolean; write: boolean; grants?: GrantCeiling }
- agent?: { name: string; via: string }
+ agent?: { id?: string; name: string; via: string; sponsor?: { id: string; name: string }; approvers?: { id: string; name: string }[] }
+ /** A shared-door admission; authorization still comes from this native operator. */
+ door?: { agent: string; consent: string | null }
  /** The cron scheduler acting for the owner/admin who configured it. */
  scheduler?: { operator: string; email: string }
  session: string

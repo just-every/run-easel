@@ -72,7 +72,7 @@ The rolling window keeps that many future months after the last close. Closed mo
 
 ## MCP
 
-Agents can use the native-session [MCP endpoint](docs/mcp.md) at `POST /api/easel/mcp` for filtered reads and proposal, comment and explanation tools. Approval, close, publication and promotion stay with people.
+Company agents use the shared [MCP door](docs/mcp.md) at `POST /mcp` (also `/api/easel/mcp`) under the signed company policy and the sponsor's native planning grants. The namespaced catalogue supports filtered reads and draft proposals, comments and explanations. Approval, close, publication and promotion retain their native human lifecycle.
 
 ## Model audit trail (AUDIT-001)
 
@@ -90,7 +90,7 @@ A signed-in member manages their own tokens through these session-only routes:
 
 Issuance uses Base's fresh identity proof. If it returns `step_up_required`, request `POST /auth/step-up` with `{ "action": "credentials:mint", "returnTo": "/app" }`, follow and confirm the emailed link in the same browser session, then issue again. Key-gated local developer sessions already satisfy this proof.
 
-Integrations send `Authorization: Bearer <token>` to the existing Easel read and command/import routes. They do not send session cookies or an `Origin` header. Read tokens cannot make POST requests. A supplied invalid bearer is refused even if the request also carries a valid session. Token administration, invitations and MCP require the native signed-in session; MCP's proposal-only tools remain documented separately in `docs/mcp.md`.
+Integrations send `Authorization: Bearer <token>` to the existing Easel read and command/import routes. They do not send session cookies or an `Origin` header. Read tokens cannot make POST requests. A supplied invalid bearer is refused even if the request also carries a valid session. Token administration and invitations require the native signed-in session. The shared MCP door preserves each credential's original scopes and grant ceiling; its proposal tools are documented separately in `docs/mcp.md`.
 
 Tokens retain the issuer's role at issuance, intersect their original departments with today's grants, and resolve current membership on every request. A role change, deactivation, native operator-version change, expiry or revocation removes access; later department additions never expand an existing token. Named service tokens are labelled as agent work under their issuer's authority. They may edit a working forecast horizon under the issuer's current company-wide planning grant and original token ceiling; approval, month close, publication, promotion and connection administration remain refused to agents. Writes and import journal batches recheck the live credential and revision fence atomically, so stale revisions still return 409.
 

@@ -51,3 +51,12 @@ header contracts while avoiding overlapping regex scans, and carry Base
 `rer-v0.2.30`'s own changes to them (message keys and relay list headers). These two files are
 outside the byte-equal Base inventory; `edition.json` records their public Easel
 baseline and mappings. The remaining mail files retain their recorded Base pin.
+
+Agent-door adoption uses released `@runeditrun/rer` 0.2.86. Its release tag is
+identical to Base `f96363bf919ea3e7ed1837daba6894810a50e4a6`. Agent door, Business
+settings, operator-auth and the settings theme/icon dependency are recorded at
+that immutable source in `base-copies.json`; other copies retain their previous
+origins. The source was acquired as an authenticated archive. Runtime sources
+exclude upstream tests and fixtures. New migrations add Business settings,
+Business person bindings, door state and last-sign-in tracking. Earlier applied
+migrations remain unchanged. `docs/mcp.md` states the declared subset and gaps.
