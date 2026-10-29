@@ -7,12 +7,14 @@ import { erasedView } from './erasure'
 import { actorAuthority, changeEvent, eventStatement } from './audit-write'
 import { operatorAuth, runtimeBindings, type Bindings } from '../auth.server'
 import { tokenActor, tokenAuthority } from './token-auth'
+import { sheetAddonActor, sheetAddonAuthority } from './sheet-addon-auth'
 import { Fault, key, requireThat, type Actor, type Data, type State } from './types'
 
 export async function actor(request: Request, original: Bindings): Promise<Actor> {
  const env = runtimeBindings(original)
  const url = new URL(request.url), host = request.headers.get('host')
  requireThat(url.origin === env.AUTH_ORIGIN && (!host || host.toLowerCase() === url.host.toLowerCase()), 'Invalid host', 403)
+ if (request.headers.has('x-easel-sheets-key')) return sheetAddonActor(request, env)
  if (request.headers.has('authorization')) return tokenActor(request, env)
  if (!['GET', 'HEAD'].includes(request.method)) requireThat(request.headers.get('origin') === env.AUTH_ORIGIN && request.headers.get('sec-fetch-site') !== 'cross-site', 'Invalid origin', 403)
  const session = await operatorAuth(env).getSession(request)
@@ -22,6 +24,7 @@ export async function actor(request: Request, original: Bindings): Promise<Actor
 
 /** SQL that is true only while the actor's session and operator are still current. */
 function nativeAuthority(a: Actor, finance = false) {
+ if (a.sheetAddon) return sheetAddonAuthority(a, finance)
  if (a.token) return tokenAuthority(a, finance)
  if (a.scheduler) return { sql: "EXISTS(SELECT 1 FROM oa_operators o WHERE o.id=? AND o.status='active' AND o.role IN ('owner','admin'))", params: [a.scheduler.operator] }
  return {
