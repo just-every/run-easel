@@ -54,6 +54,16 @@ export async function pipelineExchange(key: PipelineKey, grant?: Data) {
 }
 
 export async function readPipeline(key: PipelineKey, beforeRead:()=>Promise<void>): Promise<PipelineSource> {
+ try { return await readSource(key,beforeRead) }
+ catch(error) {
+  if(error instanceof PipelineFailure)throw error
+  // Schema faults (including nested records and missing labels) are provider
+  // failures. Never retain their payload or a validation exception's text.
+  if(error instanceof Fault && [401,403,409].includes(error.status))throw error
+  throw new PipelineFailure('CRM returned an invalid source schema; accepted pipeline data is unchanged')
+ }
+}
+async function readSource(key: PipelineKey, beforeRead:()=>Promise<void>): Promise<PipelineSource> {
  let requests = 0
  const get = async (path: string) => { if (++requests > 160) throw new PipelineFailure('CRM exceeds the bounded read; narrow the provider grant'); await beforeRead(); return pipelineRequest(key.origin, path, { headers: { authorization: `Bearer ${key.accessToken}`, accept: 'application/json' } }) }
  const list = async (path: string, kind: 'hubspot' | 'salesforce' | 'orbit') => {

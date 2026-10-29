@@ -3,6 +3,7 @@ import { scopedReader } from './group-projections'
 // Report aggregates consume atomic dimension partitions internally, never traces.
 import { descendants, dimensionAccess, dimensionStructure, validateDimensions, type DimensionStructure } from './dimensions'
 import { dimensionalCells } from './dimensions-report'
+import { model } from './model'
 import { workingCalculation } from './calculation'
 import type { Context } from './context'
 import { frozenModel } from './reforecasts'
@@ -19,7 +20,9 @@ export async function reportDimensionSource(c: Context, id: string) {
  const frozen = scenario.status === 'frozen' ? await frozenModel(c, scenario) : null
  const calculation = frozen?.calculation ?? await workingCalculation(c, id)
  const structure: DimensionStructure = frozen?.dimensionStructure ?? dimensionStructure(c.s)
- return { structure, cells: dimensionalCells(calculation.cells).filter(cell => (!scopedReader(c.x) || seesDepartmentDetail(c.x, cell.department)) && dimensionAccess(c.s, c.x, cell.dimensions, cell.department)) }
+ const inputs=frozen?.inputs ?? model(c.s,id).inputs
+ const stageCells=(inputs.revenue??[]).filter(r=>r.pipeline&&(!scopedReader(c.x)||seesDepartmentDetail(c.x,r.department))&&dimensionAccess(c.s,c.x,r.dimensions??{},r.department)).map(r=>({month:r.start,line:r.line,department:r.department,dimensions:r.dimensions??{},amount:r.contractValueCents,stage:`${r.pipeline.provider}:${r.pipeline.stage}`,stageName:`${r.pipeline.provider} · ${r.pipeline.stageName}`}))
+ return { structure, stageCells, cells: dimensionalCells(calculation.cells).filter(cell => (!scopedReader(c.x) || seesDepartmentDetail(c.x, cell.department)) && dimensionAccess(c.s, c.x, cell.dimensions, cell.department)) }
 }
 
 export function reportDimensionRows(definition: Data, structure: DimensionStructure, lines: Data[]) {
@@ -40,6 +43,7 @@ export function reportDimensionMatch(c: Context, definition: Data, structure: Di
   requireThat(structure['dimension-member'].some(m => m.id === member && m.dimension === dimension), 'A filter member is absent from this source version', 409)
   if (!descendants(structure['dimension-member'], member as string).has(cell.dimensions?.[dimension] ?? '')) return false
  }
+ if (definition.row === 'stage') return cell.stage===row
  if (definition.row === 'dimension') return row ? descendants(structure['dimension-member'], row).has(cell.dimensions?.[definition.dimension] ?? '') : !cell.dimensions?.[definition.dimension]
  if (definition.row === 'hierarchy') return row.startsWith('group:') ? structure.line.some(l => l.id === cell.line && descendants(structure['line-group'], row.slice(6)).has(l.group)) : row === cell.line
  return definition.row === 'line' ? cell.line === row : cell.department === row

@@ -4,13 +4,13 @@ import assert from 'node:assert/strict'
 export const hubspotGrant={clientId:'synthetic-hubspot-client',clientSecret:'synthetic-hubspot-secret',refreshToken:'synthetic-hubspot-refresh',consent:true,readOnly:true,currency:'USD'}
 export const salesforceGrant={clientId:'synthetic-salesforce-client',clientSecret:'synthetic-salesforce-secret',refreshToken:'synthetic-salesforce-refresh',instance:'https://synthetic.my.salesforce.com',termField:'Subscription_Term__c',consent:true,readOnly:true,currency:'USD'}
 export function pipelineProvider(){
- const state={moved:false,fail:false,changed:false,restated:false,malformed:false,revocation:200,calls:[],learning:false,outcomes:false}
+ const state={moved:false,fail:false,changed:false,restated:false,malformed:false,revocation:200,calls:[],learning:false,outcomes:false,proposal:false,missingName:false,malformedProduct:false,revocationFailure:false}
  const stages=[{id:'qualified',label:'Qualified',metadata:{probability:'0.2',isClosed:'false'}},{id:'proposal',label:'Proposal',metadata:{probability:'0.6',isClosed:'false'}},{id:'won',label:'Won',metadata:{probability:'1',isClosed:'true'}}]
  const hubspotDeals=()=>[
-  {id:'deal-a',properties:{dealname:'Acme qualified',dealstage:'qualified',amount:state.changed?'1001':'1000',closedate:state.moved?'2026-07-01':'2026-04-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
+  {id:'deal-a',properties:{dealname:state.missingName?undefined:'Acme qualified',dealstage:'qualified',amount:state.changed?'1001':'1000',closedate:state.moved?'2026-07-01':'2026-04-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
   {id:'deal-b',properties:{dealname:'Beta proposal',dealstage:'proposal',amount:state.restated?'2500':'2400',closedate:'2026-04-15',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
   {id:'deal-c',properties:{dealname:'Gamma signed',dealstage:'won',amount:'1000',closedate:'2026-05-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
-  ...(state.learning?Array.from({length:3},(_,i)=>({id:`learning-${i}`,properties:{dealname:`Reviewed learning deal ${i}`,dealstage:state.outcomes?'won':'qualified',amount:'1000',closedate:'2026-03-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}})):[]),
+  ...(state.learning?Array.from({length:3},(_,i)=>({id:`learning-${i}`,properties:{dealname:`Reviewed learning deal ${i}`,dealstage:state.outcomes?'won':state.proposal?'proposal':'qualified',amount:'1000',closedate:'2026-03-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}})):[]),
  ]
  const periods=Array.from({length:24},(_,i)=>{
   const start=new Date(Date.UTC(2025,11+i,25)),end=new Date(Date.UTC(2026,i,24))
@@ -22,6 +22,7 @@ export function pipelineProvider(){
    assert.equal(request.method,'POST');const body=new URLSearchParams(await request.text());assert.ok(['refresh_token','authorization_code'].includes(body.get('grant_type')))
    return Response.json({access_token:'synthetic-crm-access',refresh_token:body.get('refresh_token')??'synthetic-crm-refresh',expires_in:3600})
   }
+  if(u.pathname.includes('/oauth/v1/refresh-tokens/')){assert.equal(request.method,'DELETE');if(state.revocationFailure)throw new Error('synthetic outage');return new Response(null,{status:state.revocation})}
   if(u.pathname.endsWith('/revoke'))return new Response('',{status:state.revocation})
   assert.equal(request.method,'GET');assert.match(request.headers.get('authorization'),/^Bearer /)
   if(state.fail)return new Response('Private provider diagnostic must never leave the edge',{status:429,headers:{'retry-after':'30'}})

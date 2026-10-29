@@ -6,11 +6,12 @@ import {pipelineProvider,pipelineFixture,pipelineInput,hubspotGrant,salesforceGr
 import {readWorkbook,proveFormulas} from './spreadsheet-proof.mjs'
 
 test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal commission, coverage work and private dashboards with native sealed custody',async t=>{
- const edge=pipelineProvider(),h=await harness({outbound:edge.outbound,now:()=> '2026-01-15T12:00:00.000Z',bindings:{ORBIT_ORIGIN:'https://orbit.example.test'}});t.after(()=>h.close())
+ let now='2026-01-15T12:00:00.000Z'
+ const edge=pipelineProvider(),h=await harness({outbound:edge.outbound,now:()=>now,bindings:{ORBIT_ORIGIN:'https://orbit.example.test'}});t.after(()=>h.close())
  const f=await pipelineFixture(h)
  const post=async(path,b,cookie=h.owner,status=200)=>{const r=await h.send('/api/easel/'+path,b,cookie);assert.equal(r.status,status,r.text);return r.value}
  const view=(cookie=h.owner)=>h.get(`/api/easel/scenario/${f.scenario}`,cookie)
- const source=async(provider='hubspot')=>post('pipeline/sources',{provider,scenario:f.scenario,revision:(await view()).scenario.revision})
+ const source=async(provider='hubspot')=>post('pipeline/sources',{provider,scenario:f.scenario,revision:(await h.get(`/api/easel/pipeline/${f.scenario}`)).revision})
  const accept=async body=>{const p=await post('pipeline/preview',body);await post('pipeline/stage',body);await post('pipeline/accept',{...body,digest:p.digest,reason:'Reviewed source, mappings and dated weighted bookings'});return p}
  const sales=await h.person('sales@example.test','contributor',[f.department.id],false),other=await h.person('other@example.test','contributor',[f.other.id]),board=await h.person('board@example.test','viewer'),finance=await h.person('finance@example.test','finance',[],false)
  for(const cookie of[sales,other,board])await post('connections/pipeline/hubspot/connect',hubspotGrant,cookie,403)
@@ -36,8 +37,31 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  assert.match(cell(current,f.salary.id,'2026-05').sources[0].trace,/Period quota.*attainment.*marginal tiers/)
  assert.equal(current.calculation.cash.find(r=>r.month==='2026-05').collections,196000)
  await post('pipeline/preview',{...body,revision:current.scenario.revision,owners:body.owners.map(o=>({...o,position:''}))},finance,403)
+ const reviewingFinance=await h.person('reviewer@example.test','finance')
+ const privateReport=await h.command('dashboard-save',{name:'Private source-impact sentinel',scenario:f.scenario,audience:'private',widgets:[{metric:'revenue',display:'table'}]})
+ const beforeUndo=await h.get(`/api/easel/pipeline/${f.scenario}`)
+ const jobsBefore=(await h.db.prepare("SELECT id FROM ik_jobs WHERE namespace='easel-crm-pipeline'").all()).results.length
+ edge.changed=true
+ await accept(pipelineInput(f,await source(),(await view()).scenario.revision))
+ let journalView=await h.get(`/api/easel/pipeline/${f.scenario}`),latestImport=journalView.imports.at(-1)
+ // Use the highest accepted plan revision; import IDs need no ordering.
+ latestImport=(await h.db.prepare("SELECT id FROM e_records WHERE kind='pipeline-import' ORDER BY json_extract(value,'$.acceptedRevision') DESC LIMIT 1").first()).id
+ await post('pipeline/undo',{id:latestImport,revision:journalView.revision},finance,403)
+ await post('pipeline/undo',{id:latestImport,revision:journalView.revision-1},h.owner,409)
+ const undone=await post('pipeline/undo',{id:latestImport,revision:journalView.revision})
+ assert.equal(undone.job.state,'undone')
+ assert.deepEqual((await h.get(`/api/easel/pipeline/${f.scenario}`)).deals,beforeUndo.deals,'journal undo restores every accepted pipeline value exactly')
+ await h.get(`/api/easel/scenario/${f.scenario}`,h.owner,409)
+ edge.changed=false
+ await accept(pipelineInput(f,await source(),(await h.get(`/api/easel/pipeline/${f.scenario}`)).revision))
+ current=await view()
+ assert.ok((await h.db.prepare("SELECT id FROM ik_jobs WHERE namespace='easel-crm-pipeline'").all()).results.length>jobsBefore)
  const revision=current.scenario.revision
  await accept({...body,revision});assert.equal((await view()).scenario.revision,revision,'identical refresh never revises source arithmetic')
+ const storedReview=await h.get(`/api/easel/pipeline/${f.scenario}`,reviewingFinance)
+ assert.doesNotMatch(JSON.stringify(storedReview),/Private source-impact sentinel/)
+ assert.ok(!JSON.stringify(storedReview).includes(privateReport.id))
+ await h.get(`/api/easel/dashboards/${privateReport.id}`,reviewingFinance,404)
  await h.command('revenue',{...current.inputs.revenue[0],scenario:f.scenario},h.owner,409)
  const approval=await h.command('approve-budget',{scenario:f.scenario,revision}),frozen=await view()
  f.scenario=approval.forecast.id
@@ -55,15 +79,42 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  assert.doesNotMatch(JSON.stringify(dash),/deal-a|Private CRM commission sentinel|commissionPosition/)
  await h.command('dashboard-layout',{dashboard:dashboard.id,revision:0,definitionRevision:dashboard.revision,widgets:[{metric:'revenue',display:'table'},{metric:'pipelineCoverage',display:'tile'}]},board)
  assert.equal((await h.get(`/api/easel/dashboards/${dashboard.id}`,board)).widgets[0].metric,'revenue')
+ const stageReport=await h.command('report-save',{name:'Board pipeline stages',scenario:f.scenario,audience:'board',report:{row:'stage',period:'month',through:'2026-12',lines:[f.revenue.id]}})
+ const stageView=await h.get(`/api/easel/dashboards/${stageReport.id}/report`,board)
+ assert.equal(stageView.metric,'pipelineBookings')
+ assert.equal(stageView.monthly.find(r=>r.row==='hubspot:qualified'&&r.month==='2026-04').budget,50000)
+ assert.equal(stageView.monthly.find(r=>r.row==='hubspot:proposal'&&r.month==='2026-05').budget,96000)
+ assert.ok(stageView.monthly.every(r=>r.actual===null),'unclassified GL actuals never become invented stage totals')
+ await h.stepUp(board)
+ const biToken=await post('tokens/issue',{label:'Pipeline BI reader',kind:'service',scope:'read'},board)
+ const feed=async format=>h.mf.dispatchFetch(`${h.origin}/api/easel/dataset/${stageReport.id}?format=${format}`,{headers:{authorization:`Bearer ${biToken.token}`}})
+ const stageDataset=await (await feed('json')).json()
+ assert.equal(stageDataset.rows.find(r=>r.row_id==='hubspot:qualified'&&r.month==='2026-04'&&r.series===stageView.sourceName).amount_minor,50000)
+ assert.doesNotMatch(JSON.stringify(stageDataset),/deal-a|commission|Private CRM/)
+ assert.match(await (await feed('csv')).text(),/hubspot:qualified/)
+ const stageBook=await readWorkbook(await (await feed('xlsx')).arrayBuffer());proveFormulas(stageBook)
+ await h.get(`/api/easel/dataset/${stageReport.id}?format=json`,other,404)
  const sheet=await h.mf.dispatchFetch(`${h.origin}/api/easel/dashboards/${dashboard.id}/document.xlsx`,{headers:{cookie:board}})
  assert.equal(sheet.status,200);const workbook=await readWorkbook(await sheet.arrayBuffer());proveFormulas(workbook);assert.doesNotMatch(JSON.stringify(workbook.worksheets.map(s=>s.getSheetValues())),/deal-a|Private CRM/)
  let fw=await view();src=await source();body=pipelineInput(f,src,fw.scenario.revision)
  await accept(body);assert.equal((await h.get('/api/easel/metric-tasks')).tasks.length,1,'unchanged refresh does not duplicate an open task')
+ const alternative=await h.command('branch',{from:f.scenario,name:'Independent pipeline alternative'})
+ // A sub-cent ratio breach must not disappear when display rounds to 100%.
+ let exactBody=pipelineInput(f,await source(),(await view()).scenario.revision);exactBody.coverageTarget='1460.01';await accept(exactBody)
+ const exactRule=await h.command('metric-rule-save',{name:'Exact coverage boundary',kind:'pipeline-coverage',department:f.department.id,owner:'sales@example.test',dueDays:3,enabled:true,coveragePercent:'100'})
+ const exactTask=(await h.get('/api/easel/metric-tasks')).tasks.find(t=>t.rule===exactRule.id)
+ assert.equal(exactTask.evidence.weightedCents,146000);assert.equal(exactTask.evidence.targetCents,146001);assert.equal(exactTask.evidence.coverageBps,10000)
+ await h.command('metric-rule-save',{...exactRule,enabled:false,coveragePercent:'100'})
  edge.moved=true;src=await source();body=pipelineInput(f,src,(await view()).scenario.revision)
  await post('pipeline/observe',{provider:'hubspot',scenario:f.scenario,revision:body.revision})
  await h.get(`/api/easel/scenario/${f.scenario}`,h.owner,409)
  const moved=await post('pipeline/preview',body);assert.equal(moved.bookings.find(r=>r.deal==='deal-a').month,'2026-07')
- await accept(body);fw=await view();assert.equal(cell(fw,f.revenue.id,'2026-04').amount,0);assert.equal(cell(fw,f.revenue.id,'2026-07').amount,50000)
+ await accept(body)
+ await h.get(`/api/easel/scenario/${alternative.id}`,h.owner,409)
+ const alternativeSource=await post('pipeline/sources',{provider:'hubspot',scenario:alternative.id,revision:alternative.revision})
+ await accept({...pipelineInput(f,alternativeSource,alternative.revision),scenario:alternative.id})
+ await h.get(`/api/easel/scenario/${alternative.id}`)
+ fw=await view();assert.equal(cell(fw,f.revenue.id,'2026-04').amount,0);assert.equal(cell(fw,f.revenue.id,'2026-07').amount,50000)
  assert.deepEqual(await h.get(`/api/easel/scenario/${approval.budget?.id??frozen.scenario.id}`),frozen)
  for(const sn of frozenSnapshots)assert.deepEqual(await h.get(`/api/easel/snapshot/${sn.id}`),sn)
  for(const cookie of[board,other,finance,sales])assert.doesNotMatch(JSON.stringify(await view(cookie)),/Private CRM commission sentinel|commissionPosition|commissionRateBps|Commission planning estimate: contract/)
@@ -73,7 +124,10 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  await h.get(callback,finance,403)
  const completed=await h.send(callback,undefined,h.owner);assert.equal(completed.status,303)
  await h.get(callback,h.owner,409)
- const sf=await source('salesforce'),sfBody=pipelineInput(f,sf,(await view()).scenario.revision,'salesforce')
+ const sf=await source('salesforce')
+ const suggested=sf.mappingSuggestions.find(p=>p.product==='subscription')
+ assert.equal(suggested.line,f.subscription.id);assert.match(suggested.reason,/normalized name/);assert.equal(suggested.requiresFinanceApproval,true)
+ const sfBody=pipelineInput(f,sf,(await view()).scenario.revision,'salesforce')
  const sfPreview=await accept(sfBody)
  assert.deepEqual(sfPreview.bookings.map(b=>[b.product,b.month,b.amountCents]),[['setup','2026-06',4000],['subscription','2026-06',48000]])
  fw=await view();assert.equal(cell(fw,f.subscription.id,'2026-06').amount,4000)
@@ -91,6 +145,12 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  }
  const archive=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}}),zip=await JSZip.loadAsync(await archive.arrayBuffer())
  for(const file of Object.values(zip.files).filter(f=>!f.dir)){const text=await file.async('string');for(const secret of[hubspotGrant.refreshToken,hubspotGrant.clientSecret,salesforceGrant.clientSecret,'synthetic-crm-refresh','synthetic-crm-access',sealed.sealed])assert.ok(!text.includes(secret),'Portable export excludes CRM custody')}
+ edge.missingName=true
+ await post('pipeline/sources',{provider:'hubspot',scenario:f.scenario,revision:fw.scenario.revision},h.owner,502)
+ assert.match((await h.get('/api/easel/connections/pipeline/hubspot')).error,/invalid source schema/)
+ await h.get(`/api/easel/scenario/${f.scenario}`,h.owner,409)
+ edge.missingName=false
+ await accept(pipelineInput(f,await source(),fw.scenario.revision))
  edge.fail=true
  await post('pipeline/sources',{provider:'hubspot',scenario:f.scenario,revision:fw.scenario.revision},h.owner,502)
  const health=await h.get('/api/easel/connections/pipeline/hubspot');assert.equal(health.rateLimit,'Retry after 30 seconds');assert.doesNotMatch(JSON.stringify(health),/Private provider diagnostic/)
@@ -153,9 +213,17 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
   await h.command('close-month',{scenario:f.scenario,month})
  }
  await close('2026-01')
+ now='2026-07-15T12:00:00.000Z'
+ const datedRule=await h.command('metric-rule-save',{name:'Current fiscal planning quarter',kind:'pipeline-coverage',department:f.department.id,owner:'sales@example.test',dueDays:3,enabled:true,coveragePercent:'300'})
+ assert.equal((await h.get('/api/easel/metric-tasks')).tasks.find(t=>t.rule===datedRule.id).evidence.from,'2026-10')
+ await h.command('metric-rule-save',{...datedRule,enabled:false,coveragePercent:'300'})
+ now='2026-01-15T12:00:00.000Z'
+ edge.proposal=true;await accept(pipelineInput(f,await source(),(await view()).scenario.revision))
  edge.outcomes=true;await accept(pipelineInput(f,await source(),(await view()).scenario.revision))
  for(const month of['2026-02','2026-03','2026-04','2026-05','2026-06'])await close(month)
  const learned=await h.get(`/api/easel/forecast-learning/${f.scenario}`),stage=learned.measures.find(m=>m.key.startsWith('stage-probability:hubspot:qualified'))
+ const proposalStage=learned.measures.find(m=>m.key.startsWith('stage-probability:hubspot:proposal'))
+ assert.equal(proposalStage.samples,3)
  assert.equal(stage.samples,3);assert.equal(stage.unit,'basis points');assert.equal(stage.meanDays,5000);assert.equal(stage.backtest.keptForecasts,6);assert.equal(stage.suggestion.eligible,true)
  const beforeLearning=await view(),learning=await h.command('learning-propose',{scenario:f.scenario,measure:stage.key,evidence:stage.evidenceSha})
  assert.deepEqual(await view(),beforeLearning)
@@ -178,6 +246,8 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  await post('pipeline/stage',closedBody)
  await post('pipeline/accept',{...closedBody,digest:closedPreview.digest,reason:'Review required'},h.owner,409)
  await post('pipeline/accept',{...closedBody,digest:closedPreview.digest,reason:'Reviewed corrected CRM booking and its future planning effects',reviewedClosedChanges:true})
+ const lastJournal=(await h.db.prepare("SELECT id FROM e_records WHERE kind='pipeline-import' AND json_extract(value,'$.scenario')=? ORDER BY json_extract(value,'$.acceptedRevision') DESC LIMIT 1").bind(f.scenario).first()).id
+ await post('pipeline/undo',{id:lastJournal,revision:(await view()).scenario.revision},h.owner,409)
  const corrected=await view()
  assert.equal(cell(corrected,f.revenue.id,'2026-05').amount,cell(beforeCorrection,f.revenue.id,'2026-05').amount)
  assert.ok(corrected.calculation.contracts.actualsIssues.some(r=>r.month==='2026-05'),'CRM/ledger recognition differences remain visible')
@@ -188,6 +258,14 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  await post('connections/pipeline/orbit/connect',{key:'synthetic-orbit-key',currency:'USD',consent:true,readOnly:true})
  await post('pipeline/sources',{provider:'orbit',scenario:f.scenario,revision:(await view()).scenario.revision},h.owner,502)
  assert.match((await h.get('/api/easel/connections/pipeline/orbit')).error,/does not expose close date, owner and product/)
+ for(const [status,failure,expected] of [[204,false,'confirmed'],[403,false,'unconfirmed'],[302,false,'unconfirmed'],[200,true,'unconfirmed']]){
+  edge.revocation=status;edge.revocationFailure=failure
+  const revoked=await post('connections/pipeline/hubspot/disconnect',{})
+  assert.equal(revoked.providerRevocation.status,expected);assert.equal(revoked.providerRevocation.httpStatus,failure?500:status)
+  assert.equal(await h.db.prepare("SELECT id FROM e_connection_secrets WHERE id='pipeline-hubspot'").first(),null)
+  assert.ok(edge.calls.some(c=>c.method==='DELETE'&&c.url.endsWith('/oauth/v1/refresh-tokens/'+hubspotGrant.refreshToken)))
+  edge.revocationFailure=false;await post('connections/pipeline/hubspot/connect',hubspotGrant)
+ }
  edge.revocation=503
  await post('connections/pipeline/salesforce/disconnect',{})
  const disconnected=await h.get('/api/easel/connections/pipeline/salesforce');assert.equal(disconnected.providerRevocation.status,'unconfirmed');assert.equal(disconnected.providerRevocation.httpStatus,503)
