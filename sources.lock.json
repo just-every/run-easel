@@ -127,7 +127,7 @@
       "executable": false
     },
     "agent-surface.json": {
-      "sha256": "0634c49d82c8bbc56a4a6b35a1062e686533cf1fafe18040542bd200734d13e0",
+      "sha256": "5725ec487e4d482016fe1db9dcd5541094462fd0d84302ad084a06a4fc8e5f12",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -963,7 +963,7 @@
       "executable": false
     },
     "src/agent-door/catalogue.ts": {
-      "sha256": "b6a8cc87fd5e5d5c2ea665edc705ff284ce3d4fc4b793b2d86342f59af05f2af",
+      "sha256": "0aa2c510e31c38d3118e5291876ab382296b9ccaf2ec24979cfd1b45393946c3",
       "executable": false
     },
     "src/agent-door/credentials.ts": {
