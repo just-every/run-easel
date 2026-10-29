@@ -178,11 +178,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   return get(s, 'scenario', id)
  }
  if (op === 'proposal-submit') {
-  requireMember(x)
-  requireThat(x.role === 'finance' || x.role === 'contributor', 'Only finance and contributors submit proposals', 403)
-  const p = proposal(s, b.id, x)
-  requireThat(p.createdBy === x.actor.email || x.role === 'finance', 'Only the proposer submits a proposal', 403)
-  requireProposalScope(s, x, p)
+  const p = requireProposalSubmission(c, b.id)
   requireThat(p.proposalStatus === 'draft', 'This proposal was already submitted', 409)
   put(s, 'scenario', p.id, { ...p, proposalStatus: 'submitted', submittedRevision: p.revision, submittedAt: c.now, summary: optionalText(b.summary, 'Summary', 4000) })
   c.activity.push({ action: op, record: p.id, scenario: p.id, before: p.revision, after: p.revision, detail: {} })
@@ -258,6 +254,17 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
 /** A calculation the forecast cannot produce leaves the promotion's effect unavailable rather than guessed. */
 async function effectCalculation(c: Context, scenario: string) {
  try { return await workingCalculation(c, scenario) } catch (error) { if (error instanceof Fault) return null; throw error }
+}
+
+/** Admission shared by a fresh submission and its current-authority receipt. */
+export function requireProposalSubmission(c: Context, id: unknown) {
+ const { s, x } = c
+ requireMember(x)
+ requireThat(x.role === 'finance' || x.role === 'contributor', 'Only finance and contributors submit proposals', 403)
+ const p = proposal(s, id, x)
+ requireThat(p.createdBy === x.actor.email || x.role === 'finance', 'Only the proposer submits a proposal', 403)
+ requireProposalScope(s, x, p)
+ return p
 }
 
 function proposal(s: State, id: unknown, x: import('./types').Access) {

@@ -63,7 +63,11 @@ It changes planning assumptions; it does not approve a budget or close a month.
 Approved deletion retries use the original native before-image, bound to the same
 agent, native sponsor and idempotency key. Current proposal, department, dimension
 and Pay detail checks run again before the retained receipt can be returned.
-A new key cannot use a deleted record's receipt.
+A new key cannot use a deleted record's receipt. Submitted-proposal retries
+likewise require the original agent, sponsor and key, and recheck today's native
+submission grants before returning the receipt. They cannot submit again.
+Scenario and metrics reads may return a native calculation-job handle; inspect
+it with `easel.calculations.status`, without resubmitting the original work.
 
 Business bindings, signed policy, pending approvals and shared-door receipts stay
 with their installation and are excluded from portable planning archives. Restore

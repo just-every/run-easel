@@ -8,6 +8,7 @@ import { versionStructure } from '../easel/structure-versions'
 import { erasedView } from '../easel/erasure'
 import { Fault, find, type Actor, type Data } from '../easel/types'
 import type { Context } from '../easel/context'
+import { submissionReplay } from './submission.ts'
 import { invokeNative } from '../easel/agent-actions'
 
 export async function nativeContext(ctx: ToolContext | ResourceContext): Promise<Context & { before: Context['s']; revision: number }> {
@@ -41,6 +42,10 @@ export async function nativeAction(name: string, args: Data, ctx: ToolContext, p
  const c = await nativeContext(ctx)
  try {
   if (expected && (c.revision !== expected.revision || c.x.actor.id !== expected.person || c.x.actor.version !== expected.version || c.x.actor.baseRole !== expected.role)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
+  if (!persist && name === 'proposal-submit') {
+   const retained = await submissionReplay(c, args, ctx)
+   if (retained) return { c, result: retained }
+  }
   let proposed = args
   if (!persist && args.revision !== undefined && ctx.idempotencyKey) {
    // A completed effect advances its own native revision. Re-admit its receipt

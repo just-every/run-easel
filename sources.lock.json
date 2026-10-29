@@ -215,7 +215,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "ce785df1dd504b3f995ddc6af386baa3efbf46adb6a9b0221bd1b8ccfacd5a60",
+      "sha256": "3f18a6d04b7fbe1e68770dbaa8b24d6f83bb523b976e7cb2d860fb867096af89",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -975,7 +975,7 @@
       "executable": false
     },
     "src/agent-door/native.ts": {
-      "sha256": "58ede68b9f14319937decb0a5ae554f65da5d9b53b2b8e7462ec0c9630f626bc",
+      "sha256": "f7d481ba3282c08ad48063592af9e42282c413789286bf53c68a0959fe88e06e",
       "executable": false
     },
     "src/agent-door/people.ts": {
@@ -983,7 +983,11 @@
       "executable": false
     },
     "src/agent-door/schemas.ts": {
-      "sha256": "4865d1c1f225f8d4778328a00559f118f9d451ecdc722a221da82be58b23c148",
+      "sha256": "7c2ca82b205b2768039a51ee55bf8bbbc1412b34d8d1968d331cfe62c5b71514",
+      "executable": false
+    },
+    "src/agent-door/submission.ts": {
+      "sha256": "234194d72f8db6d2ed60612f1ee82d5574ddbb7f0ccdb8d6f388455bc6defe3f",
       "executable": false
     },
     "src/agent-door/targets.ts": {
@@ -1339,7 +1343,7 @@
       "executable": false
     },
     "src/easel/calculation-jobs.ts": {
-      "sha256": "37af01900d37f8ae6294ae587d1a7377a1a911ee8d9138cb89da4b8aee65ec11",
+      "sha256": "d5b046c351892d4f270e0186a8db5ef0c09ee91ad4f28b59d2a28de4e07d82b3",
       "executable": false
     },
     "src/easel/calculation-status.ts": {
@@ -2119,7 +2123,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "7156312495dc85694a167eb5ec03a6fb1573efb087deb3776578c66721059844",
+      "sha256": "2b2cc5abdf81d020b56a03595275f01978e20c56f67ddf70ee135b569b97fec5",
       "executable": false
     },
     "src/easel/qbo-connection.ts": {
@@ -5139,7 +5143,7 @@
       "executable": false
     },
     "tests/agent-replay-journey.mjs": {
-      "sha256": "7bdb1f5132449ba0b151614a7393c4a493fb9bc424f839648c6f7a8b08900769",
+      "sha256": "b0bfce99b25e181c382c6984f91a9234aaf7e5bf40774deac9b60cf3d99acd78",
       "executable": false
     },
     "tests/api-tokens.test.mjs": {

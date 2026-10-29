@@ -9,6 +9,7 @@ const job = { type: 'object', required: ['id','scenarios','status','startedAt'],
  id: string, scenarios: { type: 'array', items: string }, status: { type: 'string', enum: ['running','completed','failed','interrupted'] },
  startedAt: string, completedAt: string, error: string,
 }, additionalProperties: false }
+const pending = { type: 'object', required: ['calculationJob'], properties: { calculationJob: job }, additionalProperties: false }
 const inputs = new Set(['revenue','position','expense','schedule','formula','asset-category','asset','allocation','debt','tax-policy','equity'])
 
 /** Public native response shapes, independent of tool input or imported narratives. */
@@ -19,12 +20,12 @@ export function outputSchema(name: string): JsonSchema {
   scenarios: { type: 'array', items: scenario }, lines: records, departments: records, workspace: object,
   references: { type: 'object', properties: { forecast: string, lines: object, departments: object } },
  } }
- if (name === 'scenario') return { type: 'object', required: ['scenario','inputs','calculation'], properties: { scenario, inputs: object, calculation: object } }
+ if (name === 'scenario') return { oneOf: [pending, { type: 'object', required: ['scenario','inputs','calculation'], properties: { scenario, inputs: object, calculation: object } }] }
  if (name === 'compare') return { type: 'object', required: ['changedCells'], properties: { changedCells: records } }
  if (name === 'variance') return { type: 'object', required: ['month','rows'], properties: { month: string, rows: records } }
- if (name === 'metrics') return { type: 'object', required: ['currency','months','profit','cash','headcount'], properties: {
+ if (name === 'metrics') return { oneOf: [pending, { type: 'object', required: ['currency','months','profit','cash','headcount'], properties: {
   currency: string, months: { type: 'array', items: string }, profit: records, cash: records, headcount: { type: ['array','object'] },
- } }
+ } }] }
  if (name === 'calculation_status') return { oneOf: [
   { type: 'object', required: ['jobs'], properties: { jobs: { type: 'array', items: { type: 'object', required: ['calculationJob'], properties: { calculationJob: job, responseStatus: { type: 'integer' } }, additionalProperties: false } } }, additionalProperties: false },
   { type: 'object', required: ['calculationJob'], properties: { calculationJob: job, responseStatus: { type: 'integer' } }, additionalProperties: false },

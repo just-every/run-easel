@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 
 // Native submission consumes the draft precondition. Its retained receipt must
 // still pass current authority, policy and idempotency admission on retry.
-export async function afterStep({ step, args, result, tool, request, origin }) {
+export async function afterStep({ step, args, result, tool, request, origin, cookie }) {
  if (step.tool !== 'easel.proposals.submit') return
  const read = async () => {
-  const response = await request(new URL(`/api/easel/scenario/${result.id}`, origin).href)
+  const response = await request(new URL(`/api/easel/scenario/${result.id}`, origin).href, { headers: { cookie, origin } })
   assert.equal(response.status, 200)
   return response.json()
  }
