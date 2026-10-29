@@ -162,6 +162,26 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  const learnedInput=(await h.get(`/api/easel/scenario/${learning.id}`)).inputs.revenue.find(r=>r.pipeline?.deal==='deal-a');assert.equal(learnedInput.pipeline.probabilityBps,10000)
  const learningSubmitted=await h.command('proposal-submit',{id:learning.id});await h.command('proposal-promote',{id:learning.id,revision:learningSubmitted.revision})
  assert.equal((await view()).inputs.revenue.find(r=>r.pipeline?.deal==='deal-a').pipeline.probabilityBps,10000)
+ // Refreshing freshness alone is not a financial revision. A correction to a
+ // closed booking needs explicit finance consent and never rewrites actuals.
+ let stable=pipelineInput(f,await source(),(await view()).scenario.revision)
+ stable.stages.find(s=>s.stage==='qualified').probability='100'
+ await accept(stable)
+ const beforeHealth=await view()
+ stable={...stable,revision:beforeHealth.scenario.revision,nextExpectedAt:'2027-01-31T12:00:00.000Z'}
+ const healthOnly=await accept(stable)
+ assert.equal(healthOnly.changes.length,0);assert.equal((await view()).scenario.revision,beforeHealth.scenario.revision)
+ edge.restated=true
+ const closedBody={...stable,revision:(await view()).scenario.revision},closedPreview=await post('pipeline/preview',closedBody)
+ assert.ok(closedPreview.closedChangeOrigins.some(id=>id.includes('deal-b')))
+ const beforeCorrection=await view()
+ await post('pipeline/stage',closedBody)
+ await post('pipeline/accept',{...closedBody,digest:closedPreview.digest,reason:'Review required'},h.owner,409)
+ await post('pipeline/accept',{...closedBody,digest:closedPreview.digest,reason:'Reviewed corrected CRM booking and its future planning effects',reviewedClosedChanges:true})
+ const corrected=await view()
+ assert.equal(cell(corrected,f.revenue.id,'2026-05').amount,cell(beforeCorrection,f.revenue.id,'2026-05').amount)
+ assert.ok(corrected.calculation.contracts.actualsIssues.some(r=>r.month==='2026-05'),'CRM/ledger recognition differences remain visible')
+ for(const sn of frozenSnapshots)assert.deepEqual(await h.get(`/api/easel/snapshot/${sn.id}`),sn)
  await h.stepUp();const token=await post('tokens/issue',{label:'CRM native fence proof',kind:'personal',scope:'write'})
  const refused=await h.mf.dispatchFetch(`${h.origin}/api/easel/connections/pipeline/hubspot/disconnect`,{method:'POST',headers:{authorization:`Bearer ${token.token}`,origin:h.origin,'content-type':'application/json'},body:'{}'})
  assert.equal(refused.status,403,'a write token never administers provider custody')
