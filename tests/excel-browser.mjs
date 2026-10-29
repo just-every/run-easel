@@ -16,7 +16,7 @@ try {
   if (new URL(request.url).hostname === 'api.resend.com') { messages.push(await request.json()); return Response.json({ id: 'synthetic-easel-2' }) }
   return new Response('Unexpected provider', { status: 502 })
  } })
- browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--no-sandbox', '--use-mock-keychain', '--password-store=basic'] })
+ browser = await chromium.launch({ headless: true, ...(process.env.EASEL_CHROMIUM_PATH ? { executablePath: process.env.EASEL_CHROMIUM_PATH } : {}), args: ['--no-sandbox', '--use-mock-keychain', '--password-store=basic', '--ignore-certificate-errors', '--disable-gpu'] })
  const owner = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 } })
  assert.equal((await owner.request.post(`${server.origin}/auth/bootstrap`, { headers: { origin: server.origin }, data: { token: server.bootstrap, displayName: 'Finance' }, maxRedirects: 0 })).status(), 303)
  const cmd = (op, body) => api(owner, server.origin, `command/${op}`, body)
@@ -121,4 +121,8 @@ try {
  await expired.close()
  console.log('Production Excel host assets: workbook, selection, report ranges, simulated dependency and reopen, expired authority; native write-back at 1440 and 390')
  console.log('Excel write-back: contributor next-revision entry reads as 150.00 in native Plan; 1440 and 390 proof captured')
-} finally { await browser?.close(); await server?.close() }
+} finally {
+ try { await Promise.all((browser?.contexts() ?? []).map(context => context.close())) }
+ finally { try { await browser?.close() } finally { await server?.close() } }
+}
+console.log('Excel browser journey teardown complete')

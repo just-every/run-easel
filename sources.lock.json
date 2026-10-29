@@ -4951,7 +4951,7 @@
       "executable": false
     },
     "tests/excel-browser.mjs": {
-      "sha256": "1280ce72c75d3cb18f47af97ce980cf223860da637a908e6160335343b7bf780",
+      "sha256": "45dd21890b89929dd60b85bc7b6ea3bfbc92f7fb089288dfa58530b7d147950e",
       "executable": false
     },
     "tests/excel-host.mjs": {
@@ -5035,7 +5035,7 @@
       "executable": false
     },
     "tests/google-sheets-addon-browser.mjs": {
-      "sha256": "b9361c2203a5354c203e459542e26a04dcf29cc6aafb68cf9627530db12c6b7e",
+      "sha256": "a2cd3d866e608a5d28ebbf4228e5baaf3737073de572eb8cab16640a97bde7dd",
       "executable": false
     },
     "tests/google-sheets-addon.test.mjs": {
