@@ -6,6 +6,7 @@ import { commissionPosition } from './commissions'
 import { datePeriod } from './fiscal-calendar'
 import { requireEditable, scenarioInputs, workspace } from './model'
 import { month } from './months'
+import { visiblePipelineMetadata } from './pipeline-visibility'
 import { startPipelineImport } from './pipeline-journal'
 import { bump } from './plan'
 import { pipelineAuthority, pipelineId, pipelineKey } from './pipeline-connection'
@@ -43,7 +44,7 @@ export function pipelineBlock(c: Context, sc: Data, department?: string) {
   const acceptedDigest=sc.pipelineSources?.[provider]?.sourceDigest ?? review?.sourceDigest
   if(connection.latestSourceDigest && acceptedDigest!==connection.latestSourceDigest)return 'Pipeline source changed since this scenario was accepted; review this scenario before using dependent conclusions.'
   if(connection.pendingRaw)return 'Pipeline source changes await finance acceptance; dependent conclusions are unavailable.'
-  const expected=connection.nextExpectedAt ?? sc.pipelineSources?.[provider]?.nextExpectedAt ?? review?.nextExpectedAt
+  const expected=sc.pipelineSources?.[provider]?.nextExpectedAt ?? review?.nextExpectedAt ?? connection.nextExpectedAt
   if(expected && Date.parse(c.now)>Date.parse(expected))return 'Pipeline source stopped updating; refresh and review before using dependent conclusions.'
  }
  return null
@@ -51,7 +52,7 @@ export function pipelineBlock(c: Context, sc: Data, department?: string) {
 
 function assumptions(c: Context, b: Data, source: PipelineSource, scenario: Data, provider: string) {
  const w=workspace(c.s), positions=scenarioInputs(c.s,scenario.id,'position')
- requireThat(source.currency===w.currency && source.deals.every(d=>d.currency===w.currency),'CRM currency differs from the plan; no exchange rate is inferred',409)
+ if(source.currency!==w.currency||source.deals.some(d=>d.currency!==w.currency))throw new PipelineFailure('CRM currency differs from the plan; no exchange rate is inferred; accepted data is unchanged')
  for (const key of ['stages','products','owners','periods']) requireThat(Array.isArray(b[key]),`Review explicit ${key} mappings`)
  requireThat(new Set(source.deals.map(d=>d.id)).size===source.deals.length && new Set(source.stages.map(s=>s.id)).size===source.stages.length,'CRM source identifiers are ambiguous',409)
  const stages:Data[]=source.stages.map((s):Data=>{
@@ -102,7 +103,7 @@ function assumptions(c: Context, b: Data, source: PipelineSource, scenario: Data
   for(const part of parts) {
    const rule=products.find(p=>p.product===part.product)!
    let term=rule.termMonths
-   if(rule.termSource==='crm' && rule.rule!=='one-time') { const raw=String(part.term??''), match=raw.match(/^(?:P)?([1-9]\d{0,2})(?:M)?$/); requireThat(match && Number(match[1])<=120,'CRM line-item term is absent or unsupported',409); term=Number(match![1]) }
+   if(rule.termSource==='crm' && rule.rule!=='one-time') { const raw=String(part.term??''), match=raw.match(/^(?:P)?([1-9]\d{0,2})(?:M)?$/); if(!match||Number(match[1])>120)throw new PipelineFailure('CRM line-item term is absent or unsupported for its reviewed revenue rule; accepted data is unchanged'); term=Number(match![1]) }
    if(rule.rule==='one-time')term=1
    const originId=`crm:${provider}:${deal.id}:${part.id}`, weighted=mulDiv(part.amountCents,probability,10000)
    requireThat(Number.isSafeInteger(weighted),'Weighted booking exceeds exact range',409)
@@ -147,6 +148,7 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  pipelineAuthority(c)
  const provider=pipelineProvider(b.provider), sc=scenarioAccess(c.s,c.x,b.scenario), w=workspace(c.s)
  requireThat(sc.status!=='frozen' && sc.kind!=='proposal' && !sc.sandbox,'Pull CRM data into a working company budget or forecast',409)
+ requireThat(!all(c.s,'pipeline-import').some(i=>i.scenario===sc.id&&['importing','undoing'].includes(i.status)),'Finish the pending pipeline import before another pull',409)
  requireThat(sc.revision===b.revision,'The plan changed; review pipeline again',409)
  requireThat(['sources','observe','preview','stage','accept'].includes(op),'Unknown pipeline action',404)
  const source=await readPipeline(await pipelineKey(c,env,provider),()=>readFence(c.db,c.x.actor,(c as Context & {revision:number}).revision))
@@ -155,13 +157,13 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
   deal.products.sort((a:Data,b:Data)=>a.id.localeCompare(b.id))
  }
  source.deals.sort((a,b)=>a.id.localeCompare(b.id));source.stages.sort((a,b)=>a.id.localeCompare(b.id));source.periods.sort((a,b)=>a.start.localeCompare(b.start))
+ if(new TextEncoder().encode(JSON.stringify(source)).byteLength>750000)throw new PipelineFailure('CRM observation exceeds the atomic review limit; narrow the scoped source; accepted data is unchanged')
  if(op==='sources')return {...source,mappingSuggestions:mappingSuggestions(c,source,sc.id,provider)}
- requireThat(new TextEncoder().encode(JSON.stringify(source)).byteLength<=750000,'CRM observation is too large for one atomic review; narrow the scoped source',409)
  if(op==='observe'){
   const id=`${sc.id}:${provider}`, prior=find(c.s,'pipeline-review',id),sourceDigest=await digest(source)
   const connection=get(c.s,'connection',pipelineId(provider))
   put(c.s,'connection',connection.id,{...connection,latestSourceDigest:sourceDigest,pendingRaw:connection.sourceDigest!==sourceDigest})
-  put(c.s,'pipeline-observation',id,{scenario:sc.id,provider,sourceDigest,observedAt:c.now,observedBy:c.x.actor.email,status:prior?.sourceDigest===sourceDigest&&prior.status==='accepted'?'accepted':'pending',stages:source.stages,products:[...new Set(source.deals.flatMap(d=>d.products.map((p:Data)=>p.product)))],rows:source.deals.length,impacts:impacts(c,sc.id)})
+  put(c.s,'pipeline-observation',id,{scenario:sc.id,provider,sourceDigest,observedAt:c.now,observedBy:c.x.actor.email,status:prior?.sourceDigest===sourceDigest&&prior.status==='accepted'?'accepted':'pending',stages:source.stages,products:[...new Set(source.deals.flatMap(d=>d.products.map((p:Data)=>p.product)))],rows:source.deals.length})
   c.activity.push({action:'pipeline-observed',record:id,scenario:sc.id,detail:{provider,sourceDigest,rows:source.deals.length}})
   return {...source,mappingSuggestions:mappingSuggestions(c,source,sc.id,provider)}
  }
@@ -191,7 +193,7 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  const result={id,provider,scenario:sc.id,revision:sc.revision,digest:fingerprint,sourceDigest,assumptionDigest,currency:w.currency,source,assumptions:built.assumptions,changes,closedChangeOrigins,impacts:impacts(c,sc.id),nextExpectedAt,departments:[...new Set([...built.inputs,...previous].map(r=>r.department))],
   bookings:built.inputs.map(r=>({deal:r.pipeline.deal,product:r.pipeline.product,month:r.start,amountCents:r.contractValueCents,probabilityBps:r.pipeline.probabilityBps,trace:`${provider} deal ${r.pipeline.deal}: ${formatMoney(r.pipeline.sourceAmountCents,w.currency)} × ${formatBps(r.pipeline.probabilityBps)} (${r.pipeline.closed?'closed outcome':r.pipeline.mode==='override'?'finance override':'CRM probability'}); source close ${r.pipeline.sourceCloseDate} + ${r.pipeline.slippageDays} days = ${r.startDate}; ${r.pipeline.fiscalPeriod?`Salesforce fiscal period ${r.pipeline.fiscalPeriod.id} → `:''}${r.start}; assumption version ${assumptionDigest}`}))}
  if(op==='preview')return result
- const {source:_inventory,changes:_changes,bookings:_bookings,...metadata}=result
+ const {source:_inventory,changes:_changes,bookings:_bookings,impacts:_impacts,...metadata}=result
  if(op==='stage'){
   const connection=get(c.s,'connection',pipelineId(provider))
   put(c.s,'connection',connection.id,{...connection,latestSourceDigest:sourceDigest,pendingRaw:connection.sourceDigest!==sourceDigest})
@@ -249,6 +251,6 @@ export function pipelineView(c: Context, scenario: unknown) {
  const inputs=scenarioInputs(c.s,sc.id,'revenue').filter(r=>r.pipeline && visible(r))
  return {scenario:sc.id,revision:sc.revision,blocked:pipelineBlock(c,sc),deals:inputs.map(r=>({id:r.originId,name:r.name,month:r.start,weightedCents:r.contractValueCents,provider:r.pipeline.provider,deal:r.pipeline.deal,product:r.pipeline.product,stage:r.pipeline.stageName,closed:r.pipeline.closed,closeDate:r.startDate,probabilityBps:r.pipeline.probabilityBps,mode:r.pipeline.mode,assumptionVersion:r.pipeline.assumptionVersion})),
   positions:c.x.role==='finance'?scenarioInputs(c.s,sc.id,'position').filter(p=>seesPayDetail(c.x,p.department)).map(p=>({origin:p.originId,title:p.title,department:p.department})):[],
-  imports:c.x.role==='finance'&&c.x.payDetail?all(c.s,'pipeline-import').filter(i=>i.scenario===sc.id).map(i=>({id:i.id,provider:i.provider,status:i.status,createdAt:i.createdAt,revision:sc.revision})):[],
-  reviews:c.x.role==='finance' && c.x.payDetail?all(c.s,'pipeline-review').filter(r=>r.scenario===sc.id).map(r=>({...r,impacts:impacts(c,sc.id)})):[]}
+  imports:c.x.role==='finance'&&c.x.payDetail?all(c.s,'pipeline-import').filter(i=>i.scenario===sc.id).map(i=>({id:i.id,provider:i.provider,status:i.status,createdAt:i.createdAt,acceptedRevision:i.acceptedRevision,revision:sc.revision})):[],
+  reviews:c.x.role==='finance' && c.x.payDetail?all(c.s,'pipeline-review').filter(r=>r.scenario===sc.id).map(r=>visiblePipelineMetadata(c.s,c.x,{...r,impacts:r.impacts??impacts(c,sc.id)})):[]}
 }

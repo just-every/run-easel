@@ -79,9 +79,12 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  assert.doesNotMatch(JSON.stringify(dash),/deal-a|Private CRM commission sentinel|commissionPosition/)
  await h.command('dashboard-layout',{dashboard:dashboard.id,revision:0,definitionRevision:dashboard.revision,widgets:[{metric:'revenue',display:'table'},{metric:'pipelineCoverage',display:'tile'}]},board)
  assert.equal((await h.get(`/api/easel/dashboards/${dashboard.id}`,board)).widgets[0].metric,'revenue')
- const stageReport=await h.command('report-save',{name:'Board pipeline stages',scenario:f.scenario,audience:'board',report:{row:'stage',period:'month',through:'2026-12',lines:[f.revenue.id]}})
+ const stageBaseline=await h.command('reforecast-save',{from:f.scenario,revision:(await view()).scenario.revision,name:'Pipeline stage baseline'})
+ const stageReport=await h.command('report-save',{name:'Board pipeline stages',scenario:f.scenario,audience:'board',report:{row:'stage',period:'month',through:'2026-12',lines:[f.revenue.id],comparison:stageBaseline.id,comparisons:[stageBaseline.id]}})
  const stageView=await h.get(`/api/easel/dashboards/${stageReport.id}/report`,board)
  assert.equal(stageView.metric,'pipelineBookings')
+ assert.equal(stageView.monthly.find(r=>r.row==='hubspot:qualified'&&r.month==='2026-04').comparison,50000)
+ assert.ok(stageView.rows.every(r=>r.priorYearActual===null))
  assert.equal(stageView.monthly.find(r=>r.row==='hubspot:qualified'&&r.month==='2026-04').budget,50000)
  assert.equal(stageView.monthly.find(r=>r.row==='hubspot:proposal'&&r.month==='2026-05').budget,96000)
  assert.ok(stageView.monthly.every(r=>r.actual===null),'unclassified GL actuals never become invented stage totals')
@@ -129,6 +132,13 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
  assert.equal(suggested.line,f.subscription.id);assert.match(suggested.reason,/normalized name/);assert.equal(suggested.requiresFinanceApproval,true)
  const sfBody=pipelineInput(f,sf,(await view()).scenario.revision,'salesforce')
  const sfPreview=await accept(sfBody)
+ edge.malformedProduct=true
+ await post('pipeline/sources',{provider:'salesforce',scenario:f.scenario,revision:(await h.get(`/api/easel/pipeline/${f.scenario}`)).revision},h.owner,502)
+ assert.match((await h.get('/api/easel/connections/pipeline/salesforce')).error,/invalid source schema/)
+ await h.get(`/api/easel/scenario/${f.scenario}`,h.owner,409)
+ edge.malformedProduct=false
+ await accept(pipelineInput(f,await source('salesforce'),(await h.get(`/api/easel/pipeline/${f.scenario}`)).revision,'salesforce'))
+
  assert.deepEqual(sfPreview.bookings.map(b=>[b.product,b.month,b.amountCents]),[['setup','2026-06',4000],['subscription','2026-06',48000]])
  fw=await view();assert.equal(cell(fw,f.subscription.id,'2026-06').amount,4000)
  const recurring=fw.calculation.contracts.rows.filter(r=>r.originId.includes('sf-deal:item-sub')&&r.month>='2026-06'&&r.month<='2027-05')
@@ -143,6 +153,10 @@ test('REV-001 reviewed CRM pipeline reaches revenue, deferred cash, marginal com
   assert.equal(response.status,200);const book=await readWorkbook(await response.arrayBuffer());proveFormulas(book)
   if(cookie===board)assert.doesNotMatch(JSON.stringify(book.worksheets.map(s=>s.getSheetValues())),/Private CRM commission sentinel|commissionPosition|Commission planning estimate: contract/)
  }
+ const privateArchive=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:reviewingFinance}})
+ assert.equal(privateArchive.status,200)
+ const privateZip=await JSZip.loadAsync(await privateArchive.arrayBuffer())
+ for(const file of Object.values(privateZip.files).filter(f=>!f.dir)){const data=await file.async('string');assert.ok(!data.includes(privateReport.id),'historical review metadata does not expose private report IDs in exports');assert.ok(!data.includes('Private source-impact sentinel'))}
  const archive=await h.mf.dispatchFetch(h.origin+'/api/easel/export',{headers:{cookie:h.owner}}),zip=await JSZip.loadAsync(await archive.arrayBuffer())
  for(const file of Object.values(zip.files).filter(f=>!f.dir)){const text=await file.async('string');for(const secret of[hubspotGrant.refreshToken,hubspotGrant.clientSecret,salesforceGrant.clientSecret,'synthetic-crm-refresh','synthetic-crm-access',sealed.sealed])assert.ok(!text.includes(secret),'Portable export excludes CRM custody')}
  edge.missingName=true

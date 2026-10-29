@@ -14,6 +14,7 @@ const valid = (condition: unknown, message: string) => { if (!condition) throw n
 const id = (v: unknown) => { valid(typeof v === 'string' && v.length > 0 && v.length <= 200, 'CRM returned an invalid identifier'); return v as string }
 const date = (v: unknown) => { try { return contractDate(String(v).slice(0,10)) } catch { throw new PipelineFailure('CRM returned an invalid close date') } }
 const money = (v: unknown) => { try { return cents(String(v), 'CRM amount') } catch { throw new PipelineFailure('CRM returned an inexact or negative amount') } }
+const quantity = (v:unknown) => { try { valid(decimal(String(v),'CRM quantity',4)>0,'CRM quantity must be positive');return String(v) }catch{throw new PipelineFailure('CRM returned an invalid line-item quantity')} }
 const probability = (v: unknown, fractional = false) => {
  try { const n = decimal(String(v), 'CRM probability', fractional ? 4 : 2); valid(n <= 10000, 'CRM probability exceeds 100%'); return n } catch { throw new PipelineFailure('CRM returned an invalid stage probability') }
 }
@@ -49,12 +50,28 @@ export async function pipelineExchange(key: PipelineKey, grant?: Data) {
  const result = await pipelineRequest(origin, hubspot ? '/oauth/v1/token' : '/services/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: key.clientId!, client_secret: key.clientSecret!, ...(grant ?? { grant_type: 'refresh_token', refresh_token: key.refreshToken! }) }) })
  valid(typeof result.access_token === 'string' && !!result.access_token, 'CRM OAuth response has no access token')
  if (result.scope) valid(!String(result.scope).split(/\s+/).some(s => /write|delete/.test(s)), 'CRM grant includes write scopes; reconnect a read-only grant')
- if (result.instance_url) valid(salesforceOrigin(result.instance_url) === key.origin, 'Salesforce OAuth changed instance; reconnect explicitly')
+ if (result.instance_url) {
+  try { valid(salesforceOrigin(result.instance_url)===key.origin,'Salesforce OAuth changed instance; reconnect explicitly') }
+  catch { throw new PipelineFailure('Salesforce OAuth returned an invalid or changed instance; reconnect explicitly') }
+ }
  return { accessToken: result.access_token, refreshToken: result.refresh_token ?? key.refreshToken, expiresAt: Date.now() + Math.min(3600, Number(result.expires_in) || 600) * 1000 }
 }
 
 export async function readPipeline(key: PipelineKey, beforeRead:()=>Promise<void>): Promise<PipelineSource> {
- try { return await readSource(key,beforeRead) }
+ try {
+  const source=await readSource(key,beforeRead)
+  valid(new Set(source.stages.map(s=>s.id)).size===source.stages.length,'CRM returned duplicate stages')
+  const periods=[...source.periods].sort((a,b)=>a.start.localeCompare(b.start))
+  valid(periods.every((p,i)=>p.start<=p.end&&(!i||periods[i-1].end<p.start)),'CRM returned invalid or overlapping fiscal periods')
+  for(const deal of source.deals){
+   valid(/^[A-Z]{3}$/.test(deal.currency),'CRM returned an invalid currency')
+
+   valid(source.stages.some(s=>s.id===deal.stage),'CRM returned an unknown deal stage')
+   valid(new Set(deal.products.map((p:Data)=>p.id)).size===deal.products.length,'CRM repeated a product line within one deal')
+   valid(!deal.products.length||deal.products.reduce((n:bigint,p:Data)=>n+BigInt(p.amountCents),0n)===BigInt(deal.amountCents),'CRM deal and line-item amounts do not reconcile')
+  }
+  return source
+ }
  catch(error) {
   if(error instanceof PipelineFailure)throw error
   // Schema faults (including nested records and missing labels) are provider
@@ -93,7 +110,7 @@ async function readSource(key: PipelineKey, beforeRead:()=>Promise<void>): Promi
    for (const link of associated?.results ?? []) {
     const item = await get(`/crm/v3/objects/line_items/${encodeURIComponent(id(link.id))}?properties=name,hs_product_id,quantity,price,amount,hs_recurring_billing_period`), x = item.properties
     valid(x, 'HubSpot returned an invalid line item')
-    products.push({ id: id(item.id), product: id(x.hs_product_id ?? item.id), name: text(x.name,'Product'), amountCents: money(x.amount), quantity: String(x.quantity), unitPriceCents: money(x.price), term: x.hs_recurring_billing_period ?? null })
+    products.push({ id: id(item.id), product: id(x.hs_product_id ?? item.id), name: text(x.name,'Product'), amountCents: money(x.amount), quantity: quantity(x.quantity), unitPriceCents: money(x.price), term: x.hs_recurring_billing_period ?? null })
    }
    normalized.push({ id: id(row.id), name: text(p.dealname,'Deal'), stage: stage!.id, amountCents: money(p.amount), owner: p.hubspot_owner_id ? id(p.hubspot_owner_id) : '', closeDate: date(p.closedate), closed: p.hs_is_closed==null?stage!.closed:p.hs_is_closed==='true'||p.hs_is_closed===true, won:p.hs_is_closed_won==null?stage!.closed&&stage!.probabilityBps===10000:p.hs_is_closed_won==='true'||p.hs_is_closed_won===true, currency: String(p.deal_currency_code ?? key.currency).toUpperCase(), products })
   }
@@ -110,7 +127,7 @@ async function readSource(key: PipelineKey, beforeRead:()=>Promise<void>): Promi
   const term = key.termField ?? 'Subscription_Term__c'; valid(/^[A-Za-z][A-Za-z0-9_]{0,79}$/.test(term), 'Invalid Salesforce term field')
   const items = await query(`SELECT Id,OpportunityId,PricebookEntry.Product2Id,PricebookEntry.Product2.Name,Quantity,UnitPrice,TotalPrice,${term} FROM OpportunityLineItem`)
   valid(items.every(i=>deals.some(d=>d.Id===i.OpportunityId)),'Salesforce returned line items without their visible opportunities')
-  return { stages, periods, currency: key.currency, deals: deals.map(d => ({ id: id(d.Id), name: text(d.Name,'Opportunity'), stage: id(d.StageName), amountCents: money(d.Amount), owner: id(d.OwnerId), closeDate: date(d.CloseDate), closed: d.IsClosed === true, won: d.IsWon === true, currency: String(d.CurrencyIsoCode ?? key.currency).toUpperCase(), products: items.filter(i => i.OpportunityId === d.Id).map(i => ({ id: id(i.Id), product: id(i.PricebookEntry?.Product2Id), name: text(i.PricebookEntry?.Product2?.Name,'Product'), amountCents: money(i.TotalPrice), quantity: String(i.Quantity), unitPriceCents: money(i.UnitPrice), term: i[term] })) })) }
+  return { stages, periods, currency: key.currency, deals: deals.map(d => ({ id: id(d.Id), name: text(d.Name,'Opportunity'), stage: id(d.StageName), amountCents: money(d.Amount), owner: id(d.OwnerId), closeDate: date(d.CloseDate), closed: d.IsClosed === true, won: d.IsWon === true, currency: String(d.CurrencyIsoCode ?? key.currency).toUpperCase(), products: items.filter(i => i.OpportunityId === d.Id).map(i => ({ id: id(i.Id), product: id(i.PricebookEntry?.Product2Id), name: text(i.PricebookEntry?.Product2?.Name,'Product'), amountCents: money(i.TotalPrice), quantity: quantity(i.Quantity), unitPriceCents: money(i.UnitPrice), term: i[term] })) })) }
  }
  await list('/api/v1/deals?limit=100', 'orbit')
  // Orbit's current scoped API exposes only title, stage_id, value_cents and

@@ -135,7 +135,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "2bcd65297ce94cc78678b1ce3de96745ee731b04347e8ff02b9d36c1c6453c4a",
+      "sha256": "8d4592e67e8c699ad63949206814d4ffa40117dac621edb458f410f75a42b0d8",
       "executable": false
     },
     "base-copies.json": {
@@ -1799,7 +1799,7 @@
       "executable": false
     },
     "src/easel/metric-tasks.ts": {
-      "sha256": "4d0282a9fc041434e07f33774765bd1d14901fa8d1c6304e8deab443759aa682",
+      "sha256": "e721dc40a0f9d3b2eb146e1f59eb3b4fc6151dbbad752ecde18b63ae2218e26a",
       "executable": false
     },
     "src/easel/mobile-push-credentials.ts": {
@@ -1939,7 +1939,7 @@
       "executable": false
     },
     "src/easel/open-export.ts": {
-      "sha256": "7537798d6f2d45247bf5306a511d6ba7b7ce66da1b0423fc8b22ab75e73e93cd",
+      "sha256": "96fe2dfdf679b9a157303e7a52c367971a2f0776c6f6e14f4bfdd1da60b8e621",
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
@@ -2059,15 +2059,19 @@
       "executable": false
     },
     "src/easel/pipeline-journal.ts": {
-      "sha256": "e7911710294bc29df40857f3fd75b9534274f57175214b9a613eeca9fe96dbd5",
+      "sha256": "d72035212a6f84487b1f24149ca8194ba1b6ee78785e710c9242c0d8d3a56e2b",
       "executable": false
     },
     "src/easel/pipeline-provider.ts": {
-      "sha256": "2bf4b64cd537b2510dafecdd47f728138f94cab12ce7c06b2707f626ca0c92e8",
+      "sha256": "0e8c6132d9177d159f4ef26d185b8a0774522fd2811f9ed2756970074e7944f3",
+      "executable": false
+    },
+    "src/easel/pipeline-visibility.ts": {
+      "sha256": "aaa0692b5409dc3873e1aa27d85c7b457ed1ceb3057cf7935549cc6c42dbb86e",
       "executable": false
     },
     "src/easel/pipeline.ts": {
-      "sha256": "bd6666e82fe4bfccc857eeb69a1aa736d9683dab632d4d57dd1aced243a81cf6",
+      "sha256": "3255dd9ed70fa2dd98083675ff1f96c95fa144d4dadb7d130b23a3a8a592341d",
       "executable": false
     },
     "src/easel/plaid-connection.ts": {
@@ -2159,11 +2163,11 @@
       "executable": false
     },
     "src/easel/saved-reports.ts": {
-      "sha256": "5d6d1a270c0e21fb4fa2a1f49622f71fddeb1097871cb76b4742cf6839169e1e",
+      "sha256": "0f91b802b8dcf1f81c110c985eea94be913fb454257475a9446ff152ebc29cd9",
       "executable": false
     },
     "src/easel/scenario-access.ts": {
-      "sha256": "5b73658289335fe04d6912f152634c43c34240623bef118e14c294a54d0a2740",
+      "sha256": "dfc4e748b36893a0db17f3f762667840bcca96c156da7947ecbed39eda978237",
       "executable": false
     },
     "src/easel/semantic.ts": {
@@ -4523,7 +4527,7 @@
       "executable": false
     },
     "src/ui/pipeline.tsx": {
-      "sha256": "e7b4ef79fb65607fc6dc2acf5df0570b3ffae282d8949880e5659ede3214a3c9",
+      "sha256": "fc77e29e80eda9bd03ba565f4351f5b217669297662ea72eac85a6c7dd91f9e9",
       "executable": false
     },
     "src/ui/plaid-connection.tsx": {
@@ -4579,7 +4583,7 @@
       "executable": false
     },
     "src/ui/saved-reports.tsx": {
-      "sha256": "ff86459e5149c3c75327d73b2e5573dea49c10fb0663cdf9eb98745a8de24f22",
+      "sha256": "55814a585de04ad54f875f6a05c7ed01bf6c6c1e19cd94f295ec2eae600ac6a7",
       "executable": false
     },
     "src/ui/scenarios.tsx": {
@@ -5323,15 +5327,15 @@
       "executable": false
     },
     "tests/pipeline-browser.mjs": {
-      "sha256": "263530bd5ef2947a140a0dc11463979e692608f78c48d1d5f7217011fb8bb0f7",
+      "sha256": "71554d30a17368e0f1ff0b388d3161c051b204fa55d609ade1217632f1a1a935",
       "executable": false
     },
     "tests/pipeline-fixture.mjs": {
-      "sha256": "dc853db6495e5cbd3ffa76b897ac5cf0e6235cfdfa3ba1e739f38f2418d24a91",
+      "sha256": "0a4870c681356055c24c3dd2a23541a09ab250f3050ce1f0cd275e8a2474ec49",
       "executable": false
     },
     "tests/pipeline.test.mjs": {
-      "sha256": "db9da84190f74673aceb2f7ecf0a6e1187f592167c7769b61632e4461949bd29",
+      "sha256": "513d483965b9998f198ebb69b341f156a3bfca897d201855c7110cb3cb443bcb",
       "executable": false
     },
     "tests/plaid-cash-browser.mjs": {
