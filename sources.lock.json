@@ -122,6 +122,10 @@
       "sha256": "a0e27aeeac42d6102f4ff2bce40d8fb011c07e5cb28eff3c9d77e68df29e5dd6",
       "executable": false
     },
+    ".publish-check/config.json": {
+      "sha256": "f23eb3d6b8e197d56d752d58930f0dd2dbdf92fa586f7cd41464e607f471861e",
+      "executable": false
+    },
     ".publish-check/reviewed.json": {
       "sha256": "a918c6985da45451f5e8ebc98008ddf59bf6bccc8a8461786a326157328e7f2e",
       "executable": false
