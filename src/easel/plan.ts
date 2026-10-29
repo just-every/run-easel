@@ -62,6 +62,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   if (kind === 'position' || kind === 'workbook-model' || input.line && get(s, 'line', input.line).payroll) requirePayDetail(x)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
   requireDimensionAccess(s, x, entityDimensions(s, scenario.id, input.dimensions), inputDepartment(kind, input) ?? undefined)
+  requireThat(!input.pipeline,'Use the reviewed Pipeline door to change CRM-derived dimensions',409)
   const dimensions = entityDimensions(s, scenario.id, validateDimensions(s, b.dimensions))
   requireDimensionAccess(s, x, dimensions, inputDepartment(kind, input) ?? undefined)
   put(s, kind, input.id, { ...input, dimensions })
@@ -77,6 +78,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const scenario = scenarioAccess(s, x, b.scenario)
   if(kind==='formula') requireThat(Number(b.revision)===scenario.revision,'The plan changed; reload before saving the formula',409)
   const prior = b.id ? get(s, kind, b.id) : undefined
+  requireThat(!prior?.pipeline, 'Use the reviewed Pipeline door to change CRM-derived assumptions',409)
   requireThat(!prior || prior.scenario === scenario.id, 'This input belongs to another scenario')
   if (prior?.line && get(s, 'line', prior.line).payroll) requirePayDetail(x)
   if (kind === 'revenue' && (b.commissionPosition || prior?.commissionPosition)) {
@@ -133,6 +135,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
   const scenario = scenarioAccess(s, x, input.scenario)
   requireEditable(s, x, scenario, inputDepartment(kind, input))
   requireDimensionAccess(s, x, entityDimensions(s, scenario.id, input.dimensions), inputDepartment(kind, input) ?? undefined)
+  requireThat(!input.pipeline,'Use the reviewed Pipeline door to remove a CRM-derived input',409)
   requireThat(kind !== 'revenue' || !all(s, 'expense').some(e => e.scenario === scenario.id && e.revenueOrigin === input.originId), 'Remove linked acquisition or inventory costs before deleting this revenue driver', 409)
   requireThat(kind !== 'asset-category' || !all(s, 'asset').some(a => a.scenario === input.scenario && a.category === input.originId), 'This category is used by assets; move or remove them first', 409)
   if (kind === 'revenue' && input.commissionPosition) {
@@ -187,7 +190,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    name: text(b.name, op === 'branch' ? 'Scenario name' : 'Proposal name'), kind, ...(kind==='budget'?{alternativeBudget:true}:{}), status: 'working', revision: 1, createdBy: x.actor.email, createdAt: c.now,
    ...(from.horizon ? { horizon: from.horizon } : {}), ...(from.currency ? { currency: from.currency } : {}),
    ...((b.privateSandbox === true || from.sandbox) ? { sandbox: { grants: {} } } : {}),
-   parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash, ledgerAllocations: from.ledgerAllocations, balanceLedger: from.balanceLedger,
+   parent: from.id, branchedFrom: { scenario: from.id, revision: from.revision, name: from.name }, actualsThrough: from.actualsThrough ?? null, cash: from.cash, pipelineCoverageTargetCents: from.pipelineCoverageTargetCents, pipelineSources: from.pipelineSources, ledgerAllocations: from.ledgerAllocations, balanceLedger: from.balanceLedger,
    ...(kind === 'proposal' ? { request: text(b.request, 'What should change', 2000), proposalStatus: 'draft' } : {}),
   })
   await copyVersionInputs(c, from, id)

@@ -25,12 +25,12 @@ export function ForecastLearning({ state, forecast, refresh }: { state: D; forec
    </Table>
    {!view.kept.length && <p className="muted">Close a month to keep the first forecast.</p>}
    {view.measures.map((m: D) => <div key={m.key} className="pack">
-    <h3>{m.label}: {m.meanDays > 0 ? '+' : ''}{m.meanDays} days</h3>
-    <p className="muted">{m.evidence}. Median {m.medianDays}, range {m.minDays} to {m.maxDays} days.</p>
+    <h3>{m.label}: {m.meanDays > 0 ? '+' : ''}{m.meanDays} {m.unit}</h3>
+    <p className="muted">{m.evidence}. Median {m.medianDays}, range {m.minDays} to {m.maxDays} {m.unit}.</p>
     <p>Backtest on {m.backtest.keptForecasts} kept forecasts: error {money(m.backtest.baselineError, currency)} now, {money(m.backtest.revisedError, currency)} with this revision; lower on {m.backtest.lowerOn}, higher on {m.backtest.worseOn}.</p>
     {m.suggestion.eligible
      ? <><p>{m.suggestion.affectedCount} input{m.suggestion.affectedCount === 1 ? '' : 's'} that {m.suggestion.affectedCount === 1 ? 'has' : 'have'} not started would move: {m.suggestion.affected.slice(0, 6).map((a: D) => `${a.name} (${a.field === 'start' ? monthLabel(String(a.to)) : a.to})`).join(', ')}.</p>
-      <Action label="Create proposal" confirm={`Create a draft proposal that moves ${m.suggestion.affectedCount} input(s) by ${m.suggestion.days} days? The forecast stays unchanged until you submit and promote it.`} run={async () => { setProposal(await command('learning-propose', { scenario: forecast.id, measure: m.key, evidence: m.evidenceSha })); await refresh() }} /></>
+      <Action label="Create proposal" confirm={`Create a draft proposal that moves ${m.suggestion.affectedCount} input(s) by ${m.suggestion.days} ${m.unit}? The forecast stays unchanged until you submit and promote it.`} run={async () => { setProposal(await command('learning-propose', { scenario: forecast.id, measure: m.key, evidence: m.evidenceSha })); await refresh() }} /></>
      : <p className="muted">Not suggested: {m.suggestion.reasons.join('; ')}.</p>}
    </div>)}
    {!view.measures.length && <p className="muted">No assumption is measured yet. Record deal history below{view.payDetail ? ' or accept roster files with planned start dates' : ''}.</p>}

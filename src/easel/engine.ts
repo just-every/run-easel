@@ -173,7 +173,7 @@ function* calculationSteps(model: Model, actuals: ActualCell[] = [], ledger?: Le
  openContracts(contracts, allocations)
  for (const row of contracts.rows) add(row.line, row.department, row.month, { kind: 'revenue', id: row.originId, label: row.name, amount: row.revenue, trace: row.trace }, 0, true)
  const revenueByOrigin = new Map(inputs.revenue.map(r => [r.originId, r]))
- for (const invoice of contracts.invoices) { const event={ month: datePeriod(workspace, invoice.collectionDate), date: invoice.collectionDate, amount: invoice.amount, collection: true, label: 'Planned contract invoice collection', line: revenueByOrigin.get(invoice.originId)?.line, department: revenueByOrigin.get(invoice.originId)?.department, source: invoice.originId };cash.push(event);taxableCollections.push(event) }
+ for (const invoice of contracts.invoices) { const event={ month: invoice.collectionMonth ?? datePeriod(workspace, invoice.collectionDate), date: invoice.collectionDate, amount: invoice.amount, collection: true, label: 'Planned contract invoice collection', line: revenueByOrigin.get(invoice.originId)?.line, department: revenueByOrigin.get(invoice.originId)?.department, source: invoice.originId };cash.push(event);taxableCollections.push(event) }
  for (const r of inputs.revenue.filter(r => r.kind !== 'contract')) {
   const lag = Number(r.collectionLag ?? collectionLag)
   if (libraryRevenue(r, inputs.position, months[months.length - 1], currency, (month, source) => add(r.line, r.department, month, source, lag))) continue

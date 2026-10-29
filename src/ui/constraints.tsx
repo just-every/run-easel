@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Action, api, command, Field, Form, money, monthLabel, type D } from './shared'
 
-const KINDS = [{ value: 'hire-start', label: 'Delay a hire (months)' }, { value: 'spend-cut', label: 'Cut spend (percent)' }, { value: 'collection-days', label: 'Collect a contract sooner (days)' }]
-const field = { 'hire-start': 'position', 'spend-cut': 'expense', 'collection-days': 'revenue' } as const
+const KINDS = [{ value: 'hire-start', label: 'Delay a hire (months)' }, { value: 'spend-cut', label: 'Cut spend (percent)' }, { value: 'collection-days', label: 'Collect a contract sooner (days)' }, {value:'pipeline-price',label:'Raise pipeline planning price (percent)'}]
+const field = { 'hire-start': 'position', 'spend-cut': 'expense', 'collection-days': 'revenue', 'pipeline-price':'revenue' } as const
 
 /** Finance reads the decision items the constraint watch opened, marks adjustable levers and asks for responses. */
 export function ConstraintWatch({ state, forecast, refresh }: { state: D; forecast: D; refresh: () => Promise<unknown> }) {
@@ -10,7 +10,7 @@ export function ConstraintWatch({ state, forecast, refresh }: { state: D; foreca
  const currency = state.workspace.currency
  const load = async () => { setError(''); try { setView(await api('constraints')); setInputs((await api(`scenario/${forecast.id}`)).inputs) } catch (e) { setError((e as Error).message) } }
  useEffect(() => { void load() }, [forecast.id, forecast.revision])
- const candidates = (inputs?.[field[kind as keyof typeof field]] ?? []).filter((r: D) => kind !== 'collection-days' || r.kind === 'contract').filter((r: D) => kind !== 'spend-cut' || ['recurring', 'one-off'].includes(r.kind))
+ const candidates = (inputs?.[field[kind as keyof typeof field]] ?? []).filter((r: D) => kind !== 'collection-days' || r.kind === 'contract').filter((r: D) => kind !== 'spend-cut' || ['recurring', 'one-off'].includes(r.kind)).filter((r:D)=>kind!=='pipeline-price'||r.pipeline&&!r.pipeline.closed)
  if (!view && !error) return null
  return <section className="card" aria-label="Constraint watch">
   <h2>Constraint watch</h2>
@@ -40,7 +40,7 @@ export function ConstraintWatch({ state, forecast, refresh }: { state: D; foreca
    </details>
    <h3>Adjustable levers</h3>
    {view.levers.length === 0 && <p className="muted">None marked: the agent changes nothing it was not allowed to.</p>}
-   <ul className="plain">{view.levers.map((l: D) => <li key={l.id}>{l.label} · up to {l.max} {l.kind === 'hire-start' ? 'months' : l.kind === 'spend-cut' ? 'percent' : 'days'} <Action kind="quiet" label={`Remove ${l.label}`} run={async () => { await command('lever-delete', { id: l.id }); await load() }} /></li>)}</ul>
+   <ul className="plain">{view.levers.map((l: D) => <li key={l.id}>{l.label} · up to {l.max} {l.kind === 'hire-start' ? 'months' : ['spend-cut','pipeline-price'].includes(l.kind) ? 'percent' : 'days'} <Action kind="quiet" label={`Remove ${l.label}`} run={async () => { await command('lever-delete', { id: l.id }); await load() }} /></li>)}</ul>
    <Form key={kind} submit="Mark adjustable" onSubmit={async (v, form) => { await command('lever-save', { kind, scenario: forecast.id, origin: v.origin, max: v.max }); form.reset(); await load() }}>
     <label>Lever<select aria-label="Lever kind" value={kind} onChange={e => setKind(e.target.value)}>{KINDS.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}</select></label>
     <Field label="Input" name="origin" options={candidates.map((r: D) => ({ value: r.originId, label: kind === 'hire-start' ? `${r.title} (starts ${monthLabel(r.start)})` : r.name }))} />

@@ -15,10 +15,10 @@ import { headcountView } from '../headcount'
 import { model } from '../model'
 import { addMonths, monthLabel } from '../months'
 import { sha256 } from '../store'
-import { find, get, requireThat, type Data } from '../types'
+import { all, find, get, requireThat, type Data } from '../types'
 import { dealHistory } from './deal-outcomes'
 import { cellErrors, isFault, keptForecasts, rebuild, sameCells, sumAbs, type Kept } from './learning-backtest'
-import { closeSlippage, collectionLag, collectionsByMonth, hireSlippage, MAX_KEPT, MEASURES, MIN_KEPT, MIN_SAMPLES, revise, type MeasureKey, type Observed } from './learning-measures'
+import { closeSlippage, collectionLag, collectionsByMonth, hireSlippage, MAX_KEPT, measureMeta, stageProbabilities, MIN_KEPT, MIN_SAMPLES, revise, type MeasureKey, type Observed } from './learning-measures'
 import { datePeriod } from '../fiscal-calendar'
 
 const MAX_ROWS = 600
@@ -43,6 +43,7 @@ export async function forecastLearning(c: Context, scenario: unknown) {
  // What the history says. Hire slippage reads pay-detail roster rows, so it is offered only with pay detail.
  const deals = dealHistory(c)
  const observed: Observed[] = [closeSlippage(deals), payOK ? hireSlippage((await headcountView(c, forecast.id)).history) : null, collectionLag(deals, m.inputs.revenue)].filter((x): x is Observed => x !== null)
+ observed.push(...stageProbabilities(all(c.s,'pipeline-outcome')))
  const candidates = observed.filter(o => o.samples >= MIN_SAMPLES && o.meanDays !== 0)
 
  // Recalculate each kept forecast unchanged and with every candidate revision.
@@ -120,7 +121,7 @@ export async function forecastLearning(c: Context, scenario: unknown) {
  // Backtest each candidate on the reproducible kept forecasts.
  const measures = []
  for (const o of observed) {
-  const meta = MEASURES.find(x => x.key === o.key)!
+  const meta = measureMeta(o.key)
   const rowsByKept = trials.map(t => {
    if (o.key === 'collection-lag') { const x = t.collections.get(o.key); return x ? { month: t.kept.month, baseline: x.baseline, revised: x.revised } : null }
    const r = t.revisedErrors.get(o.key)
@@ -132,7 +133,7 @@ export async function forecastLearning(c: Context, scenario: unknown) {
   const changes = revise(o.key, o.meanDays, { revenue: m.inputs.revenue, position: m.inputs.position }, m.workspace, firstOpen).changes
   const reasons = []
   if (o.samples < MIN_SAMPLES) reasons.push(`Needs at least ${MIN_SAMPLES} reviewed observations; has ${o.samples}`)
-  if (o.meanDays === 0) reasons.push('The measured miss rounds to zero days')
+  if (o.meanDays === 0) reasons.push(`The measured miss rounds to zero ${meta.unit}`)
   if (trials.length < MIN_KEPT) reasons.push(`Needs at least ${MIN_KEPT} kept forecasts that recalculate; ${trials.length} do`)
   if (revised >= baseline) reasons.push('The revision would not have lowered the error on past kept forecasts')
   if (!changes.length) reasons.push('No input that has not started would change')
@@ -145,6 +146,6 @@ export async function forecastLearning(c: Context, scenario: unknown) {
   scenario: { id: forecast.id, name: forecast.name, revision: forecast.revision, actualsThrough: forecast.actualsThrough }, currency: m.workspace.currency,
   rules: { minKeptForecasts: MIN_KEPT, maxKeptForecasts: MAX_KEPT, minObservations: MIN_SAMPLES, metric: 'Absolute error in minor units summed over line, department and closed month; collection lag sums absolute monthly collections error for linked invoices' },
   kept: perForecast, excluded, decomposition: rows, measures, payDetail: payOK,
-  deals: deals.length, stageProbabilities: 'Unavailable until REV-001 supplies stages and probabilities', churn: 'Unavailable until REV-002 supplies subscription churn',
+  deals: deals.length, stageProbabilities: observed.some(o=>o.key.startsWith('stage-probability:'))?'Reviewed CRM stage outcomes are backtested with the same six-to-twelve-kept-forecast gate':'No reviewed open-to-closed CRM stage outcomes yet', churn: 'Unavailable until REV-002 supplies subscription churn',
  }
 }
