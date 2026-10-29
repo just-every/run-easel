@@ -8,7 +8,7 @@ import { choice, find, Fault, type Data } from '../easel/types'
 /** A deleted input's native before-image admits only its original once-only receipt.
  * New keys cannot use it. Current sponsor, proposal, department and Pay grants
  * pass the very same native removal checks before any retained facts are used. */
-export async function deletionReplay(args: Data, ctx: ToolContext): Promise<Data | null> {
+export async function deletionReplay(args: Data, ctx: ToolContext): Promise<{ input: Data; c: Awaited<ReturnType<typeof nativeContext>> } | null> {
  if (!ctx.idempotencyKey) return null
  const c = await nativeContext(ctx)
  try {
@@ -17,7 +17,7 @@ export async function deletionReplay(args: Data, ctx: ToolContext): Promise<Data
   const row = await ctx.db.prepare(`SELECT detail FROM e_activity WHERE action='record-changed' AND record=?
    AND json_extract(detail,'$.kind')=? AND json_extract(detail,'$.after') IS NULL
    AND json_extract(detail,'$.authority.id')=? AND json_extract(detail,'$.authority.for.id')=?
-   AND json_extract(detail,'$.authority.idempotencyKey')=? ORDER BY id DESC LIMIT 1`)
+   AND json_extract(detail,'$.authority.idempotencyKey')=? ORDER BY seq DESC LIMIT 1`)
    .bind(args.id, kind, ctx.agent.id, ctx.person.id, ctx.idempotencyKey).first<{detail:string}>()
   if (!row) return null
   const before = JSON.parse(row.detail).before
@@ -25,7 +25,7 @@ export async function deletionReplay(args: Data, ctx: ToolContext): Promise<Data
   const input = { ...before, id: args.id }
   requireAgentDraft(c, input.scenario)
   requireInputRemoval(c, kind, input)
-  return input
+  return { input, c }
  } catch (e) {
   if (e instanceof Fault) throw new ToolRefusal(e.status === 403 ? 'forbidden' : 'resource_unavailable')
   throw e

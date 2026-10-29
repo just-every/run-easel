@@ -4,7 +4,7 @@ Easel is maintained at [just-every/run-easel](https://github.com/just-every/run-
 The public release is a clean source snapshot; its earlier authoring history is not included.
 
 This runnable checkout is authoritative. Easel adopts Base runtime and modules
-at tag `rer-v0.2.30` (`d434ea67989fe10b6ddff01daba8bb350975e54a`).
+at tag `rer-v0.2.30` (`d434ea67989fe10b6ddff01daba8bb350975e54a`), except the agent door, Business settings and operator-auth adoption recorded below.
 `base-copies.json` records their source paths, revision, SHA-256 digests and modes.
 `src/modules/operator-auth`, `src/modules/mail`, `src/modules/import-kit`, the
 operator-auth dependency closure (`dependencies`, `owner-claim`) are copied from
@@ -19,7 +19,7 @@ published package using bare `rer` verbs. They are not byte-equal Base copies.
 Dependency linking is not enabled. Signed owner claims use the existing module when trusted claim bindings are provisioned.
 
 The CLI and onboarding implementation come from the published `@runeditrun/rer`
-package, pinned exactly to `0.2.30` in `package.json` and `pnpm-lock.yaml`. The Base
+package, pinned exactly to `0.2.86` in `package.json` and `pnpm-lock.yaml`. The Base
 `--to-package` converter removed the vendored CLI and onboarding implementation
 and rewrote their callers to package exports. `rer check` verifies the command
 contract and operator-auth copy. `scripts/installer` contains only Easel adapters,
@@ -43,7 +43,7 @@ confirmation record. `rer build --site` builds the run site (run-easel.com) from
 `src/base/run-site.ts`, and the docs rendered from `docs/site.json` and
 `docs/*.md`. Base and Easel are MIT; see `LICENSE`.
 
-The vendored modules (`demo`, `operator-auth`, `mail`, `dependencies`, `owner-claim`, `import-kit`, and `d1-transport`) adopt together from Base tag `rer-v0.2.30` (`d434ea67989fe10b6ddff01daba8bb350975e54a`). The demo module is copied without path adaptations; its label helper uses operator-auth’s CSP helper. `base-copies.json` records the refreshed auth and mail modules. `edition.json`, `sources.lock.json` and retained comparison snapshots track the demo adoption. Other adopted runtime sources retain their recorded origins.
+The vendored modules (`demo`, `mail`, `dependencies`, `owner-claim`, `import-kit`, and `d1-transport`) adopt together from Base tag `rer-v0.2.30` (`d434ea67989fe10b6ddff01daba8bb350975e54a`). The demo module is copied without path adaptations; its label helper uses operator-auth’s CSP helper. `base-copies.json` records the refreshed auth and mail modules. `edition.json`, `sources.lock.json` and retained comparison snapshots track the demo adoption. Other adopted runtime sources retain their recorded origins.
 
 Mail regex hardening adapts `src/modules/mail/src/core/validation.mjs` and
 `src/modules/mail/src/inbound/headers.mjs` locally. They retain the mailbox and
