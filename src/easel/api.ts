@@ -1,3 +1,4 @@
+import { sheetAddonConnection, sheetAddonStatus, addonSession, addonRefresh, addonWrite, addonPairing } from './sheet-addon'
 import { intacctConnection,intacctStatus } from './intacct-connection'
 import { intacctImport } from './intacct-import'
 import { netsuiteConnection,netsuiteStatus } from './netsuite-connection'
@@ -173,9 +174,9 @@ async function open(c: HonoContext<Env>): Promise<Context & { revision: number; 
  const a = c.get('apiActor') ?? await actor(c.req.raw, c.env)
  const { state, revision } = await load(c.env.DB)
  const current = access(state, a)
- if (a.token) requireMember(current)
+ if (a.token || a.sheetAddon) requireMember(current)
  if (a.agent) requireAgent({ s: state }, 'mcp')
- if (scopedReader(current) && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|variance\/|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
+ if (scopedReader(current) && !a.sheetAddon && ['GET', 'HEAD'].includes(c.req.method)) requireThat(/^\/api\/easel\/(sheets-addon-confirm\/|approval-chains\/|notifications$|mobile\/devices$|calculation-jobs\/|entities$|variance\/|consolidation\/|state$|scenario\/|snapshot\/|compare(?:\.xlsx)?$|dimension-report\/|dashboards(?:\/|$)|dataset\/|reports$|department-statements(?:\/|$))/.test(c.req.path), 'This view is unavailable for dimension-scoped access', 403)
  return { s: state, before: new Map(state), revision, x: access(state, a), db: c.env.DB, activity: [], snapshots: [], now: await currentTime(c.env) }
 }
 
@@ -488,6 +489,24 @@ api.post('/api/easel/connections/gauge/:op', async c => {
   await save(ctx.db, ctx.x.actor, ctx.before, ctx.s, ctx.revision, ctx.activity, [], true, extra)
  }
  return c.json(await gaugeStatus(ctx, c.env))
+})
+api.get('/api/easel/sheets-addon-confirm/:id', c => read(c, async ctx => addonPairing(ctx, c.req.param('id'))))
+api.get('/api/easel/connections/sheets-addon', c => read(c, sheetAddonStatus))
+api.post('/api/easel/connections/sheets-addon/:op', async c => {
+ const ctx = await open(c)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const result = await sheetAddonConnection(ctx, runtimeBindings(c.env), c.req.param('op'), await body(c))
+ await commit(ctx)
+ return c.json(result)
+})
+api.get('/api/easel/google-sheets/session', c => read(c, async ctx => addonSession(ctx)))
+api.post('/api/easel/google-sheets/:op', async c => {
+ const ctx = await open(c), input = await body(c, 200000), op = c.req.param('op')
+ requireThat(op === 'refresh' || op === 'write', 'Unknown Google Sheets add-on action', 404)
+ await readFence(ctx.db, ctx.x.actor, ctx.revision)
+ const result = op === 'refresh' ? await addonRefresh(ctx, input) : await addonWrite(ctx, input)
+ await commit(ctx)
+ return c.json(result)
 })
 api.get('/api/easel/connections/sheets', c => read(c, ctx => sheetStatus(ctx, runtimeBindings(c.env))))
 api.post('/api/easel/connections/sheets/:op', async c => {

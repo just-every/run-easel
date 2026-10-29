@@ -9,6 +9,11 @@ import { scenarioView } from './views'
 import { all, find, get, integer, requireThat, type Data } from './types'
 
 export async function excelValues(c: Context, id: string, input: Data) {
+ requireThat(!c.x.actor.sheetAddon, 'Use the Google Sheets add-on door', 403)
+ return spreadsheetValues(c, id, input)
+}
+
+export async function spreadsheetValues(c: Context, id: string, input: Data) {
  requireMember(c.x)
  requireThat(!c.x.actor.token, 'Use your signed-in session for Excel reads', 403)
  const view = await scenarioView(c, id)
@@ -35,11 +40,16 @@ export async function excelReport(c: Context, id: string, input: Data) {
 
 export async function excelWrite(c: Context, op: string, b: Data): Promise<Data | undefined> {
  if (op !== 'excel-write') return
+ requireThat(!c.x.actor.sheetAddon, 'Use the Google Sheets add-on door', 403)
+ return spreadsheetWrite(c, b, 'Excel')
+}
+
+export async function spreadsheetWrite(c: Context, b: Data, channel: 'Excel' | 'Google Sheets'): Promise<Data> {
  requireMember(c.x)
- requireThat(!c.x.actor.token, 'Use your signed-in session for Excel write-back', 403)
+ requireThat(!c.x.actor.token, `Use your signed-in session for ${channel} write-back`, 403)
  const source = scenarioAccess(c.s, c.x, b.scenario)
- requireThat(integer(b.revision, 'Reviewed scenario revision', 1, Number.MAX_SAFE_INTEGER) === source.revision, 'The plan changed; refresh Excel before writing', 409)
- requireThat(source.status === 'working' && source.kind !== 'proposal' && !source.sandbox, 'Excel write-back requires a working plan; approved budgets and kept forecasts are read-only', 409)
+ requireThat(integer(b.revision, 'Reviewed scenario revision', 1, Number.MAX_SAFE_INTEGER) === source.revision, `The plan changed; refresh ${channel} before writing`, 409)
+ requireThat(source.status === 'working' && source.kind !== 'proposal' && !source.sandbox, `${channel} write-back requires a working plan; approved budgets and kept forecasts are read-only`, 409)
  const row = get(c.s, 'schedule', b.schedule)
  requireThat(row.scenario === source.id, 'This row belongs to another scenario', 409)
  requireDepartment(c.x, row.department)
@@ -47,7 +57,7 @@ export async function excelWrite(c: Context, op: string, b: Data): Promise<Data 
  const sub = find(c.s, 'submission', `${source.id}|${row.department}`)
  let target = source, targetRow = row
  if (c.x.role === 'contributor' && (source.kind !== 'budget' || ['submitted', 'reviewing'].includes(sub?.status))) {
-  target = (await plan(c, 'proposal-create', { from: source.id, name: 'Excel input change', request: 'Review the submitted Excel input change' }))!
+  target = (await plan(c, 'proposal-create', { from: source.id, name: `${channel} input change`, request: `Review the submitted ${channel} input change` }))!
   targetRow = all(c.s, 'schedule').find(r => r.scenario === target.id && r.originId === row.originId)!
   requireThat(targetRow, 'The input could not be copied to a proposal', 409)
  }
@@ -57,7 +67,7 @@ export async function excelWrite(c: Context, op: string, b: Data): Promise<Data 
  requireThat(!preview.refused.length, preview.refused.map((r: Data) => r.error).join('; '), 409)
  const saved = (await grid(c, 'grid-save', { ...request, fingerprint: preview.fingerprint }))!
  if (target.id !== source.id) {
-  const proposal = (await plan(c, 'proposal-submit', { id: target.id, summary: 'Excel write-back for finance review' }))!
+  const proposal = (await plan(c, 'proposal-submit', { id: target.id, summary: `${channel} write-back for finance review` }))!
   return { mode: 'proposal', proposal, targetRevision: source.revision }
  }
  return { mode: 'entry', ...saved }

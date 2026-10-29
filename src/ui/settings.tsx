@@ -12,6 +12,7 @@ import { GustoConnection } from './gusto'
 import { PlaidConnection } from './plaid-connection'
 import { WarehouseInputs } from './warehouse'
 import { SheetLinks } from './sheet-links'
+import { SheetAddon } from './sheet-addon'
 import { Entities } from './entities'
 import { Groups } from './groups'
 import { Dimensions } from './dimensions'
@@ -100,6 +101,7 @@ export function Settings({ state, refresh }: Shared) {
   {state.me.role === 'finance' && <><GaugeConnection /><SpendConnections /></>}
   {state.me.role === 'finance' && <><BillingConnection /><QboConnection /><XeroConnection /><IntacctConnection /><NetSuiteConnection /><PantryConnection /><GustoConnection /><HrisConnections /><GreenhouseConnection /><PlaidConnection /></>}
   {state.me.role === 'finance' && <WarehouseInputs />}
+  <SheetAddon />
   <SheetLinks state={state} refresh={refresh} />
   <section className="card">
    <h2>Account mappings</h2>
