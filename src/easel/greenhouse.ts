@@ -36,7 +36,8 @@ export async function greenhouseConnection(c:Context,env:Bindings,op:string,b:Da
   }catch(error){
    put(c.s,'connection','greenhouse',{...prior,lastAttempt:c.now,error:error instanceof GreenhouseFailure?error.message:'Greenhouse check failed; no plan changes were accepted',rateLimited:error instanceof GreenhouseFailure&&error.httpStatus===429,httpStatus:error instanceof GreenhouseFailure?error.httpStatus:null})
   }
-  c.activity.push({action:'greenhouse-checked',record:'greenhouse',detail:{httpStatus:get(c.s,'connection','greenhouse').httpStatus}})
+  const health=get(c.s,'connection','greenhouse')
+  c.activity.push({action:'greenhouse-checked',record:'greenhouse',detail:{httpStatus:health.httpStatus,failed:Boolean(health.error)}})
   return []
  }
  if(op==='disconnect'){
