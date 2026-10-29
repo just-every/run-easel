@@ -5351,7 +5351,7 @@
       "executable": false
     },
     "tests/open-export.test.mjs": {
-      "sha256": "c6f920edafd7c98a745635add0d377f1c1632e46bce0f473183b45ce616bd7c5",
+      "sha256": "4eb69e7dbb58856fc01b138e93f2fabf26bacef7eaa116ccb71049d7b697cf98",
       "executable": false
     },
     "tests/owner-questions-browser.mjs": {
