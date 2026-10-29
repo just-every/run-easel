@@ -334,7 +334,9 @@
     },
     {
       "id": "netsuite-actuals",
-      "clauses": ["CONNECT-003"]
+      "clauses": [
+        "CONNECT-003"
+      ]
     },
     {
       "id": "pantry-actuals",
@@ -364,6 +366,12 @@
       "id": "pipeline-drivers",
       "clauses": [
         "REV-001"
+      ]
+    },
+    {
+      "id": "automation-webhooks",
+      "clauses": [
+        "API-002"
       ]
     }
   ],
