@@ -359,7 +359,10 @@
   },
   "verification": {
     "owner": {
-      "initializer": "tests/initialize-agent-owner.mjs"
+      "initializer": "tests/initialize-agent-owner.mjs",
+      "bindings": {
+        "SESSION_SECRET": "sessionSecret"
+      }
     }
   },
   "escalations": [],
@@ -677,7 +680,7 @@
         "name": "Synthetic laptop",
         "category": {
           "$from": "category",
-          "pointer": "/id"
+          "pointer": "/originId"
         },
         "department": {
           "$from": "list",
@@ -685,7 +688,7 @@
         },
         "line": {
           "$from": "list",
-          "pointer": "/references/lines/Operating cost"
+          "pointer": "/references/lines/Depreciation"
         },
         "kind": "purchase",
         "cost": "1200",
@@ -708,7 +711,7 @@
         "name": "Synthetic allocation",
         "sourceDepartment": {
           "$from": "list",
-          "pointer": "/references/departments/Sales"
+          "pointer": "/references/departments/Operations"
         },
         "basis": "fixed",
         "targets": [
@@ -770,7 +773,7 @@
         },
         "line": {
           "$from": "list",
-          "pointer": "/references/lines/Operating cost"
+          "pointer": "/references/lines/Income tax"
         },
         "department": {
           "$from": "list",
@@ -871,12 +874,45 @@
       ]
     },
     {
+      "id": "temporary-position",
+      "tool": "easel.positions.update",
+      "args": {
+        "scenario": {
+          "$from": "create",
+          "pointer": "/id"
+        },
+        "title": "Synthetic temporary draft hire",
+        "holder": "Synthetic Draft Hire",
+        "department": {
+          "$from": "list",
+          "pointer": "/references/departments/Sales"
+        },
+        "line": {
+          "$from": "list",
+          "pointer": "/references/lines/Payroll"
+        },
+        "start": "2026-08",
+        "annualSalary": "10000"
+      },
+      "expect": [
+        {
+          "class": "standard"
+        },
+        {
+          "class": "sensitive",
+          "facts": {
+            "kind": "payroll"
+          }
+        }
+      ]
+    },
+    {
       "id": "delete",
       "tool": "easel.inputs.delete",
       "args": {
         "kind": "position",
         "id": {
-          "$from": "position",
+          "$from": "temporary-position",
           "pointer": "/id"
         }
       },

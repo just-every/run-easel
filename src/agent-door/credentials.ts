@@ -4,7 +4,7 @@ import { access } from '../easel/access'
 import { load } from '../easel/store'
 import type { Actor } from '../easel/types'
 
-export function scopesFor(a: Actor) { return ['planning:read', ...(!a.token || a.token.scope === 'write' ? ['planning:write'] : [])] }
+export function scopesFor(a: Actor) { return ['events:read', 'planning:read', ...(!a.token || a.token.scope === 'write' ? ['planning:write'] : [])] }
 export async function localCredential(request: Request, env: Bindings) {
  try {
   const a = await actor(request, env)

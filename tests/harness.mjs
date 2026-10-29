@@ -61,8 +61,15 @@ export async function harness(options = {}) {
   const db = await mf.getD1Database('DB')
   for (const file of (await readdir('migrations/core')).filter(f => f.endsWith('.sql')).sort()) await db.batch(unstable_splitSqlQuery(await readFile(`migrations/core/${file}`, 'utf8')).map(sql => db.prepare(sql)))
 
+  let owner = '', agentPolicyReady = false
+  const agentPolicy = async () => {
+   if (agentPolicyReady) return
+   const policy = await send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: 'all', class: '*', do: 'autonomous' }], spend: { none: true } } }, owner, 'PUT')
+   assert.equal(policy.status, 200, 'The native owner selects the test company policy')
+   agentPolicyReady = true
+  }
   const send = async (path, body, cookie = '', method) => {
-   if (path === '/api/easel/mcp') body = agentMessage(body)
+   if (path === '/api/easel/mcp') { await agentPolicy(); body = agentMessage(body) }
    const r = await mf.dispatchFetch(origin + path, { method: method ?? (body === undefined ? 'GET' : 'POST'), headers: { host: new URL(origin).host, origin, 'content-type': 'application/json', cookie, ...(path === '/api/easel/mcp' ? { 'mcp-protocol-version': '2025-11-25' } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual' })
    const text = await r.text()
    let value; try { value = JSON.parse(text) } catch { value = text }
@@ -70,9 +77,8 @@ export async function harness(options = {}) {
   }
   const boot = await send('/auth/bootstrap', { token: 'synthetic-local-test-bootstrap-token-0123456789', displayName: 'Fran Finance' })
   assert.equal(boot.status, 303, JSON.stringify(boot.value))
-  const owner = boot.cookie
-  const policy = await send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: 'all', class: '*', do: 'autonomous' }], spend: { none: true } } }, owner, 'PUT')
-  assert.equal(policy.status, 200, 'The native owner selects the test company policy')
+  owner = boot.cookie
+
 
   const expect = async (r, status, label) => { assert.equal(r.status, status, `${label}: ${JSON.stringify(r.value)}`); return r.value }
   const command = async (op, body, cookie = owner, status = 200) => expect(await send(`/api/easel/command/${op}`, body, cookie), status, op)
@@ -99,7 +105,7 @@ export async function harness(options = {}) {
    const confirmed = await send('/auth/confirm', { token }, cookie)
    assert.equal(confirmed.status, 303, 'Step-up confirmation completes in its original session')
   }
-  return { db, mf, origin, owner, send, command, kit, get, person, stepUp, messages, async close() { await mf.dispose(); await rm(dir, { recursive: true, force: true }) } }
+  return { db, mf, origin, owner, agentPolicy, send, command, kit, get, person, stepUp, messages, async close() { await mf.dispose(); await rm(dir, { recursive: true, force: true }) } }
  } catch (error) {
   await mf.dispose(); await rm(dir, { recursive: true, force: true })
   throw error
