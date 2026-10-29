@@ -130,8 +130,26 @@ jobs:
         env:
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-approval-chains
 
+  agent-door:
+    needs: plan
+    if: needs.plan.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - name: Install pinned dependencies
+        run: |
+          corepack enable
+          corepack install --global pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184
+          pnpm install --frozen-lockfile
+      - name: Verify the production company agent door
+        run: pnpm exec rer verify --non-interactive
+
   verify:
-    needs: [plan, shards]
+    needs: [plan, shards, agent-door]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 1
