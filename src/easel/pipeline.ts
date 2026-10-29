@@ -35,12 +35,12 @@ export function pipelineBlock(c: Context, sc: Data, department?: string) {
   providers.add(review.provider)
   if (review.status === 'pending') return 'Pipeline source changes await finance review; dependent conclusions are unavailable.'
  }
- for(const input of inputs)if(input.pipeline.nextExpectedAt && Date.parse(c.now)>Date.parse(input.pipeline.nextExpectedAt))return 'Pipeline source stopped updating; refresh and review before using dependent conclusions.'
  for (const provider of providers) {
-  if(sc.pipelineSources?.[provider] && Date.parse(c.now)>Date.parse(sc.pipelineSources[provider].nextExpectedAt))return 'Pipeline source stopped updating; refresh and review before using dependent conclusions.'
   const connection=find(c.s,'connection',pipelineId(provider)), review=all(c.s,'pipeline-review').find(r=>r.scenario===sc.id && r.provider===provider)
   if (!connection?.connected || connection.error) return 'Pipeline source is disconnected or its last read failed; dependent conclusions are unavailable.'
-  if (review && Date.parse(c.now)>Date.parse(review.nextExpectedAt)) return 'Pipeline source stopped updating; refresh and review before using dependent conclusions.'
+  if(connection.pendingRaw)return 'Pipeline source changes await finance acceptance; dependent conclusions are unavailable.'
+  const expected=connection.nextExpectedAt ?? sc.pipelineSources?.[provider]?.nextExpectedAt ?? review?.nextExpectedAt
+  if(expected && Date.parse(c.now)>Date.parse(expected))return 'Pipeline source stopped updating; refresh and review before using dependent conclusions.'
  }
  return null
 }
@@ -138,6 +138,8 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  requireThat(new TextEncoder().encode(JSON.stringify(source)).byteLength<=750000,'CRM observation is too large for one atomic review; narrow the scoped source',409)
  if(op==='observe'){
   const id=`${sc.id}:${provider}`, prior=find(c.s,'pipeline-review',id),sourceDigest=await digest(source)
+  const connection=get(c.s,'connection',pipelineId(provider))
+  put(c.s,'connection',connection.id,{...connection,pendingRaw:connection.sourceDigest!==sourceDigest})
   put(c.s,'pipeline-observation',id,{scenario:sc.id,provider,sourceDigest,observedAt:c.now,observedBy:c.x.actor.email,status:prior?.sourceDigest===sourceDigest&&prior.status==='accepted'?'accepted':'pending',stages:source.stages,products:[...new Set(source.deals.flatMap(d=>d.products.map((p:Data)=>p.product)))],rows:source.deals.length,impacts:impacts(c,sc.id)})
   c.activity.push({action:'pipeline-observed',record:id,scenario:sc.id,detail:{provider,sourceDigest,rows:source.deals.length}})
   return source
@@ -152,21 +154,26 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  const coverageTargetCents=cents(b.coverageTarget,'Quarterly pipeline bookings target');requireThat(coverageTargetCents>0,'Quarterly pipeline target must be positive')
  Object.assign(built.assumptions,{coverageTargetCents})
  const assumptionDigest=await digest(built.assumptions)
- for(const input of built.inputs){input.pipeline.assumptionVersion=assumptionDigest;input.pipeline.nextExpectedAt=b.nextExpectedAt}
+ for(const input of built.inputs)input.pipeline.assumptionVersion=assumptionDigest
  const id=`${sc.id}:${provider}`, prior=find(c.s,'pipeline-review',id)
  const previous=scenarioInputs(c.s,sc.id,'revenue').filter(r=>r.pipeline?.provider===provider)
  const changes=[...new Set([...previous.map(r=>r.originId),...built.inputs.map(r=>r.originId)])].sort().flatMap(origin=>{
   const before=previous.find(r=>r.originId===origin),after=built.inputs.find(r=>r.originId===origin)
-  return JSON.stringify(canonical(before?{...before,id:undefined}:before))===JSON.stringify(canonical(after?{...after,id:undefined}:after))?[]:[{origin,before:before??null,after:after??null}]
+  const comparable=(r:Data|undefined)=>r?{...r,id:undefined,pipeline:{...r.pipeline,nextExpectedAt:undefined}}:r
+  return JSON.stringify(canonical(comparable(before)))===JSON.stringify(canonical(comparable(after)))?[]:[{origin,before:before??null,after:after??null}]
  })
+ const material=(r:Data|null)=>r?{...r,id:undefined,pipeline:{...r.pipeline,nextExpectedAt:undefined,assumptionVersion:undefined}}:r
+ const closedChangeOrigins=changes.filter(change=>sc.actualsThrough && (change.before?.start<=sc.actualsThrough || change.after?.start<=sc.actualsThrough) && JSON.stringify(canonical(material(change.before)))!==JSON.stringify(canonical(material(change.after)))).map(change=>change.origin)
  const nextExpectedAt=text(b.nextExpectedAt,'Next expected CRM update',40)
  requireThat(Number.isFinite(Date.parse(nextExpectedAt))&&Date.parse(nextExpectedAt)>Date.parse(c.now),'Choose a future expected source update')
  const fingerprint=await digest({sourceDigest,assumptionDigest,revision:sc.revision,nextExpectedAt})
- const result={id,provider,scenario:sc.id,revision:sc.revision,digest:fingerprint,sourceDigest,assumptionDigest,currency:w.currency,source,assumptions:built.assumptions,changes,impacts:impacts(c,sc.id),nextExpectedAt,departments:[...new Set([...built.inputs,...previous].map(r=>r.department))],
+ const result={id,provider,scenario:sc.id,revision:sc.revision,digest:fingerprint,sourceDigest,assumptionDigest,currency:w.currency,source,assumptions:built.assumptions,changes,closedChangeOrigins,impacts:impacts(c,sc.id),nextExpectedAt,departments:[...new Set([...built.inputs,...previous].map(r=>r.department))],
   bookings:built.inputs.map(r=>({deal:r.pipeline.deal,product:r.pipeline.product,month:r.start,amountCents:r.contractValueCents,probabilityBps:r.pipeline.probabilityBps,trace:`${provider} deal ${r.pipeline.deal}: ${formatMoney(r.pipeline.sourceAmountCents,w.currency)} × ${formatBps(r.pipeline.probabilityBps)} (${r.pipeline.closed?'closed outcome':r.pipeline.mode==='override'?'finance override':'CRM probability'}); source close ${r.pipeline.sourceCloseDate} + ${r.pipeline.slippageDays} days = ${r.startDate}; ${r.pipeline.fiscalPeriod?`Salesforce fiscal period ${r.pipeline.fiscalPeriod.id} → `:''}${r.start}; assumption version ${assumptionDigest}`}))}
  if(op==='preview')return result
  const {source:_inventory,changes:_changes,bookings:_bookings,...metadata}=result
  if(op==='stage'){
+  const connection=get(c.s,'connection',pipelineId(provider))
+  put(c.s,'connection',connection.id,{...connection,pendingRaw:connection.sourceDigest!==sourceDigest})
   put(c.s,'pipeline-review',id,boundedReview({...metadata,status:changes.length?'pending':'accepted',stagedBy:c.x.actor.email,stagedAt:c.now,acceptedSource:prior?.acceptedSource??null,history:reviewHistory(prior)}))
   c.activity.push({action:'pipeline-staged',record:id,scenario:sc.id,detail:{sourceDigest,changes:changes.length}})
   return result
@@ -174,9 +181,8 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  requireThat(b.digest===fingerprint,'CRM, assumptions or plan changed since preview; review again',409)
  requireThat(prior?.digest===fingerprint && prior.status==='pending' || !changes.length,'Stage the exact source changes before accepting them',409)
  if(changes.length)text(b.reason,'Finance source-review reason',2000)
- // Closed source revisions need a separate restatement ruling. Retain every
- // accepted value and frozen capture instead of silently moving old receipts.
- requireThat(!sc.actualsThrough || changes.every(change=>(!change.before||change.before.start>sc.actualsThrough)&&(!change.after||change.after.start>sc.actualsThrough)),'CRM changed a closed period; this review remains held for restatement, with prior captures unchanged',409)
+ requireThat(!closedChangeOrigins.length || b.reviewedClosedChanges===true,'Explicitly review the closed-period CRM changes before applying their future planning effects; accepted actuals and captures remain fixed',409)
+ if(closedChangeOrigins.length)c.activity.push({action:'pipeline-restatement-reviewed',record:id,scenario:sc.id,detail:{sourceDigest,origins:closedChangeOrigins,actualsThrough:sc.actualsThrough,reason:b.reason,acceptedActualsAndCapturesUnchanged:true}})
  if(changes.length){
   const accepted=prior?.acceptedSource as PipelineSource|undefined
   if(accepted)for(const old of accepted.deals.filter(d=>!d.closed)){
@@ -199,7 +205,7 @@ export async function pipelinePull(c: Context, env: Bindings, op: string, b: Dat
  }
  put(c.s,'pipeline-review',id,boundedReview({...metadata,status:'accepted',acceptedSource:source,acceptedBy:c.x.actor.email,acceptedAt:c.now,resultingRevision:get(c.s,'scenario',sc.id).revision,history:prior?.status==='accepted'?reviewHistory(prior):prior?.history??[]}))
  put(c.s,'pipeline-observation',id,{scenario:sc.id,provider,sourceDigest,status:'accepted',observedAt:c.now,acceptedBy:c.x.actor.email})
- put(c.s,'connection',pipelineId(provider),{...get(c.s,'connection',pipelineId(provider)),lastRefresh:c.now,rowCount:source.deals.length,error:null,rateLimit:null})
+ put(c.s,'connection',pipelineId(provider),{...get(c.s,'connection',pipelineId(provider)),lastRefresh:c.now,nextExpectedAt,sourceDigest,pendingRaw:false,rowCount:source.deals.length,error:null,rateLimit:null})
  c.activity.push({action:'pipeline-refresh',record:id,scenario:sc.id,detail:{sourceDigest,assumptionDigest,changes:changes.length}})
  return {...result,unchanged:!changes.length}
 }

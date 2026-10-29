@@ -4,11 +4,11 @@ import assert from 'node:assert/strict'
 export const hubspotGrant={clientId:'synthetic-hubspot-client',clientSecret:'synthetic-hubspot-secret',refreshToken:'synthetic-hubspot-refresh',consent:true,readOnly:true,currency:'USD'}
 export const salesforceGrant={clientId:'synthetic-salesforce-client',clientSecret:'synthetic-salesforce-secret',refreshToken:'synthetic-salesforce-refresh',instance:'https://synthetic.my.salesforce.com',termField:'Subscription_Term__c',consent:true,readOnly:true,currency:'USD'}
 export function pipelineProvider(){
- const state={moved:false,fail:false,changed:false,malformed:false,revocation:200,calls:[],learning:false,outcomes:false}
+ const state={moved:false,fail:false,changed:false,restated:false,malformed:false,revocation:200,calls:[],learning:false,outcomes:false}
  const stages=[{id:'qualified',label:'Qualified',metadata:{probability:'0.2',isClosed:'false'}},{id:'proposal',label:'Proposal',metadata:{probability:'0.6',isClosed:'false'}},{id:'won',label:'Won',metadata:{probability:'1',isClosed:'true'}}]
  const hubspotDeals=()=>[
   {id:'deal-a',properties:{dealname:'Acme qualified',dealstage:'qualified',amount:state.changed?'1001':'1000',closedate:state.moved?'2026-07-01':'2026-04-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
-  {id:'deal-b',properties:{dealname:'Beta proposal',dealstage:'proposal',amount:'2400',closedate:'2026-04-15',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
+  {id:'deal-b',properties:{dealname:'Beta proposal',dealstage:'proposal',amount:state.restated?'2500':'2400',closedate:'2026-04-15',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
   {id:'deal-c',properties:{dealname:'Gamma signed',dealstage:'won',amount:'1000',closedate:'2026-05-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}},
   ...(state.learning?Array.from({length:3},(_,i)=>({id:`learning-${i}`,properties:{dealname:`Reviewed learning deal ${i}`,dealstage:state.outcomes?'won':'qualified',amount:'1000',closedate:'2026-03-01',hubspot_owner_id:'owner-1',deal_currency_code:'USD'}})):[]),
  ]
