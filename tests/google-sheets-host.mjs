@@ -15,7 +15,10 @@ export function googleBook(id = 'synthetic-google-spreadsheet') {
  book.insertSheet('Plan'); return book
 }
 function makeSheet(book, name) {
- return { name, data: [], formulas: [], hidden: false, getName() { return name }, hideSheet() { this.hidden = true }, isSheetHidden() { return this.hidden },
+ const metadata = []
+ return { name, data: [], formulas: [], hidden: false, getName() { return this.name }, setName(name) { this.name = name; return this }, hideSheet() { this.hidden = true }, isSheetHidden() { return this.hidden },
+  getDeveloperMetadata() { return metadata.map(([key, value]) => ({ getKey: () => key, getValue: () => value })) },
+  addDeveloperMetadata(key, value) { metadata.push([key, value]); return this },
   clearContents() { this.data = []; this.formulas = [] }, getRange(row, col, rows = 1, cols = 1) { return range(this, row, col, rows, cols) },
   getDataRange() { const rows = Math.max(this.data.length, this.formulas.length, 1), cols = Math.max(2, ...Array.from(this.data, r => r?.length ?? 0), ...Array.from(this.formulas, r => r?.length ?? 0)); return range(this, 1, 1, rows, cols) }, book,
  }
@@ -49,7 +52,10 @@ export async function googleHost({ origin, book, properties = new Map() }) {
   UrlFetchApp: { fetch(url, options) {
    calls.push({ path: new URL(url).pathname, options: { ...options, headers: { 'X-Easel-Spreadsheet': options.headers['X-Easel-Spreadsheet'] } } })
    assert.equal(options.followRedirects, false)
-   if (fault) { if (fault.throw) throw new Error('network failure'); return { getResponseCode: () => fault.status, getContentText: () => fault.body } }
+   if (fault && (!fault.operations || fault.operations.includes(new URL(url).pathname.split('/').pop()))) {
+    if (fault.throw) throw new Error('network failure')
+    return { getResponseCode: () => fault.status, getContentText: () => fault.body, getAllHeaders: () => fault.headers ?? {} }
+   }
    assert.ok(url.startsWith('https://easel.example.test/api/easel/google-sheets/'))
    const args = ['-sS', '--max-time', '30', '-w', '\n%{http_code}', '-X', options.method.toUpperCase(), '-H', 'content-type: application/json']
    for (const [name, value] of Object.entries(options.headers)) args.push('-H', `${name}: ${value}`)
@@ -58,7 +64,7 @@ export async function googleHost({ origin, book, properties = new Map() }) {
    const result = spawnSync('curl', args, { encoding: 'utf8', maxBuffer: 2 * 1024 * 1024 })
    assert.equal(result.status, 0, 'Apps Script UrlFetch reached the running Easel')
    const split = result.stdout.lastIndexOf('\n'), body = result.stdout.slice(0, split), status = Number(result.stdout.slice(split + 1))
-   return { getResponseCode: () => status, getContentText: () => body }
+   return { getResponseCode: () => status, getContentText: () => body, getAllHeaders: () => ({}) }
   } },
  })
  vm.runInContext(await readFile('public/google-sheets/Code.gs', 'utf8'), context, { filename: 'Code.gs' })

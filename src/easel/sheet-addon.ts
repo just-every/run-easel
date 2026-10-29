@@ -100,6 +100,11 @@ export async function addonRefresh(c: Context, b: Data) {
    values.push({ key, unavailable: true, error: error.message, status: error.status })
   }
  }
+ // A Google cache cell cannot contain more than 50,000 characters. Refuse an
+ // oversized binding here so native health matches what the sheet can publish.
+ for (let i = 0; i < values.length; i++) if (JSON.stringify(values[i]).length > 45000) {
+  values[i] = { key: values[i].key, unavailable: true, error: 'Report is too large for a Google Sheets cache cell; choose a smaller report' }
+ }
  const failed = values.filter(v => v.unavailable).length
  const prior = find(c.s, 'sheet-addon-health', c.x.actor.sheetAddon!.id)
  put(c.s, 'sheet-addon-health', sessionId(c), { lastAttempt: c.now, lastRefresh: failed ? prior?.lastRefresh ?? null : c.now, rowCount: values.length - failed,
@@ -108,6 +113,26 @@ export async function addonRefresh(c: Context, b: Data) {
  return { ...session, values, refreshedAt: c.now }
 }
 const sessionId = (c: Context) => c.x.actor.sheetAddon!.id
+// A client can report only its own connection's fixed failure categories, never
+// response bodies, credentials or arbitrary provider text. The live save fence
+// applies just as it does to refresh and write-back.
+export function addonHealth(c: Context, b: Data) {
+ addonSession(c)
+ const reason = choice(b.reason, ['menu', 'open', 'trigger'] as const, 'refresh reason')
+ const failure = choice(b.failure, ['http', 'transport', 'response', 'spreadsheet'] as const, 'refresh failure')
+ const status = failure === 'http' ? integer(b.status, 'HTTP status', 100, 599) : null
+ const retryAfter = status === 429 && b.retryAfter != null ? integer(b.retryAfter, 'Retry-After seconds', 0, 2147483647) : null
+ const prior = find(c.s, 'sheet-addon-health', sessionId(c))
+ const error = failure === 'http' ? `Add-on refresh refused (HTTP ${status}); cached values cleared`
+  : failure === 'transport' ? 'Add-on could not reach Easel; cached values cleared'
+  : failure === 'response' ? 'Add-on received an unreadable Easel response; cached values cleared'
+  : 'Add-on could not refresh its spreadsheet bindings; cached Easel values unavailable'
+ put(c.s, 'sheet-addon-health', sessionId(c), { lastAttempt: c.now, lastRefresh: prior?.lastRefresh ?? null, rowCount: 0,
+  error, rateLimit: status === 429 ? `HTTP 429${retryAfter == null ? '; retry time not supplied' : `; retry after ${retryAfter} seconds`}` : null, reason,
+  reportedBy: 'Apps Script' })
+ c.activity.push({ action: 'sheets-addon-refresh-failed', record: sessionId(c), detail: { reason, failure, status, retryAfter } })
+ return { recorded: true }
+}
 export async function addonWrite(c: Context, b: Data) {
  const session = addonSession(c)
  requireThat(session.writeBack, 'This connection does not allow write-back', 403)

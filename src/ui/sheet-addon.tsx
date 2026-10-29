@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Action, api, Field, Form, Table, type D } from './shared'
+import './sheet-addon.css'
 
 /** Uses the same finance-only Connections surface as the other providers. */
 export function SheetAddon() {
@@ -28,7 +29,7 @@ export function SheetAddon() {
   {status && !status.connections.length && <p>No spreadsheet add-on connections yet.</p>}
   {status?.connections.map((connection: D) => <article key={connection.id}>
    <h3>{connection.label}</h3>
-   <Table caption={`Add-on connection · ${connection.label}`} heads={['Setting', 'Value']}>
+   <Table className="sheet-addon-status" caption={`Add-on connection · ${connection.label}`} heads={['Setting', 'Value']}>
     <tr><td>Status</td><td>{connection.awaitingConfirmation ? 'Waiting for the named person to confirm' : connection.connected ? 'Connected' : 'Disconnected'}</td></tr>
     <tr><td>Private credential</td><td>{connection.credential ?? 'Removed'}</td></tr>
     <tr><td>Person refreshing</td><td>{connection.person}</td></tr>
@@ -37,6 +38,7 @@ export function SheetAddon() {
     <tr><td>Scope</td><td>{connection.scope}</td></tr>
     <tr><td>Schedule</td><td>{connection.schedule === 'hourly' ? 'Hourly approved; sync triggers in the add-on' : 'On demand and on open'}</td></tr>
     <tr><td>Last successful refresh</td><td>{connection.lastRefresh ?? 'No successful refresh yet'}</td></tr>
+    <tr><td>Last reported attempt</td><td>{connection.lastAttempt ?? 'No attempt reported yet'}{connection.reportedBy ? ` · ${connection.reportedBy}` : ''}</td></tr>
     <tr><td>Refreshed bindings</td><td>{connection.rowCount ?? 0}</td></tr>
     <tr><td>Errors</td><td>{connection.error ?? 'None recorded'}</td></tr>
     <tr><td>Rate limit</td><td>{connection.rateLimit ?? 'None recorded'}</td></tr>
