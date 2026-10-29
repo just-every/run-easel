@@ -112,15 +112,60 @@
       }
     },
     {
-      "path": "scripts/edition-authoring/README.md",
-      "originPath": "edition-authoring/README.md",
-      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
+      "path": "migrations/core/0025_business_settings.sql",
+      "originPath": "modules/business-settings/schema/0001_business_settings.sql",
+      "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
       "files": {
-        "scripts/edition-authoring/README.md": "26988b6b5d0426377ee85fa7d61cbbaa29ad2ad93744159a842ab448b60a6c3a"
+        "migrations/core/0025_business_settings.sql": "a16f736a781aa3fe02a2e090c993f8c360c904f9fb6d86126acdab6e1f24e773"
       },
       "modes": {
-        "scripts/edition-authoring/README.md": "100644"
-      }
+        "migrations/core/0025_business_settings.sql": "100644"
+      },
+      "originFiles": [
+        "modules/business-settings/schema/0001_business_settings.sql"
+      ]
+    },
+    {
+      "path": "migrations/core/0026_business_people.sql",
+      "originPath": "modules/business-settings/schema/0002_business_people.sql",
+      "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
+      "files": {
+        "migrations/core/0026_business_people.sql": "51aa39622d866b987d71b6e37c9a8300e7f24c54a55611edaab669ed051b01cd"
+      },
+      "modes": {
+        "migrations/core/0026_business_people.sql": "100644"
+      },
+      "originFiles": [
+        "modules/business-settings/schema/0002_business_people.sql"
+      ]
+    },
+    {
+      "path": "migrations/core/0027_agent_door.sql",
+      "originPath": "modules/agent-door/schema/agent-door.sql",
+      "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
+      "files": {
+        "migrations/core/0027_agent_door.sql": "016d8a98b964385f5c4a13447361c3c783910a76aaf4606b0e0081482bc819cc"
+      },
+      "modes": {
+        "migrations/core/0027_agent_door.sql": "100644"
+      },
+      "originFiles": [
+        "modules/agent-door/schema/agent-door.sql"
+      ]
+    },
+    {
+      "path": "migrations/core/0030_last_signin.sql",
+      "originPath": "default-seed/migrations/core/0031_last_signin.sql",
+      "revision": "114ef7a61f080da053af783c5fbe06f625d692cc",
+      "files": {
+        "migrations/core/0030_last_signin.sql": "289f99fd90e5263e9bb421f14887b0540e0686f7c7aa72110dd1ad20374bc945"
+      },
+      "modes": {
+        "migrations/core/0030_last_signin.sql": "100644"
+      },
+      "originFiles": [
+        "default-seed/migrations/core/0031_last_signin.sql"
+      ]
     },
     {
       "path": "scripts/edition-authoring/base-copies.mjs",
@@ -186,6 +231,17 @@
       },
       "modes": {
         "scripts/edition-authoring/projection-lock.mjs": "100644"
+      }
+    },
+    {
+      "path": "scripts/edition-authoring/README.md",
+      "originPath": "edition-authoring/README.md",
+      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
+      "files": {
+        "scripts/edition-authoring/README.md": "26988b6b5d0426377ee85fa7d61cbbaa29ad2ad93744159a842ab448b60a6c3a"
+      },
+      "modes": {
+        "scripts/edition-authoring/README.md": "100644"
       }
     },
     {
@@ -1370,28 +1426,6 @@
       }
     },
     {
-      "path": "src/modules/mail/LICENSE",
-      "originPath": "modules/mail/LICENSE",
-      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
-      "files": {
-        "src/modules/mail/LICENSE": "2f5076ef027045b9e0e72df8aa61ca8551e54b1877d531656d6e7985b2c32324"
-      },
-      "modes": {
-        "src/modules/mail/LICENSE": "100644"
-      }
-    },
-    {
-      "path": "src/modules/mail/README.md",
-      "originPath": "modules/mail/README.md",
-      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
-      "files": {
-        "src/modules/mail/README.md": "7a041dddfa7161acfb2d53c7fd4522551c5e0c8a6061a8001eefaf9d0539be33"
-      },
-      "modes": {
-        "src/modules/mail/README.md": "100644"
-      }
-    },
-    {
       "path": "src/modules/mail/doctor.mjs",
       "originPath": "modules/mail/doctor.mjs",
       "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
@@ -1414,6 +1448,17 @@
       }
     },
     {
+      "path": "src/modules/mail/LICENSE",
+      "originPath": "modules/mail/LICENSE",
+      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
+      "files": {
+        "src/modules/mail/LICENSE": "2f5076ef027045b9e0e72df8aa61ca8551e54b1877d531656d6e7985b2c32324"
+      },
+      "modes": {
+        "src/modules/mail/LICENSE": "100644"
+      }
+    },
+    {
       "path": "src/modules/mail/package.json",
       "originPath": "modules/mail/package.json",
       "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
@@ -1433,6 +1478,17 @@
       },
       "modes": {
         "src/modules/mail/pnpm-lock.yaml": "100644"
+      }
+    },
+    {
+      "path": "src/modules/mail/README.md",
+      "originPath": "modules/mail/README.md",
+      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
+      "files": {
+        "src/modules/mail/README.md": "7a041dddfa7161acfb2d53c7fd4522551c5e0c8a6061a8001eefaf9d0539be33"
+      },
+      "modes": {
+        "src/modules/mail/README.md": "100644"
       }
     },
     {
@@ -1574,17 +1630,6 @@
       }
     },
     {
-      "path": "src/modules/mail/src/inbound/README.md",
-      "originPath": "modules/mail/src/inbound/README.md",
-      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
-      "files": {
-        "src/modules/mail/src/inbound/README.md": "19f1c3448ae767095f257e2aa0bef8e19e94bd9d00fe0cd7515fb4d0d9f53eff"
-      },
-      "modes": {
-        "src/modules/mail/src/inbound/README.md": "100644"
-      }
-    },
-    {
       "path": "src/modules/mail/src/inbound/bytes.mjs",
       "originPath": "modules/mail/src/inbound/bytes.mjs",
       "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
@@ -1626,6 +1671,17 @@
       },
       "modes": {
         "src/modules/mail/src/inbound/multipart.mjs": "100644"
+      }
+    },
+    {
+      "path": "src/modules/mail/src/inbound/README.md",
+      "originPath": "modules/mail/src/inbound/README.md",
+      "revision": "4280971d7c0295b8a88c3e1179048efcbbe14f30",
+      "files": {
+        "src/modules/mail/src/inbound/README.md": "19f1c3448ae767095f257e2aa0bef8e19e94bd9d00fe0cd7515fb4d0d9f53eff"
+      },
+      "modes": {
+        "src/modules/mail/src/inbound/README.md": "100644"
       }
     },
     {
