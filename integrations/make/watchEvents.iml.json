@@ -31,8 +31,8 @@
       "output": "{{item}}",
       "trigger": {
         "id": "{{item.id}}",
-        "date": "{{parseDate(item.createdAt)}}",
-        "type": "id",
+        "date": "{{parseDate(item.createdAt; \"YYYY-MM-DDTHH:mm:ss.SSSZ\")}}",
+        "type": "date",
         "order": "desc"
       }
     }

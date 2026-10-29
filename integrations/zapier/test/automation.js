@@ -10,7 +10,13 @@ describe('Easel automation app public-door journey', function () {
   const original = process.cwd(); process.chdir(resolve(__dirname, '../../..'))
   const { harness } = await import('../../../tests/harness.mjs')
   let crank
-  const h = await harness({ bindings: { EASEL_WEBHOOK_HOSTS: 'crank.example.test' }, outbound: async request => crank ? crank.receive(request) : new Response('', { status: 503 }) })
+  const { automationEdge } = await import('../../../tests/automation-edge.mjs')
+  const edge = await automationEdge(async wire => {
+   if (!crank) throw new Error('Receiver not running')
+   const response = await crank.receive(new Request(wire.url, { method: 'POST', headers: wire.headers, body: wire.body }))
+   return { status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() }
+  })
+  const h = await harness({ bindings: { ...edge.bindings, EASEL_WEBHOOK_HOSTS: 'crank.example.com' }, outbound: edge.outbound })
   try {
    await h.command('workspace', { name: 'Zapier CLI proof', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
    const department = await h.command('department', { name: 'Operations' })
@@ -57,6 +63,6 @@ describe('Easel automation app public-door journey', function () {
    assert.equal((await h.get(`/api/easel/scenario/${forecast.id}`)).scenario.revision, forecast.revision)
    await h.send('/api/easel/tokens/revoke', { id: issued.value.id }, h.owner)
    await assert.rejects(appTester(App.triggers.approval.operation.perform, bundle))
-  } finally { await crank?.close(); await h.close(); process.chdir(original) }
+  } finally { await crank?.close(); await h.close(); await edge.close(); process.chdir(original) }
  })
 })
