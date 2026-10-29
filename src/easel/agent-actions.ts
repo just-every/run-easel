@@ -88,7 +88,7 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
  if (name === 'proposal-submit' || name === 'input-delete' || (INPUT_KINDS as readonly string[]).includes(name)) {
   const id = name === 'proposal-submit' ? b.id : name === 'input-delete' ? get(c.s, String(b.kind), b.id).scenario : b.scenario
   const proposal = get(c.s, 'scenario', id)
-  requireThat(proposal.kind === 'proposal' && proposal.createdBy === c.x.actor.email && proposal.status === 'working' && proposal.proposalStatus === 'draft', 'Agents may edit and submit only their own draft proposals', 403)
+  requireAgentDraft(c, proposal.id)
  }
  requireThat(!backgroundScenario(c.s, name, b), 'This change requires a native background calculation; this door does not declare queued continuation', 409)
  const result = name === 'comment' ? await cycle(c, name, b) : name === 'explanation' ? await review(c, name, b) : await plan(c, name, b)
@@ -96,3 +96,8 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
  return result
 }
 
+
+export function requireAgentDraft(c: Context, id: string) {
+ const proposal = get(c.s, 'scenario', id)
+ requireThat(proposal.kind === 'proposal' && proposal.createdBy === c.x.actor.email && proposal.status === 'working' && proposal.proposalStatus === 'draft', 'Agents may edit and submit only their own draft proposals', 403)
+}
