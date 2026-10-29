@@ -359,6 +359,12 @@
       "clauses": [
         "CONNECT-011"
       ]
+    },
+    {
+      "id": "google-sheets-addon",
+      "clauses": [
+        "SHEET-002"
+      ]
     }
   ],
   "nonGoals": [

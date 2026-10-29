@@ -42,22 +42,23 @@ export function grantCeiling(x: Access, s: State): GrantCeiling {
 }
 export function access(s: State, a: Actor): Access {
  const current = currentAccess(s, a)
- if (!a.token) return current
- if (current.role !== a.token.role) return { actor: a, role: null, departments: [], payDetail: false }
- const ceiling = a.token.grants
+ const credential = a.token ?? a.sheetAddon
+ if (!credential) return current
+ if (current.role !== credential.role) return { actor: a, role: null, departments: [], payDetail: false }
+ const ceiling = credential.grants
  // Old credentials never gain group, dimension or capability authority. Their
  // original department/pay ceilings still govern their legacy planning reads.
  if (!ceiling) {
   const legacy = currentAccess(new Map([...s].filter(([, row]) => row.kind !== 'access-group')), a)
-  return { ...legacy, departments: intersect(legacy.departments, a.token.departments), readDepartments: intersect(legacy.readDepartments ?? [], a.token.departments), payDetail: legacy.payDetail === true && a.token.payDetail, capabilities: legacy.role === 'finance' ? legacy.capabilities ?? [] : [], dimensionLimited: all(s, 'dimension').length > 0, groups: [], scenarioGrants: {},
+  return { ...legacy, departments: intersect(legacy.departments, credential.departments), readDepartments: intersect(legacy.readDepartments ?? [], credential.departments), payDetail: legacy.payDetail === true && credential.payDetail, capabilities: legacy.role === 'finance' ? legacy.capabilities ?? [] : [], dimensionLimited: all(s, 'dimension').length > 0, groups: [], scenarioGrants: {},
    readGrants: [], editGrants: [], dimensionRead: Object.fromEntries(all(s, 'dimension').map(d => [d.id, []])), dimensionEdit: Object.fromEntries(all(s, 'dimension').map(d => [d.id, []])) }
  }
  const scenarioGrants = Object.fromEntries(Object.entries(current.scenarioGrants ?? {}).filter(([id]) => ceiling.scenarioGrants[id]).map(([id, mode]) => [id, mode === 'edit' && ceiling.scenarioGrants[id] === 'edit' ? 'edit' : 'read'])) as Record<string, 'read' | 'edit'>
  const readGrants = intersectGrants(s, current.readGrants ?? [], ceiling.readGrants ?? [{ id: 'legacy-ceiling', departments: ceiling.readDepartments, dimensions: ceiling.dimensionRead }])
- const editGrants = intersectGrants(s, current.editGrants ?? [], ceiling.editGrants ?? [{ id: 'legacy-ceiling', departments: a.token.departments, dimensions: ceiling.dimensionEdit }])
+ const editGrants = intersectGrants(s, current.editGrants ?? [], ceiling.editGrants ?? [{ id: 'legacy-ceiling', departments: credential.departments, dimensions: ceiling.dimensionEdit }])
  const dimensionRead = dimensionSummary(readGrants), dimensionEdit = dimensionSummary(editGrants)
  const scoped = { ...current, readGrants, editGrants }
- return { ...scoped, dimensionRead, dimensionEdit, dimensionLimited: !hasFullScope(s, scoped), payDetail: current.payDetail === true && a.token.payDetail, departments: intersect(current.departments, a.token.departments), readDepartments: intersect(current.readDepartments ?? [], ceiling.readDepartments),
+ return { ...scoped, dimensionRead, dimensionEdit, dimensionLimited: !hasFullScope(s, scoped), payDetail: current.payDetail === true && credential.payDetail, departments: intersect(current.departments, credential.departments), readDepartments: intersect(current.readDepartments ?? [], ceiling.readDepartments),
   capabilities: intersect(current.capabilities ?? [], ceiling.capabilities) as Capability[], groups: intersect(current.groups ?? [], ceiling.groups), scenarioGrants,
   groupOnly: current.groupOnly || ceiling.groupOnly,
   statementDepartments: intersect(current.statementDepartments ?? [], ceiling.readDepartments) }

@@ -5,7 +5,7 @@ import { find, get, requireThat, type Access, type Data, type State } from './ty
 
 export function canSeeScenario(x: Access, sc: Data) {
  if (!x.role || x.scenarioDimensions?.[sc.id] && !dimensionAllowed(new Map(), x, x.scenarioDimensions[sc.id])) return false
- if (sc.sandbox) return x.actor.token ? ['read', 'edit'].includes(x.scenarioGrants?.[sc.id] ?? '') : sc.createdBy === x.actor.email || ['read', 'edit'].includes(sc.sandbox.grants?.[x.actor.email]) || ['read', 'edit'].includes(x.scenarioGrants?.[sc.id] ?? '')
+ if (sc.sandbox) return (x.actor.token || x.actor.sheetAddon) ? ['read', 'edit'].includes(x.scenarioGrants?.[sc.id] ?? '') : sc.createdBy === x.actor.email || ['read', 'edit'].includes(sc.sandbox.grants?.[x.actor.email]) || ['read', 'edit'].includes(x.scenarioGrants?.[sc.id] ?? '')
  if (sc.kind === 'proposal') return x.role === 'finance' || (x.role === 'contributor' && sc.createdBy === x.actor.email)
  return true
 }
@@ -16,7 +16,7 @@ export function scenarioAccess(s: State, x: Access, id: unknown) {
 }
 export function requireScenarioEdit(x: Access, sc: Data) {
  requireThat(canSeeScenario(x, sc), 'Scenario not found', 404)
- if (sc.sandbox) requireThat(x.actor.token ? x.scenarioGrants?.[sc.id] === 'edit' : sc.createdBy === x.actor.email || sc.sandbox.grants?.[x.actor.email] === 'edit' || x.scenarioGrants?.[sc.id] === 'edit', 'This scenario is shared read-only', 403)
+ if (sc.sandbox) requireThat((x.actor.token || x.actor.sheetAddon) ? x.scenarioGrants?.[sc.id] === 'edit' : sc.createdBy === x.actor.email || sc.sandbox.grants?.[x.actor.email] === 'edit' || x.scenarioGrants?.[sc.id] === 'edit', 'This scenario is shared read-only', 403)
 }
 
 /** Activity remains append-only; its projection follows today's scenario grant. */
