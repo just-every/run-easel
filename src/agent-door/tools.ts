@@ -1,4 +1,5 @@
 import type { ClassAndFacts, ToolDefinition } from '../modules/agent-door/index.ts'
+import { deletionReplay } from './deletion.ts'
 import { catalogue } from './catalogue.ts'
 import { nativeAction, nativeContext } from './native.ts'
 import { find, type Data } from '../easel/types'
@@ -19,6 +20,7 @@ export const planningTools: ToolDefinition[] = catalogue.map(tool => ({
  name: tool.name, title: tool.name, description: tool.description, scope: tool.scope, readOnly: tool.readOnly,
  inputSchema: { ...tool.inputSchema, type: 'object' }, outputSchema: { type: 'object' }, classes: tool.classes, clauses: tool.clauses, untrusted: true,
  async classify(args, ctx) {
+  if (tool.nativeName === 'input-delete') { const retained = await deletionReplay(args, ctx); if (retained) return recordClasses(retained) }
   // Native status reads expire interrupted jobs. Classification must never do that.
   if (tool.nativeName === 'calculation_status') { await nativeContext(ctx); return recordClasses(null) }
   const { c, result } = await nativeAction(tool.nativeName, args, ctx, false)

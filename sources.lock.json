@@ -970,12 +970,16 @@
       "sha256": "0ca01070528c76d6bd6829cced5fe876f07959600934cafe85cc4f983891bac0",
       "executable": false
     },
+    "src/agent-door/deletion.ts": {
+      "sha256": "b3f8f700800c65af17130b1f78be1f5f9c792a1c379181b569afb7574d276281",
+      "executable": false
+    },
     "src/agent-door/index.ts": {
       "sha256": "36c381072411a025f26a65a33671d69b90a3a86e3f755e093a742f193fca7137",
       "executable": false
     },
     "src/agent-door/native.ts": {
-      "sha256": "097bb5ea848dfe339f16fd4adec6e034e076f91f9e7668b8921d1b7058c9e7e5",
+      "sha256": "7e7c38fec5bdbc50e103656acfc45ec954dcb08ac67ba1c8638beff504e63a6c",
       "executable": false
     },
     "src/agent-door/people.ts": {
@@ -983,7 +987,7 @@
       "executable": false
     },
     "src/agent-door/tools.ts": {
-      "sha256": "a1a581d6fc74a38bfa3de6847d5188d8a159b58d5a102f1194d55f23a9fd805c",
+      "sha256": "8406a79e0a34bfd4599b230cebebc4423d4618537f01152894f7f28736bb44e9",
       "executable": false
     },
     "src/agent-door/trust.ts": {
@@ -1139,7 +1143,7 @@
       "executable": false
     },
     "src/easel/agent-actions.ts": {
-      "sha256": "a6dd83c5c724e21725ccb344b6f402f5e28b03d4825765e0ea6c99d63ff11e83",
+      "sha256": "be26544dfff62602d4721dca442f042797c89aa1157af11ba9f6216fda88145a",
       "executable": false
     },
     "src/easel/agents/agent-evaluate.ts": {
@@ -1287,7 +1291,7 @@
       "executable": false
     },
     "src/easel/audit-write.ts": {
-      "sha256": "eccc867db31f019198e9f65a26e947091bb2fb8ff19e6464e8a1c77b33484a35",
+      "sha256": "b005748e2a3fe3c364bf61f875c01ef20212ec6911db3cb79c564326027b4723",
       "executable": false
     },
     "src/easel/audit.ts": {
@@ -1782,6 +1786,10 @@
       "sha256": "23d7c42dfd0974fcd6c6351579c6d19c023e7408e9cae10765b8f28f9a207993",
       "executable": false
     },
+    "src/easel/input-removal.ts": {
+      "sha256": "7ad1930727b103fe5fbf11ffe645541d45c96b9f90d5c9cc114318f7a89e2e6c",
+      "executable": false
+    },
     "src/easel/intacct-connection.ts": {
       "sha256": "12ac3d18224ff1d3f88da954bd8235d650fa534d6216a49a2f363553a32094db",
       "executable": false
@@ -2131,7 +2139,7 @@
       "executable": false
     },
     "src/easel/plan.ts": {
-      "sha256": "57d6fd29ad72077735e03801c17daa1a50015fded2a14e1c3a1cb5b302d491f4",
+      "sha256": "9275c7af466981af50f64a84567ac5d12558ceef37dce07502fc278f3a09c6af",
       "executable": false
     },
     "src/easel/qbo-connection.ts": {
@@ -2307,7 +2315,7 @@
       "executable": false
     },
     "src/easel/types.ts": {
-      "sha256": "c1494ce0aa658a051697664f507c6992c720a9763dba15970dc1349c627f75df",
+      "sha256": "e70dedacda83ec53533898271053a22657ee12612ea0267da83c2055da755359",
       "executable": false
     },
     "src/easel/units.ts": {
