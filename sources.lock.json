@@ -4999,7 +4999,7 @@
       "executable": false
     },
     "tests/excel-browser.mjs": {
-      "sha256": "1280ce72c75d3cb18f47af97ce980cf223860da637a908e6160335343b7bf780",
+      "sha256": "4576cc15eb6d604e041d1edaf6c187c6a27852dbbf917a4a8cfd18c09de00b81",
       "executable": false
     },
     "tests/excel-host.mjs": {
