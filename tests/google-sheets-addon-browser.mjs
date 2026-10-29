@@ -82,6 +82,21 @@ try {
  await sidebar.goto(server.origin + '/google-sheets/Sidebar.html')
  await sidebar.getByText('Connected. Refresh to read current Easel values.', { exact: true }).waitFor()
  await sidebar.getByText('Insert a live formula', { exact: true }).click(); await sidebar.getByText('Write an input for review', { exact: true }).click()
+ // The Apps Script journeys exercise failure emission at the network edge.
+ // Here the same public health door proves the production native status UI.
+ const addonHeaders = { 'X-Easel-Sheets-Key': key, 'X-Easel-Spreadsheet': 'synthetic-google-spreadsheet' }
+ const refresh = await contributor.request.post(server.origin + '/api/easel/google-sheets/refresh', { headers: addonHeaders, data: { reason: 'menu', bindings: [{ key: 'revenue', kind: 'value', scenario, line: line.id, department: department.id, month: '2026-01' }] } })
+ assert.equal(refresh.status(), 200)
+ const successful = (await api(owner, server.origin, 'connections/sheets-addon')).connections[0]
+ assert.equal(successful.rowCount, 1); assert.ok(successful.lastRefresh)
+ const failure = await contributor.request.post(server.origin + '/api/easel/google-sheets/health', { headers: addonHeaders, data: { reason: 'menu', failure: 'http', status: 429, retryAfter: 120, error: 'Untrusted provider body' } })
+ assert.equal(failure.status(), 200)
+ await card.getByRole('button', { name: 'Refresh add-on status' }).click()
+ await card.getByRole('cell', { name: 'HTTP 429; retry after 120 seconds', exact: true }).waitFor()
+ await card.getByRole('cell', { name: 'Add-on refresh refused (HTTP 429); cached values cleared', exact: true }).waitFor()
+ assert.equal(await card.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Refreshed bindings', exact: true }) }).getByRole('cell').last().innerText(), '0')
+ assert.equal((await api(owner, server.origin, 'connections/sheets-addon')).connections[0].lastRefresh, successful.lastRefresh)
+ assert.doesNotMatch(await card.innerText(), /Untrusted provider body/)
  await noOverflow(page, 'Google Sheets connection desktop'); await noOverflow(sidebar, 'Google Sheets sidebar desktop'); await noOverflow(confirmation, 'Google Sheets confirmation desktop')
  // Each proof width starts in a fresh page, avoiding viewport-change state in
  // unrelated Settings panels. Assertions above use 1440 only.
@@ -99,8 +114,16 @@ try {
   await sheet.setViewportSize({ width, height: await sheet.evaluate(() => document.documentElement.scrollHeight + 20) }); await sheet.evaluate(() => scrollTo(0, 0))
   await photo(sheet, `google-sheets-sidebar-${width}.png`); await sheet.close()
  }
+ const unreachable = await contributor.request.post(server.origin + '/api/easel/google-sheets/health', { headers: addonHeaders, data: { reason: 'trigger', failure: 'transport' } })
+ assert.equal(unreachable.status(), 200)
+ await card.getByRole('button', { name: 'Refresh add-on status' }).click()
+ await card.getByRole('cell', { name: 'Add-on could not reach Easel; cached values cleared', exact: true }).waitFor()
+ const recovered = await contributor.request.post(server.origin + '/api/easel/google-sheets/refresh', { headers: addonHeaders, data: { reason: 'menu', bindings: [{ key: 'revenue', kind: 'value', scenario, line: line.id, department: department.id, month: '2026-01' }] } })
+ assert.equal(recovered.status(), 200)
+ await card.getByRole('button', { name: 'Refresh add-on status' }).click()
+ await card.getByRole('cell', { name: 'None recorded', exact: true }).first().waitFor()
  await card.getByRole('button', { name: 'Change refresh schedule · Sales planning sheet' }).click(); await card.getByRole('cell', { name: 'On demand and on open', exact: true }).waitFor()
  await card.getByRole('button', { name: 'Disconnect add-on · Sales planning sheet' }).click(); await card.getByText(/Easel confirmed revocation of this add-on key/).waitFor()
  const refused = await contributor.request.get(server.origin + '/api/easel/google-sheets/session', { headers: { 'X-Easel-Sheets-Key': key, 'X-Easel-Spreadsheet': 'synthetic-google-spreadsheet' } }); assert.equal(refused.status(), 401)
- console.log('SHEET-002 native approval, person-only claim, direct input in Plan, schedule and revocation passed; changed screens captured at 1440/390')
+ console.log('SHEET-002 native approval, person-only claim, direct input in Plan, persisted rate/transport failure, recovery, schedule and revocation passed; changed screens captured at 1440/390')
 } finally { await browser?.close(); await server?.close() }
