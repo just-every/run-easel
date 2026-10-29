@@ -8,7 +8,7 @@ export const ADDON_PURPOSE = 'easel:google-sheets-addon:person-key:v1'
 export const addonSecretId = (id: string) => `sheets-addon:${id}`
 export async function sheetAddonActor(request: Request, env: Bindings): Promise<Actor> {
  const path = new URL(request.url).pathname
- requireThat(/^\/api\/easel\/google-sheets\/(refresh|write|session)$/.test(path), 'This credential is only for the Google Sheets add-on', 403)
+ requireThat(/^\/api\/easel\/google-sheets\/(refresh|write|session|health)$/.test(path), 'This credential is only for the Google Sheets add-on', 403)
  requireThat(!request.headers.has('authorization'), 'Choose one sign-in method', 403)
  const key = request.headers.get('x-easel-sheets-key') ?? ''
  const match = /^easgs_([0-9a-f-]{36})\.([0-9a-f]{64})$/.exec(key)

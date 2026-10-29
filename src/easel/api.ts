@@ -1,4 +1,4 @@
-import { sheetAddonConnection, sheetAddonStatus, addonSession, addonRefresh, addonWrite, addonPairing } from './sheet-addon'
+import { sheetAddonConnection, sheetAddonStatus, addonSession, addonRefresh, addonWrite, addonPairing, addonHealth } from './sheet-addon'
 import { intacctConnection,intacctStatus } from './intacct-connection'
 import { intacctImport } from './intacct-import'
 import { netsuiteConnection,netsuiteStatus } from './netsuite-connection'
@@ -501,9 +501,9 @@ api.post('/api/easel/connections/sheets-addon/:op', async c => {
 api.get('/api/easel/google-sheets/session', c => read(c, async ctx => addonSession(ctx)))
 api.post('/api/easel/google-sheets/:op', async c => {
  const ctx = await open(c), input = await body(c, 200000), op = c.req.param('op')
- requireThat(op === 'refresh' || op === 'write', 'Unknown Google Sheets add-on action', 404)
+ requireThat(op === 'refresh' || op === 'write' || op === 'health', 'Unknown Google Sheets add-on action', 404)
  await readFence(ctx.db, ctx.x.actor, ctx.revision)
- const result = op === 'refresh' ? await addonRefresh(ctx, input) : await addonWrite(ctx, input)
+ const result = op === 'refresh' ? await addonRefresh(ctx, input) : op === 'health' ? addonHealth(ctx, input) : await addonWrite(ctx, input)
  await commit(ctx)
  return c.json(result)
 })
