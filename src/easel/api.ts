@@ -19,6 +19,9 @@ import { analystPreview, beginAnalyst, authorizeAnalyst, finishAnalyst, analystW
 import { governanceStatus, governanceSettings, requireAgent } from './agents/governance'
 import { gustoStatus, gustoConnection } from './gusto-connection'
 import { gustoImport } from './gusto-import'
+import { hrisStatus, hrisConnection } from './hris-connection'
+import { hrisImport } from './hris-import'
+import { hrisId, HRIS } from './hris-provider'
 import { privateSlackStatus, privateSlackConnection, privateSlackBinding } from './agents/private-slack'
 import { modelerStatus, modelerSettings } from './agents/modeler-settings'
 import { modelerPreview } from './agents/modeler-request'
@@ -296,6 +299,14 @@ api.post('/api/easel/greenhouse/:op', async c => {
  if(op==='preview')await readFence(ctx.db,ctx.x.actor,ctx.revision)
  else await commit(ctx)
  return c.json(value)
+})
+
+api.get('/api/easel/connections/hris/:provider', c => read(c, ctx => hrisStatus(ctx,hrisId(c.req.param('provider')))))
+api.post('/api/easel/connections/hris/:provider/:op', async c => {
+ const ctx=await open(c),id=hrisId(c.req.param('provider'))
+ ctx.extra=await hrisConnection(ctx,c.env,id,c.req.param('op'),await body(c))
+ await commit(ctx)
+ return read(c,current=>hrisStatus(current,id))
 })
 
 api.get('/api/easel/connections/gusto', c => read(c, ctx => gustoStatus(ctx)))
@@ -747,11 +758,11 @@ async function executeCommand(c: HonoContext<Env>, ctx: Awaited<ReturnType<typeo
 
 api.post('/api/easel/import/:kit/:op', async c => {
  const kit = c.req.param('kit')
- requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo' || kit === 'xero' || kit === 'intacct' || kit === 'netsuite', 'Unknown move-in kit', 404)
+ requireThat(kit === 'actuals' || kit === 'workbook' || kit === 'payroll' || kit === 'incumbent' || kit === 'gusto' || kit === 'pantry' || kit === 'qbo' || kit === 'xero' || kit === 'intacct' || kit === 'netsuite' || (HRIS as readonly string[]).includes(kit), 'Unknown move-in kit', 404)
  const ctx = await open(c)
  if (kit !== 'incumbent' || c.req.param('op') !== 'preview') requirePayDetail(ctx.x)
  const b = await body(c, kit !== 'actuals' ? 8_000_000 : 3_000_000)
- const step: KitStep | undefined = kit === 'netsuite' ? await netsuiteImport(ctx,c.env,c.req.param('op'),b) : kit === 'intacct' ? await intacctImport(ctx,c.env,c.req.param('op'),b) : kit === 'xero' ? await xeroImport(ctx,c.env,c.req.param('op'),b) : kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
+ const step: KitStep | undefined = (HRIS as readonly string[]).includes(kit) ? await hrisImport(ctx,c.env,hrisId(kit),c.req.param('op'),b) : kit === 'netsuite' ? await netsuiteImport(ctx,c.env,c.req.param('op'),b) : kit === 'intacct' ? await intacctImport(ctx,c.env,c.req.param('op'),b) : kit === 'xero' ? await xeroImport(ctx,c.env,c.req.param('op'),b) : kit === 'qbo' ? await qboImport(ctx,c.env,c.req.param('op'),b) : kit === 'pantry' ? await pantryImport(ctx,c.env,c.req.param('op'),b) : kit === 'gusto' ? await gustoImport(ctx, c.env, c.req.param('op'), b) : await (kit === 'actuals' ? actualsCommand : kit === 'payroll' ? payrollImport : kit === 'incumbent' ? moveImport : workbookCommand)(ctx, c.req.param('op'), b)
  requireThat(step, 'Unknown import action', 404)
  const importKind = kit === 'incumbent' ? 'move-import' : 'workbook-import'
  const imported = [...ctx.s.values()].find(row => row.kind === importKind && (row.id === b.id || ctx.before.get(`${importKind}:${row.id}`)?.revision !== row.revision))?.value

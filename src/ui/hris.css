@@ -1,0 +1,2 @@
+.hris-connections td small { display: block; margin-top: 4px; }
+.hris-connections .table-scroll .hris-unmapped tbody td:first-child { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }

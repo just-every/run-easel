@@ -21,7 +21,7 @@ export async function builtBrowserRuntime(options = {}) {
   compatibilityDate: config.compatibility_date, compatibilityFlags: config.compatibility_flags, d1Databases: { DB: options.databaseId??'easel-built-browser' },
   bindings: { AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'synthetic-easel-session-secret-01234567890123456789', SETUP_TOKEN: bootstrap, MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>', ...(typeof options.bindings === 'function' ? options.bindings(origin) : options.bindings) },
   assets: { directory: resolve(workerDir, config.assets.directory), binding: 'ASSETS', run_worker_first: true, routerConfig: { has_user_worker: true }, assetConfig: { html_handling: config.assets.html_handling, not_found_handling: config.assets.not_found_handling } },
-  ...(options.now ? { serviceBindings: { TEST_CLOCK: async () => new Response(options.now()) } } : {}),
+  serviceBindings: {...options.serviceBindings,...(options.now?{TEST_CLOCK:async()=>new Response(options.now())}:{})},
   ...(options.outbound ? { outboundService: options.outbound } : {}),
  }), resourcePersistencePath: options.persistencePath??directory })
  try {

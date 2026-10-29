@@ -1,3 +1,4 @@
+import { sourceGuardBlock } from './agents/source-guard'
 // Dated file observations are compared with the scenario's planned inputs.
 // Missing monthly observations stay unavailable; no carry-forward roster is invented.
 import { requireMember, seesPayDetail } from './access'
@@ -18,6 +19,7 @@ export async function headcountView(c: Context, scenario: string) {
  requireMember(c.x)
  const sc = get(c.s,'scenario',scenario)
  requireThat(canSeeScenario(c.x,sc), 'Scenario not found',404)
+ const sourceHold=sourceGuardBlock(c,sc)
  const m = sc.status === 'frozen' ? await frozenModel(c,sc) : model(c.s,scenario)
  // Compare planned cost, even where the working forecast now uses closed actuals.
  const calculation = calculate({...m,inputs:{...m.inputs,formula:[]},scenario:{...m.scenario,actualsThrough:null}})
@@ -41,12 +43,12 @@ export async function headcountView(c: Context, scenario: string) {
    const actual = selected.filter(r => r.department === d.id), pay = monthlyRuns.filter(r => r.department === d.id)
    const links = actual.map(r => r.positionOrigin).filter(Boolean)
    const ambiguous = new Set(links).size !== links.length
-   const available = latest.size > 0 && !ambiguous
+   const available = latest.size > 0 && !ambiguous && !sourceHold
    const payrollLines = m.lines.filter(l => l.payroll).map(l => l.id)
    const plannedCostCents = calculation.cells.filter(cell => cell.month === month && cell.department === d.id).reduce((n,cell) => n+cell.sources.filter(source => payrollLines.includes(cell.line) || source.kind === 'position').reduce((v,source) => v+source.amount,0),0)
    const actualCostCents = pay.length ? pay.reduce((n,r) => n+r.totalCents,0) : null
    const actualHeadcount = available ? actual.filter(r => r.start <= r.asOf && (!r.termination || r.termination > r.asOf)).length : null
-   return {month,department:d.id,name:d.name,observations:[...latest.values()].map(i => ({provider:i.provider,asOf:i.asOf})),issue:ambiguous ? 'Multiple providers link employees to the same planned position' : null,
+   return {month,department:d.id,name:d.name,observations:[...latest.values()].map(i => ({provider:i.provider,asOf:i.asOf})),issue:sourceHold ? 'Source refresh requires review; current roster conclusions are unavailable' : ambiguous ? 'Multiple providers link employees to the same planned position' : null,
     plannedHeadcount:current.length,actualHeadcount,headcountDifference:actualHeadcount === null ? null : actualHeadcount-current.length,
     plannedHires:planned.filter(p => p.start === month).length,actualHires:available ? actual.filter(r => datePeriod(m.workspace, r.start) === month && r.start <= r.asOf).length : null,
     plannedDepartures:planned.filter(p => p.end === addMonths(month,-1)).length,actualDepartures:available ? actual.filter(r => r.termination && datePeriod(m.workspace, r.termination) === month && r.termination <= r.asOf).length : null,
@@ -56,6 +58,6 @@ export async function headcountView(c: Context, scenario: string) {
    }
   })
  })
- return {scenario,currency:m.workspace.currency,source:imports.some(i => i.source === 'gusto') ? 'Reviewed files and accepted connected Gusto roster and payroll observations' : 'Reviewed roster and payroll-register files',months,history,
+ return {scenario,currency:m.workspace.currency,source:imports.some(i => i.source?.startsWith('hris:')) ? 'Reviewed files and accepted connected HRIS roster observations; payroll cost requires accepted registers' : imports.some(i => i.source === 'gusto') ? 'Reviewed files and accepted connected Gusto roster and payroll observations' : 'Reviewed roster and payroll-register files',months,history,
   positions:positions.filter(p => seesPayDetail(c.x,p.department)).map(p => ({id:p.id,originId:p.originId,title:p.title,department:p.department,plannedStartDate:p.plannedStartDate || null,backfillOrigin:p.backfillOrigin || null,attritionBps:p.attritionBps ?? 0}))}
 }

@@ -17,8 +17,8 @@ export function rosterBuckets(s: State, scenario: string, roster: Data[]) {
   const position = positions.find(p => p.originId === person.positionOrigin)
   if (!position) { unplanned.push(person); continue }
   linked.add(position.originId)
-  const row = { ...person, position: position.id, plannedTitle: position.title, plannedSalaryCents: position.annualSalaryCents }
-  if (person.salaryCents === null || person.salaryCents !== position.annualSalaryCents) changedSalary.push(row)
+  const row = { ...person, position: position.id, plannedTitle: position.title, plannedSalaryCents: position.annualSalaryCents, plannedHourlyRateCents: position.hourlyRateCents, plannedPayBasis: position.payBasis ?? 'salary' }
+  if (person.salaryCents === null ? position.payBasis !== 'hourly' || person.hourlyRateCents !== position.hourlyRateCents : position.payBasis === 'hourly' || person.salaryCents !== position.annualSalaryCents) changedSalary.push(row)
   else matched.push(row)
  }
  return { matched, unplanned, changedSalary, plannedNotHired: positions.filter(p => !linked.has(p.originId)) }

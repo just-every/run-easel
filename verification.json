@@ -35,6 +35,7 @@
         "node tests/intacct-browser.mjs --existing-build",
         "node tests/netsuite-browser.mjs --existing-build",
         "node tests/weekly-cash-browser.mjs --existing-build",
+        "node tests/hris-browser.mjs --existing-build",
         "node tests/excel-browser.mjs",
         "node tests/spend-browser.mjs",
         "node tests/gauge-schedule-browser.mjs",
