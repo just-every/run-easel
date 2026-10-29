@@ -90,6 +90,7 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
   const proposal = get(c.s, 'scenario', id)
   requireThat(proposal.kind === 'proposal' && proposal.createdBy === c.x.actor.email && proposal.status === 'working' && proposal.proposalStatus === 'draft', 'Agents may edit and submit only their own draft proposals', 403)
  }
+ requireThat(!backgroundScenario(c.s, name, b), 'This change requires a native background calculation; this door does not declare queued continuation', 409)
  const result = name === 'comment' ? await cycle(c, name, b) : name === 'explanation' ? await review(c, name, b) : await plan(c, name, b)
  requireThat(result !== undefined, 'Tool unavailable', 403)
  return result

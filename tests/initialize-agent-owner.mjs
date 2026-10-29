@@ -1,5 +1,12 @@
 // Disposable verifier fixture: only the real native owner and planning doors.
 export default async function ({ request, origin, claim, displayName, returnTo }) {
+ const nativeRequest = request
+ request = async (url, init) => {
+  console.error(`Agent owner fixture: requesting ${init?.method ?? 'GET'} ${new URL(url).pathname}`)
+  const response = await nativeRequest(url, init)
+  console.error(`Agent owner fixture: ${init?.method ?? 'GET'} ${new URL(url).pathname} ${response.status}`)
+  return response
+ }
  const bootstrap = await request(new URL(claim.path, origin).href, { method: 'POST', redirect: 'manual', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ token: claim.token, displayName, returnTo }) })
  if (bootstrap.status !== 303) throw new Error('Owner claim failed')
  const cookie = bootstrap.headers.getSetCookie().map(value => value.split(';')[0]).join('; ')
@@ -11,8 +18,11 @@ export default async function ({ request, origin, claim, displayName, returnTo }
  const command = (op, body) => json(`/api/easel/command/${op}`, body)
  await command('workspace', { name: 'Synthetic planning company', currency: 'USD', fiscalYearStart: 7, planStart: '2026-07' })
  const department = await command('department', { name: 'Sales' })
+ await command('department', { name: 'Operations', shared: true })
  const revenue = await command('line', { name: 'Revenue', type: 'revenue' })
  const cost = await command('line', { name: 'Operating cost', type: 'operating-expense' })
+ await command('line', { name: 'Depreciation', type: 'operating-expense', nonCash: true })
+ await command('line', { name: 'Income tax', type: 'operating-expense' })
  const salary = await command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
  const budget = (await json('/api/easel/state')).scenarios.find(s => s.kind === 'budget')
  await command('position', { scenario: budget.id, department: department.id, line: salary.id, title: 'Sales planner', holder: 'Synthetic Employee', annualSalary: '60000', start: '2026-07' })

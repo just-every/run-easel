@@ -26,6 +26,7 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  await h.kit('actuals', 'commit', { ...source, fingerprint: preview.fingerprint })
  await cmd('close-month', { scenario: forecast.id, month: '2026-01' })
 
+ await h.agentPolicy()
  let nextId = 1
  const rpc = async (method, params, cookie = contributor, headers = {}, notification = false) => {
   const r = await h.mf.dispatchFetch(`${h.origin}/api/easel/mcp`, { method: 'POST', headers: { origin: h.origin, cookie, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25', accept: 'application/json, text/event-stream', ...headers }, body: JSON.stringify(agentMessage({ jsonrpc: '2.0', ...(notification ? {} : { id: nextId++ }), method, params })) })

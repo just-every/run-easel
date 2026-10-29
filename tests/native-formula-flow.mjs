@@ -98,7 +98,7 @@ export async function nativeFormulaFlow(h) {
  const proposal = await h.command('proposal-create', { from: forecast.id, name: 'Support expansion', request: 'Serve 120 customers' }, contributor)
  const draft = await view(proposal.id, contributor), proposalCustomers = draft.inputs.formula.find(f => f.originId === customers.originId)
  const response = await h.send('/api/easel/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'formula', arguments: { scenario: proposal.id, revision: String(draft.scenario.revision), id: proposalCustomers.id, name: 'Customers', department: department.id, unit: 'count', start: '2026-01', formula: '120' } } }, contributor)
- assert.equal(response.status, 200); assert.equal(response.value.result.isError, undefined, JSON.stringify(response.value))
+ assert.equal(response.status, 200); assert.equal(response.value.result.isError, false, JSON.stringify(response.value))
  const comparison = await h.get(`/api/easel/compare?a=${forecast.id}&b=${proposal.id}`, contributor)
  assert.ok(comparison.changedInputs.some(c => c.after?.formula === '120' && c.before?.formula === '100'))
  assert.equal(comparison.changedCells.find(c => c.line === revenue.id && c.month === '2026-01').difference, 100000)
