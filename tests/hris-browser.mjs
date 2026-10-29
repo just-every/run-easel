@@ -22,7 +22,8 @@ try{
  const f=await hrisFixture(call),before=await call(`scenario/${f.scenario}`)
  page=await context.newPage();track(page);page.on('dialog',dialog=>dialog.accept())
  await page.goto(`${runtime.origin}/setup`)
- await page.getByLabel('I confirm this owner account is ready to use.',{exact:true}).check();await page.getByRole('button',{name:'Finish setup',exact:true}).click();await page.getByRole('navigation',{name:'Easel'}).waitFor()
+ await page.getByLabel('I confirm this owner account is ready to use.',{exact:true}).check();await page.getByRole('button',{name:'Finish setup',exact:true}).click();await page.waitForURL('**/app');await page.getByRole('navigation',{name:'Easel'}).waitFor();await settle(page)
+ const openTab=async name=>{const nav=page.getByRole('navigation',{name:'Easel'}),button=nav.getByRole('button',{name,exact:true});if(await button.getAttribute('aria-current')==='page'){await nav.getByRole('button',{name:'Overview',exact:true}).click();await settle(page)}await button.click();await settle(page)}
  const action=async(path,run)=>{const pending=page.waitForResponse(r=>r.url().endsWith(path));await run();const response=await pending;assert.equal(response.status(),200,await response.text());await settle(page);return response.json()}
  const show=async(scope,label)=>{
   for(const width of[1440,390]){await page.setViewportSize({width,height:1000});await settle(page);await noOverflow(page,`${label} ${width}`);await scope.screenshot({path:join(evidence,`${label}-${width}.png`)})}
@@ -30,7 +31,7 @@ try{
  }
  for(const id of hrisProviders){
   const name=hrisNames[id],key=grant(id)
-  await page.goto(`${runtime.origin}/app?tab=settings`);await page.getByLabel('Roster provider',{exact:true}).selectOption(id)
+  await openTab('Settings');await page.getByLabel('Roster provider',{exact:true}).selectOption(id)
   const card=page.getByRole('region',{name:`${name} roster connection`,exact:true})
   await card.getByRole('button',{name:`Connect ${name}`,exact:true}).waitFor()
   await show(card,`${id}-connect`)
@@ -62,7 +63,7 @@ try{
   assert.equal(month.actualHeadcount,3);assert.equal(month.actualDepartures,1);assert.equal(month.actualHires,3);assert.equal(month.actualCostCents,null)
   await show(headcount,`${id}-headcount`)
   assert.deepEqual(await call(`scenario/${f.scenario}`),before)
-  await page.goto(`${runtime.origin}/app?tab=settings`);await page.getByLabel('Roster provider',{exact:true}).selectOption(id)
+  await openTab('Settings');await page.getByLabel('Roster provider',{exact:true}).selectOption(id)
   await action(`/import/${id}/undo`,()=>card.getByRole('button',{name:'Undo '+name+' roster 2026-02-28',exact:true}).click())
   await action(`/connections/hris/${id}/disconnect`,()=>card.getByRole('button',{name:`Disconnect ${name}`,exact:true}).click())
   await card.getByText('Local credential deleted. Provider revocation requires the owner action above.',{exact:true}).waitFor();await show(card,`${id}-disconnected`)
@@ -72,7 +73,7 @@ try{
  // then show the changed-source hold in the same Settings review.
  const forecast=(await call('command/approve-budget',{scenario:f.scenario,revision:(await call(`scenario/${f.scenario}`)).scenario.revision})).forecast
  const future=await call('command/position',{scenario:forecast.id,department:f.department.id,line:f.line.id,title:'Provider-owned upcoming hire',annualSalary:'150000',onCostPercent:'0',start:'2026-04',plannedStartDate:'2026-04-10'})
- await page.goto(`${runtime.origin}/app?tab=settings`)
+ await openTab('Settings')
  const card=page.getByRole('region',{name:'Rippling roster connection',exact:true}),key=grant('rippling')
  await page.getByLabel('Roster provider',{exact:true}).selectOption('rippling')
  await card.getByLabel('Rippling company or origin',{exact:true}).fill(key.tenant)
@@ -94,7 +95,7 @@ try{
  await action('/import/rippling/stage',()=>card.getByRole('button',{name:'Stage Rippling source review',exact:true}).click())
  await show(card,'provider-owner-binding')
  await action('/import/rippling/commit',()=>card.getByRole('button',{name:'Accept reviewed Rippling matches',exact:true}).click())
- await page.goto(`${runtime.origin}/app?tab=review`);await settle(page)
+ await openTab('Review')
  const questions=page.getByRole('region',{name:'Owner questions',exact:true})
  await questions.getByLabel('Enable owner questions',{exact:true}).check()
  await action('/command/owner-question-settings',()=>questions.getByRole('button',{name:'Save question settings',exact:true}).click())
@@ -111,7 +112,7 @@ try{
  await action('/command/owner-question-propose',()=>question.getByRole('button',{name:'Create date proposal',exact:true}).click())
  await show(questions,'provider-owner-question-proposal')
  edge.department='Renamed Product Engineering'
- await page.goto(`${runtime.origin}/app?tab=settings`);await page.getByLabel('Roster provider',{exact:true}).selectOption('rippling')
+ await openTab('Settings');await page.getByLabel('Roster provider',{exact:true}).selectOption('rippling')
  await card.getByLabel('Rippling target scenario',{exact:true}).selectOption(forecast.id)
  await card.getByLabel('Rippling observation date',{exact:true}).fill('2026-02-28')
  await action('/import/rippling/preview',()=>card.getByRole('button',{name:'Pull Rippling preview',exact:true}).click())
@@ -119,7 +120,7 @@ try{
  assert.ok(guard.unresolved.some(i=>i.kind==='hris-metadata'))
  assert.equal((await context.request.get(`${runtime.origin}/api/easel/scenario/${forecast.id}`)).status(),409)
  await show(card,'provider-source-change-hold')
- await page.goto(`${runtime.origin}/app?tab=actuals`);await settle(page)
+ await openTab('Actuals')
  const sourceGuard=page.getByRole('region',{name:'Source change guard',exact:true})
  await sourceGuard.getByRole('link',{name:'Review this HRIS roster in Settings',exact:true}).first().waitFor()
  assert.ok((await sourceGuard.innerText()).includes('Renamed Product Engineering'))

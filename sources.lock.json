@@ -5091,7 +5091,7 @@
       "executable": false
     },
     "tests/hris-browser.mjs": {
-      "sha256": "300017198bed2e360a82104cea93844c7478c8d566b74aec0814f0654316521d",
+      "sha256": "0b1684cdca963e79d5629ed5333ec9ffe99df7f9429373a86026567b79e3e387",
       "executable": false
     },
     "tests/hris-fixture.mjs": {
