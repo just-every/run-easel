@@ -1,4 +1,5 @@
 import { workingCalculation } from './calculation'
+import { datePeriod } from './fiscal-calendar'
 import { pipelineCoverage } from './pipeline-coverage'
 // Refresh creates explicit, cited work. A blocked source is visible to finance;
 // it never supplies a made-up zero or a conclusion to a contributor.
@@ -63,9 +64,9 @@ export async function evaluateMetricTasks(c: Context) {
     const calc = await workingCalculation(c, forecast.id)
     if(rule.kind==='pipeline-coverage'){
      const inputs=model(c.s,forecast.id).inputs.revenue
-     const coverage=pipelineCoverage(inputs,forecast.actualsThrough ?? c.now.slice(0,7),w.fiscalYearStart ?? 1,forecast.pipelineCoverageTargetCents ?? 0,rule.department,forecast.pipelineSources,w.currency)
+     const coverage=pipelineCoverage(inputs,datePeriod(w,c.now.slice(0,10)),w.fiscalYearStart ?? 1,forecast.pipelineCoverageTargetCents ?? 0,rule.department,forecast.pipelineSources,w.currency)
      if(coverage.coverageBps===null)reason='Accepted pipeline and a positive finance-set quarterly bookings target are required; coverage is unavailable.'
-     else if(coverage.coverageBps<rule.coverageBps)hits=[{month:coverage.from,dedup:`${rule.id}|${forecast.id}|${coverage.from}`,evidence:{kind:'pipeline-coverage',currency:w.currency,...coverage,thresholdBps:rule.coverageBps,forecastRevision:forecast.revision,summary:`${coverage.from} through ${coverage.to}: weighted open bookings ${formatMoney(coverage.weightedCents,w.currency)} / finance quarterly target ${formatMoney(coverage.targetCents,w.currency)} = ${formatHundredths(coverage.coverageBps)}% coverage, below ${formatHundredths(rule.coverageBps)}%.`,sources:coverage.sources}}]
+     else if(BigInt(coverage.weightedCents)*10000n<BigInt(coverage.targetCents)*BigInt(rule.coverageBps))hits=[{month:coverage.from,dedup:`${rule.id}|${forecast.id}|${coverage.from}`,evidence:{kind:'pipeline-coverage',currency:w.currency,...coverage,thresholdBps:rule.coverageBps,forecastRevision:forecast.revision,summary:`${coverage.from} through ${coverage.to}: weighted open bookings ${formatMoney(coverage.weightedCents,w.currency)} / finance quarterly target ${formatMoney(coverage.targetCents,w.currency)} = ${formatHundredths(coverage.coverageBps)}% coverage, below ${formatHundredths(rule.coverageBps)}%.`,sources:coverage.sources}}]
     } else if (rule.kind === 'overspend') {
      const budget = await snapshot(c.db, forecast.budgetSnapshot)
      if (budget.body.calculation.currency !== rule.currency) reason = 'The approved budget has a different currency; this rule cannot compare those amounts.'

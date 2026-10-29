@@ -23,7 +23,7 @@ export function Pipeline({state,refresh}:Shared){
    <label>CRM provider<select aria-label="CRM provider" value={provider} onChange={e=>setProvider(e.target.value)}>{providers.map(p=><option key={p.value} value={p.value}>{p.label}</option>)}</select></label>
    {error&&<p role="alert" className="error">{error}</p>}
    {status&&<><p role="status">{status.connected?`${name} connected · credential ending ${status.suffix}`:`${name} disconnected`}</p><p className="muted">{status.scope} · {status.schedule}</p>
-    <p>Last accepted refresh: {status.lastRefresh??'None'} · {status.rowCount??0} deals</p>
+    <p>Connection owner: {status.owner??'Not connected'}</p><p>Last accepted refresh: {status.lastRefresh??'None'} · {status.rowCount??0} deals</p>
     {status.error&&<p role="alert">{status.error}</p>}{status.rateLimit&&<p role="status">{status.rateLimit}</p>}
     {status.providerRevocation&&<p>Provider revocation: {status.providerRevocation.status}{status.providerRevocation.httpStatus?` (HTTP ${status.providerRevocation.httpStatus})`:''}. {status.providerRevocation.status!=='confirmed'&&status.ownerAction}</p>}
     {status.connected?<Action label={`Disconnect ${name}`} kind="danger" run={async()=>{await post(`connections/pipeline/${provider}/disconnect`,{});await load()}}/>:
@@ -59,9 +59,9 @@ export function Pipeline({state,refresh}:Shared){
      <Field label={`${s.name} slippage days`} name={`stage-days-${i}`} type="number" defaultValue={old?.slippageDays??0}/>
     </fieldset>})}
     <div className="wide"><h3>Product recognition</h3><p>One-time recognizes in the slipped close period. Ratable and subscription-start allocate the weighted deal total over the term, starting in that period, with the final cent remainder. Planning invoices bill upfront; collection follows DSO.</p></div>
-    {[...new Set<string>(source.deals.flatMap((d:D)=>d.products.length?d.products.map((p:D)=>p.product):['*']))].sort().map((product,i)=>{const old=previous?.assumptions.products.find((x:D)=>x.product===product);return <fieldset className="wide" key={product}><legend>Product {product==='*'?'Deal amount (no line items)':product}</legend>
-     <Field label={`Product ${product} revenue line`} name={`product-line-${i}`} options={options(state.lines.filter((l:D)=>l.type==='revenue'))} defaultValue={old?.line}/>
-     <Field label={`Product ${product} department`} name={`product-department-${i}`} options={options(state.departments)} defaultValue={old?.department}/>
+    {[...new Set<string>(source.deals.flatMap((d:D)=>d.products.length?d.products.map((p:D)=>p.product):['*']))].sort().map((product,i)=>{const old=previous?.assumptions.products.find((x:D)=>x.product===product),suggestion=source.mappingSuggestions?.find((x:D)=>x.product===product);return <fieldset className="wide" key={product}><legend>Product {product==='*'?'Deal amount (no line items)':product}</legend>
+     <p>{suggestion?.reason} {suggestion?.departmentReason} Suggestions apply only when finance previews and accepts this review.</p><Field label={`Product ${product} revenue line`} name={`product-line-${i}`} options={options(state.lines.filter((l:D)=>l.type==='revenue'))} defaultValue={old?.line??suggestion?.line}/>
+     <Field label={`Product ${product} department`} name={`product-department-${i}`} options={options(state.departments)} defaultValue={old?.department??suggestion?.department}/>
      <Field label={`Product ${product} recognition rule`} name={`product-rule-${i}`} options={[{value:'one-time',label:'One-time'},{value:'ratable',label:'Ratable over term'},{value:'subscription-start',label:'Subscription start'}]} defaultValue={old?.rule??'one-time'}/>
      <Field label={`Product ${product} term source`} name={`product-source-${i}`} options={[{value:'finance',label:'Finance term'},{value:'crm',label:'CRM line-item term'}]} defaultValue={old?.termSource??'finance'}/>
      <Field label={`Product ${product} term periods`} name={`product-term-${i}`} type="number" defaultValue={old?.termMonths??12}/><Field label={`Product ${product} collection days`} name={`product-dso-${i}`} type="number" defaultValue={old?.dsoDays??0}/>

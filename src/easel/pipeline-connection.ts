@@ -52,10 +52,12 @@ export async function pipelineConnection(c: Context, env: Bindings, name: unknow
  requireThat(['connect','begin','complete','disconnect'].includes(op),'Unknown CRM connection action',404)
  if (op === 'disconnect') {
   let outcome = { status:'unsupported',httpStatus:null as number|null,ownerAction:ownerAction(p) }
-  if (p === 'salesforce' && await c.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind(id).first()) {
+  if (p !== 'orbit' && await c.db.prepare('SELECT id FROM e_connection_secrets WHERE id=?').bind(id).first()) {
    try {
     const {key} = await stored(c,env,p)
-    const response = await fetch(key.origin+'/services/oauth2/revoke',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({token:key.refreshToken!}),redirect:'manual',signal:AbortSignal.timeout(10000)})
+    const response = p === 'hubspot'
+     ? await fetch('https://api.hubapi.com/oauth/v1/refresh-tokens/'+encodeURIComponent(key.refreshToken!),{method:'DELETE',redirect:'manual',signal:AbortSignal.timeout(10000)})
+     : await fetch(key.origin+'/services/oauth2/revoke',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({token:key.refreshToken!}),redirect:'manual',signal:AbortSignal.timeout(10000)})
     outcome = {...outcome,status:response.ok?'confirmed':'unconfirmed',httpStatus:response.status}; await response.body?.cancel()
    } catch { outcome = {...outcome,status:'unconfirmed'} }
   }

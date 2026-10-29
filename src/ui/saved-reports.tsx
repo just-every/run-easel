@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import type { Shared } from './app'
 import { Action, api, command, decimalText, Field, Form, money, options, Table, type D } from './shared'
 
-const rows = ['department', 'line', 'dimension', 'hierarchy'].map(value => ({ value, label: ({ department: 'Departments', line: 'Lines', dimension: 'Dimension members', hierarchy: 'Account hierarchy' } as D)[value] }))
+const rows = ['department', 'line', 'dimension', 'hierarchy', 'stage'].map(value => ({ value, label: ({ department: 'Departments', line: 'Lines', dimension: 'Dimension members', hierarchy: 'Account hierarchy', stage: 'Pipeline stages (weighted bookings)' } as D)[value] }))
 const periods = ['month', 'quarter', 'year'].map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))
 const audiences = [{ value: 'private', label: 'Private' }, { value: 'leadership', label: 'Leadership' }, { value: 'board', label: 'Board' }, { value: 'department', label: 'Department' }]
 const percent = (v: number | null) => v === null ? 'Unavailable' : `${decimalText(v)}%`
