@@ -14,7 +14,7 @@ export async function nativeContext(ctx: ToolContext | ResourceContext): Promise
  const person = await nativeActor(ctx.db, ctx.person.id)
  if (!person) throw new ToolRefusal('unauthenticated')
  const client = ctx.clientId ?? ''
- let a: Actor = { ...person, agent: { id: ctx.agent.id, name: ctx.agent.name, via: 'mcp', sponsor: { id: ctx.person.id, name: ctx.person.name }, ...('approvers' in ctx ? { approvers: [...ctx.approvers] } : {}) } }
+ let a: Actor = { ...person, agent: { id: ctx.agent.id, name: ctx.agent.name, via: 'mcp', sponsor: { id: ctx.person.id, name: ctx.person.name }, ...('approvers' in ctx ? { approvers: [...ctx.approvers], idempotencyKey: ctx.idempotencyKey, operationId: ctx.operationId } : {}) } }
  if (client.startsWith('session:')) {
   const id = client.slice(8)
   const session = await ctx.db.prepare('SELECT id FROM oa_sessions WHERE id=? AND operator_id=? AND operator_version=? AND revoked_at IS NULL AND expires_at>unixepoch()*1000').bind(id, a.id, a.version).first()
