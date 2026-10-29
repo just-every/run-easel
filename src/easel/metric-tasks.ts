@@ -13,6 +13,11 @@ import { notify } from './notify'
 import { Fault, all, put, uid, type Data } from './types'
 import { formatHundredths, formatMoney } from './units'
 
+function planningDate(now:string,zone:string){
+ const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now)).map(p=>[p.type,p.value]))
+ return `${p.year}-${p.month}-${p.day}`
+}
+
 const triggers = new Set(['metric-refresh', 'metric-rule-save', 'actuals-accepted', 'close-month','pipeline-refresh'])
 export const needsMetricRefresh = (c: Context) => c.activity.some(e => triggers.has(e.action))
 
@@ -64,7 +69,7 @@ export async function evaluateMetricTasks(c: Context) {
     const calc = await workingCalculation(c, forecast.id)
     if(rule.kind==='pipeline-coverage'){
      const inputs=model(c.s,forecast.id).inputs.revenue
-     const coverage=pipelineCoverage(inputs,datePeriod(w,c.now.slice(0,10)),w.fiscalYearStart ?? 1,forecast.pipelineCoverageTargetCents ?? 0,rule.department,forecast.pipelineSources,w.currency)
+     const coverage=pipelineCoverage(inputs,datePeriod(w,planningDate(c.now,w.timeZone??'America/New_York')),w.fiscalYearStart ?? 1,forecast.pipelineCoverageTargetCents ?? 0,rule.department,forecast.pipelineSources,w.currency)
      if(coverage.coverageBps===null)reason='Accepted pipeline and a positive finance-set quarterly bookings target are required; coverage is unavailable.'
      else if(BigInt(coverage.weightedCents)*10000n<BigInt(coverage.targetCents)*BigInt(rule.coverageBps))hits=[{month:coverage.from,dedup:`${rule.id}|${forecast.id}|${coverage.from}`,evidence:{kind:'pipeline-coverage',currency:w.currency,...coverage,thresholdBps:rule.coverageBps,forecastRevision:forecast.revision,summary:`${coverage.from} through ${coverage.to}: weighted open bookings ${formatMoney(coverage.weightedCents,w.currency)} / finance quarterly target ${formatMoney(coverage.targetCents,w.currency)} = ${formatHundredths(coverage.coverageBps)}% coverage, below ${formatHundredths(rule.coverageBps)}%.`,sources:coverage.sources}}]
     } else if (rule.kind === 'overspend') {
