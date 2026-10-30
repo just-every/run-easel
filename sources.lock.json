@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "05754c30418e3d1006c1a799c31ab668cbacbba223e19ea5e6cbe7abfa299ed9",
+      "sha256": "012747499b2b66d03adfe1f41a23ee403dfd78c6f75cf801409ebd6ca952fce4",
       "executable": false
     },
     "agent-surface.json": {
@@ -143,7 +143,7 @@
       "executable": false
     },
     "AGENTS.md": {
-      "sha256": "8baaf7d3dd78a4c9d643ec189bc653a8e3fb71fc0ed3be010ea9daf35cd78234",
+      "sha256": "86a95501388fcecec6e4e35ef0cdeb2cbbbf23edda923676155217676d2c959e",
       "executable": false
     },
     "API.md": {
@@ -899,7 +899,7 @@
       "executable": false
     },
     "scripts/contract-docs.mjs": {
-      "sha256": "92eb4180c7a016b824def4d8de8f67913b1804e0f006792299350868d7a82c45",
+      "sha256": "39fb4d429f89f46920f1f29782da58f5928446dda55d395d368ad233779f27a9",
       "executable": false
     },
     "scripts/delivery/base/artifact.mjs": {
@@ -6144,6 +6144,10 @@
     },
     "tests/constraint-responses.test.mjs": {
       "sha256": "968f2ec6ad4f616081ac2891c99247281750982d8cc10aacdb0ebd2701278d08",
+      "executable": false
+    },
+    "tests/contract-docs.test.mjs": {
+      "sha256": "a445db12e890108d5fdcfdfdd9c89292186b62f948c40eb9b67a7915d010685b",
       "executable": false
     },
     "tests/contracts-browser.mjs": {
