@@ -2,7 +2,7 @@
 
 Generated from [CONTRACT.md](../CONTRACT.md) by `node scripts/contract-docs.mjs write`. The contract retains the acceptance text, evidence and gaps. Partial and missing clauses make no completed capability claim.
 
-81 done, 30 partial, 6 missing; 117 clauses.
+82 done, 29 partial, 6 missing; 117 clauses.
 
 | Clause | Title | Status |
 | --- | --- | --- |
@@ -113,7 +113,7 @@ Generated from [CONTRACT.md](../CONTRACT.md) by `node scripts/contract-docs.mjs 
 | `BASE-AGENT-001` | One MCP door per seed | partial |
 | `BASE-AGENT-002` | The seed's jobs are tools, through the UI's own actions | partial |
 | `BASE-AGENT-003` | Records are resources | partial |
-| `BASE-AGENT-004` | Business identity and short-lived, audience-bound tokens | partial |
+| `BASE-AGENT-004` | Business identity and short-lived, audience-bound tokens | done |
 | `BASE-AGENT-005` | An agent acts as a person in a role, never more | partial |
 | `BASE-AGENT-006` | Every action declares its risk class | partial |
 | `BASE-AGENT-007` | The company's policy decides, at one chokepoint | partial |

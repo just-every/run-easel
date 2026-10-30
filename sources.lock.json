@@ -6,7 +6,7 @@
   "toolchain": {
     "id": "runeditrun/edition-authoring",
     "version": "1.1.0",
-    "sha256": "5cfbabc877752218b1fdb82052bf220ee2be22ef21b573650005250661f70cd8"
+    "sha256": "b546ef04830f935ee2493a5bc08ef43a0f7d5905aeb8549fb75670c19890af99"
   },
   "components": [
     {
@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "012747499b2b66d03adfe1f41a23ee403dfd78c6f75cf801409ebd6ca952fce4",
+      "sha256": "1c55e2b5ea29a3a6ffa6d9ffb1a1efd8b3fe8f1ca5b3e914bd589482e4d9093f",
       "executable": false
     },
     "agent-surface.json": {
@@ -191,7 +191,7 @@
       "executable": false
     },
     "docs/CLAIMS.md": {
-      "sha256": "124b0fbef6bed37369515396a124a77f94e45da624329ead219c9f269caa472e",
+      "sha256": "688cc7643687635990b55d7a7ff02e9920ce18d00cb53c0cf3f09e8efa764c94",
       "executable": false
     },
     "docs/committed-spend.md": {
