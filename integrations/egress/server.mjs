@@ -5,7 +5,7 @@ import { createServer } from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 import { NodePinnedTransport } from '@runeditrun/rer/internal/modules/integrations/core/node-transport.ts'
-import { validateDestination } from '@runeditrun/rer/internal/modules/integrations/core/destination.ts'
+import { webhookDestination } from '../../src/easel/webhook-destination.ts'
 
 export function createEgressGateway({ token, hosts, transport = new NodePinnedTransport({ timeoutMs: 10000, maxResponseBytes: 65536 }) }) {
  if (typeof token !== 'string' || token.length < 32 || !Array.isArray(hosts) || !hosts.length) throw new Error('Configure gateway authentication and exact public receiver hosts')
@@ -19,7 +19,7 @@ export function createEgressGateway({ token, hosts, transport = new NodePinnedTr
    const chunks = []; let bytes = 0
    for await (const chunk of request) { bytes += chunk.length; if (bytes > 32768) throw new Error(); chunks.push(chunk) }
    wire = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-   const url = validateDestination(wire.url)
+   const url = webhookDestination(wire.url)
    if (!hosts.includes(url.hostname) || url.search || typeof wire.body !== 'string' || Buffer.byteLength(wire.body) > 16384) throw new Error()
    const allowed = ['content-type','x-easel-event-id','x-easel-timestamp','x-easel-signature']
    if (!wire.headers || Object.keys(wire.headers).length !== allowed.length || !allowed.every(name => typeof wire.headers[name] === 'string' && wire.headers[name].length <= 200 && !/[\r\n]/.test(wire.headers[name]))) throw new Error()
