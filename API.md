@@ -839,3 +839,63 @@ Stage reports use `report.row:'stage'` and expose `metric:'pipelineBookings'`: w
 Native finance administers `GET /api/easel/connections/sheets-addon` and `POST /api/easel/connections/sheets-addon/{connect,schedule,disconnect}`. Connect takes `label`, an existing signed-in `person` email, `spreadsheet` ID, `schedule` (`manual` or `hourly`), `expiresInDays` (1–365) and optional boolean `writeBack`. The response returns a connection ID and non-secret `confirmationPath`. The named person reads `GET /api/easel/sheets-addon-confirm/:id`, then posts `{id}` to `.../connections/sheets-addon/claim` from their own native session to receive the once-only key. Finance cannot claim another person’s key. Schedule takes `id` and `schedule`; disconnect takes `id`. Status exposes masked metadata only. These operations require the native finance session and connections grant; integration credentials refuse administration.
 
 The add-on sends `X-Easel-Sheets-Key` and `X-Easel-Spreadsheet` to its exclusive routes: `GET /api/easel/google-sheets/session`, `POST .../refresh` and `POST .../write`. Session returns live person/role, configured schedule and write-back permission. Refresh takes `reason` (`menu`, `open`, `trigger`) and up to 100 `bindings`: `{key,kind:"value",scenario,line,department,month}` or `{key,kind:"report",report,period,metric}`. It returns aggregate amounts in cents or report tables with per-binding explicit unavailable errors; trigger refresh requires finance’s hourly approval. Writes take `scenario`, exact reviewed `revision`, existing `schedule` row ID, `month`, decimal-string `value`, and follow the same entry/proposal rules as Excel. The add-on has no approve/promote operation. See [Google Sheets add-on](docs/google-sheets-addon.md) for installation, effective trigger identity, formula dependencies, custody and the external qualification boundary.
+## Webhooks and automation apps (API-002)
+
+Native finance with company-wide access administers receivers. Configure
+`EASEL_WEBHOOK_HOSTS` with the comma-separated exact public HTTPS hostnames the
+installation owner has reviewed. Receivers cannot use IP literals, internal
+names, URL credentials, query strings, fragments or nonstandard ports. Redirects
+are refused. The hosting network must also prevent allowed names from resolving
+to private infrastructure. A receiver URL's path and its signing key are sealed
+under the installation secret and are excluded from every export and restore.
+Changing that secret requires registering receivers again.
+
+| Door | Request / result |
+| --- | --- |
+| `POST /api/easel/webhooks/register` | Native session and exact Origin; `{label,url,events:["approval","close","publish","refresh-failure","alert","task"],secret?}`. Returns `{id,label,host,events,secret}`; retain the secret now. An omitted secret generates 32 random bytes as hex. A supplied shared secret must contain 32–200 letters, digits, underscores or hyphens. At most 20 active receivers. |
+| `GET /api/easel/webhooks` | Native finance only; receiver metadata and the latest 100 delivery outcomes, without URL paths or keys. |
+| `POST /api/easel/webhooks/revoke` | Native session; `{id}`. Deletes local sealed custody, blocks pending sends and prevents new deliveries. A send already in flight cannot be recalled. Rotate by revoking and registering again. |
+| `GET /api/easel/automation/events` | Company-wide finance session or scoped read/write token. Ascending events after `?after=0`, optionally `type=approval`. Returns `{events,cursor,next}`. Follow non-null `next` with `after=next`; persist `cursor` after consuming the page. `recent=true` returns the latest 100 matches newest first for platform polling. |
+| `POST /api/easel/automation/proposals` | Scoped write token or native planner; `{from,revision,name,request}`. Exact positive integer source revision is mandatory. Returns an ordinary draft proposal with `branchedFrom`; a stale revision returns 409 and writes nothing. Human submission and promotion remain separate. |
+| `POST /api/easel/automation/dispatch` | Company-wide finance session or write token; `{}`. Wakes the bounded delivery pass; it does not reset failures or retry unknown outcomes. The same pass runs after successful HTTP writes and on the ordinary scheduled Worker handler. |
+
+Comments use the existing `POST /api/easel/command/comment` with
+`{scenario,department,text}`. All token rate, expiry, revocation, issuance-ceiling
+and audit rules still apply. Machines cannot approve, close, publish or promote.
+Versioned Crank, Zapier and Make app sources and developer instructions are in
+[integrations/README.md](integrations/README.md).
+
+Events are recorded atomically with the committed native source operation, then
+one delivery intent per matching active receiver. Event types cover budget and
+chain approvals; month close; pack publication; failed provider refresh/health and
+scheduled sheet pulls; cash/constraint alerts; and planning task lifecycle events.
+A refused source operation records no event. Their version-1 JSON body is:
+
+```json
+{"id":"event UUID","type":"approval","version":1,"createdAt":"UTC ISO instant","data":{"action":"approve-budget","record":"budget ID","scenario":"budget ID","revision":2}}
+```
+
+Only record IDs, action and revision metadata travel. Names, salaries, emails,
+provider response bodies and commentary do not. An event is a notification to read
+the referenced record through its ordinary authorized door, not a captured full
+record or permission grant. A polling event additionally includes a numeric cursor.
+
+Verify `X-Easel-Signature: v1=<lowercase hex HMAC-SHA256>` over the exact UTF-8 bytes
+of `X-Easel-Timestamp + "." + rawRequestBody`, using the shared secret as UTF-8.
+Compare in constant time, require the timestamp to be within five minutes, and
+require `X-Easel-Event-Id` to equal the signed body's `id`. Persist the accepted ID
+before processing and acknowledge duplicate IDs without repeating effects. Retain
+IDs for at least 30 days, including across process restarts. Authenticating the
+signature alone does not prevent replay. Never parse and reserialize before
+verification.
+
+A successful 2xx response completes delivery. Explicit 429/5xx refusals receive at
+most five attempts with the same event ID and body, fresh attempt signatures and
+30-second exponential delays, respecting Retry-After up to one day. Other statuses
+(including redirects) fail permanently. A timeout, transport exception or expired
+sending claim is **uncertain** and is never automatically retried. Outcomes keep
+only status, attempt count and times; response bodies are discarded. Each pass
+claims at most 20 intents atomically, rechecking the authorizing native finance
+account, version, full scope, receiver revocation and configured host before egress.
+Event history, receiver custody and delivery queues are installation-bound and
+excluded from open and portable archives so restoration never resends old events.

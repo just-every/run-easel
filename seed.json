@@ -373,6 +373,12 @@
       "clauses": [
         "SHEET-002"
       ]
+    },
+    {
+      "id": "automation-webhooks",
+      "clauses": [
+        "API-002"
+      ]
     }
   ],
   "nonGoals": [

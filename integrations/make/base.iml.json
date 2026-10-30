@@ -1,0 +1,6 @@
+{
+ "baseUrl": "{{connection.origin}}/api/easel",
+ "headers": { "Authorization": "Bearer {{connection.token}}", "Content-Type": "application/json" },
+ "response": { "error": { "message": "[{{statusCode}}] {{body.error}}" } },
+ "log": { "sanitize": ["request.headers.authorization"] }
+}

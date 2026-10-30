@@ -1,3 +1,4 @@
+import { automationStatements } from './automation-events'
 import { reconcileApprovalChains } from './approval-chains'
 import { access } from './access'
 // Loading and saving the editable model. Every save is one D1 batch fenced by
@@ -86,7 +87,7 @@ export async function save(db: D1Database, a: Actor, before: State, after: State
   const table = ['approval-chain-version', 'approval-content'].includes(r.kind) ? 'e_approval_captures' : 'e_records'
   q.push(db.prepare(`DELETE FROM ${table} WHERE kind=? AND id=?`).bind(r.kind, r.id))
  }
- q.push(...extra)
+ q.push(...extra, ...automationStatements(db, activity, at))
  for (const s of snapshots) {
   const body = JSON.stringify(s.body)
   q.push(db.prepare('INSERT INTO e_snapshots(id,kind,scenario,label,actor,at,sha256,body) VALUES(?,?,?,?,?,?,?,?)').bind(s.id, s.kind, s.scenario, s.label, a.email, at, await sha256(body), body))

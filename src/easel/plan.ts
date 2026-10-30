@@ -166,6 +166,7 @@ export async function plan(c: Context, op: string, b: Data): Promise<Data | unde
    requireThat(x.role === 'finance' || x.role === 'contributor', 'Viewers cannot propose changes', 403)
    requireThat(from.status === 'working', 'Proposals change a working scenario; this one is frozen', 409)
   }
+  if (op === 'proposal-create' && b.revision !== undefined) requireThat(from.revision === Number(b.revision), 'The source revision changed; review it before creating the proposal', 409)
   const id = uid()
   const kind = op === 'branch' ? b.budget===true?'budget':'scenario' : 'proposal'
   put(s, 'scenario', id, {
