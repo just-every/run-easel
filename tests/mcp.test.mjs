@@ -1,6 +1,61 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { randomUUID, webcrypto } from 'node:crypto'
+import { signJws, accessToken, policyEnvelope, autonomousPolicy } from '../src/modules/agent-door/conformance/crypto.mjs'
 import { harness, agentMessage, agentName } from './harness.mjs'
+
+async function pairedSignIn(t) {
+ const keys = await webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
+ const kid = randomUUID(), issuer = 'https://synthetic-easel-issuer.invalid', installationId = randomUUID()
+ const publicKeys = { [kid]: { ...await webcrypto.subtle.exportKey('jwk', keys.publicKey), kid, alg: 'ES256', use: 'sig' } }
+ const ownerEmail = ['owner', 'example.test'].join('@'), email = ['synthetic-easel-2', 'example.invalid'].join('@')
+ const bindings = { RER_OWNER_CLAIM_ISSUER: issuer, RER_OWNER_CLAIM_INSTALLATION_ID: installationId, RER_OWNER_CLAIM_PUBLIC_KEYS: JSON.stringify(publicKeys), RER_BUSINESS_TRUST: JSON.stringify({ v: 1, issuer, audience: 'self-host', subject: installationId, email: ownerEmail, keys: publicKeys }) }
+ const h = await harness({ bindings }); t.after(() => h.close())
+ await h.command('workspace', { name: 'Synthetic paired company', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const department = await h.command('department', { name: 'Sales' })
+ const ownerSub = randomUUID(), memberSub = randomUUID(), business = 'synthetic-easel-business'
+ const settings = async detached => {
+  const iat = Math.floor(Date.now() / 1000)
+  const token = await signJws(keys.privateKey, kid, 'rer-business-settings+jwt', { v: 1, iss: issuer, aud: 'self-host', sub: installationId, business, email: ownerEmail, owner_id: ownerSub, jti: randomUUID(), iat, exp: iat + 300, rev: detached ? 2 : 1, values: {}, logo: null, team: [{ id: memberSub, email, name: 'Synthetic contributor', role: 'member', invite: 1 }], ...(detached ? { detached: true } : {}) })
+  assert.equal((await h.send('/api/rer/business-settings', { settings: token })).status, 200)
+ }
+ await settings(false)
+ await h.command('member', { email, name: 'Synthetic contributor', role: 'contributor', departments: [department.id] })
+ assert.equal((await h.send('/api/easel/invite', { email }, h.owner)).status, 200)
+ const invitation = h.messages.filter(message => message.to.includes(email)).at(-1)
+ const confirmation = new URL(invitation.text.match(/http:\/\/\S+\/auth\/confirm\?token=\S+/)[0])
+ const confirmed = await h.send('/auth/confirm', { token: confirmation.searchParams.get('token') })
+ assert.equal(confirmed.status, 303)
+ const contributor = confirmed.cookie
+ const surface = { specialist: 'finance planner', tools: [{ scope: 'planning:read' }, { scope: 'planning:write' }] }
+ const contexts = [ownerSub, memberSub].map((sub, i) => ({ signer: { issuer, kid, installationId, privateKey: keys.privateKey }, origin: h.origin, business, person: { sub, email: i ? email : ownerEmail }, agentId: `synthetic-easel-agent-${i}`, surface, consent: randomUUID(), revision: 0, seq: 0 }))
+ const signed = await policyEnvelope(contexts[0], autonomousPolicy())
+ assert.equal((await h.send('/api/rer/agent-policy', { policy: signed.policy })).status, 200)
+ const tokens = await Promise.all(contexts.map(context => accessToken(context)))
+ const list = async (token, installation = h) => {
+  const response = await installation.mf.dispatchFetch(`${installation.origin}/mcp`, { method: 'POST', headers: { origin: installation.origin, authorization: `Bearer ${token}`, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) })
+  await response.body?.cancel()
+  return response.status
+ }
+ for (const token of tokens) assert.equal(await list(token), 200, 'Both native sponsors admit their signed agent before detaching')
+ assert.equal((await h.send(`/agents/api/agents/${contexts[1].agentId}/revoke`, {}, h.owner)).status, 200)
+ assert.equal(await list(tokens[1]), 401, 'Native revocation refuses the next sponsored call')
+ tokens[1] = await accessToken({ ...contexts[1], agentId: 'synthetic-easel-agent-2', consent: randomUUID() })
+ assert.equal(await list(tokens[1]), 200, 'A distinct consent remains independent of the revoked agent')
+ const sibling = await harness({ bindings }); t.after(() => sibling.close())
+ assert.equal(await list(tokens[0], sibling), 401, 'The identical token cannot cross the installation audience')
+ await settings(true)
+ for (const token of tokens) assert.equal(await list(token), 401, 'Detaching refuses every Business sponsor immediately')
+ for (const [mailbox, previous] of [[ownerEmail, h.owner], [email, contributor]]) {
+  assert.equal((await h.send('/auth/magic-link', { email: mailbox })).status, 202)
+  const message = h.messages.filter(message => message.to.includes(mailbox)).at(-1)
+  const href = message.text.match(/http:\/\/\S+\/auth\/confirm\?token=\S+/)[0]
+  const response = await h.send('/auth/confirm', { token: new URL(href).searchParams.get('token') })
+  assert.equal(response.status, 303, 'Native email sign-in remains available after detaching')
+  assert.notEqual(response.cookie, previous)
+  assert.ok((await h.get('/api/easel/state', response.cookie)).scenarios.length)
+ }
+}
 
 test('API-003 a contributor uses MCP for filtered reads and proposals, never financial approvals', async t => {
  const h = await harness()
@@ -142,4 +197,5 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.notEqual(ownAudit.detail.authority.id, firstAudit.detail.authority.id)
  await cmd('member', { email: 'planner@example.test', name: 'planner', role: 'contributor', departments: [sales.id], active: false })
  assert.equal((await rpc('tools/list')).status, 401)
+ await pairedSignIn(t)
 })

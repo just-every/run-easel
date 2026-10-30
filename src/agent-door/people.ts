@@ -21,7 +21,11 @@ export function easelPeople(env: Bindings, paired: boolean): PeopleAdapter {
  }
  return {
   person: async id => admitted(await native.person(id)),
-  sponsor: async claims => admitted(await native.sponsor(claims)),
+  sponsor: async claims => {
+   // A detached roster retains historical native bindings, never live tokens.
+   if (paired && !await env.DB.prepare('SELECT 1 FROM bs_settings WHERE singleton=1 AND stopped=0').first()) return null
+   return admitted(await native.sponsor(claims))
+  },
   session: async request => admitted(await native.session(request)),
   businessMember: native.businessMember,
   businessRole: person => (person as MappedPerson).policyRole,

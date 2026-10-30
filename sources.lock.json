@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b39d8d8773ed193b0ef304b17f78d9f48fe2c5739a6f93a8babe2a68031ea11b",
+      "sha256": "bb33fc2519a683409c79ad82ebf4f54472fd582525d6f8966f08104ad0c8b493",
       "executable": false
     },
     "DEMO.md": {
@@ -1683,7 +1683,7 @@
       "executable": false
     },
     "src/agent-door/people.ts": {
-      "sha256": "9d4bd9822cf181283403c9cd21e3b509114ee4f5696c1cb77ad8738c7fc517be",
+      "sha256": "90b2c54306620a1a76d0f6a981244ac6f9c3165b77b56bf293ae59778019fee1",
       "executable": false
     },
     "src/agent-door/schemas.ts": {
@@ -6487,7 +6487,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "7a81d001ecb1338f11f82c8022336bd0de9434798b318f4949274b9252a4593d",
+      "sha256": "aa58aa3f3bb0c80474952c6c6d58ebc3f57e2cc6d8c7558bd0be75d05eedcf05",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {
