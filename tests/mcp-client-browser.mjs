@@ -17,31 +17,31 @@ try {
  assert.equal(boot.status(), 303)
  const cookie = (await context.cookies()).map(row => `${row.name}=${row.value}`).join('; ')
  let captured = false
-  await standaloneClientJourney({ origin: runtime.origin, cookie, proof: line => console.log(`PROBE ${line}`),
-   approve: async ({ approval, native }) => {
-    await page.goto(approval.url)
-    await page.getByRole('button', { name: 'Approve', exact: true }).waitFor()
-    if (!captured) {
-     for (const width of [1440, 390]) {
-      await page.setViewportSize({ width, height: 1000 })
-      if (width === 1440) assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Approval fits the assertion viewport')
-      await page.screenshot({ path: join(evidence, `approval-${width}.png`), fullPage: true })
-     }
-     await page.setViewportSize({ width: 1440, height: 1000 })
-     captured = true
+ await standaloneClientJourney({ origin: runtime.origin, cookie, proof: line => console.log(`PROBE ${line}`),
+  approve: async ({ approval, native }) => {
+   await page.goto(approval.url)
+   await page.getByRole('button', { name: 'Approve', exact: true }).waitFor()
+   if (!captured) {
+    for (const width of [1440, 390]) {
+     await page.setViewportSize({ width, height: 1000 })
+     if (width === 1440) assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Approval fits the assertion viewport')
+     await page.screenshot({ path: join(evidence, `approval-${width}.png`), fullPage: true })
     }
-    const response = page.waitForResponse(row => row.url().endsWith(`/agents/api/approvals/${approval.id}/approve`))
-    await page.getByRole('button', { name: 'Approve', exact: true }).click()
-    assert.equal((await response).status(), 200)
-    assert.equal((await native(`/agents/api/approvals/${approval.id}`)).approval.state, 'executed')
-   },
-  })
-  await page.goto(runtime.origin + '/agents')
-  await page.getByRole('heading', { name: 'Agents', exact: true }).waitFor()
-  for (const width of [1440, 390]) {
-   await page.setViewportSize({ width, height: 1000 })
-   await page.screenshot({ path: join(evidence, `agents-${width}.png`), fullPage: true })
-  }
-  console.log('Standalone built MCP client journey passed: both paths, both versions, autonomous and held policies, native approvals, unchanged transport refusals and caller-key replay; screens at 1440 and 390')
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    captured = true
+   }
+   const response = page.waitForResponse(row => row.url().endsWith(`/agents/api/approvals/${approval.id}/approve`))
+   await page.getByRole('button', { name: 'Approve', exact: true }).click()
+   assert.equal((await response).status(), 200)
+   assert.equal((await native(`/agents/api/approvals/${approval.id}`)).approval.state, 'executed')
+  },
+ })
+ await page.goto(runtime.origin + '/agents')
+ await page.getByRole('heading', { name: 'Agents', exact: true }).waitFor()
+ for (const width of [1440, 390]) {
+  await page.setViewportSize({ width, height: 1000 })
+  await page.screenshot({ path: join(evidence, `agents-${width}.png`), fullPage: true })
+ }
+ console.log('Standalone built MCP client journey passed: both paths, both versions, autonomous and held policies, native approvals, unchanged transport refusals and caller-key replay; screens at 1440 and 390')
  await context.close()
 } finally { await browser?.close(); await runtime.close() }
