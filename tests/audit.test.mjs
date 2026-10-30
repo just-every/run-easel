@@ -5,7 +5,7 @@ import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
 import { harness, agentMessage } from './harness.mjs'
 import ExcelJS from 'exceljs'
 
-test('AUDIT-001 three people and an agent leave immutable, filterable, exportable before/after history including imports', async t => {
+test('AUDIT-001 three people and an agent leave immutable, filterable, exportable before and after history including imports', async t => {
  const h = await harness(); t.after(() => h.close())
  await h.command('workspace', { name: 'Harbour Analytics', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Sales' })

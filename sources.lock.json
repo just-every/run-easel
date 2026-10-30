@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3c025ae53a448223c4de5eb3a5024b53840869ac050ac7e3428e016aaec64b54",
+      "sha256": "747da8b9285a12e3cf991fdc07b70661c17c7bd4ca72b8e0ccf72b732e96ab7d",
       "executable": false
     },
     "DEMO.md": {
@@ -6027,7 +6027,7 @@
       "executable": false
     },
     "tests/audit.test.mjs": {
-      "sha256": "f23dfa566ad69645d1fb09803404e2330d2e5388274acebab891e55267d97532",
+      "sha256": "2a51635ba9984da69503a8603c783b4893d5258078d4b97e0bc3bb213f8eaf99",
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
