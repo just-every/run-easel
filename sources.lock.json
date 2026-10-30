@@ -3171,7 +3171,7 @@
       "executable": false
     },
     "src/modules/agent-door/credentials.ts": {
-      "sha256": "eca02ffbe6261725b3b2f602770e691cec76cd1659308868e0a43836374c9ca7",
+      "sha256": "a3e4fdd6bb00c2b2ef6049a3dc1c1c69bc38922b5eafe8186fb3de5b4ebba501",
       "executable": false
     },
     "src/modules/agent-door/errors.ts": {
