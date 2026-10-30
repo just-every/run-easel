@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b39d8d8773ed193b0ef304b17f78d9f48fe2c5739a6f93a8babe2a68031ea11b",
+      "sha256": "3c025ae53a448223c4de5eb3a5024b53840869ac050ac7e3428e016aaec64b54",
       "executable": false
     },
     "DEMO.md": {
@@ -1858,6 +1858,10 @@
       "sha256": "482d96a578fb53b0f3826858e4da5b3a861006ef8a3932da509cdc2c5be633a1",
       "executable": false
     },
+    "src/easel/activity-attribution.ts": {
+      "sha256": "24498591f49eed6c691dea3ec6b2e548f84321efd1a67048766926ed830de6b2",
+      "executable": false
+    },
     "src/easel/actor-names.ts": {
       "sha256": "7a2e0d77954e88afebaee26457e1bbb2d71ccef3cc1b4fbe9f69b26bf4d62d52",
       "executable": false
@@ -2023,7 +2027,7 @@
       "executable": false
     },
     "src/easel/audit.ts": {
-      "sha256": "9c9fc64aeae36e73cb2820ece7a9a52181a26dd1388a2d8d23263ae69b539e36",
+      "sha256": "2b3b60589904c0ab44af26bc052ba7811f77ced754cd76bab3c20ee8e666d26d",
       "executable": false
     },
     "src/easel/balance-actuals-workbook.ts": {
@@ -2727,7 +2731,7 @@
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
-      "sha256": "e4f4b3e9722cf17466c2a6d7c8eedf95bdcae1164f152bd257c767f4cd402812",
+      "sha256": "f1b77d34efd6dfe09679b315d32d50036ac37b64747388cc7860b64921198e7c",
       "executable": false
     },
     "src/easel/pack-blocks.ts": {
@@ -5543,7 +5547,7 @@
       "executable": false
     },
     "src/ui/activity-format.ts": {
-      "sha256": "f6a3dd039da99d09fef10394ad59b2998cb401c3ad1717698136c570d11eda8f",
+      "sha256": "29e368a2920d2cda21dce32dce4cf412e04c0d4b57283f3ed05662db67ad9024",
       "executable": false
     },
     "src/ui/activity-style.ts": {
@@ -5555,7 +5559,7 @@
       "executable": false
     },
     "src/ui/activity.tsx": {
-      "sha256": "c362201e36612dfb5970d80abeae680a5fceac59d45bbf6d1b4d570afa8403c7",
+      "sha256": "6f079c604a4d7fcf0baa5de213569574ac124468ac1f2861b6016bb6a028e07c",
       "executable": false
     },
     "src/ui/actuals.tsx": {
@@ -5990,6 +5994,10 @@
       "sha256": "2c2e15a7de42332cedef9bc39c476e2d30185450c5c830e0181081f024f688a7",
       "executable": false
     },
+    "tests/agent-attribution-browser.mjs": {
+      "sha256": "27cf48bcc7712dc33c9a5290f07c1e46c4b3cbe34db60d5a4d0d7c573dff492d",
+      "executable": false
+    },
     "tests/agent-governance-browser.mjs": {
       "sha256": "21f556517ff359fd1ca76970a72e71a0399892bd56f28453dabedd855a501f37",
       "executable": false
@@ -6019,7 +6027,7 @@
       "executable": false
     },
     "tests/audit.test.mjs": {
-      "sha256": "dbcf3c59e53485097067a0bd8261f60a1d43e8b05742c4d47175498e4637f856",
+      "sha256": "f23dfa566ad69645d1fb09803404e2330d2e5388274acebab891e55267d97532",
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
@@ -6863,7 +6871,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "8d3f71843b81f9fa1ab1adf5f47ac004821267598d1e2cc27cfaa7218d9719b0",
+      "sha256": "56561a6939f06687796f03979fee10d44da68fb3c4c36618b3db3a1ccd763488",
       "executable": false
     },
     "vite.config.ts": {
