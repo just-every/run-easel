@@ -239,6 +239,23 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
  assert.equal(decision.status, 200)
  const resumed = await rpc('resources/read', { uri: `easel://scenarios/${forecast.id}`, requestState: held.body.error.data.requestState }, h.owner)
  assert.deepEqual(contents(resumed), await h.get(`/api/easel/scenario/${forecast.id}`))
+ // An approved read receipt cannot replay payroll hidden by a later grant change.
+ const contributorHold = await read(`easel://scenarios/${forecast.id}`)
+ assert.equal(contributorHold.body.error.data.code, 'approval_required')
+ const contributorApproval = contributorHold.body.error.data.approval
+ const contributorDetails = (await h.get(`/agents/api/approvals/${contributorApproval.id}`, contributor)).approval
+ const contributorDecision = await h.send(`/agents/api/approvals/${contributorApproval.id}/approve`, { revision: contributorDetails.revision, summary_sha256: contributorDetails.summary_sha256 }, contributor)
+ assert.equal(contributorDecision.status, 200)
+ const approvedRead = () => rpc('resources/read', { uri: `easel://scenarios/${forecast.id}`, requestState: contributorHold.body.error.data.requestState })
+ assert.ok(contents(await approvedRead()).inputs.expense.some(row => row.name === 'Sales cost'))
+ await cmd('pay-detail', { email: address('planner'), granted: false })
+ const beforeReplay = await modelState()
+ const replay = contents(await approvedRead())
+ assert.deepEqual(replay, await h.get(`/api/easel/scenario/${forecast.id}`, contributor))
+ assert.deepEqual(replay.inputs.expense, [])
+ assert.deepEqual(await modelState(), beforeReplay)
+ await cmd('pay-detail', { email: address('planner'), granted: true })
+ console.log('PROBE BASE-AGENT-003 replay: approved /mcp resource receipt after Pay revocation -> current native Pay-free view; model unchanged')
  contents(await read(`easel://scenarios/${forecast.id}`, viewer))
  await policy([{ id: 'all', class: '*', do: 'autonomous' }])
  await h.send('/agents/api/pause', { paused: true }, h.owner).then(r => assert.equal(r.status, 200))

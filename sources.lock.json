@@ -6487,7 +6487,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "8b2455ab82b7bb6a31161168d09ddb18f1244d19cc06b8769c40f8524da3c787",
+      "sha256": "8fb89268e54f649ec15ec62fb0dc082bc2c81c36a9addd2a7022bf9c6a77564e",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {
