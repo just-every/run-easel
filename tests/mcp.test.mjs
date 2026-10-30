@@ -65,6 +65,52 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal((await call('expense', { scenario: proposal.id, department: engineering.id, line: salary.id, name: 'Other department', kind: 'recurring', amount: '1', start: '2026-02' })).isError, true)
  assert.equal((await call('scenario', { scenario: proposal.id }, other)).isError, true)
  assert.equal((await call('scenario', { scenario: proposal.id }, viewer)).isError, true)
+ const own = ok(await call('proposal-create', { from: forecast.id, name: 'Synthetic engineering proposal', request: 'Prepare an independent department alternative' }, other))
+ const ownExpense = ok(await call('expense', { scenario: own.id, department: engineering.id, line: salary.id, name: 'Synthetic engineering cost', kind: 'recurring', amount: '25', start: '2026-02' }, other))
+ assert.equal(ok(await call('scenario', { scenario: own.id }, other)).inputs.expense.find(row => row.id === ownExpense.id).amountCents, 2500)
+ assert.notEqual(own.createdBy, proposal.createdBy)
+ await h.stepUp(other)
+ const credential = await h.send('/api/easel/tokens/issue', { kind: 'service', scope: 'write', label: 'Synthetic engineering agent' }, other)
+ assert.equal(credential.status, 200)
+ const tokenCall = async (name, args) => {
+  const answer = await rpc('tools/call', { name, arguments: args }, '', { authorization: `Bearer ${credential.value.token}` })
+  assert.equal(answer.status, 200)
+  return answer.body.result
+ }
+ assert.equal(ok(await tokenCall('scenario', { scenario: own.id })).scenario.id, own.id)
+ const privateBefore = await h.get(`/api/easel/scenario/${proposal.id}`)
+ for (const invoke of [(name, args) => call(name, args, other), tokenCall]) {
+  const deniedRead = await invoke('scenario', { scenario: proposal.id })
+  assert.equal(deniedRead.isError, true)
+  assert.equal(deniedRead.structuredContent, undefined)
+  const deniedChange = await invoke('proposal-submit', { id: proposal.id, summary: 'Synthetic cross-sponsor attempt' })
+  assert.equal(deniedChange.isError, true)
+  assert.equal(deniedChange.structuredContent, undefined)
+ }
+ const nativePrivate = await h.send(`/api/easel/scenario/${proposal.id}`, undefined, other)
+ assert.ok([403, 404].includes(nativePrivate.status))
+ assert.deepEqual(await h.get(`/api/easel/scenario/${proposal.id}`), privateBefore)
+ const heldPolicy = { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: 'all', class: '*', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }], spend: { none: true } }
+ assert.equal((await h.send('/agents/api/policy', { document: heldPolicy }, h.owner, 'PUT')).status, 200)
+ const held = await call('proposal-submit', { id: proposal.id, summary: 'Synthetic private decision' })
+ assert.equal(held._meta['com.runeditrun/error'].code, 'approval_required')
+ const approvalPath = `/agents/api/approvals/${held._meta['com.runeditrun/error'].approval.id}`
+ const pending = (await h.get(approvalPath, contributor)).approval
+ const decision = { revision: pending.revision, summary_sha256: pending.summary_sha256 }
+ for (const [path, body] of [[approvalPath], [`${approvalPath}/approve`, decision]]) {
+  const personAttempt = await h.send(path, body, other)
+  assert.ok([403, 404].includes(personAttempt.status))
+  const agentAttempt = await h.mf.dispatchFetch(h.origin + path, { method: body ? 'POST' : 'GET', headers: { origin: h.origin, authorization: `Bearer ${credential.value.token}`, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) })
+  assert.equal(agentAttempt.status, 403)
+  await agentAttempt.body?.cancel()
+ }
+ const stillPending = (await h.get(approvalPath, contributor)).approval
+ assert.equal(stillPending.state, 'pending')
+ assert.deepEqual(stillPending.approvals, [])
+ assert.deepEqual(await h.get(`/api/easel/scenario/${proposal.id}`), privateBefore)
+ assert.equal((await h.send(`${approvalPath}/reject`, decision, contributor)).status, 200)
+ assert.equal((await h.send('/agents/api/policy', { document: { ...heldPolicy, rules: [{ id: 'all', class: '*', do: 'autonomous' }] } }, h.owner, 'PUT')).status, 200)
+ ok(await call('proposal-submit', { id: own.id, summary: 'Synthetic engineering review' }, other))
  const comparison = ok(await call('compare', { a: forecast.id, b: proposal.id }))
  assert.ok(comparison.changedCells.some(cell => cell.department === sales.id && cell.difference === 5000))
  ok(await call('input-delete', { kind: 'expense', id: expense.id }))
@@ -88,6 +134,12 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal((await h.get(`/api/easel/scenario/${proposal.id}`)).scenario.proposalStatus, 'submitted')
  const audit = await h.db.prepare("SELECT actor FROM e_activity WHERE action='proposal-create' AND record=?").bind(proposal.id).first()
  assert.equal(audit.actor, 'planner@example.test')
+ const attributed = await h.get('/api/easel/activity')
+ const ownAudit = attributed.find(row => row.action === 'proposal-create' && row.record === own.id)
+ const firstAudit = attributed.find(row => row.action === 'proposal-create' && row.record === proposal.id)
+ assert.equal(ownAudit.actor, own.createdBy)
+ assert.notEqual(ownAudit.detail.authority.for.id, firstAudit.detail.authority.for.id)
+ assert.notEqual(ownAudit.detail.authority.id, firstAudit.detail.authority.id)
  await cmd('member', { email: 'planner@example.test', name: 'planner', role: 'contributor', departments: [sales.id], active: false })
  assert.equal((await rpc('tools/list')).status, 401)
 })

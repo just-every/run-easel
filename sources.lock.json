@@ -135,7 +135,7 @@
       "executable": false
     },
     "agent-surface.json": {
-      "sha256": "4a6f69552e9341c2338ade7ff333a005a6d4b4ee200791f63d52d7674ac8251f",
+      "sha256": "7d298664d1805eaecc04b8f2de4381f498e828656c6f9678ecdf917ba4aa1bd6",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -6019,7 +6019,7 @@
       "executable": false
     },
     "tests/audit.test.mjs": {
-      "sha256": "dbcf3c59e53485097067a0bd8261f60a1d43e8b05742c4d47175498e4637f856",
+      "sha256": "6e8a764f10e5ef7f4b479b1b061e033bd73f4f34b570da5b94dbea43652a3d7d",
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
@@ -6443,7 +6443,11 @@
       "executable": false
     },
     "tests/initialize-agent-owner.mjs": {
-      "sha256": "e78aa71c889b37a83c420c856dfdadc3931ce93b4d7b4ca7b72f9cb30dd0d8b6",
+      "sha256": "adeff4666d411e1d57a4a3aa3b3e5df57bdfa0bf0889ec293de51f6a05d1c5e8",
+      "executable": false
+    },
+    "tests/initialize-agent-sponsor.mjs": {
+      "sha256": "d1546db054e99aff8c9261afaf6e9930b6eea81c327b9808489841c113d38b07",
       "executable": false
     },
     "tests/intacct-browser.mjs": {
@@ -6483,7 +6487,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "967878fe0b1c1b172eac48a7f3cb292beac5eb8cd229ce3fbfa5c56361c5b198",
+      "sha256": "7a81d001ecb1338f11f82c8022336bd0de9434798b318f4949274b9252a4593d",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {

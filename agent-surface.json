@@ -377,6 +377,49 @@
         "read",
         "window"
       ]
+    },
+    "sponsors": [
+      {
+        "label": "owner"
+      },
+      {
+        "label": "contributor",
+        "email": "synthetic-easel-2\u0040example.invalid",
+        "role": "member",
+        "initializer": "tests/initialize-agent-sponsor.mjs"
+      }
+    ],
+    "reviewers": [
+      {
+        "label": "contributor",
+        "email": "synthetic-easel-2\u0040example.invalid",
+        "initializer": "tests/initialize-agent-sponsor.mjs"
+      }
+    ],
+    "crossSponsor": {
+      "prepare": [
+        "list",
+        "create"
+      ],
+      "read": {
+        "tool": "easel.scenarios.read",
+        "args": {
+          "scenario": {
+            "$from": "create",
+            "pointer": "/id"
+          }
+        }
+      },
+      "change": {
+        "tool": "easel.proposals.submit",
+        "args": {
+          "id": {
+            "$from": "create",
+            "pointer": "/id"
+          },
+          "summary": "Synthetic private proposal for native review."
+        }
+      }
     }
   },
   "escalations": [],

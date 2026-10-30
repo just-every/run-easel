@@ -1,5 +1,6 @@
 // Disposable verifier fixture: only the real native owner and planning doors.
-export default async function ({ request, origin, claim, displayName, returnTo }) {
+import { prepareSponsor } from './initialize-agent-sponsor.mjs'
+export default async function ({ request, origin, claim, displayName, returnTo, reviewers }) {
  const nativeRequest = request
  request = async (url, init) => {
   console.error(`Agent owner fixture: requesting ${init?.method ?? 'GET'} ${new URL(url).pathname}`)
@@ -36,5 +37,7 @@ export default async function ({ request, origin, claim, displayName, returnTo }
  const current = await json(`/api/easel/scenario/${budget.id}`)
  const approved = await command('approve-budget', { scenario: budget.id, revision: current.scenario.revision })
  await command('close-month', { scenario: approved.forecast.id, month: '2026-07' })
+ // Wait for the signed roster to provision its invitation before confirming.
+ prepareSponsor(origin, () => reviewers.initialize('contributor', { cookie }))
  return bootstrap
 }
