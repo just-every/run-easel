@@ -11,6 +11,18 @@ const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-excel')
 await mkdir(evidence, { recursive: true })
 const messages = []
 let server, browser
+// page.evaluate has no default timeout. A stalled Office host/fetch must fail
+// this journey with its phase, rather than consume the entire Verify job.
+const office = async (page, label, action, input) => {
+ console.log(`Excel host: ${label}`)
+ let timer
+ try {
+  return await Promise.race([
+   page.evaluate(action, input),
+   new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Excel host timed out: ${label}`)), 30000) }),
+  ])
+ } finally { clearTimeout(timer) }
+}
 try {
  server = await builtBrowserRuntime({ https: true, bindings: { AUTH_LOCAL: 'false', MAIL_PROVIDER: 'resend', MAIL_API_KEY: 'synthetic-easel-1' }, outbound: async request => {
   if (new URL(request.url).hostname === 'api.resend.com') { messages.push(await request.json()); return Response.json({ id: 'synthetic-easel-2' }) }
@@ -35,11 +47,12 @@ try {
  await excel.route('https://appsforoffice.microsoft.com/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }))
  const openWorkbook = async () => {
   await excel.goto(taskpane)
-  await excel.evaluate(() => window.easelExcelReady)
-  const metadata = await excel.evaluate(async () => (await fetch('/excel/functions.json')).json())
+  await excel.waitForFunction(() => Boolean(window.easelExcelReady))
+  await office(excel, 'initialize shared runtime', () => window.easelExcelReady)
+  const metadata = await office(excel, 'read function metadata', async () => (await fetch('/excel/functions.json')).json())
   const valueFunction = metadata.functions.find(f => f.name === 'VALUE').id
   const reportFunction = metadata.functions.find(f => f.name === 'REPORT').id
-  await excel.evaluate(({ scenario, report, valueFunction, reportFunction }) => {
+  await office(excel, 'open workbook values and report', ({ scenario, report, valueFunction, reportFunction }) => {
    window.excelHost.cell('A1', valueFunction, ['Revenue', 'Sales', '2026-01', scenario])
    window.excelHost.cell('B1', valueFunction, ['Revenue', 'Sales', '2026-02', scenario])
    window.excelHost.cell('A3', reportFunction, [report, '2026-01', 'budget'])
@@ -56,7 +69,7 @@ try {
   return cmd('excel-write', { scenario, revision: current.scenario.revision, schedule: row.id, month, value })
  }
  await write('2026-01', '125'); await write('2026-02', '250')
- await excel.evaluate(() => { window.excelHost.select("'Plan'!$A$1:$A$1"); return window.excelHost.command('refreshSelection') })
+ await office(excel, 'refresh selection', () => { window.excelHost.select("'Plan'!$A$1:$A$1"); return window.excelHost.command('refreshSelection') })
  book = await snapshot(); assert.deepEqual([book.values.A1, book.values.B1, book.sum], [125, 200, 325])
  await excel.getByRole('button', { name: 'Refresh workbook', exact: true }).click()
  await excel.waitForFunction(() => window.excelHost.snapshot().sum === 375)
@@ -103,13 +116,13 @@ try {
  const expired = await contributor.newPage()
  await expired.addInitScript(installExcelHost)
  await expired.route('https://appsforoffice.microsoft.com/**', route => route.fulfill({ contentType: 'text/javascript', body: '' }))
- await expired.goto(taskpane); await expired.evaluate(() => window.easelExcelReady)
- await expired.evaluate(scenario => {
+ await expired.goto(taskpane); await expired.waitForFunction(() => Boolean(window.easelExcelReady)); await office(expired, 'initialize viewer runtime', () => window.easelExcelReady)
+ await office(expired, 'refresh viewer value', scenario => {
   window.excelHost.cell('A1', 'VALUE', ['Revenue', 'Sales', '2026-01', scenario])
   return window.excelHost.command('refreshWorkbook')
  }, scenario)
  assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).values.A1, 150)
- await expired.evaluate(({ scenario, report }) => {
+ await office(expired, 'refresh viewer report and payroll', ({ scenario, report }) => {
   window.excelHost.cell('A3', 'REPORT', [report, '2026-01', 'budget'])
   window.excelHost.cell('A5', 'VALUE', ['Payroll', 'Sales', '2026-01', scenario])
   return window.excelHost.command('refreshWorkbook')
@@ -119,7 +132,7 @@ try {
  assert.deepEqual(viewerBook.values.A3, [['Row', 'FY2026 budget (USD)'], ['Sales', '$150.00'], ['No department', '$0.00']])
  assert.doesNotMatch(JSON.stringify(viewerBook), /Restricted|120000|sources|trace|inputs/)
  await contributor.clearCookies()
- await expired.evaluate(() => window.excelHost.command('refreshWorkbook'))
+ await office(expired, 'refresh after session expiry', () => window.excelHost.command('refreshWorkbook'))
  assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).values.A1.code, 'unavailable')
  assert.equal((await expired.evaluate(() => window.excelHost.snapshot())).sum, 'unavailable')
  await expired.close()

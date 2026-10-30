@@ -147,7 +147,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "91e870dcca74a9e930f9e48c44ed1b82aafb99ca8aff6f85f26e034758024fd4",
+      "sha256": "7a08665b253e9db6f7ea0b586221528fa069c4adce0045b2496d8091f8b9b322",
       "executable": false
     },
     "base-copies.json": {
@@ -6098,6 +6098,10 @@
       "sha256": "dbcf3c59e53485097067a0bd8261f60a1d43e8b05742c4d47175498e4637f856",
       "executable": false
     },
+    "tests/automation-app.test.mjs": {
+      "sha256": "0fa78542fff7d83a736d1fb9c2df63cd210d0e27d2084412fe9e74839ac69e3a",
+      "executable": false
+    },
     "tests/automation-edge.mjs": {
       "sha256": "12b9a3429d9f86bca48c84f77a9c85efb78759b8a39f57c3a6f6245b884ac83f",
       "executable": false
@@ -6323,7 +6327,7 @@
       "executable": false
     },
     "tests/excel-browser.mjs": {
-      "sha256": "b8f1d4b81a70e30dd293c4e7a2e1a086e49608b79d108b6975b7b93ffb712a3e",
+      "sha256": "5302b1b2da9611799f03fcef424f4d35afd5dc04925193553a82e7c0defc383e",
       "executable": false
     },
     "tests/excel-host.mjs": {
