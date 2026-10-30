@@ -1,0 +1,70 @@
+{
+  "name": "watchEvents",
+  "label": "Watch planning events",
+  "type": "polling",
+  "connection": "easel",
+  "parameters": [
+    {
+      "name": "type",
+      "type": "select",
+      "label": "Event type",
+      "required": true,
+      "options": [
+        "approval",
+        "close",
+        "publish",
+        "refresh-failure",
+        "alert",
+        "task"
+      ]
+    }
+  ],
+  "communication": {
+    "url": "/automation/events",
+    "method": "GET",
+    "qs": {
+      "type": "{{parameters.type}}",
+      "recent": true
+    },
+    "response": {
+      "iterate": "{{body.events}}",
+      "output": "{{item}}",
+      "trigger": {
+        "id": "{{item.id}}",
+        "date": "{{parseDate(item.createdAt)}}",
+        "type": "id",
+        "order": "desc"
+      }
+    }
+  },
+  "interface": [
+    {
+      "name": "id",
+      "type": "text",
+      "label": "Event ID"
+    },
+    {
+      "name": "type",
+      "type": "text",
+      "label": "Event type"
+    },
+    {
+      "name": "data",
+      "type": "collection",
+      "spec": [
+        {
+          "name": "record",
+          "type": "text"
+        },
+        {
+          "name": "scenario",
+          "type": "text"
+        },
+        {
+          "name": "revision",
+          "type": "number"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+ "name": "createComment",
+ "label": "Create planning comment",
+ "type": "action",
+ "connection": "easel",
+ "expect": [ { "name": "scenario", "type": "text", "required": true }, { "name": "department", "type": "text", "required": true }, { "name": "text", "type": "text", "required": true } ],
+ "communication": { "url": "/command/comment", "method": "POST", "body": { "scenario": "{{parameters.scenario}}", "department": "{{parameters.department}}", "text": "{{parameters.text}}" }, "response": { "output": "{{body}}" } },
+ "interface": [ { "name": "id", "type": "text" }, { "name": "text", "type": "text" } ]
+}

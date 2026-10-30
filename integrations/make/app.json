@@ -1,0 +1,10 @@
+{
+ "name": "easel",
+ "label": "Easel",
+ "version": 1,
+ "theme": "#336D5C",
+ "language": "en",
+ "base": "base.iml.json",
+ "connections": ["connection.iml.json"],
+ "modules": ["watchEvents.iml.json", "createProposal.iml.json", "createComment.iml.json"]
+}
