@@ -3,28 +3,28 @@ import assert from 'node:assert/strict'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { createPortability } from '@runeditrun/rer/modules/portability'
 import { easelPolicy } from '../scripts/installer/easel-policy.mjs'
+import { automationEdge } from './automation-edge.mjs'
 import { harness } from './harness.mjs'
 
 // Two public-door journeys. Fakes are confined to HTTPS provider/receiver edges.
 test('API-002 signed durable events cover the planning loop, delivery recovery and live authority without exposing private data', async t => {
  let now = '2026-03-02T15:00:00.000Z', receiverStatus = 200
  const received = []
- const h = await harness({ now: () => now, bindings: { EASEL_WEBHOOK_HOSTS: 'receiver.example.test', GAUGE_ORIGIN: 'https://gauge.example.test' }, outbound: async request => {
-  if (new URL(request.url).hostname === 'receiver.example.test') {
-   received.push({ body: await request.text(), headers: Object.fromEntries(request.headers) })
-   if (receiverStatus === 0) return new Promise(resolve => setTimeout(() => resolve(new Response('')), 11000))
-   return new Response('', { status: receiverStatus, headers: { 'retry-after': '60' } })
-  }
-  return new Response('provider unavailable', { status: 503 })
- } }); t.after(() => h.close())
+ const edge = await automationEdge(async wire => {
+  received.push({ body: wire.body, headers: wire.headers })
+  if (receiverStatus === 0) throw new Error('Receiver transport outcome unknown')
+  return { status: receiverStatus, headers: { 'retry-after': '60' }, body: '' }
+ }); t.after(() => edge.close())
+ await edge.assertRefused(assert)
+ const h = await harness({ now: () => now, bindings: { ...edge.bindings, EASEL_WEBHOOK_HOSTS: 'receiver.example.com', GAUGE_ORIGIN: 'https://gauge.example.test' }, outbound: edge.outbound }); t.after(() => h.close())
  const register = async (body, status = 200, cookie = h.owner) => { const r = await h.send('/api/easel/webhooks/register', body, cookie); assert.equal(r.status, status, JSON.stringify(r.value)); return r.value }
- const hook = { label: 'Planning automation', url: 'https://receiver.example.test/events', events: ['approval', 'close', 'publish', 'refresh-failure', 'alert', 'task'] }
+ const hook = { label: 'Planning automation', url: 'https://receiver.example.com/events', events: ['approval', 'close', 'publish', 'refresh-failure', 'alert', 'task'] }
  await h.command('workspace', { name: 'Harbour', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await h.command('department', { name: 'Operations' })
  const line = await h.command('line', { name: 'Operating costs', type: 'operating-expense' })
  const viewer = await h.person('board@example.test', 'viewer')
  await register(hook, 403, viewer)
- for (const url of ['http://receiver.example.test/events','https://127.0.0.1/events','https://receiver.example.test/events?token=secret','https://elsewhere.example.test/events','https://user:password@receiver.example.test/events','broken']) await register({ ...hook, url }, url.includes('elsewhere') ? 403 : 400)
+ for (const url of ['http://receiver.example.com/events','https://127.0.0.1/events','https://receiver.example.com/events?token=secret','https://elsewhere.example.test/events','https://user:password@receiver.example.com/events','broken']) await register({ ...hook, url }, url.includes('elsewhere') ? 403 : 400)
  const subscription = await register(hook)
  assert.equal(received.length, 0, 'Registration does not invent an event')
  const budget = (await h.get('/api/easel/state')).scenarios[0]
@@ -90,20 +90,10 @@ test('API-002 signed durable events cover the planning loop, delivery recovery a
  assert.equal(received.length, total)
  const listed = await h.get('/api/easel/webhooks')
  assert.ok(!JSON.stringify(listed).includes(subscription.secret)); assert.ok(!JSON.stringify(await h.get('/api/easel/activity')).includes(subscription.secret))
- // A standing receiver loses authority when its authorizing finance account does.
+ // A finance admin can read results and stop receivers, but only a native
+ // owner may enter a new outbound destination under the inherited egress rule.
  const finance = await h.person('automation-finance@example.test', 'finance')
- const financeHook = await register({ ...hook, label: 'Finance-owned receiver', events: ['task'] }, 200, finance)
- receiverStatus = 503
- await h.command('calendar-task-save', { name: 'Authority recheck', kind: 'other', owner: 'owner@example.test', due: '2026-03-13' })
- const authorityEvent = JSON.parse(received.at(-1).body).id
- const financeOperator = (await h.get('/auth/operators')).find(person => person.email === 'automation-finance@example.test')
- const demoted = await h.send('/auth/operator/role', { operatorId: financeOperator.id, role: 'member' }, h.owner)
- assert.equal(demoted.status, 200)
- const beforeDemotedRetry = received.length
- receiverStatus = 200; now = '2026-03-02T15:04:00.000Z'
- await h.send('/api/easel/automation/dispatch', {}, h.owner)
- assert.equal(received.length, beforeDemotedRetry, 'A demoted finance account cannot deliver a pending event')
- assert.equal((await h.get('/api/easel/webhooks')).deliveries.find(d => d.subscription === financeHook.id && d.event === authorityEvent).status, 'blocked')
+ await register({ ...hook, events: ['task'] }, 403, finance)
  const backup = await createPortability({ db: h.db, policy: easelPolicy }), exportId = await backup.exports.create()
  try {
   while ((await backup.exports.advance(exportId, { maxParts: 16 })).phase === 'building') {}

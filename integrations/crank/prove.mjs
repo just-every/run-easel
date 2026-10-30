@@ -27,7 +27,7 @@ export async function proveCrank(h, { source, token, forecast, department }) {
    comment: { scenario: '{{steps.proposal.body.id}}', department: department.id, text: 'Prepared by Crank for review' } })
   const published = await kit.publish(crank, 'Easel approval to proposal and comment', graph)
   const hook = await kit.hookUrl(crank, published)
-  const registered = await h.send('/api/easel/webhooks/register', { label: 'Crank app', url: 'https://crank.example.test' + new URL(hook).pathname, events: ['approval'], secret }, h.owner)
+  const registered = await h.send('/api/easel/webhooks/register', { label: 'Crank app', url: 'https://crank.example.com' + new URL(hook).pathname, events: ['approval'], secret }, h.owner)
   assert.equal(registered.status, 200)
   // The caller forwards its receiver transport to this live Crank public door.
   let replay
