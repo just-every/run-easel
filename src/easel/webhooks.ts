@@ -1,5 +1,6 @@
 import { runtimeBindings, type Bindings } from '../auth.server'
 import { webhookGateway, sendWebhook } from './webhook-transport'
+import { webhookDestination } from './webhook-destination'
 import { access, requireCapability, requireFinance } from './access'
 import { hasFullScope } from './access-grants'
 import { AUTOMATION_EVENTS } from './automation-events'
@@ -21,10 +22,8 @@ function native(c: Context) {
 }
 function endpoint(value: unknown, env: Bindings) {
  let url: URL
- try { url = new URL(text(value, 'Receiver URL', 2000)) } catch { throw new Fault(400, 'Use an absolute HTTPS receiver URL') }
+ try { url = webhookDestination(text(value, 'Receiver URL', 2000)) } catch { throw new Fault(400, 'Use a public HTTPS receiver hostname without credentials, query, fragment or a custom port') }
  const hosts = (env.EASEL_WEBHOOK_HOSTS ?? '').split(',').map(v => v.trim().toLowerCase()).filter(Boolean)
- requireThat(url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash && (!url.port || url.port === '443'), 'Receiver must use HTTPS without credentials, query, fragment or a custom port')
- requireThat(/^[a-z][a-z0-9.-]*\.[a-z]{2,}$/.test(url.hostname) && !/(?:^|\.)(?:localhost|local|internal|lan|home|onion)$/.test(url.hostname), 'Use a public receiver hostname')
  requireThat(hosts.includes(url.hostname), 'The installation owner must add this exact public hostname to EASEL_WEBHOOK_HOSTS', 403)
  return url
 }

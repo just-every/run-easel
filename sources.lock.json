@@ -499,7 +499,7 @@
       "executable": false
     },
     "integrations/egress/server.mjs": {
-      "sha256": "70bc8f51d1018986ab5ff105bfef46321308dc13fa7ba2957a26e88fd2c92442",
+      "sha256": "48be1ec3db9dac648c85b26a6329aab8a0218cb4e09fe06301166598737fd3e3",
       "executable": false
     },
     "integrations/make/app.json": {
@@ -2087,7 +2087,7 @@
       "executable": false
     },
     "src/easel/automation-events.ts": {
-      "sha256": "f4d01281f195b9bafb3ef499b65642acf6f5617434317e055af53904c19201be",
+      "sha256": "235dcfbf1c7f95c8c50c082c0ad097b20279f86f7f1e8d79cb29ee74a8c87423",
       "executable": false
     },
     "src/easel/balance-actuals-workbook.ts": {
@@ -2503,7 +2503,7 @@
       "executable": false
     },
     "src/easel/greenhouse.ts": {
-      "sha256": "4b43be2951387424cc5eac126788fcc326d46576ce82d41e64a363e2e35282a3",
+      "sha256": "df69bc04c1549cf4ed70f88affc41f94a35386ec598c8505a017d7a782e08fc7",
       "executable": false
     },
     "src/easel/grid-math.ts": {
@@ -2563,7 +2563,7 @@
       "executable": false
     },
     "src/easel/hris-connection.ts": {
-      "sha256": "17e322ed4e498e35a2d53735971c3fcb5921b96b9415e5296eb8225c6ab5a424",
+      "sha256": "ccc669251553333c1bf69083c09c2b8f8971e1fbf8405899c10ce091ad009cde",
       "executable": false
     },
     "src/easel/hris-import.ts": {
@@ -3150,12 +3150,16 @@
       "sha256": "dd7bc3614ccb7a4002be8931fd70d459a9b19ec7db1c3b0b1a05aab36e6322c5",
       "executable": false
     },
+    "src/easel/webhook-destination.ts": {
+      "sha256": "ef5e6dd74d708b8a60fdb589b95653463a28fadb47d9daefe9154baebae3a37f",
+      "executable": false
+    },
     "src/easel/webhook-transport.ts": {
       "sha256": "9700fcd5d2b16159d0985ae61b65785e9a7c07b820f4a97cd5398bf628635c87",
       "executable": false
     },
     "src/easel/webhooks.ts": {
-      "sha256": "784f06e7fdfcd18ca35612c468b1e1ebc04e1eb7aca7969b3cc5615ba7b6bed8",
+      "sha256": "d1f129b2aa74420c608e6911fb7317c8c30f6adb9ffc2e37c1fe9dab7a02df1f",
       "executable": false
     },
     "src/easel/weekly-cash-workbook.ts": {
@@ -6095,11 +6099,11 @@
       "executable": false
     },
     "tests/automation-edge.mjs": {
-      "sha256": "f41dadf286823fb5bfcb3c3ce48b69b34adbded624e4ae6e7cf2439f3aac964d",
+      "sha256": "12b9a3429d9f86bca48c84f77a9c85efb78759b8a39f57c3a6f6245b884ac83f",
       "executable": false
     },
     "tests/automation.test.mjs": {
-      "sha256": "6ee5339059f350a915a6ba6e15ef21f484eeeeead8eb4c46c01b2bf73a89c5fb",
+      "sha256": "d98dcc9658f2bfc703ee69709c28bed32e37c46481ec71a5b64e1f637c2e1044",
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
