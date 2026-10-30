@@ -24,6 +24,7 @@ export function agentMessage(body) {
  return { ...body, params: { ...body.params, name: agentName(body.params.name), arguments: { ...body.params.arguments, idempotency_key: body.params.arguments?.idempotency_key ?? crypto.randomUUID() } } }
 }
 
+const fixtureAddress = name => [name, 'example.test'].join('@')
 const freePort = async () => { const s = createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r)); const p = s.address().port; await new Promise(r => s.close(r)); return p }
 
 export async function harness(options = {}) {
@@ -52,8 +53,8 @@ export async function harness(options = {}) {
   ...convertV4MiniflareOptions({
    host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],
    d1Databases: { DB: 'easel' }, ...(options.outbound ? { outboundService: options.outbound } : {}),
-   serviceBindings: { ...options.serviceBindings, TEST_CLOCK: async () => new Response(options.now?.() ?? new Date().toISOString()), TEST_MAIL: async request => { const message = await request.json(); messages.push(message); return options.mailResponse ? options.mailResponse(message, request) : Response.json({ id: crypto.randomUUID() }) } },
-   bindings: { ...options.bindings, AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'synthetic-local-test-bootstrap-token-0123456789', MAIL_PROVIDER: 'development', MAIL_FROM: 'Easel <easel@example.test>' },
+   serviceBindings: { ...options.serviceBindings, ...(options.afterReadFence ? { TEST_READ_FENCE: async () => { await options.afterReadFence(); return new Response(null) } } : {}), TEST_CLOCK: async () => new Response(options.now?.() ?? new Date().toISOString()), TEST_MAIL: async request => { const message = await request.json(); messages.push(message); return options.mailResponse ? options.mailResponse(message, request) : Response.json({ id: crypto.randomUUID() }) } },
+   bindings: { ...(typeof options.bindings === 'function' ? options.bindings(origin) : options.bindings), AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: fixtureAddress('owner'), SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'synthetic-local-test-bootstrap-token-0123456789', MAIL_PROVIDER: 'development', MAIL_FROM: `Easel <${fixtureAddress('easel')}>` },
   }),
   resourcePersistencePath: dir,
  })

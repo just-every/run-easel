@@ -70,12 +70,32 @@ with their installation and are excluded from portable planning archives. Restor
 retains the destination's own policy and identity bindings. Native planning
 activity remains in the planning archive; live shared-door audit is retained.
 
+## Scenario resources
+
+`resources/templates/list` offers `easel://scenarios/{id}` and
+`easel://proposals/{id}`. Both read the current native scenario view through
+`resources/read` with `planning:read`. The proposal template accepts proposals
+only. Scenario reads and proposal creation and submission return a
+`resource_link` that reads back the current state, including the submitted status.
+
+The native session or credential, current membership, department and dimension
+grants, separate Pay detail permission, consent and company policy apply on every
+read. Missing and inaccessible records return the same `resource_unavailable`
+response. Payroll sensitivity is computed from the filtered contents, so a
+reader of restricted totals does not acquire Pay detail by opening a URI.
+Narratives, including names and imported text, carry
+`_meta["com.runeditrun/untrusted"] = true` on the resource content. They are data,
+never instructions or authority. A changed projection during admission returns
+`resource_changed` with no content; reads do not save the planning model.
+
+This inventory covers scenarios and proposals only. Other primary record
+resources, file-byte grant budgets, resource refresh and the full catalogue
+qualification remain unproved; BASE-AGENT-003 stays partial.
+
 ## Declared subset and current limits
 
-This adoption declares the core families: tools, policy, pause, audit and
-idempotency. It retains current native principal authorization and owner-bound
-tokens. It does not declare resource catalogues/refresh, native event handoffs or
-subscriptions, multiple verification sponsors, or provider/mail edges. Events, resources, prompts and subscriptions are typed-refused as undeclared.
+This adoption declares tools, policy, pause, audit, idempotency and scenario resources. It retains current native principal authorization and owner-bound
+tokens. Resource refresh remains unscoped. Native event handoffs, subscriptions, multiple verification sponsors and provider edges are not declared. Events, prompts and subscriptions are typed-refused as undeclared.
 The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.
