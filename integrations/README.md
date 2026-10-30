@@ -31,8 +31,8 @@ and a Webhook signing-secret connection containing a random 32-byte shared secre
 Call `workflow` with those connection IDs, the Easel HTTPS origin and reviewed
 proposal/comment inputs. Save the returned graph through `POST /api/crank/workflows`,
 review its native estimate and publish it as the owner. Create its hook through
-`POST /api/crank/workflows/:id/hooks`. Register that URL and the shared secret in
-Easel (see `API.md`). Crank owns workflow review, publication, credential custody,
+`POST /api/crank/workflows/:id/hooks`. Have the native Easel owner register that URL and the shared secret
+(see `API.md`), after configuring the enforcing egress gateway. Crank owns workflow review, publication, credential custody,
 replay and downstream delivery; Easel owns its own live authority and exact revisions.
 
 `crank/prove.mjs` runs the app in an independently obtained, running Crank Worker
@@ -74,3 +74,16 @@ Zapier and Make poll the latest 100 matching events, newest first, deduplicated 
 stable event ID. They must poll often enough for that window. For lossless catch-up,
 use the ascending cursor API or signed webhooks; do not treat an empty poll as
 proof that every older event was consumed. Crank uses signed push delivery.
+
+
+## Webhook egress
+
+CYCLE-001 explicitly gives API-002 the resolved-address/pinned-egress obligation.
+`egress/server.mjs` runs Base's actual `NodePinnedTransport`: all DNS answers must
+be public, the chosen address is pinned to verified TLS and redirects are refused.
+Easel calls only that fixed authenticated gateway and has no direct receiver-fetch
+fallback. See API.md for the bounded protocol and standalone build/deployment
+instructions. `tests/automation-edge.mjs` keeps real gateway HTTP parsing and
+replaces only the final DNS/TLS provider edge with recorded receivers. Owner-only
+destination registration, gateway authentication/private-target refusal, signed
+approval, retry IDs and unknown outcomes remain in the same large public journey.

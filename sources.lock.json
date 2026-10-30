@@ -147,7 +147,7 @@
       "executable": false
     },
     "API.md": {
-      "sha256": "9aaa38214b2a6191cd8bd14f6ecf4d911d66c6cfbf24cede19772d1b03a235bf",
+      "sha256": "91e870dcca74a9e930f9e48c44ed1b82aafb99ca8aff6f85f26e034758024fd4",
       "executable": false
     },
     "base-copies.json": {
@@ -495,7 +495,11 @@
       "executable": false
     },
     "integrations/crank/prove.mjs": {
-      "sha256": "379719854f346acf091d961bea17f6627a2f5eb69a52f57e2241bf8fad1ae304",
+      "sha256": "a65b4ac3293ea4aca417e51ebfdb79b69f58e20480cfc56c6113bdc00f75b504",
+      "executable": false
+    },
+    "integrations/egress/server.mjs": {
+      "sha256": "70bc8f51d1018986ab5ff105bfef46321308dc13fa7ba2957a26e88fd2c92442",
       "executable": false
     },
     "integrations/make/app.json": {
@@ -519,11 +523,11 @@
       "executable": false
     },
     "integrations/make/watchEvents.iml.json": {
-      "sha256": "1e00a55f8555eadc7ee25fc687a51eabc718049545f40f51d33de9cfc97fc197",
+      "sha256": "2109b7c674866ad955cfc564a64131a09a326c327b214ffe338ff6d81eb8c54b",
       "executable": false
     },
     "integrations/README.md": {
-      "sha256": "034475997a8658b19bf40b961c7d98b6581bae87081abf1e82f038d194c39e89",
+      "sha256": "706da0fefcd5e54ca79cf3f56e7423d05dfb65b313c8d305efc514f38899429a",
       "executable": false
     },
     "integrations/zapier/index.cjs": {
@@ -539,7 +543,7 @@
       "executable": false
     },
     "integrations/zapier/test/automation.js": {
-      "sha256": "cfba35b1a622869a19cd36cbd017b810d0fb18f79794b6e5f858a22e581d54e8",
+      "sha256": "ee97778bbc1209fba0414fa0ebb261ea178f96159fda9cafcd686c9968415b04",
       "executable": false
     },
     "LICENSE": {
@@ -1759,7 +1763,7 @@
       "executable": false
     },
     "src/auth.server.ts": {
-      "sha256": "f8fa6a5f5b987ebee94c0640d0e92ebec4531dfc4fc615c35bbb6dffd93aad04",
+      "sha256": "4664584d7536e082a637b5a7fbb97f6299c2ec10312e80de1888eccd3d7e7e5e",
       "executable": false
     },
     "src/base/contract-filter.ts": {
@@ -2083,7 +2087,7 @@
       "executable": false
     },
     "src/easel/automation-events.ts": {
-      "sha256": "ed59a0955a751c75bf6f31f46de53154e093e54a2bbfe6ccac9a831814ace38a",
+      "sha256": "f4d01281f195b9bafb3ef499b65642acf6f5617434317e055af53904c19201be",
       "executable": false
     },
     "src/easel/balance-actuals-workbook.ts": {
@@ -3146,8 +3150,12 @@
       "sha256": "dd7bc3614ccb7a4002be8931fd70d459a9b19ec7db1c3b0b1a05aab36e6322c5",
       "executable": false
     },
+    "src/easel/webhook-transport.ts": {
+      "sha256": "9700fcd5d2b16159d0985ae61b65785e9a7c07b820f4a97cd5398bf628635c87",
+      "executable": false
+    },
     "src/easel/webhooks.ts": {
-      "sha256": "aff116f78f151736e14a0c976a051ad78ae8e2b328850264f05af88f7800784c",
+      "sha256": "784f06e7fdfcd18ca35612c468b1e1ebc04e1eb7aca7969b3cc5615ba7b6bed8",
       "executable": false
     },
     "src/easel/weekly-cash-workbook.ts": {
@@ -6086,8 +6094,12 @@
       "sha256": "dbcf3c59e53485097067a0bd8261f60a1d43e8b05742c4d47175498e4637f856",
       "executable": false
     },
+    "tests/automation-edge.mjs": {
+      "sha256": "f41dadf286823fb5bfcb3c3ce48b69b34adbded624e4ae6e7cf2439f3aac964d",
+      "executable": false
+    },
     "tests/automation.test.mjs": {
-      "sha256": "080d1f266831db600b6430a97d430c3b2e292e81ea05b69c46d07c5304e26451",
+      "sha256": "6ee5339059f350a915a6ba6e15ef21f484eeeeead8eb4c46c01b2bf73a89c5fb",
       "executable": false
     },
     "tests/balance-actuals-browser.mjs": {
