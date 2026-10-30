@@ -216,8 +216,13 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
  assert.ok((await h.db.prepare('SELECT revoked_at FROM oa_sessions WHERE id=?').bind(nativeSession.id).first()).revoked_at)
  assert.deepEqual(await modelState(), beforeRevokedRead)
 
- // Frozen model bytes retain their capture; current erasure transforms all reads.
+ // Membership deactivation alone must refuse MCP before erasure revokes sessions.
  await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id], active: false })
+ assert.equal((await rpc('tools/list')).status, 401)
+ assert.equal((await read(proposalLink.uri)).status, 401)
+ console.log('PROBE BASE-AGENT-003 membership-deactivation: native member active=false then /mcp tool list and proposal read -> 401 before person erasure')
+
+ // Frozen model bytes retain their capture; current erasure transforms all reads.
  const capturesBeforeErasure = (await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results
  await cmd('person-erase', { email: address('planner') })
  const erasedProposal = contents(await read(proposalLink.uri, h.owner))
