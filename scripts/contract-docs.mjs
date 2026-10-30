@@ -1,5 +1,5 @@
-// Project touched acceptance rows and the claims index from the contract source.
-// Legacy acceptance prose outside the selected clauses is retained verbatim.
+// With no clause argument, regenerate every clause row, adding any missing row.
+// --clauses ID,ID limits write and check to those rows; prose outside rows is retained.
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { parseContract } from '../src/base/seed-contract.mjs'
 
@@ -16,15 +16,16 @@ const generatedSource = source.split('\n').map(line => {
 }).join('\n')
 const contract = parseContract(generatedSource)
 const marker = '<!-- Generated from CONTRACT.md -->'
-const selected = args.length ? args[1].split(',') : acceptance.split('\n').filter(line => line.includes(marker)).map(line => /`([^`]+)`/.exec(line)?.[1])
+const selected = args.length ? args[1].split(',') : contract.clauses.map(c => c.id)
 if (!selected.length || selected.some(id => !contract.clauses.some(c => c.id === id))) throw Error('Select at least one defined clause')
 const sourceLines = generatedSource.split('\n')
 function projection(clause) {
  const following = sourceLines.slice(clause.line).findIndex(line => /^#{1,4} /.test(line))
  const body = sourceLines.slice(clause.line, following < 0 ? undefined : clause.line + following).join('\n')
  const paragraphs = body.trim().split(/\n\s*\n/).filter(p => !/^\*Status:/.test(p) && !/^\*Acceptance evidence/.test(p)).map(p => p.replace(/^\*Acceptance:\*\s*/, '').replace(/\s+/g,' ').trim())
+ const text = (clause.kind === 'published' ? clause.text : paragraphs.join(' ')).replace(/(?<!\\)\|/g, '\\|')
  const [, , , , evidence, gap] = split(sourceLines[clause.row-1])
- return `| \`${clause.id}\` — ${clause.title} | ${clause.status} | ${marker} ${paragraphs.join(' ')} Proof: ${evidence}.${clause.status === 'done' ? '' : ` Remaining Gap: ${gap}.`} |`
+ return `| \`${clause.id}\` — ${clause.title} | ${clause.status} | ${marker} ${text} Proof: ${evidence}.${clause.status === 'done' ? '' : ` Remaining Gap: ${gap}.`} |`
 }
 let generatedAcceptance = acceptance
 for (const id of selected) {
@@ -33,8 +34,12 @@ for (const id of selected) {
  if (matches.length > 1) throw Error(`Expected at most one acceptance row for ${id}`)
  if (matches.length) lines[matches[0]] = projection(clause)
  else {
-  if (!lines.includes('## Adopted agent door clauses')) lines.push('', '## Adopted agent door clauses', '', '| Clause | Status | Acceptance |', '| --- | --- | --- |')
-  lines.push(projection(clause))
+  const heading = clause.kind === 'published' ? '## Published clause acceptance' : '## Adopted agent door clauses'
+  if (!lines.includes(heading)) lines.push('', heading, '', '| Clause | Status | Acceptance |', '| --- | --- | --- |')
+  let end = lines.indexOf(heading) + 1
+  while (end < lines.length && (!lines[end].trim() || lines[end].startsWith('|'))) end++
+  while (!lines[end - 1].trim()) end--
+  lines.splice(end, 0, projection(clause))
  }
  generatedAcceptance = lines.join('\n')
 }

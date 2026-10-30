@@ -46,7 +46,7 @@ Agents act as a signed-in person through `API.md`, with that person's authority.
 
 Lander-Regenerate: node scripts/contract-docs.mjs write
 
-`CONTRACT.md` is the acceptance and Status source. Lander-Regenerate for a touched clause is `node scripts/contract-docs.mjs write --clauses SPEND-001`, followed by `node scripts/contract-docs.mjs check --clauses SPEND-001`; use a comma-separated clause list when needed. This updates the selected acceptance rows, summary counts and the generated claims index. Legacy acceptance prose outside those rows is preserved. With no clause argument, the command selects previously generated acceptance rows.
+Lander-Regenerate is `node scripts/contract-docs.mjs write`, followed by `node scripts/contract-docs.mjs check`; with no argument it regenerates every clause's ACCEPTANCE.md row (adding a row for a clause that has none), the summary counts and the generated claims index, so a newly finished clause needs nothing else; `--clauses ID,ID` limits both commands to those rows; prose outside the rows is preserved.
 
 Resolve the contract source first after a merge, keeping newer main judgments, then regenerate its views. Stage all intended files before `node node_modules/@runeditrun/rer/edition-authoring/cli.mjs lock`; run `node node_modules/@runeditrun/rer/edition-authoring/cli.mjs check` afterward. Generate the source lock last, and commit it with the source and generated views.
 
