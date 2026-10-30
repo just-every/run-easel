@@ -134,6 +134,7 @@ try {
   await page.setViewportSize({ width, height: 1000 }); await settle(page); await noOverflow(page, `Activity ${width}`)
   await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Activity', exact: true }) }).screenshot({ path: join(evidence, `activity-${width}.png`) })
  }
+ await page.setViewportSize({ width: 1440, height: 1000 })
  assert.ok(await page.locator('.activity-log').evaluate(node => [...node.querySelectorAll('td, th')].every(cell => parseFloat(getComputedStyle(cell).fontSize) >= 13)))
  assert.deepEqual((await db.prepare('SELECT id,body,sha256 FROM e_snapshots ORDER BY id').all()).results, frozen)
  const persisted = (await db.prepare('SELECT * FROM e_activity WHERE seq=?').bind(reviewed.seq).first())

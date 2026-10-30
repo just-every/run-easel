@@ -5995,7 +5995,7 @@
       "executable": false
     },
     "tests/agent-attribution-browser.mjs": {
-      "sha256": "27cf48bcc7712dc33c9a5290f07c1e46c4b3cbe34db60d5a4d0d7c573dff492d",
+      "sha256": "e7eb5d388dc3ebc02b4a8622bf4bddb072ea7349fa306dc24b0a68275eb1e065",
       "executable": false
     },
     "tests/agent-governance-browser.mjs": {
