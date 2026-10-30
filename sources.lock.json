@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "31bff0787aa6d409afe7ca46c00e2810404b10b5baa6e96f8bd20bac22b3464e",
+      "sha256": "c562e1bcf002be90fa0d572a91db7ec2680b0c02bea56b37e814dac640b88789",
       "executable": false
     },
     "DEMO.md": {
@@ -227,7 +227,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "00e26114955d2382db50fca423be209d3ce7a28b13c96e983bb0df6efbbee15e",
+      "sha256": "01934c9e35b80bf21cee687663a7116309909331d73b0a3f4d3222c1196ffe3f",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -1699,7 +1699,7 @@
       "executable": false
     },
     "src/agent-door/tools.ts": {
-      "sha256": "d1a1a1b21759996933645e81e21a741e5fae307fc2c59b183e44bccb9505282a",
+      "sha256": "97ca8bcf2061a22273db2cc88627e274f13067eaac8268a4b21bab879b21d0fd",
       "executable": false
     },
     "src/agent-door/trust.ts": {
@@ -6487,7 +6487,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "e164a2bc22a2fbe44c7aca31552356f72bc839f51072fb9945727efd132ef5aa",
+      "sha256": "8b2455ab82b7bb6a31161168d09ddb18f1244d19cc06b8769c40f8524da3c787",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {

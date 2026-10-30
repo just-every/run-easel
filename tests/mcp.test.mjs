@@ -81,7 +81,11 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
   for (const id of [forecast.id, budget.id]) {
    const resource = await read(`easel://scenarios/${id}`, cookie)
    assert.deepEqual(contents(resource), await h.get(`/api/easel/scenario/${id}`, cookie))
-   assert.equal(resource.body.result._meta['com.runeditrun/decision'].classes.some(item => item.class === 'sensitive'), cookie !== viewer)
+   const sensitive = resource.body.result._meta['com.runeditrun/decision'].classes.some(item => item.class === 'sensitive')
+   assert.equal(sensitive, cookie !== viewer)
+   const tool = await call('scenario', { scenario: id }, cookie)
+   assert.deepEqual(ok(tool), contents(resource))
+   assert.equal(tool._meta['com.runeditrun/decision'].classes.some(item => item.class === 'sensitive'), sensitive, 'Tool and resource classify the same filtered payroll view')
   }
  }
  assert.deepEqual(await modelState(), beforeReads, 'Resource reads cannot change planning records, captures, revisions or native activity')
@@ -156,8 +160,38 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
  assert.equal((await h.get(`/api/easel/scenario/${proposal.id}`)).scenario.proposalStatus, 'submitted')
  const audit = await h.db.prepare("SELECT actor FROM e_activity WHERE action='proposal-create' AND record=?").bind(proposal.id).first()
  assert.equal(audit.actor, address('planner'))
+
+ // Native dimension filtering and scenario shares also apply to resource URIs.
+ const region = await cmd('dimension', { name: 'Synthetic region' })
+ const east = await cmd('dimension-member', { dimension: region.id, name: 'Synthetic east' })
+ const west = await cmd('dimension-member', { dimension: region.id, name: 'Synthetic west' })
+ const sandbox = await cmd('sandbox-create', { from: forecast.id, name: 'Synthetic private scenario' })
+ for (const [member, name, rate] of [[east, 'Synthetic visible driver', '100'], [west, 'Synthetic private driver', '700']]) {
+  await cmd('revenue', { scenario: sandbox.id, name, department: sales.id, line: revenue.id, kind: 'volume', start: '2026-02', startVolume: '1', rate, dimensions: { [region.id]: member.id } })
+ }
+ const sandboxUri = `easel://scenarios/${sandbox.id}`
+ assert.deepEqual((await read(sandboxUri)).body.error, (await read('easel://scenarios/synthetic-easel-missing')).body.error)
+ await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id], dimensionMembers: { [region.id]: [east.id] } })
+ await cmd('scenario-share', { scenario: sandbox.id, revision: (await h.get(`/api/easel/scenario/${sandbox.id}`)).scenario.revision, email: address('planner'), mode: 'read' })
+ const beforeScopedRead = await modelState()
+ const scoped = contents(await read(sandboxUri))
+ assert.deepEqual(scoped, await h.get(`/api/easel/scenario/${sandbox.id}`, contributor))
+ assert.ok(scoped.inputs.revenue.some(row => row.name === 'Synthetic visible driver'))
+ assert.doesNotMatch(JSON.stringify(scoped), /Synthetic private driver|Private Employee/)
+ assert.deepEqual(await modelState(), beforeScopedRead)
+ afterReadFence = () => cmd('scenario-share', { scenario: sandbox.id, revision: scoped.scenario.revision, email: address('planner'), mode: 'remove' })
+ const unshared = await read(sandboxUri)
+ assert.equal(unshared.body.result, undefined)
+ assert.equal(unshared.body.error.data.code, 'resource_unavailable')
+ assert.deepEqual((await read(sandboxUri)).body.error, (await read('easel://scenarios/synthetic-easel-missing')).body.error)
+ await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id], dimensionMembers: {} })
+ console.log('PROBE BASE-AGENT-003 grants: native dimension-limited share then /mcp resource read -> native filtered driver; revocation during read refuses all content')
+
  // Reclassify the current filtered projection after Pay detail changes.
- await cmd('pay-detail', { email: address('other'), granted: false })
+ afterReadFence = () => cmd('pay-detail', { email: address('other'), granted: false })
+ const payChanged = await read(`easel://scenarios/${forecast.id}`, other)
+ assert.equal(payChanged.body.error.data.code, 'resource_changed')
+ assert.equal(payChanged.body.result, undefined)
  const payFree = await read(`easel://scenarios/${forecast.id}`, other)
  assert.deepEqual(contents(payFree), await h.get(`/api/easel/scenario/${forecast.id}`, other))
  assert.ok(!JSON.stringify(payFree.body.result).includes('Private Employee'))
@@ -190,6 +224,12 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
 
  const policy = rules => h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, spend: { none: true } } }, h.owner, 'PUT').then(r => assert.equal(r.status, 200, JSON.stringify(r.value)))
  await policy([{ id: 'all', class: '*', do: 'autonomous' }, { id: 'payroll', class: 'sensitive', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }])
+ const beforeHeldRead = await modelState()
+ const heldTool = await call('scenario', { scenario: forecast.id })
+ assert.equal(heldTool.isError, true)
+ assert.equal(heldTool._meta['com.runeditrun/error'].code, 'approval_required')
+ assert.equal(heldTool.structuredContent, undefined)
+ assert.deepEqual(await modelState(), beforeHeldRead)
  const held = await read(`easel://scenarios/${forecast.id}`, h.owner)
  assert.equal(held.body.error.data.code, 'approval_required')
  assert.equal(held.body.result, undefined)

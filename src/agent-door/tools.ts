@@ -28,6 +28,9 @@ export function planningTools(): ToolDefinition[] {
   const { c, result } = await nativeAction(tool.nativeName, args, ctx, false)
   admissions.set(key(ctx, tool.name), nativeAdmission(c))
   if (!tool.classes.includes('sensitive')) return recordClasses(null)
+  // Preserve the filtered view's line metadata when classifying payroll inputs.
+  // Wrapping it as an effect list loses the relationship to payroll lines.
+  if (tool.readOnly && tool.nativeName !== 'variance') return recordClasses(result)
   const changed = [...c.s.values()].filter(row => c.before.get(`${row.kind}:${row.id}`)?.revision !== row.revision)
   const removed = [...c.before.values()].filter(row => !c.s.has(`${row.kind}:${row.id}`))
   const records = tool.readOnly ? result : [...changed.map(row => row.value), ...removed.map(row => row.value)]

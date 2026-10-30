@@ -81,8 +81,11 @@ only. Scenario reads and proposal creation and submission return a
 The native session or credential, current membership, department and dimension
 grants, separate Pay detail permission, consent and company policy apply on every
 read. Missing and inaccessible records return the same `resource_unavailable`
-response. Payroll sensitivity is computed from the filtered contents, so a
+response. Payroll sensitivity for both scenario tools and resources is computed from the
+filtered contents, including visible inputs on payroll lines without a position. A
 reader of restricted totals does not acquire Pay detail by opening a URI.
+Native dimension restrictions and scenario shares also apply; removing a share
+during a read refuses the content before it leaves the door.
 Narratives, including names and imported text, carry
 `_meta["com.runeditrun/untrusted"] = true` on the resource content. They are data,
 never instructions or authority. A changed projection during admission returns
@@ -90,7 +93,9 @@ never instructions or authority. A changed projection during admission returns
 
 This inventory covers scenarios and proposals only. Other primary record
 resources, file-byte grant budgets, resource refresh and the full catalogue
-qualification remain unproved; BASE-AGENT-003 stays partial.
+qualification remain unproved; BASE-AGENT-003 stays partial. The pinned Base
+resource context supplies no byte budget and its pipeline does not enforce
+file-byte grant budgets. This seed does not claim that Base qualification.
 
 ## Declared subset and current limits
 
