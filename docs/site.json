@@ -95,6 +95,12 @@
           "title": "Share it with your team",
           "file": "share-with-your-team.md",
           "summary": "Check a deployment locally, then put Easel on your own account for the people who plan with you."
+        },
+        {
+          "slug": "agents",
+          "title": "Planning with agents",
+          "file": "agents.md",
+          "summary": "Discover planning tools, retrieve specialist job prompts and prepare proposals and cited explanations under current human authority."
         }
       ]
     }
