@@ -28,10 +28,10 @@ test('PORT-001 finance opens the complete plan export with verified digests, ori
  const state = await h.get('/api/easel/state')
  assert.equal(model.workspace.name, state.workspace.name)
  assert.equal(model.records.length, Number((await h.db.prepare('SELECT COUNT(*) AS n FROM e_records').first()).n))
- // Every product and import-journal table travels; native auth, credentials, calculation receipts and the installation erasure key do not.
- const { results: tables } = await h.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') AND name NOT IN ('e_api_tokens','e_api_limits','e_connection_secrets','e_erasure_key','e_calculation_jobs','e_calculation_job_chunks')").all()
+ // Every product and import-journal table travels; native auth, credentials, webhook operational state, calculation receipts and the installation erasure key do not.
+ const { results: tables } = await h.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND (name GLOB 'e_*' OR name GLOB 'ik_*') AND name NOT IN ('e_automation_events','e_webhook_subscriptions','e_webhook_deliveries','e_api_tokens','e_api_limits','e_connection_secrets','e_erasure_key','e_calculation_jobs','e_calculation_job_chunks')").all()
  for (const {name} of tables) assert.ok(archive.file(`tables/${name}.csv`), name)
- assert.ok(!Object.keys(archive.files).some(name => /oa_|e_api_tokens|e_api_limits|e_connection_secrets|e_erasure_key|e_calculation_job/.test(name)))
+ assert.ok(!Object.keys(archive.files).some(name => /oa_|e_automation_events|e_webhook_subscriptions|e_webhook_deliveries|e_api_tokens|e_api_limits|e_connection_secrets|e_erasure_key|e_calculation_job/.test(name)))
  const originals = manifest.originals.filter(o => o.status === 'retained')
  assert.ok(originals.length)
  assert.ok((await Promise.all(originals.map(o => archive.file(o.path).async('string')))).includes(f.body.csv), 'Original accepted ledger bytes are exact')
