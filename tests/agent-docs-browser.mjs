@@ -43,6 +43,7 @@ try {
   assert.equal(response.status(), 200, await response.text())
   const body = await response.json(); assert.ok(!body.error, JSON.stringify(body)); return body.result
  }
+ const text = value => value.replace(/\s+/g, ' ').trim()
  const discovery = await rpc('server/discover'), { tools } = await rpc('tools/list')
  const { prompts } = await rpc('prompts/list'), { resourceTemplates } = await rpc('resources/templates/list')
  const page = await context.newPage()
@@ -52,7 +53,7 @@ try {
  const article = page.locator('article[data-doc=agents]')
  await article.getByRole('heading', { level: 1 }).waitFor()
  assert.deepEqual(await article.locator('h3').allTextContents(), tools.map(tool => tool.name), 'Published tools equal the live MCP catalogue')
- assert.ok((await article.innerText()).includes(discovery.instructions), 'Discovery and the built guide share generated instructions')
+ assert.ok(text(await article.innerText()).includes(text(discovery.instructions)), 'Discovery and the built guide share generated instructions')
  for (const tool of tools) {
   const details = await article.locator('h3').filter({ hasText: tool.name }).evaluate(heading => {
    const text = []
@@ -62,11 +63,11 @@ try {
   assert.ok(details.includes(tool._meta['com.runeditrun/scope']), tool.name)
   for (const cls of tool._meta['com.runeditrun/classes']) assert.ok(details.includes(`Computed class proof ${cls}:`), `${tool.name} has a published ${cls} proof`)
  }
- const guide = await article.innerText()
+ const guide = text(await article.innerText())
  for (const prompt of prompts) {
   assert.ok(guide.includes(prompt.name))
   const retrieved = await rpc('prompts/get', { name: prompt.name })
-  assert.ok(guide.includes(retrieved.messages[0].content.text), 'The published job is retrievable through MCP')
+  assert.ok(guide.includes(text(retrieved.messages[0].content.text)), 'The published job is retrievable through MCP')
  }
  assert.deepEqual(resourceTemplates, [])
  assert.match(guide, /Resource template inventory: none declared/)

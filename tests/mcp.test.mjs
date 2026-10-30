@@ -123,8 +123,8 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal((await h.get(`/api/easel/scenario/${proposal.id}`)).scenario.proposalStatus, 'submitted')
  const audit = await h.db.prepare("SELECT actor FROM e_activity WHERE action='proposal-create' AND record=?").bind(proposal.id).first()
  assert.equal(audit.actor, 'planner@example.test')
- const adopt = async rules => assert.equal((await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, spend: { none: true } } }, h.owner, 'PUT')).status, 200)
- await adopt([{ id: 'standard', class: 'standard', do: 'review' }, { id: 'sensitive', class: 'sensitive', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }])
+ const adopt = async rules => { const response = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, reviewers: ['sponsor'], spend: { none: true } } }, h.owner, 'PUT'); assert.equal(response.status, 200, response.text) }
+ await adopt([{ id: 'all', class: '*', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }, { id: 'standard', class: 'standard', do: 'review' }])
  for (const prompt of prompts.prompts) assert.ok((await rpc('prompts/get', { name: prompt.name })).body.result.messages.length > 0, 'Held policy still permits job preparation')
  await adopt([{ id: 'block', class: '*', do: 'blocked' }])
  assert.equal((await rpc('prompts/get', { name: prompts.prompts[0].name })).body.error.data.code, 'policy_blocked')

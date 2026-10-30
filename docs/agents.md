@@ -2,13 +2,13 @@ Easel’s **finance planner** specialist prepares alternatives and cited explana
 
 ## Discover and prepare a job
 
-Discover the installation at `/.well-known/oauth-protected-resource/mcp`, then call `server/discover` through `POST /mcp`. `POST /api/easel/mcp` is the same door. Use the returned versions, method and name headers, schemas and private cache metadata. Tokens belong only in the Authorization header. Sign in through the installation’s own trusted authority; prompts do not grant access.
+Discover the installation at `/.well-known/oauth-protected-resource/mcp`, then call `server / discover` through `POST /mcp`. `POST /api/easel/mcp` is the same door. Use the returned versions, method and name headers, schemas and private cache metadata. Tokens belong only in the Authorization header. Sign in through the installation’s own trusted authority; prompts do not grant access.
 
 The discovery instructions below come from the same registry as this page:
 
 Easel: tools for the finance planner specialist. Act for the sponsoring person under their company policy; people decide approvals at the supplied URL. Read /docs/agents for the generated registry, class proofs, scopes, limits and errors. Jobs: easel.proposal.prepare: Prepare and compare a private planning alternative, then submit it for native finance review. easel.variance.explain: Read accepted closed-month evidence and prepare a cited explanation for human confirmation. Tools: easel.allocations.update (planning:write; standard); easel.asset_categories.update (planning:write; standard); easel.assets.update (planning:write; standard); easel.calculations.status (planning:read; standard); easel.calendar.update (planning:write; standard); easel.comments.create (planning:write; standard); easel.debt.update (planning:write; standard); easel.equity.update (planning:write; standard); easel.expenses.update (planning:write; standard); easel.explanations.draft (planning:write; standard); easel.formulas.update (planning:write; standard); easel.inputs.delete (planning:write; standard, sensitive); easel.metrics.read (planning:read; standard); easel.positions.update (planning:write; standard, sensitive); easel.proposals.create (planning:write; standard, sensitive); easel.proposals.submit (planning:write; standard); easel.revenue.update (planning:write; standard, sensitive); easel.scenarios.compare (planning:read; standard, sensitive); easel.scenarios.list (planning:read; standard); easel.scenarios.read (planning:read; standard, sensitive); easel.schedules.update (planning:write; standard); easel.taxes.update (planning:write; standard); easel.variance.read (planning:read; standard, sensitive). Native finance retains promotion, approval, close and publication. Prompts prepare work and grant no authority.
 
-Call `prompts/list`, then `prompts/get` with a listed name. Optional string arguments describe the requested work; they are returned separately as untrusted planning inputs. Retrieving a prompt reads no planning records and changes no model state. All tool calls still pass current scope, native grants, policy, Pause and human approval checks.
+Call `prompts / list`, then `prompts / get` with a listed name. Optional string arguments describe the requested work; they are returned separately as untrusted planning inputs. Retrieving a prompt reads no planning records and changes no model state. All tool calls still pass current scope, native grants, policy, Pause and human approval checks.
 
 - **Prepare a planning proposal** — `easel.proposal.prepare`: Prepare and compare a private planning alternative, then submit it for native finance review.
 
@@ -242,7 +242,7 @@ Read role-filtered variance and evidence for a closed month.
 
 ## Resources and events
 
-Resource template inventory: **none declared**. `resources/templates/list` returns an empty inventory. Resource reads are typed refusals; scenario content remains available through the classified read tools above.
+Resource template inventory: **none declared**. `resources / templates / list` returns an empty inventory. Resource reads are typed refusals; scenario content remains available through the classified read tools above.
 
 Event type inventory: **none declared**. Events and subscriptions remain undeclared and typed-refused. No event delivery, resource refresh or subscription qualification is claimed.
 

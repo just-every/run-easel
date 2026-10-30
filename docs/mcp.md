@@ -78,7 +78,7 @@ its scope and computed-class proof, the resource and event inventories, limits
 and errors. Regenerate it with `node scripts/agent-docs.mjs write` and check it
 with `node scripts/agent-docs.mjs check`. Discovery serves the same generated
 planning instructions. Retrieve `easel.proposal.prepare` or
-`easel.variance.explain` through `prompts/get`; both preserve native human gates. It retains current native principal authorization and owner-bound
+`easel.variance.explain` through `prompts / get`; both preserve native human gates. It retains current native principal authorization and owner-bound
 tokens. It does not declare resource catalogues and refresh, native event handoffs or
 subscriptions, multiple verification sponsors, or provider and mail edges. Events, resources and subscriptions are typed-refused as undeclared.
 The built-in events tool is absent from this core catalogue.

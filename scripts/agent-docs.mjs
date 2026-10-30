@@ -24,9 +24,9 @@ export async function agentDocumentation() {
  const lines = [
   `Easel’s **${registry.specialist}** specialist prepares alternatives and cited explanations with a named person’s current authority. It never makes the person’s financial decisions.`, '',
   '## Discover and prepare a job', '',
-  'Discover the installation at `/.well-known/oauth-protected-resource/mcp`, then call `server/discover` through `POST /mcp`. `POST /api/easel/mcp` is the same door. Use the returned versions, method and name headers, schemas and private cache metadata. Tokens belong only in the Authorization header. Sign in through the installation’s own trusted authority; prompts do not grant access.', '',
+  'Discover the installation at `/.well-known/oauth-protected-resource/mcp`, then call `server / discover` through `POST /mcp`. `POST /api/easel/mcp` is the same door. Use the returned versions, method and name headers, schemas and private cache metadata. Tokens belong only in the Authorization header. Sign in through the installation’s own trusted authority; prompts do not grant access.', '',
   'The discovery instructions below come from the same registry as this page:', '', registry.planningInstructions(), '',
-  'Call `prompts/list`, then `prompts/get` with a listed name. Optional string arguments describe the requested work; they are returned separately as untrusted planning inputs. Retrieving a prompt reads no planning records and changes no model state. All tool calls still pass current scope, native grants, policy, Pause and human approval checks.', '',
+  'Call `prompts / list`, then `prompts / get` with a listed name. Optional string arguments describe the requested work; they are returned separately as untrusted planning inputs. Retrieving a prompt reads no planning records and changes no model state. All tool calls still pass current scope, native grants, policy, Pause and human approval checks.', '',
   ...registry.planningPrompts.flatMap(prompt => [
    `- **${prompt.title}** — \`${prompt.name}\`: ${prompt.description}`, '',
    ...prompt.messages({}).map(message => message.content.text), '',
@@ -45,7 +45,7 @@ export async function agentDocumentation() {
    ...tool.classes.map(cls => `- Computed class proof ${proof(tool, cls)}`), '')
  }
  lines.push('## Resources and events', '',
-  surface.resources.length ? surface.resources.map(uri => `- \`${uri}\``).join('\n') : 'Resource template inventory: **none declared**. `resources/templates/list` returns an empty inventory. Resource reads are typed refusals; scenario content remains available through the classified read tools above.', '',
+  surface.resources.length ? surface.resources.map(uri => `- \`${uri}\``).join('\n') : 'Resource template inventory: **none declared**. `resources / templates / list` returns an empty inventory. Resource reads are typed refusals; scenario content remains available through the classified read tools above.', '',
   'Event type inventory: **none declared**. Events and subscriptions remain undeclared and typed-refused. No event delivery, resource refresh or subscription qualification is claimed.', '',
   '## Capacity and policy limits', '',
   `The live door is configured for **${registry.agentLimits.requestsPerMinute.toLocaleString('en-US')} requests per minute per agent** and **${registry.agentLimits.maxBodyBytes.toLocaleString('en-US')} body bytes**. Capacity bounds rate and size, not daily business volume. A rate overrun returns 429 with Retry-After; an oversized request returns 413 without an effect.`, '',

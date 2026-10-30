@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b39d8d8773ed193b0ef304b17f78d9f48fe2c5739a6f93a8babe2a68031ea11b",
+      "sha256": "8e86d4a9225a9f7f427c7a3efced7a9351092f147dbb44b3d9be7fcf60ca4a0f",
       "executable": false
     },
     "DEMO.md": {
@@ -179,7 +179,7 @@
       "executable": false
     },
     "docs/agents.md": {
-      "sha256": "af99fa7da2852bc08fb32e85fdda4809c60c2e55cb83c03822c28a93d44d2414",
+      "sha256": "378ecfe2ed70c9c0326cc1320d57aed03fae9b72e026f44a97543a3d2bd7bc51",
       "executable": false
     },
     "docs/backup-and-restore.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "206ae4241fb05f3ef4533b3db566f8bb8a9d7a6891984b5bddc128e77a802999",
+      "sha256": "f03fb6f0d60bd4784acd1527eef2beeae4e3c16b406603061f3b248c901bde49",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -887,7 +887,7 @@
       "executable": false
     },
     "scripts/agent-docs.mjs": {
-      "sha256": "03b53f3b06eac88ad0d13a59431c2cceff55b204ac07e9bd6729192724bfbece",
+      "sha256": "7407409f73640a13a610f2b67ecbb6178372ceb53b538b9b046caf15f58019b2",
       "executable": false
     },
     "scripts/build-delivery-artifact.mjs": {
@@ -5355,7 +5355,7 @@
       "executable": false
     },
     "src/site/docs/docs.css": {
-      "sha256": "c0ea32ef45fe8ab6c6e241227b38e9d977f7e96abd07f66e22b42c8b48ae30cb",
+      "sha256": "58e6817de52b3627c4a90facbb6aa31cd1496f46f308abc470695a08c8fbf1ea",
       "executable": false
     },
     "src/site/docs/DocsArticle.tsx": {
@@ -6003,7 +6003,7 @@
       "executable": false
     },
     "tests/agent-docs-browser.mjs": {
-      "sha256": "11bb5445c545c07bfb2058c48a6a3105fa2ab67a0f128227062011a2a4b4d481",
+      "sha256": "f93b016936b4cf494d1d53bef3b58386eb437fd86ee360c4a1f7d9c09e57e2cb",
       "executable": false
     },
     "tests/agent-governance-browser.mjs": {
@@ -6499,7 +6499,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "04a3d5043a5b81e72a2f49d1ede499edf86004a94e8ad4fc8d32afc407983da6",
+      "sha256": "16cf0248a8afc0fb7fadb1e8ca1e2446759bbdd0d2a5dcaad638564e397b41f6",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {
