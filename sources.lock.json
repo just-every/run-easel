@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "78f23f53426a4c5eb276a60b6cfe10c40ec94d97a10c17fe0e07cfa3bcb8201b",
+      "sha256": "5027d974206898e0bcbfb385fdd8be609f083d9672f91f7ff16bac27a82bd445",
       "executable": false
     },
     "agent-surface.json": {
@@ -6615,7 +6615,7 @@
       "executable": false
     },
     "tests/mcp-client-browser.mjs": {
-      "sha256": "87a344dcc80667373fcec93744fcac56b4beb45bbf49a35e27cf427144255118",
+      "sha256": "d2a1dbcb031d32f6fca58feb7e60347592b24e031cf6d2b461465ec9a96f5bf1",
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {

@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { droppedResponseProxy, standaloneClientJourney } from './mcp-client-journey.mjs'
-const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
+const { chromium, expect } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-mcp-client')
 await mkdir(evidence, { recursive: true })
 const runtime = await builtBrowserRuntime()
@@ -50,6 +50,7 @@ try {
    const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/easel/activity' && new URL(response.url()).searchParams.get('record') === proposal.id)
    await page.getByRole('button', { name: 'Filter activity', exact: true }).click()
    await filtered
+   await expect(page.getByRole('link', { name: 'Export filtered activity as CSV', exact: true })).toHaveAttribute('href', `/api/easel/activity.csv?${new URLSearchParams({ record: proposal.id })}`)
    const creation = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Created a proposal', { exact: true }) })
    await creation.waitFor()
    assert.equal(await creation.count(), 1, 'Native Activity shows one creation after recovery')
@@ -101,6 +102,7 @@ try {
    const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/easel/activity' && new URL(response.url()).searchParams.get('scenario') === proposal.id)
    await page.getByRole('button', { name: 'Filter activity', exact: true }).click()
    await filtered
+   await expect(page.getByRole('link', { name: 'Export filtered activity as CSV', exact: true })).toHaveAttribute('href', `/api/easel/activity.csv?${new URLSearchParams({ scenario: proposal.id })}`)
    const submission = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Submitted a proposal', { exact: true }) })
    await submission.waitFor()
    assert.equal(await submission.count(), 1)
