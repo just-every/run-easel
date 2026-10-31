@@ -78,8 +78,9 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
      ...(!handshake ? { 'mcp-protocol-version': version } : {}),
      ...(version === legacy ? {} : { 'mcp-method': method, ...(method === 'tools/call' ? { 'mcp-name': params.name } : {}) }), ...headers,
     }
-    // An early 413 can close the upload side while its refusal is still being
-    // received. Keep those independent halves with Node's raw HTTP client.
+    // Read early refusals before committing more upload bytes. The fixed-size
+    // request advertises its actual length; a streaming request sends every
+    // byte with backpressure and carries no size header.
     if (raw) return new Promise((resolve, reject) => {
      let received = false
      const upload = httpRequest(url, { method: 'POST', headers: { ...requestHeaders, ...(!stream ? { 'content-length': Buffer.byteLength(payload) } : {}) } }, response => {
@@ -87,13 +88,24 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
       const chunks = []
       response.on('data', chunk => chunks.push(chunk))
       response.once('error', reject)
-      response.once('end', () => { try { resolve({ status: response.statusCode, headers: new Headers(response.headers), body: JSON.parse(Buffer.concat(chunks).toString()) }) } catch (error) { reject(error) } })
+      response.once('end', () => {
+       try { resolve({ status: response.statusCode, headers: new Headers(response.headers), body: JSON.parse(Buffer.concat(chunks).toString()) }) } catch (error) { reject(error) }
+       upload.destroy()
+      })
      })
-     upload.once('error', error => { if (!received) reject(error) })
-     const bytes = Buffer.from(payload)
-     if (stream) for (let offset = 0; offset < bytes.length; offset += 65536) upload.write(bytes.subarray(offset, offset + 65536))
-     else upload.write(bytes)
-     upload.end()
+     upload.once('error', error => { if (!received) reject(new Error(`Raw ${stream ? 'streamed' : 'fixed'} request ${path}: ${error.message}`, { cause: error })) })
+     upload.setTimeout(30000, () => upload.destroy(new Error('Raw HTTP refusal timed out')))
+     upload.flushHeaders()
+     if (stream) {
+      const bytes = Buffer.from(payload)
+      const send = offset => {
+       if (received || upload.destroyed) return
+       if (offset === bytes.length) { upload.end(); return }
+       const end = Math.min(offset + 65536, bytes.length)
+       upload.write(bytes.subarray(offset, end), error => { if (!error) setImmediate(() => send(end)) })
+      }
+      send(0)
+     }
     })
     const response = await fetch(url, { method: 'POST', redirect: 'manual', headers: requestHeaders,
      body: stream ? new ReadableStream({ start(controller) { const bytes = new TextEncoder().encode(payload); for (let offset = 0; offset < bytes.length; offset += 65536) controller.enqueue(bytes.slice(offset, offset + 65536)); controller.close() } }) : payload,

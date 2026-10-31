@@ -6607,7 +6607,7 @@
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
-      "sha256": "844c36d712d09c2cf5d63ed34980136ed73a598d728f18e3fa29514e7e79e073",
+      "sha256": "b5526d3b8d62e5c792cd3d8837565bf75fe560f986ac334d611985cd207a8dfc",
       "executable": false
     },
     "tests/mcp-client.test.mjs": {
