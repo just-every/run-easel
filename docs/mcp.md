@@ -166,7 +166,7 @@ an outbound provider, so no test-only provider edge is declared.
 
 ## Browse and export agent audit
 
-Open Settings → Agent governance → Browse agent audit to reach `/agents/audit`.
+Open Review → Agent governance → Browse agent audit to reach `/agents/audit`.
 The existing native owner or editor session is required. Agent credentials,
 including an agent credential accompanied by a person cookie, are refused.
 
