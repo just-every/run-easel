@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "c044fccfb57131e9137e54ac5940bf1a8f16e413d4a233a0198f6a01776dd736",
+      "sha256": "0423a449bfb1bc419e616516aad879ca6642baa4eb4325efad7cc8bb8eb814b2",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6599,7 +6599,7 @@
       "executable": false
     },
     "tests/mcp-client-browser.mjs": {
-      "sha256": "3567849b83a906bfd2277f599a81cdc605dcd9db827a2590cf3719f84bdedd85",
+      "sha256": "518896634724ea4f3aead66336c3327c156545388445f2c389e699fa9bf9d2ce",
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
@@ -6991,7 +6991,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "13b0e54abe94fa8e3457004ab87fbdd7bd3bbf567805db0be6e52c50d4cab456",
+      "sha256": "b8056d17abd0e3f0615e7d47a25b0d7661eaab3862944f23d2abfb225fb54524",
       "executable": false
     },
     "vite.config.ts": {

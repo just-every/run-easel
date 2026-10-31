@@ -95,6 +95,9 @@ and `params._meta["io.modelcontextprotocol/protocolVersion"]` set to that revisi
 For a tool call, `MCP-Name` must match the public tool name, for example
 `easel.proposals.create`. Caller-supplied `idempotency_key` belongs in the tool's
 arguments; retain it when resuming approval or retrying a completed operation.
+A modern held call returns `resultType: "input_required"` and its approval URL
+in metadata. A legacy held call returns `approval_required` in error metadata.
+Only the named signed-in person can complete that native decision.
 
 A legacy 2025-11-25 client sends `initialize` with that `protocolVersion`, then
 its initialized notification and subsequent requests with

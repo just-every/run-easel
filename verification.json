@@ -67,7 +67,7 @@
         "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs tests/mcp-client.test.mjs",
         "node tests/agent-attribution-browser.mjs",
         "node tests/agent-docs-browser.mjs",
-        "node tests/mcp-client-browser.mjs"
+        "perl -e 'alarm 1200; exec @ARGV' -- node tests/mcp-client-browser.mjs"
       ]
     }
   ],
