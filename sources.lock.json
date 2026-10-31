@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "9e264efda9d1dcdc9140726a932c0d39eef758f9ccd5ee48dcd808cb96b323d4",
+      "sha256": "78f23f53426a4c5eb276a60b6cfe10c40ec94d97a10c17fe0e07cfa3bcb8201b",
       "executable": false
     },
     "agent-surface.json": {
@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "b1666f424cd5db146c75fe8d676c03258f89419b564036ca52adbdf526662703",
+      "sha256": "d1188cbe1ec2ffec30abd7e461dd8bb87a14c43ef1dc17a15fc3f02c76cb1113",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "4131cd70885057a1c38cad3351d49a4b96fd93114934edf9bdb0d6156cc7fbb3",
+      "sha256": "de843423e992cdcb7ecea1e5afa937e1b12fd99cad69a256fbf29fc82f170859",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6114,6 +6114,18 @@
       "sha256": "1c1d8926f3d73b499c450dfd3e24df0faa083f1c4c84c22bc2f8fa3bf0c803b9",
       "executable": false
     },
+    "tests/agent-policy-browser.mjs": {
+      "sha256": "e358e2b63e05ec45b4b42a123daeb9b427b70b051021254bc989f4df5c1d65be",
+      "executable": false
+    },
+    "tests/agent-policy-flow.mjs": {
+      "sha256": "417feee44e7b8af43aabe457bcd9997b6691258409aeeed84591b9e6cf621bc5",
+      "executable": false
+    },
+    "tests/agent-policy.test.mjs": {
+      "sha256": "2a6988d80e8bddd4091b0206609c8c4b70902601dd7b3f575dad382bfd0cadd8",
+      "executable": false
+    },
     "tests/api-tokens.test.mjs": {
       "sha256": "1989c90ae4b8f347ba48970bc47f013ee69ea81c818ec5ace5544dfe26e3c63c",
       "executable": false
@@ -6507,7 +6519,7 @@
       "executable": false
     },
     "tests/harness.mjs": {
-      "sha256": "518eed0c2493c3742a4e64422470fb5a85cc4bcddac06c420f17976696a6dc86",
+      "sha256": "dc742e206defacb72b5c4e0c83ddd34db56ca81c1b396124d9546159afa34ace",
       "executable": false
     },
     "tests/headcount-browser.mjs": {
@@ -7007,7 +7019,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "3a870fc21c5191f61f4982e13ce0e47c3006a3f960bddf13cdd9db2907d31c81",
+      "sha256": "6c0482e400af59cbd6ef03f4170d9beb1774f7736f9c2d015b7a0ea439ecf8f8",
       "executable": false
     },
     "vite.config.ts": {
