@@ -107,6 +107,34 @@ The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.
 
+## Request capacity and recovery
+
+The production capacity is 600 authenticated requests per fixed minute per
+agent. Both `POST /mcp` and `POST /api/easel/mcp` consume the same agent bucket;
+switching endpoint paths does not reset it. This installation protection is
+separate from company policy and any daily business-volume or provider-spend
+rules. Discovery advertises the current capacity and body-size limits.
+
+An exhausted agent receives HTTP 429 with JSON-RPC error data
+`code: "rate_limited"` and an integer `Retry-After` of 1 to 60 seconds. Wait that
+real interval before retrying. Admission refuses the call before planning effects
+or pending approvals are created. Other agents have independent capacity, and
+native person sessions continue to read and save planning work. Recovery retains
+the current company policy: a sensitive proposal under held policy still needs
+the named person's approval. Keep the original mutation key when retrying;
+a refused call does not reserve an outcome or create a proposal.
+
+`tests/agent-capacity.test.mjs` and `tests/agent-capacity-browser.mjs` run the
+same raw HTTP journey against workerd and the built application under autonomous
+and held policies. The client observes 429 directly, exhausts the unchanged
+production allowance across both paths, checks native state and approvals,
+measures recovery after the advertised interval and verifies one effect from the
+original refused key. The browser inspects native proposals and approvals at
+1440, with screen captures at 1440 and 390. These journeys do not change clocks,
+counters or capacity limits. Provider spend, mail edges, resource-refresh budgets,
+business-volume policy thresholds and usage qualification remain outside this
+bounded capacity proof; spend remains none.
+
 ## Standalone client compatibility
 
 Both endpoint paths accept native sessions with the installation's matching
