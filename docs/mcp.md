@@ -178,8 +178,9 @@ a retained result is not a way around a current refusal.
 
 The existing standalone client journeys also put a real HTTP proxy between
 the client and each endpoint. The proxy consumes the complete successful
-upstream response, then closes the downstream connection before sending any
-response bytes. The client observes a transport failure after the real native
+upstream response, then closes the downstream connection either before any
+response bytes or after sending an incomplete JSON body with its full length
+advertised. The client observes a transport failure after the real native
 proposal creation has completed. Its retry sends unchanged arguments and the
 original key, receives the complete recorded proposal, and adds no native
 record, Activity entry or approval. Both autonomous and held policies run.
@@ -192,17 +193,25 @@ approved snapshot, including stored snapshot bytes and hashes.
 `tests/mcp-client-browser.mjs` repeats the wire journey against the production
 build, checks the resulting proposals and Activity, and records those screens
 at 1440 and 390. Both run in the existing agent-door verification shard.
-The same journey now continues through a salary edit, revision-bound formula
-creation and deletion, a comment, and proposal submission. Each completed
+The same journey continues through every currently registered synchronous
+planning mutation: revenue, salary, expense creation and editing, entered
+schedules, formulas, asset categories and assets, allocations, borrowing,
+equity, tax assumptions, forecast windows, comments, variance explanation
+drafts and proposal submission, with formula and expense removal. Each completed
 response is lost at the HTTP edge, then recovered with the original key and
 arguments and a new JSON-RPC id through both endpoints under both policies.
-It checks the native input values, removed formula, comment, submitted proposal
-and Activity, with unchanged approved snapshot bytes and hashes. Changed
+It checks the native input values and exact cents, removed inputs, comment,
+draft explanation, forecast window, submitted proposal and Activity, with unchanged approved snapshot bytes and hashes. Changed
 arguments conflict without another effect, stale new work names the current
 revision, and a new key cannot submit an already submitted proposal.
 
-Completed formula recovery rechecks the existing formula with current native
-Pay, department, dimension and source grants. Completed submission rechecks
+Completed formula, allocation and tax-policy creation recoveries locate their
+original native input by agent, sponsor and caller key. They recheck that record
+as an edit with current native authority, including Pay, department, dimension,
+source and finance grants. This preserves native uniqueness constraints without
+trying to create another allocation or tax policy. A fresh key cannot consume
+the original completed receipt. A native finance downgrade refuses allocation
+and tax retries on both endpoint paths without cached content or effects. Completed submission rechecks
 current proposal ownership and every changed input's native scope. Only the
 shared door's completed, argument-matched receipt may consume the original
 revision or draft precondition; first execution retains those checks. Native

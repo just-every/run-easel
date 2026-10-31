@@ -62,10 +62,27 @@ try {
    }
    await page.setViewportSize({ width: 1440, height: 1000 })
   },
-  inspectLifecycle: async ({ native, proposal, edited, formula, note, policy, path }) => {
+  inspectLifecycle: async ({ native, proposal, edited, formula, note, policy, path, revenue, expense, schedule, asset, equity }) => {
    const view = await native(`/api/easel/scenario/${proposal.id}`)
    assert.equal(view.inputs.position.find(row => row.id === edited.id).annualSalaryCents, 7200000)
    assert.ok(!view.inputs.formula.some(row => row.id === formula.id))
+   await page.setViewportSize({ width: 1440, height: 1000 })
+   await page.goto(runtime.origin + '/app?tab=plan')
+   await page.getByLabel('Scenario', { exact: true }).selectOption(proposal.id)
+   const expenseTable = page.getByRole('region', { name: 'Expenses', exact: true })
+   const expenseRow = expenseTable.getByRole('row').filter({ has: page.getByRole('cell', { name: expense.name, exact: true }) })
+   await expenseRow.waitFor()
+   assert.equal(await expenseRow.count(), 1)
+   assert.ok((await expenseRow.textContent()).includes('$234.56'))
+   assert.equal(await expenseTable.getByRole('cell', { name: 'Synthetic removed expense', exact: true }).count(), 0)
+   for (const [table, record] of [['Revenue models', revenue], ['Schedules', schedule], ['Planned and existing assets', asset], ['Planned equity raises', equity]]) {
+    const row = page.getByRole('region', { name: table, exact: true }).getByRole('row').filter({ has: page.getByRole('cell', { name: record.name, exact: true }) })
+    assert.equal(await row.count(), 1, `Recovered ${table} appears once in native Plan`)
+   }
+   if (path === '/mcp') for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await expenseTable.locator('xpath=ancestor::section[1]').screenshot({ path: join(evidence, `recovered-plan-expenses-${policy}-${width}.png`) })
+   }
    await page.setViewportSize({ width: 1440, height: 1000 })
    await page.goto(runtime.origin + '/app?tab=scenarios')
    const proposals = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Proposals', exact: true }) })

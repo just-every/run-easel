@@ -20,6 +20,11 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
    if (captures) assert.deepEqual(current, captures, 'Stored snapshot bytes and hashes survive every dropped-response recovery')
    captures = current
   },
+  inspectMutation: async ({ key, target, action }) => {
+   const effects = await h.db.prepare("SELECT count(*) AS n FROM e_activity WHERE json_extract(detail,'$.authority.idempotencyKey')=? AND record=? AND action=?").bind(key, target, action).first()
+   assert.equal(effects.n, 1, 'The complete recovery journey persists exactly one native effect per caller key')
+   assert.deepEqual(await frozen(), captures, 'Every recovered mutation preserves stored approved and kept snapshot bytes and hashes')
+  },
   approve: async ({ approval, native }) => {
    const view = (await native(`/agents/api/approvals/${approval.id}`)).approval
    assert.equal(view.state, 'pending')
@@ -43,8 +48,8 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
    rules: policy === 'autonomous' ? [{ id: 'all', class: '*', do: 'autonomous' }] : [{ id: 'sensitive', class: '*', do: 'approval', approver: ['role:owner'], wait: 'P1D' }, { id: 'ordinary', class: 'standard', do: 'review' }],
   } }, h.owner, 'PUT')
   assert.equal(configured.status, 200)
-  const call = async (name, args) => {
-   const response = await fetch(h.origin + '/mcp', { method: 'POST', headers: { origin: h.origin, cookie: sponsor, 'content-type': 'application/json', 'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/call', 'mcp-name': name },
+  const call = async (name, args, path = '/mcp') => {
+   const response = await fetch(h.origin + path, { method: 'POST', headers: { origin: h.origin, cookie: sponsor, 'content-type': 'application/json', 'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/call', 'mcp-name': name },
     body: JSON.stringify({ jsonrpc: '2.0', id: ++requestId, method: 'tools/call', params: { name, arguments: args, _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } }) })
    assert.equal(response.status, 200)
    return (await response.json()).result
@@ -84,6 +89,28 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
   assert.deepEqual(await h.get(`/api/easel/scenario/${draft.id}`), before)
   assert.deepEqual(await h.get('/api/easel/activity'), history)
   console.log(`PROBE BASE-AGENT-012 authority: ${policy} completed formula and submission keys after native Pay and department revocation -> forbidden, no cached content or native effect`)
+  await h.command('member', { email, name: 'Synthetic replay sponsor', role: 'finance', departments: [] })
+  const financeDraft = await complete('easel.proposals.create', { from: forecast.id, name: `Synthetic ${policy} finance recovery`, request: 'Synthetic finance assumptions', idempotency_key: `synthetic-easel-${policy}-finance-create` })
+  const allocationArgs = { scenario: financeDraft.id, name: 'Synthetic finance allocation', sourceDepartment: state.departments.find(row => row.shared).id,
+   basis: 'fixed', targets: [{ department: department.id, percent: '100' }], idempotency_key: `synthetic-easel-${policy}-finance-allocation` }
+  const taxArgs = { scenario: financeDraft.id, name: 'Synthetic finance taxes', line: state.lines.find(row => row.name === 'Synthetic income tax').id,
+   department: department.id, sutaPercent: '2.7', sutaBase: '9000', stateIncomePercent: '5', idempotency_key: `synthetic-easel-${policy}-finance-tax` }
+  const receipts = [['easel.allocations.update', allocationArgs], ['easel.taxes.update', taxArgs]]
+  for (const [tool, args] of receipts) {
+   const written = await complete(tool, args)
+   assert.deepEqual((await call(tool, args)).structuredContent, written, 'Finance recovers the exact recorded singleton input')
+  }
+  await h.command('member', { email, name: 'Synthetic replay sponsor', role: 'contributor', departments: [department.id] })
+  const financeBefore = { view: await h.get(`/api/easel/scenario/${financeDraft.id}`), activity: await h.get('/api/easel/activity') }
+  for (const path of ['/mcp', '/api/easel/mcp']) for (const [tool, args] of receipts) {
+   const refused = await call(tool, args, path)
+   assert.equal(refused.isError, true)
+   assert.equal(refused._meta['com.runeditrun/error'].code, 'forbidden')
+   assert.equal(refused.structuredContent, undefined, 'A retained singleton outcome cannot bypass current finance authority')
+  }
+  assert.deepEqual({ view: await h.get(`/api/easel/scenario/${financeDraft.id}`), activity: await h.get('/api/easel/activity') }, financeBefore)
+  console.log(`PROBE BASE-AGENT-012 finance authority: ${policy} allocation and tax keys after native finance downgrade at both endpoints -> forbidden, no cached content or effect`)
+
  }
  // Retained outcomes cannot restore a different person's erased identity.
  for (const policy of ['autonomous', 'held']) {

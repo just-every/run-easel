@@ -53,16 +53,16 @@ export async function nativeAction(name: string, args: Data, ctx: ToolContext | 
    const scenario = written && typeof args.scenario === 'string' ? find(c.s, 'scenario', args.scenario) : null
    if (scenario) proposed = { ...args, revision: typeof args.revision === 'string' ? String(scenario.revision) : scenario.revision }
   }
-  if (!persist && completed && name === 'formula' && !args.id) {
-   // Creating a formula consumes its unique name. Re-admit the existing native
-   // record as an edit, so current Pay, department, dimension and source grants
-   // still run without trying to create that name a second time.
+  if (!persist && completed && ['formula', 'allocation', 'tax-policy'].includes(name) && !args.id) {
+   // Formula names, shared-department allocations and scenario tax policies
+   // consume a native uniqueness constraint. Re-admit the recorded input as
+   // an edit so current native grants run without creating it a second time.
    const row = await ctx.db.prepare(`SELECT record FROM e_activity WHERE action='record-changed'
-    AND json_extract(detail,'$.kind')='formula' AND json_extract(detail,'$.after') IS NOT NULL
+    AND json_extract(detail,'$.kind')=? AND json_extract(detail,'$.after') IS NOT NULL
     AND json_extract(detail,'$.authority.id')=? AND json_extract(detail,'$.authority.for.id')=?
     AND json_extract(detail,'$.authority.idempotencyKey')=? LIMIT 1`)
-    .bind(ctx.agent.id, ctx.person.id, ctx.idempotencyKey).first<{record:string}>()
-   if (!row || !find(c.s, 'formula', row.record)) throw new ToolRefusal('resource_unavailable')
+    .bind(name, ctx.agent.id, ctx.person.id, ctx.idempotencyKey).first<{record:string}>()
+   if (!row || !find(c.s, name, row.record)) throw new ToolRefusal('resource_unavailable')
    proposed = { ...proposed, id: row.record }
   }
   if (!persist && completed && name === 'proposal-submit') {
