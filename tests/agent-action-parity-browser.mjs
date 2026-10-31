@@ -47,7 +47,7 @@ try {
   // Assertions use desktop. A fresh phone page records its ordinary initial layout.
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
   const title = draft ? 'Expenses' : 'Activity'
-  await page.getByRole('heading', { name: title, exact: true }).evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
+  await (draft ? page.getByRole('heading', { name: title, exact: true }) : page.locator('.activity-log tbody tr').filter({ has: page.locator('[data-label="What"]').getByText('Removed a expense', { exact: true }) }).first()).evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
   await page.screenshot({ path: join(evidence, `${name}-1440.png`), animations: 'disabled' })
   const phone = await context.newPage()
   try {
@@ -65,7 +65,7 @@ try {
     await phone.getByRole('table', { name: 'Expenses', exact: true }).getByRole('row').filter({ hasText: 'Synthetic one-off expense' }).getByRole('button', { name: 'Edit', exact: true }).click()
     await phone.getByLabel('Planned payment date', { exact: true }).waitFor()
    }
-   await phone.getByRole('heading', { name: title, exact: true }).evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
+   await (draft ? phone.getByRole('heading', { name: title, exact: true }) : phone.locator('.activity-log tbody tr').filter({ has: phone.locator('[data-label="What"]').getByText('Removed a expense', { exact: true }) }).first()).evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
    await phone.screenshot({ path: join(evidence, `${name}-390.png`), animations: 'disabled' })
   } finally { await phone.close() }
  }

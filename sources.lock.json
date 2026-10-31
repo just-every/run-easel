@@ -6087,7 +6087,7 @@
       "executable": false
     },
     "tests/agent-action-parity-browser.mjs": {
-      "sha256": "d928624b83fc573929bb16f5055e55742cce04783aa084f07214ef7bab4113f9",
+      "sha256": "a13b213d2b68da659c4aecf461aedfe4cc3fd404487892ddf2e996b6aa0a49ec",
       "executable": false
     },
     "tests/agent-action-parity-flow.mjs": {
