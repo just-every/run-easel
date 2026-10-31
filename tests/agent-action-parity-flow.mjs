@@ -111,6 +111,11 @@ export async function expenseParityJourney({ origin, cookie, mutateNative, appro
      agentInput = await call('easel.expenses.update', { ...body, scenario: agentDraft.id, ...(agentInput ? { id: agentInput.id } : {}) })
 
      const views = await compare(`${fixture.kind} ${stage}`, fixture.cents[index], personInput, agentInput)
+     if (fixture.kind === 'one-off') {
+      assert.equal(personInput.paymentDate, body.paymentDate)
+      assert.equal(agentInput.paymentDate, body.paymentDate)
+      assert.deepEqual(views.native.calculation.dailyCash.filter(row => row.date === body.paymentDate), [{ date: body.paymentDate, collections: 0, payments: index === 0 ? 2347 : 3459, assumed: false }], 'The planned date carries the exact entered cents, without a monthly-lag assumption')
+     }
      await activity(stage === 'create' ? 'expense-added' : 'expense-changed')
      await inspect({ stage, fixture, policy, path, personDraft, agentDraft, personInput, agentInput, views, sponsor })
     }

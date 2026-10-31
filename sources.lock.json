@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "ae54da6e655eed0d60e3b4ec6884df81b27572e275c2d42b91b3f2bbd2949b32",
+      "sha256": "6defaf8dba55195a014677a4bf4591fd22b5c3d8e9379f8c7cc54ff8c234845f",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6091,7 +6091,7 @@
       "executable": false
     },
     "tests/agent-action-parity-flow.mjs": {
-      "sha256": "fdc75e7f25240c696aac0e0c3111c724d0809de6067b252c2fc6f20d30198418",
+      "sha256": "5acf8f3cb2b796442028f776d52f49c4e3562ef289ff01f693c1566e99890678",
       "executable": false
     },
     "tests/agent-action-parity.test.mjs": {
