@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "18dc62c088e1507c78e74ccc8f79bee7f7f613d675a2c690a9341a545761c468",
+      "sha256": "de452a142a0ab93f512f8ea26375e96fb196bcc4c0cd87889847ba4474bbcacf",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "cb02eb3530bb9a37255ac61c6e336aa53940568e99d9c3b924b8e27450c3337c",
+      "sha256": "203c8c16da77e1aa7679485fb55ee539a8bcc0e2a1de9d3299d97b2166afd002",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6603,15 +6603,15 @@
       "executable": false
     },
     "tests/mcp-client-browser.mjs": {
-      "sha256": "518896634724ea4f3aead66336c3327c156545388445f2c389e699fa9bf9d2ce",
+      "sha256": "080ba79d2cc8d6f8daa8ec2f0a32778202940a591389e9fd59c745f645f709c7",
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
-      "sha256": "bbcea7b9a06f523136ccfda20e4ccc608c2fa03fbb3cd38be097337d9f41be30",
+      "sha256": "b0adea52517603d3947fbc6b5ec8d9a39c4b99e9b1f35601cd4de9362703f1b3",
       "executable": false
     },
     "tests/mcp-client.test.mjs": {
-      "sha256": "464d403cfe3bd731b2fc91f13620472230fe31b617cb14ad2cdda5827512aef8",
+      "sha256": "9e232e41e42722a2a117743ee1b9a8f0caefad669e933fb86eb05b3fd913e5b3",
       "executable": false
     },
     "tests/mcp.test.mjs": {

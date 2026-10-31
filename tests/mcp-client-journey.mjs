@@ -1,9 +1,43 @@
 // Independent wire client: no shared-door protocol or name-rewriting helpers.
 import assert from 'node:assert/strict'
+import { createServer } from 'node:http'
 
 const modern = '2026-07-28', legacy = '2025-11-25'
 
-export async function standaloneClientJourney({ origin, cookie, approve, proof = () => {} }) {
+// Forward the real HTTP request completely, then lose its successful response.
+// The Worker and D1 never see a fake completion or a cancelled upstream request.
+export async function droppedResponseProxy(origin) {
+ let armed = false, dropped
+ const server = createServer(async (request, response) => {
+  try {
+   assert.equal(request.method, 'POST')
+   assert.ok(['/mcp', '/api/easel/mcp'].includes(request.url))
+   const chunks = []
+   for await (const chunk of request) chunks.push(chunk)
+   const payload = JSON.parse(Buffer.concat(chunks).toString())
+   const headers = { ...request.headers }; delete headers.host; delete headers['content-length']
+   const upstream = await fetch(origin + request.url, { method: 'POST', headers, body: JSON.stringify(payload), redirect: 'manual' })
+   const bytes = Buffer.from(await upstream.arrayBuffer())
+   if (armed) {
+    armed = false
+    dropped = { path: request.url, request: payload, status: upstream.status, body: JSON.parse(bytes.toString()) }
+    response.destroy()
+   } else {
+    response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json' })
+    response.end(bytes)
+   }
+  } catch (error) { response.destroy(error) }
+ })
+ await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve) })
+ return {
+  origin: `http://127.0.0.1:${server.address().port}`,
+  arm() { assert.equal(armed, false); armed = true; dropped = undefined },
+  get dropped() { return dropped },
+  async close() { await new Promise((resolve, reject) => { server.close(error => error ? reject(error) : resolve()); server.closeAllConnections() }) },
+ }
+}
+
+export async function standaloneClientJourney({ origin, cookie, edge, approve, inspect = async () => {}, proof = () => {} }) {
  let id = 0
  const native = async (path, body, method = body === undefined ? 'GET' : 'POST') => {
   const response = await fetch(origin + path, { method, redirect: 'manual', headers: { origin, cookie, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
@@ -18,6 +52,8 @@ export async function standaloneClientJourney({ origin, cookie, approve, proof =
  await command('position', { scenario: budget.id, department: department.id, line: payroll.id, title: 'Synthetic planner', holder: 'Synthetic Person', annualSalary: '60000', start: '2026-01' })
  const approved = await command('approve-budget', { scenario: budget.id, revision: (await native(`/api/easel/scenario/${budget.id}`)).scenario.revision })
  const forecast = approved.forecast
+ const frozen = await native(`/api/easel/snapshot/${approved.budget.approval.snapshot}`)
+ const unchangedCapture = async () => assert.deepEqual(await native(`/api/easel/snapshot/${frozen.id}`), frozen, 'Approved snapshot contents and hash remain unchanged')
  const snapshot = async () => {
   const state = await native('/api/easel/state')
   return { state, scenarios: await Promise.all(state.scenarios.map(row => native(`/api/easel/scenario/${row.id}`))), activity: await native('/api/easel/activity'), approvals: await native('/agents/api/approvals') }
@@ -32,10 +68,10 @@ export async function standaloneClientJourney({ origin, cookie, approve, proof =
    ],
   } }, 'PUT')
   for (const path of ['/mcp', '/api/easel/mcp']) {
-   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false } = {}) => {
+   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, throughEdge = false } = {}) => {
     const payload = JSON.stringify({ jsonrpc: '2.0', ...(notification ? {} : { id: ++id }), method,
      params: { ...params, ...(version === legacy ? {} : { _meta: { 'io.modelcontextprotocol/protocolVersion': version } }) } })
-    const response = await fetch(origin + path, { method: 'POST', redirect: 'manual', headers: {
+    const response = await fetch((throughEdge ? edge.origin : origin) + path, { method: 'POST', redirect: 'manual', headers: {
      // Refused oversized uploads may close early: keep their sockets out of the native-read pool.
      origin, cookie, connection: 'close', accept: 'application/json, text/event-stream', 'content-type': 'application/json',
      ...(!handshake ? { 'mcp-protocol-version': version } : {}),
@@ -135,6 +171,55 @@ export async function standaloneClientJourney({ origin, cookie, approve, proof =
     assert.deepEqual(await snapshot(), completed, 'A caller-key retry returns the original record without another native effect')
    }
    proof(`BASE-AGENT-001 client flow: ${path} ${policy} raw modern and legacy proposal calls with caller keys -> native records and exactly-once replay${policy === 'held' ? ' after native person approval' : ''}`)
+
+   const lostArgs = { ...args, name: `Synthetic ${policy} ${route} lost-response proposal`, idempotency_key: `${key}-lost-response` }
+   const lostParams = { name: 'easel.proposals.create', arguments: lostArgs }
+   const beforeLoss = await snapshot()
+   let resume = lostParams
+   if (policy === 'held') {
+    const held = await result('tools/call', lostParams, { throughEdge: true })
+    assert.equal(held.resultType, 'input_required')
+    const approval = held._meta['com.runeditrun/approval']
+    assert.equal(new URL(approval.url).origin, origin)
+    assert.ok(!(await native('/api/easel/state')).scenarios.some(row => row.name === lostArgs.name))
+    await unchangedCapture()
+    await approve({ approval, native, policy, path, version: modern })
+    resume = { ...lostParams, ...(held.requestState ? { requestState: held.requestState } : {}) }
+   }
+   edge.arm()
+   await assert.rejects(rpc('tools/call', resume, { throughEdge: true }), error => error instanceof TypeError && error.message === 'fetch failed', 'The client loses the response after the upstream completes')
+   const lost = edge.dropped
+   assert.ok(lost, 'The network edge observed and discarded the real response')
+   assert.equal(lost.path, path)
+   assert.equal(lost.status, 200)
+   assert.ok(!lost.body.error, JSON.stringify(lost.body))
+   assert.equal(lost.body.result.isError, false, JSON.stringify(lost.body))
+   const recorded = lost.body.result.structuredContent
+   assert.equal(recorded.name, lostArgs.name)
+   const afterLoss = await snapshot()
+   const proposals = afterLoss.state.scenarios.filter(row => row.name === lostArgs.name)
+   assert.deepEqual(proposals.map(row => row.id), [recorded.id], 'The lost response has already produced exactly one native proposal')
+   assert.equal(afterLoss.state.scenarios.length, beforeLoss.state.scenarios.length + 1)
+   const effects = afterLoss.activity.filter(row => row.action === 'proposal-create' && row.record === recorded.id)
+   assert.equal(effects.length, 1, 'Exactly one creation is visible in native Activity')
+   assert.equal(effects[0].detail.authority.idempotencyKey, lostArgs.idempotency_key)
+   assert.equal(effects[0].detail.authority.label, `MCP client for ${afterLoss.state.me.name}`)
+   if (policy === 'held') assert.ok(effects[0].detail.authority.approvers.some(person => person.name === afterLoss.state.me.name))
+   else assert.deepEqual(effects[0].detail.authority.approvers, [])
+   assert.equal((await native(`/api/easel/scenario/${recorded.id}`)).scenario.name, lostArgs.name)
+   await unchangedCapture()
+
+   const retry = await rpc('tools/call', lostParams, { throughEdge: true })
+   assert.equal(retry.status, 200)
+   assert.ok(!retry.body.error, JSON.stringify(retry.body))
+   assert.notEqual(retry.body.id, lost.request.id, 'The retry has a new JSON-RPC id')
+   assert.deepEqual(lost.request.params.arguments, lostArgs, 'Original caller arguments and key reached the mutation')
+   assert.deepEqual(retry.body.result.structuredContent, recorded, 'Retry returns the complete recorded outcome')
+   assert.equal(retry.body.result.isError, false)
+   assert.deepEqual(await snapshot(), afterLoss, 'Recovery changes no native state, Activity or approval')
+   await unchangedCapture()
+   await inspect({ native, proposal: recorded, activity: effects[0], policy, path })
+   proof(`BASE-AGENT-012 point2: ${path} ${policy} real response dropped after completion; new JSON-RPC id with original arguments and key -> recorded outcome, one proposal and Activity effect, approved snapshot unchanged${policy === 'held' ? ', named-person approval retained' : ''}`)
   }
  }
  return { native, catalogue }
