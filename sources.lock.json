@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "dd2a16dfd1d27698a08ead1d61758d37945b55e613d3e844b1bc4820f0a14fb9",
+      "sha256": "0a8088698993690994230f8f5aabddc14518482c61fb2c07f05f739c3c5e501e",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "3658e513d6b8663709cf467d462b1ca267f3a6eb5a210ed4da3d976e68742a34",
+      "sha256": "92fc0ede7298407968dd5652eb81193cd253c367e2939b3bb5d37799bc1129ac",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6090,6 +6090,18 @@
       "sha256": "20b54c93c05f530e1229ee4dead4bc2a570ff915f6073f24419ac6342adc28ca",
       "executable": false
     },
+    "tests/agent-authority-browser.mjs": {
+      "sha256": "895ecec2796bcb993ea98faf7769f7c48bf86ac5abdd97ca9b5af4637b212a92",
+      "executable": false
+    },
+    "tests/agent-authority-journey.mjs": {
+      "sha256": "122a9aba607037f4fdc6ae8de359590e923e1178b056a85f0d598190a380d787",
+      "executable": false
+    },
+    "tests/agent-authority.test.mjs": {
+      "sha256": "ee838cc4fe07f2a6cb9e7e0ce2312b30bcb3c7715bfbb15116d9f5b288eb1372",
+      "executable": false
+    },
     "tests/agent-capacity-browser.mjs": {
       "sha256": "a8bfd06550b9a9fcd38c948545d20a634c23c94f82929b5afe8865a8cd4b1e72",
       "executable": false
@@ -7019,7 +7031,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "6011a160a6f8e27530675c35ec3798cb6335ed8ec31cb10561280fd5b4dc14ab",
+      "sha256": "c485e3ba193c8990f17de14c51222c91953901b92330d6b89ca08600f8cb4b2c",
       "executable": false
     },
     "vite.config.ts": {
