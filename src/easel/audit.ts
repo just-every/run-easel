@@ -3,6 +3,7 @@ import { visibleActivity } from './scenario-access'
 import { requireFinance, requirePayDetail } from './access'
 import type { Context } from './context'
 import { requireThat, type Data } from './types'
+import { activityAttribution } from './activity-attribution'
 
 export type AuditFilters = { actor?: string; record?: string; scenario?: string; from?: string; to?: string; before?: string; action?: string }
 
@@ -42,11 +43,11 @@ const csvCell = (value: unknown) => {
  return `"${(/^[\s]*[=+\-@]/.test(text) ? "'" : '') + text.replaceAll('"', '""')}"`
 }
 export async function activityCsv(c: Context, filters: AuditFilters = {}) {
- const lines = [['Sequence', 'Time', 'Actor', 'Action', 'Record', 'Scenario', 'Revision before', 'Revision after', 'Changed values and attribution'].map(csvCell).join(',')]
+ const lines = [['Sequence', 'Time', 'Actor', 'Action', 'Record', 'Scenario', 'Revision before', 'Revision after', 'Changed values and attribution', 'Attribution'].map(csvCell).join(',')]
  let before = filters.before
  do {
   const rows = await activityView(c, { ...filters, before })
-  for (const r of rows) lines.push([r.seq, r.at, r.actor, r.action, r.record, r.scenario, r.beforeRevision, r.afterRevision, r.detail].map(csvCell).join(','))
+  for (const r of rows) lines.push([r.seq, r.at, r.actor, r.action, r.record, r.scenario, r.beforeRevision, r.afterRevision, r.detail, activityAttribution(r)].map(csvCell).join(','))
   if (rows.length < 300) break
   before = String(rows.at(-1)!.seq)
  } while (true)
