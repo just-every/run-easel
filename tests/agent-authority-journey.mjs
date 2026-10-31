@@ -67,6 +67,12 @@ export async function authorityJourney({ origin, request, owner, signing, messag
   const response = await request(origin + path, { method: 'POST', headers: { origin, authorization: `Bearer ${token}`, 'content-type': 'application/json', 'mcp-protocol-version': version, 'mcp-method': 'tools/call', 'mcp-name': name }, body: JSON.stringify({ jsonrpc: '2.0', id: ++seq, method: 'tools/call', params: { name, arguments: args, ...(requestState ? { requestState } : {}), _meta: { 'io.modelcontextprotocol/protocolVersion': version } } }) })
   const body = await response.json()
   assert.equal(response.status, status, JSON.stringify(body))
+  if (status === 401) {
+   assert.equal(body.result, undefined, 'An unauthenticated response cannot carry a retained tool result')
+   assert.ok(!JSON.stringify(body).includes(proposal.name), 'Suspension cannot expose the private proposal')
+   assert.ok(!JSON.stringify(body).includes('Restricted agent cost'))
+   assert.ok(!JSON.stringify(body).includes('Restricted engineering cost'))
+  }
   if (name === 'easel.scenarios.read' && body.result?.requestState) readStates.set(args.idempotency_key, body.result.requestState)
   return status === 200 ? body.result : body
  }
@@ -162,6 +168,7 @@ export async function authorityJourney({ origin, request, owner, signing, messag
  const suspended = await model()
  for (const path of ['/mcp', '/api/easel/mcp']) {
   for (const [name, args] of [['easel.scenarios.read', readArgs], ['easel.proposals.create', creation], ['easel.expenses.update', write]]) await rpc(name, args, path, 401)
+  await rpc('easel.proposals.create', { ...creation, idempotency_key: `synthetic-easel-${policy}-suspended-${path === '/mcp' ? 'canonical' : 'alias'}` }, path, 401)
  }
  await native('/api/easel/state', undefined, person, 401)
  assert.deepEqual(await model(), suspended, 'Suspended agent and person credentials cannot change or recover native data')

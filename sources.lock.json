@@ -6095,7 +6095,7 @@
       "executable": false
     },
     "tests/agent-authority-journey.mjs": {
-      "sha256": "122a9aba607037f4fdc6ae8de359590e923e1178b056a85f0d598190a380d787",
+      "sha256": "7ce1fde3eaf8d378bca208f6f72bb971836d6b0c0c6e5f03de004c0746e68380",
       "executable": false
     },
     "tests/agent-authority.test.mjs": {
