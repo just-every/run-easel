@@ -135,6 +135,24 @@ counters or capacity limits. Provider spend, mail edges, resource-refresh budget
 business-volume policy thresholds and usage qualification remain outside this
 bounded capacity proof; spend remains none.
 
+After capacity recovers, the same journey also exercises the native **Pause
+agents** control and signed Business Pause independently. Both issued agents
+lose access through both MCP paths within sixty real seconds: new reads, new
+mutations and completed-key retries return `agents_paused` without private
+results, planning effects or pending approvals. An agent credential receives
+403 at the native resume door. The signed-in person can still save planning
+comments, and person-authorized resume restores populated scenario reads for
+both agents. The built journey clicks native Pause and Resume and records
+their states at 1440 and 390. The Business envelope is signed only at the
+synthetic network edge; this does not qualify Business's own user interface.
+
+Full BASE-AGENT-011 acceptance remains partial. The current shared door rejects
+local spend caps with `spend_caps_not_enforced`; its Business state reports
+configured spend caps as `not_enforced`. Provider-spend reservation and provider-spend usage
+qualification therefore need a released Base implementation, which this slice
+does not change. The current planning catalogue also declares no outside-mail
+or paid-provider tool; no recipient-cap or paid-call result is claimed.
+
 ## Standalone client compatibility
 
 Both endpoint paths accept native sessions with the installation's matching

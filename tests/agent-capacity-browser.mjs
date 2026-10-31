@@ -31,13 +31,29 @@ try {
  let setupFinished = false
  const receipts = await agentCapacityJourney({ origin: runtime.origin, cookie, signing,
   proof: line => console.log(`PROBE ${line}`),
-  inspect: async ({ phase, policy, args }) => {
+  pause: async ({ paused, native }) => {
+   await page.goto(runtime.origin + '/agents')
+   const response = page.waitForResponse(row => row.url().endsWith('/agents/api/pause') && row.request().method() === 'POST')
+   await page.getByRole('button', { name: paused ? 'Pause agents' : 'Resume agents', exact: true }).click()
+   assert.equal((await response).status(), 200)
+   await page.getByRole('button', { name: paused ? 'Resume agents' : 'Pause agents', exact: true }).waitFor()
+   assert.equal((await native('/agents/api/state')).paused.local, paused)
+  },
+  inspect: async ({ phase, control, policy, args }) => {
    if (!setupFinished) {
     await page.goto(runtime.origin + '/setup')
     await page.getByLabel('I confirm this owner account is ready to use.', { exact: true }).check()
     await page.getByRole('button', { name: 'Finish setup', exact: true }).click()
     await page.waitForURL(/\/app/)
     setupFinished = true
+   }
+   if (phase === 'paused' || phase === 'resumed') {
+    await page.goto(runtime.origin + '/agents')
+    await page.getByRole('heading', { name: 'Agents', exact: true }).waitFor()
+    assert.equal(await page.locator('[data-agents-state]').innerText(), phase === 'paused' ? 'Agents are paused.' : 'Agents are on.')
+    assert.equal(await page.getByText('Paused in Business.', { exact: true }).count(), control === 'business' && phase === 'paused' ? 1 : 0)
+    if (policy === 'held') await screens(`${control}-${phase}`)
+    return
    }
    await page.goto(runtime.origin + '/app?tab=scenarios')
    await page.getByRole('heading', { name: 'Proposals', exact: true }).waitFor()
@@ -63,7 +79,7 @@ try {
   },
  })
  await writeFile(join(evidence, 'capacity-result.json'), JSON.stringify({ receipts, assertionWidth: 1440, screenWidths: [1440, 390] }, null, 2) + '\n')
- console.log('Built agent capacity journey passed under both policies; native refusal, recovery and person approval screens at 1440 and 390')
+ console.log('Built agent capacity and Pause journey passed under both policies; native refusal, recovery, approval and Pause screens at 1440 and 390')
  await context.close()
 } catch (error) {
  await page?.screenshot({ path: join(evidence, 'failed.png'), fullPage: true }).catch(() => {})
