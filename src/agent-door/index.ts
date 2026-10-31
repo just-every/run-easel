@@ -10,6 +10,8 @@ import { planningTools } from './tools.ts'
 import { agentLimits, notTools, specialist } from './catalogue.ts'
 import { planningInstructions, planningPrompts } from './prompts.ts'
 import { planningResources } from './resources.ts'
+import { erasureMaps } from '../easel/erasure'
+import { transformErased } from '../easel/erasure-map.mjs'
 export async function agentResponse(request: Request, original: Bindings) {
  const path = new URL(request.url).pathname
  const businessPath = ['/api/rer/business-settings', '/rer-business-logo', '/rer-business.css'].includes(path)
@@ -26,8 +28,18 @@ export async function agentResponse(request: Request, original: Bindings) {
  // The shared door owns transport and admission. Only its public discovery
  // instructions gain the seed's registry-generated planning guide.
  if (response?.headers.get('content-type')?.includes('application/json') && ['/mcp', '/api/easel/mcp'].includes(path)) {
-  const body = await response.clone().json() as { result?: { instructions?: string } }
-  if (typeof body.result?.instructions === 'string') return Response.json({ ...body, result: { ...body.result, instructions: planningInstructions() } }, { status: response.status, headers: response.headers })
+  const body = await response.clone().json() as { result?: { instructions?: string; structuredContent?: unknown; content?: Array<{ type?: string; text?: string; name?: string }> } }
+  let result = body.result
+  if (result && Object.hasOwn(result, 'structuredContent') && Array.isArray(result.content)) {
+   // Retained planning outcomes follow today's native erasure map. Project
+   // content fields without changing the shared door's protocol or class facts.
+   const maps = await erasureMaps(env.DB)
+   if (maps.length) result = { ...result, structuredContent: transformErased(result.structuredContent, maps), content: result.content.map(block =>
+    typeof block.text === 'string' ? { ...block, text: transformErased(block.text, maps) } :
+    block.type === 'resource_link' && typeof block.name === 'string' ? { ...block, name: transformErased(block.name, maps) } : block) }
+  }
+  if (typeof result?.instructions === 'string') result = { ...result, instructions: planningInstructions() }
+  if (result !== body.result) return Response.json({ ...body, result }, { status: response.status, headers: response.headers })
  }
  return response
 }

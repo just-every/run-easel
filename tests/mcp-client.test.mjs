@@ -85,4 +85,53 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
   assert.deepEqual(await h.get('/api/easel/activity'), history)
   console.log(`PROBE BASE-AGENT-012 authority: ${policy} completed formula and submission keys after native Pay and department revocation -> forbidden, no cached content or native effect`)
  }
+ // Retained outcomes cannot restore a different person's erased identity.
+ for (const policy of ['autonomous', 'held']) {
+  const configured = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', spend: { none: true }, reviewers: ['role:owner'],
+   rules: policy === 'autonomous' ? [{ id: 'all', class: '*', do: 'autonomous' }] : [{ id: 'sensitive', class: '*', do: 'approval', approver: ['role:owner'], wait: 'P1D' }, { id: 'ordinary', class: 'standard', do: 'review' }],
+  } }, h.owner, 'PUT')
+  assert.equal(configured.status, 200)
+  const email = [`synthetic-easel-erasure-${policy}`, 'example.test'].join('@'), name = `Synthetic Subject ${policy}`
+  await h.person(email, 'contributor', [department.id])
+  await h.command('member', { email, name, role: 'contributor', departments: [department.id] })
+  const call = async (path, name, args) => {
+   const response = await h.mf.dispatchFetch(h.origin + path, { method: 'POST', headers: { origin: h.origin, cookie: h.owner, 'content-type': 'application/json', 'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/call', 'mcp-name': name },
+    body: JSON.stringify({ jsonrpc: '2.0', id: ++requestId, method: 'tools/call', params: { name, arguments: args, _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } }) })
+   assert.equal(response.status, 200)
+   return (await response.json()).result
+  }
+  const receipts = []
+  const complete = async (tool, args) => {
+   let answer = await call('/mcp', tool, args)
+   if (answer.resultType === 'input_required') {
+    const approval = (await h.get(`/agents/api/approvals/${answer._meta['com.runeditrun/approval'].id}`)).approval
+    const approved = await h.send(`/agents/api/approvals/${approval.id}/approve`, { revision: approval.revision, summary_sha256: approval.summary_sha256 }, h.owner)
+    assert.equal(approved.value.approval.state, 'executed')
+    answer = await call('/mcp', tool, args)
+   }
+   assert.equal(answer.isError, false, JSON.stringify(answer))
+   receipts.push({ tool, args, classes: answer._meta['com.runeditrun/decision'].classes })
+   return answer.structuredContent
+  }
+  const draft = await complete('easel.proposals.create', { from: forecast.id, name, request: 'Synthetic subject recovery', idempotency_key: `synthetic-easel-${policy}-subject-create` })
+  await complete('easel.formulas.update', { scenario: draft.id, revision: String(draft.revision), name, department: department.id, line: payroll.id, unit: 'money', formula: '100', start: '2026-01', idempotency_key: `synthetic-easel-${policy}-subject-formula` })
+  const submitted = await complete('easel.proposals.create', { from: forecast.id, name: `${name} submitted`, request: 'Synthetic subject submission', idempotency_key: `synthetic-easel-${policy}-subject-submitted` })
+  await complete('easel.proposals.submit', { id: submitted.id, summary: 'Synthetic reviewed alternative', idempotency_key: `synthetic-easel-${policy}-subject-submit` })
+  const captures = await frozen()
+  await h.command('member', { email, name, role: 'contributor', departments: [department.id], active: false })
+  const erased = await h.command('person-erase', { email })
+  const after = { draft: await h.get(`/api/easel/scenario/${draft.id}`), submitted: await h.get(`/api/easel/scenario/${submitted.id}`), activity: await h.get('/api/easel/activity') }
+  assert.equal(after.draft.scenario.name, erased.pseudonym)
+  for (const path of ['/mcp', '/api/easel/mcp']) for (const receipt of receipts) {
+   const replay = await call(path, receipt.tool, receipt.args)
+   assert.equal(replay.isError, false, JSON.stringify(replay))
+   assert.ok(!JSON.stringify(replay).includes(name), 'Cached structured data, serialized text and resource names cannot restore an erased identity')
+   assert.ok(replay.structuredContent.name.includes(erased.pseudonym))
+   assert.deepEqual(JSON.parse(replay.content.find(block => block.type === 'text').text), replay.structuredContent)
+   assert.deepEqual(replay._meta['com.runeditrun/decision'].classes, receipt.classes, 'Erasure does not rewrite computed class facts')
+  }
+  assert.deepEqual({ draft: await h.get(`/api/easel/scenario/${draft.id}`), submitted: await h.get(`/api/easel/scenario/${submitted.id}`), activity: await h.get('/api/easel/activity') }, after)
+  assert.deepEqual(await frozen(), captures, 'Erasure and retained-key recovery preserve stored approved snapshot bytes and hashes')
+  console.log(`PROBE BASE-AGENT-012 erasure: ${policy} both endpoints replay creation, formula and submission after subject erasure -> current pseudonym in structured data, serialized text and resource names; native state and captures unchanged`)
+ }
 })

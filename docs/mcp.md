@@ -22,6 +22,31 @@ changed arguments conflict. A policy hold returns a saved summary and a native
 approval URL. Only a named signed-in person decides it. Approval does not expand
 the sponsor's planning permissions. Native governance Stop also stops these calls.
 
+## Signed policy lifetime
+
+The existing owner binding receives signed revisions at
+`POST /api/rer/agent-policy`. A successfully adopted revision controls the next
+planning call and appears in that call's decision and the native person's audit
+at `/agents/api/audit`. Autonomous work runs immediately; held work leaves native
+planning records unchanged until the named person approves its saved summary at
+the supplied `/agents/approvals/` page. A later blocked revision also refuses
+completed-key retries without returning their private results.
+
+The adopted envelope has its own expiry, independent of the access token's
+validity and the approval's wait. Once it expires, fresh planning calls, private
+reads and completed-key retries return `policy_unavailable` without native effects
+or cached private content. Approving pending work cannot bypass that boundary.
+A newly signed, valid envelope restores policy admission while current native
+permissions and the original token's validity remain required.
+
+`tests/agent-policy.test.mjs` and `tests/agent-policy-browser.mjs` exercise signed
+updates, public audit revisions, native person approval and real elapsed expiry.
+The browser journey uses the emitted application and captures the pending,
+completed and refused pages at 1440 and 390. These synthetic Business envelopes
+qualify the existing planning catalogue and owner binding; they do not qualify
+real Business transport, wider administration, approval wait expiration, money
+thresholds, daily caps, upgrade questions or additional agent doors.
+
 ## Supported planning work
 
 Specialist tools use `planning:read` or `planning:write`. The native sponsor still needs
@@ -184,6 +209,14 @@ revision or draft precondition; first execution retains those checks. Native
 Pay revocation refuses a completed formula key, and department revocation
 refuses a completed submission key, without returning private content or
 changing the proposal or Activity.
+
+Retained results also follow the current native erasure map. The seed projects
+structured planning data, serialized result text and resource names when
+returning them, including a cached receipt. Erasing a different person cannot
+restore their old identity through a proposal, formula or submission retry.
+Computed class facts retain their shared-door values, and stored approved
+snapshot bytes and hashes remain unchanged. Both policies and endpoint paths
+exercise this boundary through native person erasure and MCP recovery.
 
 This bounds BASE-AGENT-012 acceptance point 2 to these synchronous planning
 mutations through `/mcp` and `/api/easel/mcp`. Queued work, uncertain provider
