@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "acdbe3a9e9f2401edaa255f9b6715e4df45cce65b7a76b3aca7cea20d8378acb",
+      "sha256": "07aa8d0d6505f0aa405a097dcbd0af58ac3b90514d0e477b68336364b6c52dbe",
       "executable": false
     },
     "agent-surface.json": {
@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "3a56c9b07c15b33614805f2210763adf9e9b328c4c8be828d1a255bebd964940",
+      "sha256": "e245329dcf30b90fe4b71e3c1bcc123d784406505028b2e2272621dbda9c5b9d",
       "executable": false
     },
     "DEMO.md": {
@@ -1918,6 +1918,10 @@
       "sha256": "482d96a578fb53b0f3826858e4da5b3a861006ef8a3932da509cdc2c5be633a1",
       "executable": false
     },
+    "src/easel/activity-attribution.ts": {
+      "sha256": "24498591f49eed6c691dea3ec6b2e548f84321efd1a67048766926ed830de6b2",
+      "executable": false
+    },
     "src/easel/actor-names.ts": {
       "sha256": "7a2e0d77954e88afebaee26457e1bbb2d71ccef3cc1b4fbe9f69b26bf4d62d52",
       "executable": false
@@ -2083,7 +2087,7 @@
       "executable": false
     },
     "src/easel/audit.ts": {
-      "sha256": "9c9fc64aeae36e73cb2820ece7a9a52181a26dd1388a2d8d23263ae69b539e36",
+      "sha256": "2b3b60589904c0ab44af26bc052ba7811f77ced754cd76bab3c20ee8e666d26d",
       "executable": false
     },
     "src/easel/automation-events.ts": {
@@ -2791,7 +2795,7 @@
       "executable": false
     },
     "src/easel/operational-workbooks.ts": {
-      "sha256": "e4f4b3e9722cf17466c2a6d7c8eedf95bdcae1164f152bd257c767f4cd402812",
+      "sha256": "f1b77d34efd6dfe09679b315d32d50036ac37b64747388cc7860b64921198e7c",
       "executable": false
     },
     "src/easel/pack-blocks.ts": {
@@ -5619,7 +5623,7 @@
       "executable": false
     },
     "src/ui/activity-format.ts": {
-      "sha256": "f6a3dd039da99d09fef10394ad59b2998cb401c3ad1717698136c570d11eda8f",
+      "sha256": "29e368a2920d2cda21dce32dce4cf412e04c0d4b57283f3ed05662db67ad9024",
       "executable": false
     },
     "src/ui/activity-style.ts": {
@@ -5631,7 +5635,7 @@
       "executable": false
     },
     "src/ui/activity.tsx": {
-      "sha256": "c362201e36612dfb5970d80abeae680a5fceac59d45bbf6d1b4d570afa8403c7",
+      "sha256": "6f079c604a4d7fcf0baa5de213569574ac124468ac1f2861b6016bb6a028e07c",
       "executable": false
     },
     "src/ui/actuals.tsx": {
@@ -6066,6 +6070,10 @@
       "sha256": "2c2e15a7de42332cedef9bc39c476e2d30185450c5c830e0181081f024f688a7",
       "executable": false
     },
+    "tests/agent-attribution-browser.mjs": {
+      "sha256": "e7eb5d388dc3ebc02b4a8622bf4bddb072ea7349fa306dc24b0a68275eb1e065",
+      "executable": false
+    },
     "tests/agent-governance-browser.mjs": {
       "sha256": "21f556517ff359fd1ca76970a72e71a0399892bd56f28453dabedd855a501f37",
       "executable": false
@@ -6095,7 +6103,7 @@
       "executable": false
     },
     "tests/audit.test.mjs": {
-      "sha256": "6e8a764f10e5ef7f4b479b1b061e033bd73f4f34b570da5b94dbea43652a3d7d",
+      "sha256": "5db597be9008b38330157cf5bdb51000fa118bafbab4c8775d2ba2dc44c3b945",
       "executable": false
     },
     "tests/automation-app.test.mjs": {
@@ -6955,7 +6963,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "8d3f71843b81f9fa1ab1adf5f47ac004821267598d1e2cc27cfaa7218d9719b0",
+      "sha256": "56561a6939f06687796f03979fee10d44da68fb3c4c36618b3db3a1ccd763488",
       "executable": false
     },
     "vite.config.ts": {
