@@ -8,6 +8,7 @@ export function AgentGovernance() {
  useEffect(() => { reload().catch(e => setError(e.message)) }, [])
  return <section className="card" aria-label="Agent governance">
   <h2>Agent governance</h2>
+  <p><a href="/agents/audit">Browse agent audit</a></p>
   <p>Finance controls each agent and can stop all agent work. Existing agents also keep their individual settings and permissions. New agents start disabled. Agents cannot approve, close, publish, promote, connect, pay or hire.</p>
   {error && <p role="alert">{error}</p>}
   {status && <>
