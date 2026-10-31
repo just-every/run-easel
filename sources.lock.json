@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "8476d90184fdeb974bfda63a55635264004fcbff962e9dcf7c3ef28b9a95fe66",
+      "sha256": "0876deeb985351d3c33e83d6e7b416c35982da73004dba7bccdf0317226a2c5d",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6619,7 +6619,7 @@
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
-      "sha256": "2cdebf9532c4c560814998bdb5495bab992bc935acc78991f500bc7c37799b16",
+      "sha256": "6eadc050c75fdaccbf2d554701bf64ebf950c02496e10567e3a600d9eb35476b",
       "executable": false
     },
     "tests/mcp-client.test.mjs": {

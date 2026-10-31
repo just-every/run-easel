@@ -200,6 +200,7 @@ equity, tax assumptions, forecast windows, comments, variance explanation
 drafts and proposal submission, with formula and expense removal. Each completed
 response is lost at the HTTP edge, then recovered with the original key and
 arguments and a new JSON-RPC id through both endpoints under both policies.
+The alternate endpoint also recovers each completed key without another effect.
 It checks the native input values and exact cents, removed inputs, comment,
 draft explanation, forecast window, submitted proposal and Activity, with unchanged approved snapshot bytes and hashes. Changed
 arguments conflict without another effect, stale new work names the current

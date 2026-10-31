@@ -90,10 +90,10 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    ],
   } }, 'PUT')
   for (const path of ['/mcp', '/api/easel/mcp']) {
-   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, raw = false, throughEdge = false } = {}) => {
+   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, raw = false, throughEdge = false, endpoint = path } = {}) => {
     const payload = JSON.stringify({ jsonrpc: '2.0', ...(notification ? {} : { id: ++id }), method,
      params: { ...params, ...(version === legacy ? {} : { _meta: { 'io.modelcontextprotocol/protocolVersion': version } }) } })
-    const url = (throughEdge ? edge.origin : origin) + path
+    const url = (throughEdge ? edge.origin : origin) + endpoint
     const requestHeaders = {
      // Refused oversized uploads may close early: keep their sockets out of the native-read pool.
      origin, cookie, connection: 'close', accept: 'application/json, text/event-stream', 'content-type': 'application/json',
@@ -308,6 +308,11 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
     assert.deepEqual(lost.request.params.arguments, arguments_)
     assert.equal(replay.body.result?.isError, false, `${name}: ${JSON.stringify(replay.body)}`)
     assert.deepEqual(replay.body.result.structuredContent, outcome, `${name} returns its recorded outcome after consumed native preconditions`)
+    const alias = await rpc('tools/call', params, { throughEdge: true, endpoint: path === '/mcp' ? '/api/easel/mcp' : '/mcp' })
+    assert.equal(alias.status, 200)
+    assert.notEqual(alias.body.id, lost.request.id)
+    assert.equal(alias.body.result?.isError, false, JSON.stringify(alias.body))
+    assert.deepEqual(alias.body.result.structuredContent, outcome, 'The other endpoint recovers the same caller key and outcome')
     assert.deepEqual(await snapshot(), completed, `${name} recovery has no second effect, Activity entry or approval`)
     const conflict = await result('tools/call', { ...params, arguments: { ...arguments_, expected_revision: -1 } }, { throughEdge: true })
     assert.equal(conflict.isError, true)
