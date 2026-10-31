@@ -85,6 +85,40 @@ The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.
 
+## Standalone client compatibility
+
+Both endpoint paths accept native sessions with the installation's matching
+Origin. Existing scoped credentials retain their native grant ceilings. A modern
+2026-07-28 client can call immediately, without initialization. Send
+`MCP-Protocol-Version: 2026-07-28`, `MCP-Method` matching the JSON-RPC method,
+and `params._meta["io.modelcontextprotocol/protocolVersion"]` set to that revision.
+For a tool call, `MCP-Name` must match the public tool name, for example
+`easel.proposals.create`. Caller-supplied `idempotency_key` belongs in the tool's
+arguments; retain it when resuming approval or retrying a completed operation.
+
+A legacy 2025-11-25 client sends `initialize` with that `protocolVersion`, then
+its initialized notification and subsequent requests with
+`MCP-Protocol-Version: 2025-11-25`. It receives the same deterministic tool
+catalogue as the modern client. Lists carry `ttlMs` and `cacheScope: "private"`.
+Discovery returns the supported revisions, offered capabilities, server identity,
+instructions and body-size limit. Protected-resource metadata names canonical
+`/mcp`, header bearer authentication and the supported planning scopes.
+
+Unsupported revisions return HTTP 400 and JSON-RPC `-32022`
+(`UnsupportedProtocolVersion`). A foreign Origin returns HTTP 403 and `-32600`.
+Inconsistent method or name headers return HTTP 400 and `-32020`
+(`HeaderMismatch`). A body exceeding the advertised limit returns HTTP 413 and
+`-32600` (`Body too large`), including streamed bodies without a size header.
+These transport refusals create no native planning record or pending approval.
+
+`tests/mcp-client.test.mjs` exercises raw HTTP against workerd.
+`tests/mcp-client-browser.mjs` runs the same independent wire client against the
+built application under autonomous and held policies. Sensitive proposal copies
+wait for a named person's native approval; completed caller-key retries return
+the same record without another native effect. This standalone qualification
+does not establish dual-host deployment, real Business transport or pairing,
+or the undeclared resource and prompt families.
+
 The unmerged ct surface at `0fdce273b4c78b98414fdc780b8160950e4fbfb5`
 is a broader target. Administrative access/security changes, connectors, erasure,
 public deliveries, scheduled missions and a stranger's complete finance week
