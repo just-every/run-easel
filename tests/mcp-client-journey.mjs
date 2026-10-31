@@ -1,13 +1,13 @@
 // Independent wire client: no shared-door protocol or name-rewriting helpers.
 import assert from 'node:assert/strict'
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 
 const modern = '2026-07-28', legacy = '2025-11-25'
 
 // Forward the real HTTP request completely, then lose its successful response.
 // The Worker and D1 never see a fake completion or a cancelled upstream request.
 export async function droppedResponseProxy(origin) {
- let armed = false, dropped
+ let armed = false, dropped, mode
  const server = createServer(async (request, response) => {
   try {
    assert.equal(request.method, 'POST')
@@ -20,7 +20,16 @@ export async function droppedResponseProxy(origin) {
    const bytes = Buffer.from(await upstream.arrayBuffer())
    if (armed) {
     armed = false
-    dropped = { path: request.url, request: payload, status: upstream.status, body: JSON.parse(bytes.toString()) }
+    dropped = { path: request.url, request: payload, status: upstream.status, body: JSON.parse(bytes.toString()), transmittedBytes: 0 }
+    if (mode === 'body') {
+     // Send a real prefix, with the complete length advertised, then break
+     // the response stream. The upstream transaction has already finished.
+     const prefix = bytes.subarray(0, Math.max(1, Math.floor(bytes.length / 2)))
+     response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type'), 'content-length': bytes.length })
+     await new Promise(resolve => response.write(prefix, resolve))
+     dropped.transmittedBytes = prefix.length
+     await new Promise(resolve => setImmediate(resolve))
+    }
     response.destroy()
    } else {
     response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json' })
@@ -31,13 +40,13 @@ export async function droppedResponseProxy(origin) {
  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve) })
  return {
   origin: `http://127.0.0.1:${server.address().port}`,
-  arm() { assert.equal(armed, false); armed = true; dropped = undefined },
+  arm(dropMode = 'headers') { assert.equal(armed, false); armed = true; mode = dropMode; dropped = undefined },
   get dropped() { return dropped },
   async close() { await new Promise((resolve, reject) => { server.close(error => error ? reject(error) : resolve()); server.closeAllConnections() }) },
  }
 }
 
-export async function standaloneClientJourney({ origin, cookie, edge, approve, inspect = async () => {}, proof = () => {} }) {
+export async function standaloneClientJourney({ origin, cookie, edge, approve, inspect = async () => {}, inspectLifecycle = async () => {}, inspectMutation = async () => {}, proof = () => {} }) {
  let id = 0
  const native = async (path, body, method = body === undefined ? 'GET' : 'POST') => {
   const response = await fetch(origin + path, { method, redirect: 'manual', headers: { origin, cookie, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
@@ -48,10 +57,23 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
  await command('workspace', { name: 'Synthetic client company', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await command('department', { name: 'Sales' })
  const payroll = await command('line', { name: 'Payroll', type: 'operating-expense', payroll: true })
+ const revenueLine = await command('line', { name: 'Synthetic revenue', type: 'revenue' })
+ const costs = await command('line', { name: 'Synthetic costs', type: 'operating-expense' })
+ const depreciation = await command('line', { name: 'Synthetic depreciation', type: 'operating-expense', nonCash: true })
+ const taxLine = await command('line', { name: 'Synthetic income tax', type: 'operating-expense' })
+ const shared = await command('department', { name: 'Synthetic shared services', shared: true })
  const budget = (await native('/api/easel/state')).scenarios.find(row => row.kind === 'budget')
  await command('position', { scenario: budget.id, department: department.id, line: payroll.id, title: 'Synthetic planner', holder: 'Synthetic Person', annualSalary: '60000', start: '2026-01' })
  const approved = await command('approve-budget', { scenario: budget.id, revision: (await native(`/api/easel/scenario/${budget.id}`)).scenario.revision })
  const forecast = approved.forecast
+ // Native month-close creates the real Review door for explanation recovery.
+ await command('account-map', { account: '4000', target: revenueLine.id })
+ await command('department-map', { source: 'Sales', department: department.id })
+ const actuals = { csv: 'Date,Account,Department,Amount\n2026-01-01,4000,Sales,-1000.00\n', filename: 'synthetic-easel-actuals.csv',
+  columns: { date: 'Date', account: 'Account', department: 'Department', amount: 'Amount' }, amountMode: 'debit-positive', dateFormat: 'YYYY-MM-DD' }
+ const preview = await native('/api/easel/import/actuals/preview', actuals)
+ await native('/api/easel/import/actuals/commit', { ...actuals, fingerprint: preview.fingerprint })
+ await command('close-month', { scenario: forecast.id, month: '2026-01' })
  const frozen = await native(`/api/easel/snapshot/${approved.budget.approval.snapshot}`)
  const unchangedCapture = async () => assert.deepEqual(await native(`/api/easel/snapshot/${frozen.id}`), frozen, 'Approved snapshot contents and hash remain unchanged')
  const snapshot = async () => {
@@ -68,15 +90,47 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    ],
   } }, 'PUT')
   for (const path of ['/mcp', '/api/easel/mcp']) {
-   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, throughEdge = false } = {}) => {
+   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, raw = false, throughEdge = false, endpoint = path } = {}) => {
     const payload = JSON.stringify({ jsonrpc: '2.0', ...(notification ? {} : { id: ++id }), method,
      params: { ...params, ...(version === legacy ? {} : { _meta: { 'io.modelcontextprotocol/protocolVersion': version } }) } })
-    const response = await fetch((throughEdge ? edge.origin : origin) + path, { method: 'POST', redirect: 'manual', headers: {
+    const url = (throughEdge ? edge.origin : origin) + endpoint
+    const requestHeaders = {
      // Refused oversized uploads may close early: keep their sockets out of the native-read pool.
      origin, cookie, connection: 'close', accept: 'application/json, text/event-stream', 'content-type': 'application/json',
      ...(!handshake ? { 'mcp-protocol-version': version } : {}),
      ...(version === legacy ? {} : { 'mcp-method': method, ...(method === 'tools/call' ? { 'mcp-name': params.name } : {}) }), ...headers,
-    }, body: stream ? new ReadableStream({ start(controller) { const bytes = new TextEncoder().encode(payload); for (let offset = 0; offset < bytes.length; offset += 65536) controller.enqueue(bytes.slice(offset, offset + 65536)); controller.close() } }) : payload,
+    }
+    // Read early refusals before committing more upload bytes. The fixed-size
+    // request advertises its actual length; a streaming request sends every
+    // byte with backpressure and carries no size header.
+    if (raw) return new Promise((resolve, reject) => {
+     let received = false
+     const upload = httpRequest(url, { method: 'POST', headers: { ...requestHeaders, ...(!stream ? { 'content-length': Buffer.byteLength(payload) } : {}) } }, response => {
+      received = true
+      const chunks = []
+      response.on('data', chunk => chunks.push(chunk))
+      response.once('error', reject)
+      response.once('end', () => {
+       try { resolve({ status: response.statusCode, headers: new Headers(response.headers), body: JSON.parse(Buffer.concat(chunks).toString()) }) } catch (error) { reject(error) }
+       upload.destroy()
+      })
+     })
+     upload.once('error', error => { if (!received) reject(new Error(`Raw ${stream ? 'streamed' : 'fixed'} request ${path}: ${error.message}`, { cause: error })) })
+     upload.setTimeout(30000, () => upload.destroy(new Error('Raw HTTP refusal timed out')))
+     upload.flushHeaders()
+     if (stream) {
+      const bytes = Buffer.from(payload)
+      const send = offset => {
+       if (received || upload.destroyed) return
+       if (offset === bytes.length) { upload.end(); return }
+       const end = Math.min(offset + 65536, bytes.length)
+       upload.write(bytes.subarray(offset, end), error => { if (!error) setImmediate(() => send(end)) })
+      }
+      send(0)
+     }
+    })
+    const response = await fetch(url, { method: 'POST', redirect: 'manual', headers: requestHeaders,
+     body: stream ? new ReadableStream({ start(controller) { const bytes = new TextEncoder().encode(payload); for (let offset = 0; offset < bytes.length; offset += 65536) controller.enqueue(bytes.slice(offset, offset + 65536)); controller.close() } }) : payload,
     ...(stream ? { duplex: 'half' } : {}) })
     const text = await response.text()
     return { status: response.status, headers: response.headers, body: text ? JSON.parse(text) : null }
@@ -134,8 +188,8 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
     [{ headers: { origin: 'https://foreign.invalid' } }, args, 403, -32600, 'Origin refused'],
     [{ headers: { 'mcp-method': 'tools/list' } }, args, 400, -32020, 'HeaderMismatch'],
     [{ headers: { 'mcp-name': 'easel.scenarios.list' } }, args, 400, -32020, 'HeaderMismatch'],
-    [{}, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
-    [{ stream: true }, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
+    [{ raw: true }, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
+    [{ stream: true, raw: true }, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
    ]
    for (const [options, arguments_, status, code, message] of refusals) {
     const refused = await rpc('tools/call', { name: 'easel.proposals.create', arguments: arguments_ }, options)
@@ -220,6 +274,145 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    await unchangedCapture()
    await inspect({ native, proposal: recorded, activity: effects[0], policy, path })
    proof(`BASE-AGENT-012 point2: ${path} ${policy} real response dropped after completion; new JSON-RPC id with original arguments and key -> recorded outcome, one proposal and Activity effect, approved snapshot unchanged${policy === 'held' ? ', named-person approval retained' : ''}`)
+
+   // Recover an entire native draft lifecycle, including consumed preconditions.
+   const recover = async (name, values, check, suffix = '', dropMode = 'headers') => {
+    const arguments_ = { ...values, idempotency_key: `${key}-lost-${name}${suffix}` }
+    const params = { name: `easel.${name}`, arguments: arguments_ }
+    const before = await snapshot()
+    let resume = params
+    if (policy === 'held' && name === 'positions.update') {
+     const pending = await result('tools/call', params, { throughEdge: true })
+     assert.equal(pending.resultType, 'input_required')
+     assert.deepEqual((await snapshot()).scenarios, before.scenarios, 'Held edits cannot change a draft before native approval')
+     await approve({ approval: pending._meta['com.runeditrun/approval'], native, policy, path, version: modern })
+     resume = { ...params, ...(pending.requestState ? { requestState: pending.requestState } : {}) }
+    }
+    edge.arm(dropMode)
+    await assert.rejects(rpc('tools/call', resume, { throughEdge: true }), error => error instanceof TypeError && (dropMode === 'body' ? ['fetch failed', 'terminated'].includes(error.message) : error.message === 'fetch failed'))
+    const lost = edge.dropped
+    assert.equal(lost.status, 200)
+    assert.ok(!lost.body.error, JSON.stringify(lost.body))
+    assert.equal(lost.body.result.isError, false, JSON.stringify(lost.body))
+    const outcome = lost.body.result.structuredContent
+    if (dropMode === 'body') assert.ok(lost.transmittedBytes > 0, 'A partial response really reached the client before disconnection')
+    const completed = await snapshot()
+    await check(outcome, before, completed)
+    const target = name === 'inputs.delete' ? values.id : outcome.id
+    const action = ({ 'calendar.update': 'forecast-window', 'explanations.draft': 'explanation', 'comments.create': 'comment', 'proposals.submit': 'proposal-submit' })[name] ?? 'record-changed'
+    const effects = completed.activity.filter(row => row.action === action && row.record === target && row.detail?.authority?.idempotencyKey === arguments_.idempotency_key)
+    assert.equal(effects.length, 1, `${name} creates one native Activity effect`)
+    assert.equal(effects[0].detail.authority.label, `MCP client for ${completed.state.me.name}`)
+    const replay = await rpc('tools/call', params, { throughEdge: true })
+    assert.notEqual(replay.body.id, lost.request.id)
+    assert.deepEqual(lost.request.params.arguments, arguments_)
+    assert.equal(replay.body.result?.isError, false, `${name}: ${JSON.stringify(replay.body)}`)
+    assert.deepEqual(replay.body.result.structuredContent, outcome, `${name} returns its recorded outcome after consumed native preconditions`)
+    const alias = await rpc('tools/call', params, { throughEdge: true, endpoint: path === '/mcp' ? '/api/easel/mcp' : '/mcp' })
+    assert.equal(alias.status, 200)
+    assert.notEqual(alias.body.id, lost.request.id)
+    assert.equal(alias.body.result?.isError, false, JSON.stringify(alias.body))
+    assert.deepEqual(alias.body.result.structuredContent, outcome, 'The other endpoint recovers the same caller key and outcome')
+    assert.deepEqual(await snapshot(), completed, `${name} recovery has no second effect, Activity entry or approval`)
+    const conflict = await result('tools/call', { ...params, arguments: { ...arguments_, expected_revision: -1 } }, { throughEdge: true })
+    assert.equal(conflict.isError, true)
+    assert.equal(conflict._meta['com.runeditrun/error'].code, 'idempotency_conflict')
+    assert.equal(conflict.structuredContent, undefined)
+    assert.deepEqual(await snapshot(), completed, 'Changed arguments cannot reuse a completed key or add an effect')
+    await unchangedCapture()
+    await inspectMutation({ name, outcome, target, action, key: arguments_.idempotency_key })
+    proof(`BASE-AGENT-012 point2 ${name}: ${path} ${policy} lost completed response -> equal recorded result, one native effect, unchanged approved snapshot; ${dropMode === 'body' ? 'partial body interrupted' : 'response lost before headers'}`)
+    return outcome
+   }
+   const view = () => native(`/api/easel/scenario/${recorded.id}`)
+   const input = async (name, kind, values, expected, suffix = '') => {
+    const outcome = await recover(name, { scenario: recorded.id, ...values }, async outcome => {
+     for (const [field, value] of Object.entries(expected)) assert.deepEqual(outcome[field], value, `${name} ${field}`)
+     const rows = (await view()).inputs[kind].filter(row => row.id === outcome.id)
+     assert.equal(rows.length, 1, `${name} has one native input`)
+     assert.deepEqual(rows[0], outcome)
+    }, suffix, 'body')
+    if (['allocations.update', 'taxes.update'].includes(name)) {
+     const completed = await snapshot()
+     const duplicate = await result('tools/call', { name: `easel.${name}`, arguments: { scenario: recorded.id, ...values, idempotency_key: `${key}-new-${name}` } })
+     assert.equal(duplicate.isError, true, 'A new key retains the native singleton constraint')
+     assert.equal(duplicate.structuredContent, undefined)
+     assert.deepEqual(await snapshot(), completed)
+    }
+    return outcome
+   }
+   const base = { department: department.id, start: '2026-02' }
+   const revenue = await input('revenue.update', 'revenue', { ...base, line: revenueLine.id, name: 'Synthetic recovered revenue', kind: 'volume', startVolume: '10', rate: '125.01' }, { rateCents: 12501, startVolume: 1000 })
+   const expenseArgs = { ...base, line: costs.id, name: 'Synthetic recovered expense', kind: 'recurring', amount: '123.45' }
+   const expense = await input('expenses.update', 'expense', expenseArgs, { amountCents: 12345 })
+   const editedExpense = await input('expenses.update', 'expense', { ...expenseArgs, id: expense.id, amount: '234.56' }, { id: expense.id, amountCents: 23456 }, '-edit')
+   const removedExpense = await input('expenses.update', 'expense', { ...expenseArgs, name: 'Synthetic removed expense', amount: '19.99' }, { amountCents: 1999 }, '-remove')
+   await recover('inputs.delete', { kind: 'expense', id: removedExpense.id }, async () => {
+    assert.ok(!(await view()).inputs.expense.some(row => row.id === removedExpense.id))
+   }, '-expense', 'body')
+   const schedule = await input('schedules.update', 'schedule', { name: 'Synthetic recovered schedule', line: costs.id, department: shared.id, values: { '2026-02': '42.01' } }, { values: { '2026-02': 4201 } })
+   const category = await input('asset_categories.update', 'asset-category', { name: 'Synthetic recovered equipment', usefulLifeMonths: '60' }, { usefulLifeMonths: 60 })
+   const asset = await input('assets.update', 'asset', { ...base, name: 'Synthetic recovered asset', category: category.originId, line: depreciation.id, kind: 'purchase', cost: '1200' }, { costCents: 120000, category: category.originId })
+   const allocation = await input('allocations.update', 'allocation', { name: 'Synthetic recovered allocation', sourceDepartment: shared.id, basis: 'fixed', targets: [{ department: department.id, percent: '100' }] }, { targets: [{ department: department.id, bps: 10000 }] })
+   const debt = await input('debt.update', 'debt', { ...base, name: 'Synthetic recovered borrowing', line: costs.id, debtKind: 'credit', maturity: '2026-12', limit: '5000', annualRate: '12', draws: { '2026-02': '1000' } }, { drawsCents: { '2026-02': 100000 }, annualRateBps: 1200 })
+   const equity = await input('equity.update', 'equity', { name: 'Synthetic recovered equity', month: '2026-02', amount: '5000.01' }, { amountCents: 500001 })
+   const tax = await input('taxes.update', 'tax-policy', { name: 'Synthetic recovered taxes', line: taxLine.id, department: department.id, sutaPercent: '2.7', sutaBase: '9000', stateIncomePercent: '5' }, { sutaBps: 270, sutaBaseCents: 900000, stateIncomeBps: 500 })
+   await recover('calendar.update', { scenario: forecast.id, revision: String((await native(`/api/easel/scenario/${forecast.id}`)).scenario.revision), months: '12' }, async outcome => {
+    assert.equal(outcome.rollingWindow, 12)
+    assert.equal((await native(`/api/easel/scenario/${forecast.id}`)).scenario.horizon, 13)
+   }, '', 'body')
+   const explanationText = `Synthetic ${policy} ${route} recovered explanation`
+   await recover('explanations.draft', { month: '2026-01', line: payroll.id, department: department.id, text: explanationText }, async outcome => {
+    assert.equal(outcome.text, explanationText)
+    assert.equal(outcome.status, 'draft')
+    const row = (await native('/api/easel/variance/2026-01')).rows.find(row => row.line === payroll.id && row.department === department.id)
+    assert.equal(row.explanation.text, explanationText)
+    assert.equal(row.explanation.status, 'draft')
+   }, '', 'body')
+   const copied = (await view()).inputs.position[0]
+   const edited = await recover('positions.update', { scenario: recorded.id, id: copied.id, title: copied.title, holder: copied.holder,
+    department: department.id, line: payroll.id, start: '2026-01', annualSalary: '72000' }, async (outcome, before, after) => {
+     assert.equal(outcome.id, copied.id)
+     assert.equal(outcome.annualSalaryCents, 7200000)
+     const positions = (await view()).inputs.position
+     assert.equal(positions.length, 1)
+     assert.equal(positions[0].annualSalaryCents, 7200000)
+     assert.equal(after.activity.filter(row => row.action === 'record-changed' && row.record === copied.id).length,
+      before.activity.filter(row => row.action === 'record-changed' && row.record === copied.id).length + 1)
+    })
+   const formula = await recover('formulas.update', { scenario: recorded.id, revision: String((await view()).scenario.revision),
+    name: 'Synthetic recovery formula', department: department.id, unit: 'money', line: payroll.id, formula: '100', start: '2026-01' }, async outcome => {
+     assert.deepEqual((await view()).inputs.formula.map(row => ({ id: row.id, formula: row.formula })), [{ id: outcome.id, formula: '100' }])
+    })
+   await recover('inputs.delete', { kind: 'formula', id: formula.id, revision: String((await view()).scenario.revision) }, async () => {
+    assert.ok(!(await view()).inputs.formula.some(row => row.id === formula.id))
+   })
+   const note = `Synthetic ${policy} ${route} recovered comment`
+   const commented = await recover('comments.create', { scenario: recorded.id, department: department.id, text: note }, async (_outcome, before, after) => {
+    assert.equal(after.state.comments.filter(row => row.text === note).length, 1)
+    assert.equal(after.activity.filter(row => row.action === 'comment' && row.scenario === recorded.id).length,
+     before.activity.filter(row => row.action === 'comment' && row.scenario === recorded.id).length + 1)
+   })
+   const beforeStale = await snapshot()
+   const stale = await result('tools/call', { name: 'easel.comments.create', arguments: { scenario: recorded.id, department: department.id,
+    text: 'Synthetic stale request', idempotency_key: `${key}-stale`, expected_revision: -1 } })
+   assert.equal(stale.isError, true)
+   assert.equal(stale._meta['com.runeditrun/error'].code, 'revision_conflict')
+   assert.ok(Number.isSafeInteger(stale._meta['com.runeditrun/error'].current_revision))
+   assert.deepEqual(await snapshot(), beforeStale, 'Stale requests are refused before any native effect')
+   const submitted = await recover('proposals.submit', { id: recorded.id, summary: 'Synthetic recovered planning alternative' }, async (outcome, before, after) => {
+    assert.equal(outcome.proposalStatus, 'submitted')
+    assert.equal((await view()).scenario.proposalStatus, 'submitted')
+    assert.equal(after.activity.filter(row => row.action === 'proposal-submit' && row.record === recorded.id).length, 1)
+    assert.equal(after.state.scenarios.length, before.state.scenarios.length)
+   })
+   const afterSubmit = await snapshot()
+   const resubmit = await result('tools/call', { name: 'easel.proposals.submit', arguments: { id: recorded.id,
+    summary: 'Synthetic second submission', idempotency_key: `${key}-new-submit` } })
+   assert.equal(resubmit.isError, true, 'A new key cannot bypass the native submitted precondition')
+   assert.equal(resubmit.structuredContent, undefined)
+   assert.deepEqual(await snapshot(), afterSubmit)
+   await inspectLifecycle({ native, proposal: submitted, edited, formula, commented, note, policy, path, revenue, expense: editedExpense, schedule, asset, allocation, debt, equity, tax })
   }
  }
  return { native, catalogue }
