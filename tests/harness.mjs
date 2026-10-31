@@ -30,6 +30,7 @@ const freePort = async () => { const s = createServer(); await new Promise(r => 
 export async function harness(options = {}) {
  const port = await freePort(), origin = `http://127.0.0.1:${port}`
  const dir = await mkdtemp(join(tmpdir(), 'easel-test-'))
+ if (typeof options.bindings === 'function') options = { ...options, bindings: options.bindings(origin) }
  const messages = []
  const mailProvider = { name: 'test-mail-provider', setup(build) {
   build.onLoad({ filter: /easel\/time\.ts$/ }, () => ({ contents: `export async function currentTime(env) { return (await env.TEST_CLOCK.fetch('https://clock/')).text() }`, loader: 'js' }))

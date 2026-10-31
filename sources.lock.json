@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "18dc62c088e1507c78e74ccc8f79bee7f7f613d675a2c690a9341a545761c468",
+      "sha256": "04c6b5b87f4be7a98fddd657174c22e97970f997e8117836e908b963f0fa4a9f",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "cb02eb3530bb9a37255ac61c6e336aa53940568e99d9c3b924b8e27450c3337c",
+      "sha256": "8bddbff1190a4298b111d861e0122e23eabe0ae8bff99b9f6eead9f04638484f",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6102,6 +6102,18 @@
       "sha256": "1c1d8926f3d73b499c450dfd3e24df0faa083f1c4c84c22bc2f8fa3bf0c803b9",
       "executable": false
     },
+    "tests/agent-policy-browser.mjs": {
+      "sha256": "e358e2b63e05ec45b4b42a123daeb9b427b70b051021254bc989f4df5c1d65be",
+      "executable": false
+    },
+    "tests/agent-policy-flow.mjs": {
+      "sha256": "417feee44e7b8af43aabe457bcd9997b6691258409aeeed84591b9e6cf621bc5",
+      "executable": false
+    },
+    "tests/agent-policy.test.mjs": {
+      "sha256": "2a6988d80e8bddd4091b0206609c8c4b70902601dd7b3f575dad382bfd0cadd8",
+      "executable": false
+    },
     "tests/api-tokens.test.mjs": {
       "sha256": "1989c90ae4b8f347ba48970bc47f013ee69ea81c818ec5ace5544dfe26e3c63c",
       "executable": false
@@ -6495,7 +6507,7 @@
       "executable": false
     },
     "tests/harness.mjs": {
-      "sha256": "518eed0c2493c3742a4e64422470fb5a85cc4bcddac06c420f17976696a6dc86",
+      "sha256": "dc742e206defacb72b5c4e0c83ddd34db56ca81c1b396124d9546159afa34ace",
       "executable": false
     },
     "tests/headcount-browser.mjs": {
@@ -6995,7 +7007,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "b8056d17abd0e3f0615e7d47a25b0d7661eaab3862944f23d2abfb225fb54524",
+      "sha256": "13dd9bef5ecd046db705a69a7bcc9018a211ba3555286d5ba746896678c4e31d",
       "executable": false
     },
     "vite.config.ts": {
