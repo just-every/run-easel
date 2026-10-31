@@ -36,11 +36,15 @@ export async function nativeContext(ctx: ToolContext | ResourceContext): Promise
 }
 export type NativeAdmission = { revision: number; person: string; version: number; role: Actor['baseRole'] }
 export const nativeAdmission = (c: Awaited<ReturnType<typeof nativeContext>>): NativeAdmission => ({ revision: c.revision, person: c.x.actor.id, version: c.x.actor.version, role: c.x.actor.baseRole })
+export const admits = (c: Awaited<ReturnType<typeof nativeContext>>, expected: NativeAdmission) =>
+ c.revision === expected.revision && c.x.actor.id === expected.person && c.x.actor.version === expected.version && c.x.actor.baseRole === expected.role
 
-export async function nativeAction(name: string, args: Data, ctx: ToolContext | ResourceContext, persist: boolean, expected?: NativeAdmission, completed = false) {
+/** `job` runs the action as its own background calculation, as MODEL-007's native commands do. */
+export async function nativeAction(name: string, args: Data, ctx: ToolContext | ResourceContext, persist: boolean, expected?: NativeAdmission, completed = false, job?: string) {
  const c = await nativeContext(ctx)
+ if (job) c.calculationJob = job
  try {
-  if (expected && (c.revision !== expected.revision || c.x.actor.id !== expected.person || c.x.actor.version !== expected.version || c.x.actor.baseRole !== expected.role)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
+  if (expected && !admits(c, expected)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
   let proposed = args
   if (!persist && completed && args.revision !== undefined && ctx.idempotencyKey) {
    // A completed effect advances its own native revision. Re-admit its receipt

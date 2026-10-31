@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "5027d974206898e0bcbfb385fdd8be609f083d9672f91f7ff16bac27a82bd445",
+      "sha256": "7182caf11c00380b7e22fc179b20547fdd5c231467931514e2a0451f8d1887ce",
       "executable": false
     },
     "agent-surface.json": {
@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "09dfe7737cd3f25723524aa32ea29c48d0457779c2f3f554610eb1918a1cfb23",
+      "sha256": "f12c280b89741abe67e1e138a7abd5d9a51b293150da5f43243e005b5ae01a82",
       "executable": false
     },
     "DEMO.md": {
@@ -179,7 +179,7 @@
       "executable": false
     },
     "docs/agents.md": {
-      "sha256": "1ca9183910d8e2fd4c8c52e5c6db9618da277777a0b1c1f5aece1e6f4ffd2422",
+      "sha256": "cbd460d0ed017eda5555edfd36642b5a63a8a1c7347e28e0b5934c6d2b3ef3ae",
       "executable": false
     },
     "docs/backup-and-restore.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "0876deeb985351d3c33e83d6e7b416c35982da73004dba7bccdf0317226a2c5d",
+      "sha256": "87f94270b9a95ef9ed89427c9d25b2a9419942ee88b74fc9f74ae412819b58ec",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -1743,11 +1743,15 @@
       "executable": false
     },
     "src/agent-door/index.ts": {
-      "sha256": "130c93b3471fd2c4f37cb577908e5d6c0f471d65b29e970ad5bfd016bdb0f0cb",
+      "sha256": "414f2d557acd6112512fb4e3c16ff5e532a245b57204e65d51c5be7a4a24dcd4",
+      "executable": false
+    },
+    "src/agent-door/jobs.ts": {
+      "sha256": "0aeb85a7beec6c4bb474dfe298f70ccfbface2637cafdf75048fa1312db3da47",
       "executable": false
     },
     "src/agent-door/native.ts": {
-      "sha256": "01eced2e3cf73c0de0224c34db13f456b4d4284441ec1d297248b3289158e50a",
+      "sha256": "a567e62c58689c362547d04c8c9a7220698fa7ad81df5c84cfc4f9b67ff467b3",
       "executable": false
     },
     "src/agent-door/people.ts": {
@@ -1763,7 +1767,7 @@
       "executable": false
     },
     "src/agent-door/schemas.ts": {
-      "sha256": "4865d1c1f225f8d4778328a00559f118f9d451ecdc722a221da82be58b23c148",
+      "sha256": "fb89f7ae9623cfebea30a2a5a3897ab69d266655782079639011d4a5d6db55d3",
       "executable": false
     },
     "src/agent-door/targets.ts": {
@@ -1771,7 +1775,7 @@
       "executable": false
     },
     "src/agent-door/tools.ts": {
-      "sha256": "6a8a1953e306bf6863e190eeb6fcf2921b5b719d43f5def0b489023b69b8eba6",
+      "sha256": "cf8fbce0e3c61b7b35dcd85767d66677b0a5eaeddf4bf2f57ff803698d9df213",
       "executable": false
     },
     "src/agent-door/trust.ts": {
@@ -1951,7 +1955,7 @@
       "executable": false
     },
     "src/easel/agent-actions.ts": {
-      "sha256": "7d27df532cc43f976054e6b29890e5445dba52f4698227719bcbdf2c5e69bbad",
+      "sha256": "107bf0dd75cf150dfac5b14ee404d5599703d319a4d893e5996a5804000cb786",
       "executable": false
     },
     "src/easel/agents/agent-evaluate.ts": {
@@ -2147,7 +2151,7 @@
       "executable": false
     },
     "src/easel/calculation-jobs.ts": {
-      "sha256": "37af01900d37f8ae6294ae587d1a7377a1a911ee8d9138cb89da4b8aee65ec11",
+      "sha256": "14f7dc9ab4b5cae1221aed04f57cb7704d2c58be68c562368311f1252f842018",
       "executable": false
     },
     "src/easel/calculation-status.ts": {
@@ -5415,7 +5419,7 @@
       "executable": false
     },
     "src/server.ts": {
-      "sha256": "ccb960e96cdd41009721b1af68a40241947b99863b1213235f5b605a060242ce",
+      "sha256": "4b66517751969d24f81fd84c37e87bbb7b958a96aa8ceeb40879946bffd7bcd3",
       "executable": false
     },
     "src/site/docs/build/manifest.ts": {
@@ -6327,7 +6331,7 @@
       "executable": false
     },
     "tests/easel-worker.ts": {
-      "sha256": "b398703606c2efff3bd7b71d611c4ef86de1fcd343463d708e6584e46ced0359",
+      "sha256": "db94a4d5a5ba79bcd41bd223b08e1e5b4fe0bdb92602a25041786fcce961ff1b",
       "executable": false
     },
     "tests/easel.test.mjs": {
@@ -6623,7 +6627,7 @@
       "executable": false
     },
     "tests/mcp-client.test.mjs": {
-      "sha256": "546644002d488332172b00ffbb4287555a27840ed7fbd5aad0914a15a16ad67a",
+      "sha256": "84bd83dbbfe03185e96655b171b299586df7c14b5f25157a9bd7f345e0db149b",
       "executable": false
     },
     "tests/mcp.test.mjs": {

@@ -2,9 +2,12 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { harness } from './harness.mjs'
 import { droppedResponseProxy, standaloneClientJourney } from './mcp-client-journey.mjs'
+import { finishJob, largeWorkbook } from './scale-fixtures.mjs'
 
 test('Standalone MCP clients negotiate both versions and preserve native state across transport refusals under both policies', async t => {
- const h = await harness()
+ // The installation clock: retention is checked a full day later without waiting.
+ let skew = 0
+ const h = await harness({ now: () => new Date(Date.now() + skew).toISOString() })
  t.after(() => h.close())
  const edge = await droppedResponseProxy(h.origin)
  t.after(() => edge.close())
@@ -175,5 +178,120 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
   assert.deepEqual({ draft: await h.get(`/api/easel/scenario/${draft.id}`), submitted: await h.get(`/api/easel/scenario/${submitted.id}`), activity: await h.get('/api/easel/activity') }, after)
   assert.deepEqual(await frozen(), captures, 'Erasure and retained-key recovery preserve stored approved snapshot bytes and hashes')
   console.log(`PROBE BASE-AGENT-012 erasure: ${policy} both endpoints replay creation, formula and submission after subject erasure -> current pseudonym in structured data, serialized text and resource names; native state and captures unchanged`)
+ }
+ // Long work: a change to a plan above MODEL-007's 2,000 inline inputs runs as
+ // the native background calculation and records its job handle as the outcome.
+ const operations = await h.command('department', { name: 'Operations' })
+ await h.command('line', { name: 'Software', type: 'operating-expense' })
+ const file = await largeWorkbook()
+ const preview = await h.kit('workbook', 'preview', file)
+ let imported = await finishJob(h, (await h.send('/api/easel/import/workbook/commit', { ...file, fingerprint: preview.fingerprint }, h.owner)).value)
+ while (imported.import.status === 'importing') imported = await finishJob(h, (await h.send('/api/easel/import/workbook/resume', { id: imported.import.id }, h.owner)).value)
+ assert.equal(imported.import.status, 'imported')
+ const queuedEmail = ['synthetic-easel-queued', 'example.test'].join('@')
+ const planner = await h.person(queuedEmail, 'contributor', [operations.id])
+ const mcp = async (cookie, path, name, args, through = h.origin) => {
+  const response = await fetch(through + path, { method: 'POST', headers: { origin: h.origin, cookie, connection: 'close', 'content-type': 'application/json', 'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/call', 'mcp-name': name },
+   body: JSON.stringify({ jsonrpc: '2.0', id: ++requestId, method: 'tools/call', params: { name, arguments: args, _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } }) })
+  assert.equal(response.status, 200)
+  return (await response.json()).result
+ }
+ const finished = async handle => {
+  for (let polls = 0; ; polls++) {
+   const status = await mcp(planner, '/mcp', 'easel.calculations.status', { id: handle.id })
+   assert.equal(status.isError, false, JSON.stringify(status))
+   if (status.structuredContent.calculationJob.status !== 'running') return status.structuredContent
+   assert.ok(polls < 300, 'The background calculation finishes')
+   await new Promise(resolve => setTimeout(resolve, 200))
+  }
+ }
+ // One native effect is one changed input record carrying the caller's key.
+ const effects = async (key, kind) => (await h.db.prepare("SELECT count(*) AS n FROM e_activity WHERE action='record-changed' AND json_extract(detail,'$.kind')=? AND json_extract(detail,'$.authority.idempotencyKey')=?").bind(kind, key).first()).n
+ const listed = await fetch(h.origin + '/mcp', { method: 'POST', headers: { origin: h.origin, cookie: planner, 'content-type': 'application/json', 'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/list' },
+  body: JSON.stringify({ jsonrpc: '2.0', id: ++requestId, method: 'tools/list', params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } }) })
+ const writes = (await listed.json()).result.tools.filter(tool => !tool.annotations.readOnlyHint)
+ assert.ok(writes.some(tool => tool.name === 'easel.schedules.update'))
+ for (const tool of writes) {
+  assert.ok(tool.inputSchema.required.includes('idempotency_key'), `${tool.name} requires a caller key`)
+  assert.ok(tool.inputSchema.properties.expected_revision && !tool.inputSchema.required.includes('expected_revision'), `${tool.name} takes an optional expected revision`)
+ }
+ const configure = async policy => {
+  const configured = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', spend: { none: true }, reviewers: ['role:owner'],
+   rules: policy === 'autonomous' ? [{ id: 'all', class: '*', do: 'autonomous' }] : [{ id: 'sensitive', class: '*', do: 'approval', approver: ['role:owner'], wait: 'P1D' }, { id: 'ordinary', class: 'standard', do: 'review' }],
+  } }, h.owner, 'PUT')
+  assert.equal(configured.status, 200)
+ }
+ await configure('autonomous')
+ const created = await mcp(planner, '/mcp', 'easel.proposals.create', { from: imported.import.scenario, name: 'Synthetic large plan', request: 'Synthetic large planning change', idempotency_key: 'synthetic-easel-queued-create' })
+ assert.equal(created.isError, false, JSON.stringify(created))
+ const draft = created.structuredContent
+ const schedule = (await h.get(`/api/easel/scenario/${draft.id}`, planner)).inputs.schedule.find(row => row.department === operations.id)
+ const calculations = async () => (await h.db.prepare("SELECT count(*) AS n FROM e_calculation_jobs j,json_each(j.scenarios) s WHERE s.value=?").bind(draft.id).first()).n
+ const unkeyed = { scenario: draft.id, id: schedule.id, name: schedule.name, line: schedule.line, department: schedule.department, values: { '2026-01': '100.00' } }
+ const refused = await mcp(planner, '/api/easel/mcp', 'easel.schedules.update', unkeyed)
+ assert.equal(refused._meta['com.runeditrun/error'].code, 'idempotency_key_required')
+ assert.equal(await calculations(), 0, 'A mutation without a caller key starts no work')
+ for (const [policy, amount] of [['autonomous', '101.00'], ['held', '102.00']]) {
+  await configure(policy)
+  const recorded = [], started = await calculations()
+  const args = { scenario: draft.id, id: schedule.id, name: schedule.name, line: schedule.line, department: schedule.department, values: { '2026-01': amount }, idempotency_key: `synthetic-easel-${policy}-queued-schedule` }
+  edge.arm()
+  await assert.rejects(mcp(planner, '/mcp', 'easel.schedules.update', args, edge.origin), error => error instanceof TypeError, 'The client loses the job handle after the change is admitted')
+  const lost = edge.dropped.body.result
+  assert.equal(lost.isError, false, JSON.stringify(lost))
+  const handle = lost.structuredContent.calculationJob
+  assert.deepEqual(handle.scenarios, [draft.id])
+  for (const path of ['/mcp', '/api/easel/mcp']) {
+   const replay = await mcp(planner, path, 'easel.schedules.update', args)
+   assert.deepEqual(replay.structuredContent, lost.structuredContent, 'A retry with a new JSON-RPC id and the original key returns the recorded job handle')
+  }
+  const done = await finished(handle)
+  assert.equal(done.calculationJob.status, 'completed'); assert.equal(done.responseStatus, 200)
+  recorded.push(['easel.schedules.update', args, lost.structuredContent])
+  const changed = (await h.get(`/api/easel/scenario/${draft.id}`, planner)).inputs.schedule.find(row => row.id === schedule.id)
+  assert.equal(changed.values['2026-01'], Number(amount) * 100)
+  assert.equal(await effects(args.idempotency_key, 'schedule'), 1, 'The queued change has one native effect')
+  assert.equal(await calculations(), started + 1, 'Recovering the handle starts no second calculation')
+  // A handle is the initiating person's: finance can see the proposal, yet its
+  // own agent session reads the handle as not found and lists no foreign job.
+  for (const path of ['/mcp', '/api/easel/mcp']) {
+   const foreign = await mcp(h.owner, path, 'easel.calculations.status', { id: handle.id })
+   assert.equal(foreign.isError, true)
+   assert.equal(foreign._meta['com.runeditrun/error'].code, 'resource_unavailable')
+   assert.equal(foreign.structuredContent, undefined)
+   assert.ok(!JSON.stringify(foreign).includes(draft.id))
+   const listed = await mcp(h.owner, path, 'easel.calculations.status', {})
+   assert.equal(listed.isError, false, JSON.stringify(listed))
+   assert.ok(!JSON.stringify(listed.structuredContent).includes(handle.id))
+   const own = await mcp(planner, path, 'easel.calculations.status', {})
+   assert.ok(own.structuredContent.jobs.some(job => job.calculationJob.id === handle.id))
+  }
+  console.log(`PROBE BASE-AGENT-012 point5: ${policy} another person's agent session reads the planner's job handle at /mcp and /api/easel/mcp -> resource_unavailable, absent from its list; the planner reads completed`)
+  if (policy === 'held') {
+   // Sensitive work waits for the named owner; the approved execution is queued.
+   const positionArgs = { scenario: draft.id, title: 'Synthetic queued analyst', department: operations.id, line: payroll.id, start: '2026-03', annualSalary: '90000', idempotency_key: 'synthetic-easel-held-queued-position' }
+   const pending = await mcp(planner, '/mcp', 'easel.positions.update', positionArgs)
+   assert.equal(pending.resultType, 'input_required')
+   const approval = (await h.get(`/agents/api/approvals/${pending._meta['com.runeditrun/approval'].id}`)).approval
+   assert.equal(await effects(positionArgs.idempotency_key, 'position'), 0, 'No native effect before the named person decides')
+   const decided = await h.send(`/agents/api/approvals/${approval.id}/approve`, { revision: approval.revision, summary_sha256: approval.summary_sha256 }, h.owner)
+   assert.equal(decided.value.approval.state, 'executed')
+   const outcome = await mcp(planner, '/api/easel/mcp', 'easel.positions.update', positionArgs)
+   assert.equal(outcome.isError, false, JSON.stringify(outcome))
+   assert.equal((await finished(outcome.structuredContent.calculationJob)).responseStatus, 200)
+   assert.equal(await effects(positionArgs.idempotency_key, 'position'), 1)
+   recorded.push(['easel.positions.update', positionArgs, outcome.structuredContent])
+  }
+  const totals = async () => (await h.db.prepare('SELECT (SELECT count(*) FROM e_activity) AS activity,(SELECT count(*) FROM e_calculation_jobs) AS jobs,(SELECT count(*) FROM agent_door_approvals) AS approvals').all()).results
+  const before = await totals()
+  skew = 25 * 60 * 60 * 1000
+  for (const path of ['/mcp', '/api/easel/mcp']) for (const [tool, args, outcome] of recorded) {
+   const replay = await mcp(planner, path, tool, args)
+   assert.equal(replay.isError, false, JSON.stringify(replay))
+   assert.deepEqual(replay.structuredContent, outcome, 'The first outcome is returned 25 hours later')
+  }
+  assert.deepEqual(await totals(), before, 'Late replays add no native effect, calculation or approval')
+  skew = 0
+  console.log(`PROBE BASE-AGENT-012 queued: ${policy} lost job handle for a 2,201-input plan -> recorded handle at both endpoints, one calculation and one native effect; ${recorded.length} keys replay unchanged 25 hours later`)
  }
 })

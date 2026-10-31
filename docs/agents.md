@@ -55,7 +55,7 @@ Add or edit an asset in your own working proposal, within your departments.
 
 ### easel.calculations.status
 
-Read a known calculation job or list currently visible native job statuses; never resubmit a pending mutation.
+Read a calculation job you started, or list your jobs; a change to a plan above 2,000 inputs returns its job handle. Never resubmit a pending mutation.
 
 - Scope: `planning:read`. Read only.
 - Possible classes: `standard`.

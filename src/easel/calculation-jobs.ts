@@ -150,11 +150,13 @@ async function execute(db: D1Database, id: string, deadline: number, work: (id: 
  }
 }
 
-export async function readCalculationJob(c: Context, id: string): Promise<CalculationJobEnvelope> {
+/** `initiatorOnly` reads a handle as a capability of the person who started the
+ * work; native readers of the affected scenarios otherwise see its metadata. */
+export async function readCalculationJob(c: Context, id: string, initiatorOnly = false): Promise<CalculationJobEnvelope> {
  const { state, revision, x } = await reader(c)
  await expire(c.db)
  const row = await c.db.prepare('SELECT * FROM e_calculation_jobs WHERE id=?').bind(id).first<JobRow>()
- requireThat(row && mayReadMetadata(state, x, row), 'Calculation job not found', 404)
+ requireThat(row && (!initiatorOnly || row.actor_id === x.actor.id) && mayReadMetadata(state, x, row), 'Calculation job not found', 404)
  const envelope: CalculationJobEnvelope = { calculationJob: metadata(row) }
  if (row.actor_id === x.actor.id && row.authority_digest === await authorityDigest(state, x) && ['completed', 'failed'].includes(row.status)) {
   const { results } = await c.db.prepare('SELECT ordinal,body FROM e_calculation_job_chunks WHERE job_id=? ORDER BY ordinal').bind(id).all<{ ordinal: number; body: string }>()
