@@ -44,6 +44,7 @@ try {
  await post(owner, '/auth/bootstrap', { token: bootstrap, displayName: 'Fran Finance' }, 303)
  await command('workspace', { name: 'Synthetic attribution studio', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const department = await command('department', { name: 'Sales' })
+ const costs = await command('line', { name: 'Operating costs', type: 'operating-expense' })
  const budget = (await get('/api/easel/state')).scenarios[0]
  const forecast = (await command('approve-budget', { scenario: budget.id, revision: (await get(`/api/easel/scenario/${budget.id}`)).scenario.revision })).forecast
  const frozen = (await db.prepare('SELECT id,body,sha256 FROM e_snapshots ORDER BY id').all()).results
@@ -54,14 +55,30 @@ try {
  const token = new URL(mail.text.match(/https:\/\/\S+\/auth\/confirm\?token=\S+/)[0]).searchParams.get('token')
  await post(planner, '/auth/confirm', { token }, 303)
  const policy = disposition => post(owner, '/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: disposition, class: '*', do: disposition, ...(disposition === 'approval' ? { approver: ['role:owner'], wait: 'P1D' } : {}) }], spend: { none: true } } }, 200, 'PUT')
- const prepare = args => async () => {
-  const response = await planner.request.post(origin + '/mcp', { headers: { origin, 'mcp-protocol-version': '2025-11-25' }, data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'easel.proposals.create', arguments: args } } })
+ const call = async (name, args) => {
+  const response = await planner.request.post(origin + '/mcp', { headers: { origin, 'mcp-protocol-version': '2025-11-25' }, data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } } })
   assert.equal(response.status(), 200, await response.text())
   return (await response.json()).result
+ }
+ const prepare = args => () => call('easel.proposals.create', args)
+ const act = async (name, args, key) => {
+  const result = await call(name, { ...args, idempotency_key: key })
+  assert.equal(result.isError, false, JSON.stringify(result))
+  return result.structuredContent
  }
  await policy('autonomous')
  const autonomous = await prepare({ from: forecast.id, name: 'Autonomous cost alternative', request: 'Prepare a planning alternative', idempotency_key: 'synthetic-easel-auto-1' })()
  assert.equal(autonomous.isError, false, JSON.stringify(autonomous))
+ const alternative = autonomous.structuredContent
+ const expense = { scenario: alternative.id, department: department.id, line: costs.id, name: 'Synthetic planning cost', kind: 'recurring', start: '2026-01', amount: '100' }
+ const added = await act('easel.expenses.update', expense, 'synthetic-easel-add-1')
+ await act('easel.expenses.update', { ...expense, id: added.id, amount: '250' }, 'synthetic-easel-edit-1')
+ await act('easel.inputs.delete', { kind: 'expense', id: added.id }, 'synthetic-easel-delete-1')
+ await act('easel.comments.create', { scenario: alternative.id, department: department.id, text: 'Synthetic planning alternative ready for review.' }, 'synthetic-easel-comment-1')
+ await act('easel.proposals.submit', { id: alternative.id, summary: 'Synthetic reviewed cost alternative' }, 'synthetic-easel-submit-1')
+ const submitted = await get(`/api/easel/scenario/${alternative.id}`)
+ assert.equal(submitted.scenario.proposalStatus, 'submitted')
+ assert.deepEqual(submitted.inputs.expense, [])
  await policy('approval')
  const heldCall = prepare({ from: forecast.id, name: 'Reviewed cost alternative', request: 'Prepare a reviewed planning alternative', idempotency_key: 'synthetic-easel-held-1' })
  const pending = await heldCall(), handle = pending._meta['com.runeditrun/error'].approval
@@ -87,6 +104,12 @@ try {
  const filtered = await get(`/api/easel/activity?actor=${encodeURIComponent(plannerEmail)}`)
  assert.ok(filtered.length >= 4)
  assert.ok(filtered.every(row => row.actor === plannerEmail && row.detail.authority.label === 'MCP client for Pat Planner'))
+ const changed = filtered.find(row => row.record === added.id && row.detail.before?.amountCents === 10000 && row.detail.after?.amountCents === 25000)
+ assert.ok(changed, 'The edited cost retains its before and after values and agent attribution')
+ assert.ok(filtered.some(row => row.record === added.id && row.detail.before?.amountCents === 25000 && row.detail.after === null), 'Removal remains attributed in append-only history')
+ assert.ok(filtered.some(row => row.action === 'comment' && row.scenario === alternative.id))
+ assert.ok(filtered.some(row => row.action === 'proposal-submit' && row.record === alternative.id))
+ assert.ok(filtered.every(row => row.detail.authority.id && row.detail.authority.for.id), 'Display labels retain native authority identifiers')
  const prepared = filtered.filter(row => row.action === 'proposal-create')
  assert.equal(prepared.length, 2, 'A completed-key replay adds no native effect')
  const reviewed = prepared.find(row => row.record === held.id)
@@ -130,6 +153,11 @@ try {
  const exported = sheet.getRows(3, filtered.length).find(row => row.getCell(1).value === reviewed.seq)
  assert.equal(JSON.parse(exported.getCell(10).value).authority.approvers[0].name, 'Fran Finance')
  assert.ok(csvBytes.toString().includes('Fran Finance'))
+ const exportedChange = sheet.getRows(3, filtered.length).find(row => row.getCell(1).value === changed.seq)
+ const exportedDetail = JSON.parse(exportedChange.getCell(10).value)
+ assert.deepEqual(exportedDetail.authority, changed.detail.authority)
+ assert.equal(exportedDetail.before.amountCents, 10000)
+ assert.equal(exportedDetail.after.amountCents, 25000)
  for (const width of [1440, 390]) {
   await page.setViewportSize({ width, height: 1000 }); await settle(page); await noOverflow(page, `Activity ${width}`)
   await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Activity', exact: true }) }).screenshot({ path: join(evidence, `activity-${width}.png`) })
@@ -138,6 +166,7 @@ try {
  assert.ok(await page.locator('.activity-log').evaluate(node => [...node.querySelectorAll('td, th')].every(cell => parseFloat(getComputedStyle(cell).fontSize) >= 13)))
  assert.deepEqual((await db.prepare('SELECT id,body,sha256 FROM e_snapshots ORDER BY id').all()).results, frozen)
  const persisted = (await db.prepare('SELECT * FROM e_activity WHERE seq=?').bind(reviewed.seq).first())
+ const history = (await db.prepare('SELECT * FROM e_activity WHERE actor=? ORDER BY seq').bind(plannerEmail).all()).results
  await command('member', { email: plannerEmail, name: 'Pat Planner', role: 'contributor', departments: [department.id], active: false })
  const erased = await command('person-erase', { email: plannerEmail })
  const erasedRows = await get(`/api/easel/activity?record=${held.id}`)
@@ -147,7 +176,10 @@ try {
  await page.reload(); await page.getByRole('heading', { name: 'Activity', exact: true }).waitFor(); await settle(page)
  assert.ok(!(await page.locator('.activity-log').textContent()).includes('Pat Planner'))
  assert.deepEqual(await db.prepare('SELECT * FROM e_activity WHERE seq=?').bind(reviewed.seq).first(), persisted)
+ const replay = await planner.request.post(origin + '/mcp', { headers: { origin, 'mcp-protocol-version': '2025-11-25' }, data: { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'easel.proposals.create', arguments: { from: forecast.id, name: 'Reviewed cost alternative', request: 'Prepare a reviewed planning alternative', idempotency_key: 'synthetic-easel-held-1' } } } })
+ assert.equal(replay.status(), 401, 'Erasure revokes completed-key replay before any cached content is returned')
+ assert.deepEqual((await db.prepare('SELECT * FROM e_activity WHERE actor=? ORDER BY seq').bind(plannerEmail).all()).results, history)
  assert.deepEqual((await db.prepare('SELECT id,body,sha256 FROM e_snapshots ORDER BY id').all()).results, frozen)
- console.log('PROBE BASE-AGENT-008 point6: /mcp autonomous and held proposals, native owner approval, Activity and downloaded CSV and XLSX -> agent for person, separate approver, preserved filters and snapshots; screens 1440 and 390')
+ console.log('PROBE BASE-AGENT-008 point6: /mcp autonomous proposal edits, removal, comment and submission; held preparation and native owner approval; Activity and downloaded CSV and XLSX -> exact agent for person, separate approver, native identifiers, preserved filters and immutable history and snapshots; revoked replay refused; screens 1440 and 390')
 } catch (error) { if (page) await page.screenshot({ path: join(evidence, 'failed.png'), fullPage: true }).catch(() => {}); throw error }
 finally { await browser?.close(); await mf.dispose(); await rm(scratch, { recursive: true, force: true }) }
