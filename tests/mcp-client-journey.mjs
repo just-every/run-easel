@@ -36,7 +36,8 @@ export async function standaloneClientJourney({ origin, cookie, approve, proof =
     const payload = JSON.stringify({ jsonrpc: '2.0', ...(notification ? {} : { id: ++id }), method,
      params: { ...params, ...(version === legacy ? {} : { _meta: { 'io.modelcontextprotocol/protocolVersion': version } }) } })
     const response = await fetch(origin + path, { method: 'POST', redirect: 'manual', headers: {
-     origin, cookie, accept: 'application/json, text/event-stream', 'content-type': 'application/json',
+     // Refused oversized uploads may close early: keep their sockets out of the native-read pool.
+     origin, cookie, connection: 'close', accept: 'application/json, text/event-stream', 'content-type': 'application/json',
      ...(!handshake ? { 'mcp-protocol-version': version } : {}),
      ...(version === legacy ? {} : { 'mcp-method': method, ...(method === 'tools/call' ? { 'mcp-name': params.name } : {}) }), ...headers,
     }, body: stream ? new ReadableStream({ start(controller) { const bytes = new TextEncoder().encode(payload); for (let offset = 0; offset < bytes.length; offset += 65536) controller.enqueue(bytes.slice(offset, offset + 65536)); controller.close() } }) : payload,
