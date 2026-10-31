@@ -94,7 +94,7 @@ qualification remain unproved; BASE-AGENT-003 stays partial.
 
 ## Declared subset and current limits
 
-This adoption declares tools, policy, pause, audit, idempotency scenario resources and specialist
+This adoption declares tools, policy, pause, audit, idempotency, scenario resources and specialist
 job prompts. The registry-generated [agent guide](/docs/agents) lists every tool,
 its scope and computed-class proof, the resource and event inventories, limits
 and errors. Regenerate it with `node scripts/agent-docs.mjs write` and check it
@@ -102,7 +102,7 @@ with `node scripts/agent-docs.mjs check`. Discovery serves the same generated
 planning instructions. Retrieve `easel.proposal.prepare` or
 `easel.variance.explain` through `prompts / get`; both preserve native human gates. It retains current native principal authorization and owner-bound
 tokens. It does not declare resource refresh, the full resource catalogue, native event handoffs or
-subscriptions, multiple verification sponsors, or provider and mail edges. Events and subscriptions are typed-refused as undeclared.
+subscriptions, or provider and mail edges. Independent native sponsors retain separate private proposals, approvals and revocation; Business detachment refuses their Business tokens while native sign-in remains available. Events and subscriptions are typed-refused as undeclared.
 The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.

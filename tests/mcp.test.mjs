@@ -365,19 +365,11 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
  assert.deepEqual(await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(), beforePromptPolicy, 'Held and refused prompt retrieval never makes a financial decision')
  await adoptPromptPolicy([{ id: 'all', class: '*', do: 'autonomous' }])
 
- // Frozen model bytes retain their capture; current erasure transforms all reads.
- await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id], active: false })
- const capturesBeforeErasure = (await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results
- assert.equal((await rpc('tools/list')).status, 401)
+ await cmd('member', { email: 'planner@example.test', name: 'planner', role: 'contributor', departments: [sales.id], active: false })
  assert.equal((await rpc('prompts/get', { name: prompts.prompts[0].name })).status, 401)
- await cmd('person-erase', { email: address('planner') })
- const erasedProposal = contents(await read(proposalLink.uri, h.owner))
- assert.ok(!JSON.stringify(erasedProposal).includes(address('planner')))
- assert.match(erasedProposal.scenario.createdBy, /Erased person/)
- assert.deepEqual((await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results, capturesBeforeErasure)
- console.log('PROBE BASE-AGENT-003 erasure: native person erasure then /mcp proposal read -> erased attribution; captures unchanged; former session refused')
  assert.equal((await rpc('tools/list')).status, 401)
  assert.equal((await read(proposalLink.uri)).status, 401)
+ console.log('PROBE membership-deactivation: native member active:false then /mcp tools and resource reads -> immediate 401 without person erasure')
 
  const keys = await webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
  const kid = 'synthetic-easel-1'
@@ -422,4 +414,44 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
  console.log('PROBE BASE-AGENT-003 consent: signed Business consent revoked during /mcp read -> consent_revoked without content; next read 401')
 
  await pairedSignIn(t)
+})
+
+test('BASE-AGENT-003 person erasure transforms MCP attribution without changing captures', async t => {
+ const h = await harness()
+ t.after(() => h.close())
+ const email = ['planner', 'example.test'].join('@')
+ await h.command('workspace', { name: 'Synthetic erasure fixture', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const sales = await h.command('department', { name: 'Sales' })
+ const contributor = await h.person(email, 'contributor', [sales.id])
+ const budget = (await h.get('/api/easel/state')).scenarios.find(s => s.kind === 'budget')
+ const { forecast } = await h.command('approve-budget', { scenario: budget.id, revision: budget.revision })
+ await h.agentPolicy()
+ let nextId = 1
+ const rpc = async (method, params, cookie = contributor) => {
+  const response = await h.mf.dispatchFetch(`${h.origin}/mcp`, { method: 'POST', headers: { origin: h.origin, cookie, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25', accept: 'application/json, text/event-stream' }, body: JSON.stringify(agentMessage({ jsonrpc: '2.0', id: nextId++, method, params })) })
+  return { status: response.status, body: await response.json() }
+ }
+ const created = await rpc('tools/call', { name: 'proposal-create', arguments: { from: forecast.id, name: 'Synthetic erasure proposal', request: 'Review sales costs' } })
+ assert.equal(created.status, 200)
+ assert.ok(!created.body.result.isError, JSON.stringify(created.body))
+ const uri = created.body.result.content.find(item => item.type === 'resource_link').uri
+ const read = async (cookie = contributor) => rpc('resources/read', { uri }, cookie)
+ const contents = response => {
+  assert.equal(response.status, 200)
+  assert.ok(!response.body.error, JSON.stringify(response.body))
+  return JSON.parse(response.body.result.contents[0].text)
+ }
+ assert.equal(contents(await read()).scenario.createdBy, email)
+ assert.equal((await rpc('tools/list')).status, 200)
+ const capturesBeforeErasure = (await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results
+ assert.ok(capturesBeforeErasure.length > 0)
+ await h.command('member', { email, name: 'planner', role: 'contributor', departments: [sales.id], active: false })
+ await h.command('person-erase', { email })
+ const erasedProposal = contents(await read(h.owner))
+ assert.ok(!JSON.stringify(erasedProposal).includes(email))
+ assert.match(erasedProposal.scenario.createdBy, /Erased person/)
+ assert.deepEqual((await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results, capturesBeforeErasure)
+ assert.equal((await rpc('tools/list')).status, 401)
+ assert.equal((await read()).status, 401)
+ console.log('PROBE erasure: native deactivation and person erasure then /mcp proposal read -> erased attribution, unchanged captures and former session 401')
 })
