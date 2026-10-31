@@ -47,6 +47,22 @@ qualify the existing planning catalogue and owner binding; they do not qualify
 real Business transport, wider administration, approval wait expiration, money
 thresholds, daily caps, upgrade questions or additional agent doors.
 
+## Live sponsor authority
+
+Authority changes apply to an already-issued credential. A native owner narrowing
+the sponsor's departments changes the next scenario read, including an approved
+read resumed with its original `requestState`. A contributor changed to a viewer
+retains the native viewer projection of public plans and loses private proposals
+and planning writes. Deactivating the sponsor through `/auth/operator/status`
+returns HTTP 401 on the next call. Completed mutation keys cannot recover content
+or create another effect after the relevant native authority is removed.
+
+This qualification covers synchronous scenario reads, proposal creation and
+expense updates on both MCP paths under autonomous and held policies, using real
+native invitation, confirmation and named-owner approval. It does not establish
+full role-by-tool parity, folder or byte budgets, access and security tools,
+grant administration, injection acceptance or real Business transport.
+
 ## Supported planning work
 
 Specialist tools use `planning:read` or `planning:write`. The native sponsor still needs
