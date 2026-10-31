@@ -31,6 +31,11 @@ try {
   await page.getByRole('heading', { name: 'Expenses', exact: true }).waitFor()
   await settle()
   const picker = page.getByLabel('Scenario', { exact: true })
+  if (!await picker.evaluate((select, id) => [...select.options].some(option => option.value === id), draft.id)) {
+   // Proposals prepared through HTTP must enter the current native page state.
+   await page.reload()
+   await page.getByRole('heading', { name: 'Expenses', exact: true }).waitFor()
+  }
   if (await picker.inputValue() !== draft.id) {
    const loaded = page.waitForResponse(row => new URL(row.url()).pathname === `/api/easel/scenario/${draft.id}`)
    await picker.selectOption(draft.id)
@@ -38,15 +43,33 @@ try {
   }
   await page.getByRole('table', { name: 'Expenses', exact: true }).waitFor()
  }
- const screen = async name => {
-  // Assertions use the desktop viewport. The phone rendering is recorded once.
+ const screen = async (name, draft) => {
+  // Assertions use desktop. A fresh phone page records its ordinary initial layout.
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
-  for (const width of [1440, 390]) {
-   await page.setViewportSize({ width, height: 1000 })
-   await page.screenshot({ path: join(evidence, `${name}-${width}.png`), fullPage: true })
-  }
-  await page.setViewportSize({ width: 1440, height: 1000 })
+  const title = draft ? 'Expenses' : 'Activity'
+  await page.getByRole('heading', { name: title, exact: true }).evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
+  await page.screenshot({ path: join(evidence, `${name}-1440.png`), animations: 'disabled' })
+  const phone = await context.newPage()
+  try {
+   await phone.setViewportSize({ width: 390, height: 1000 })
+   await phone.goto(page.url())
+   await phone.getByRole('heading', { name: title, exact: true }).waitFor()
+   if (!draft) await phone.locator('.activity-log tbody tr').first().waitFor()
+   if (draft) {
+    const picker = phone.getByLabel('Scenario', { exact: true })
+    if (await picker.inputValue() !== draft.id) {
+     const loaded = phone.waitForResponse(row => new URL(row.url()).pathname === `/api/easel/scenario/${draft.id}`)
+     await picker.selectOption(draft.id)
+     await loaded
+    }
+    await phone.getByRole('table', { name: 'Expenses', exact: true }).getByRole('row').filter({ hasText: 'Synthetic one-off expense' }).getByRole('button', { name: 'Edit', exact: true }).click()
+    await phone.getByLabel('Planned payment date', { exact: true }).waitFor()
+   }
+   await phone.getByRole('heading', { name: title, exact: true }).evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }))
+   await phone.screenshot({ path: join(evidence, `${name}-390.png`), animations: 'disabled' })
+  } finally { await phone.close() }
  }
+
  await expenseParityJourney({ origin: runtime.origin, cookie, proof: line => console.log(`PROBE ${line}`),
   mutateNative: async ({ op, body, stage, fixture, draft }) => {
    await plan(draft)
@@ -105,20 +128,25 @@ try {
      const text = await row.innerText()
      for (const expected of ['Vendor costs', 'Operations', fixture.kind, `$${fixture[stage].amount}`]) assert.ok(text.includes(expected), `${name} Plan row: ${text}`)
     }
-    if (stage === 'edit' && fixture.kind === 'one-off' && policy === 'held' && path === '/api/easel/mcp') await screen(`${name}-plan`)
+    if (stage === 'edit' && fixture.kind === 'one-off' && policy === 'held' && path === '/api/easel/mcp') {
+     await row.getByRole('button', { name: 'Edit', exact: true }).click()
+     assert.equal(await page.getByLabel('Planned payment date', { exact: true }).inputValue(), fixture.edit.paymentDate)
+     await screen(`${name}-plan`, draft)
+    }
    }
   },
  })
  await page.goto(runtime.origin + '/app?tab=activity')
  await page.getByRole('heading', { name: 'Activity', exact: true }).waitFor()
+ await page.locator('.activity-log tbody tr').first().waitFor()
  for (const what of ['Added a expense', 'Changed a expense', 'Removed a expense']) {
   const rows = page.locator('.activity-log tbody tr').filter({ has: page.locator('[data-label="What"]').getByText(what, { exact: true }) })
   const actors = await rows.locator('[data-label="Who"]').allTextContents()
-  assert.ok(actors.some(text => text === 'Fran Finance'))
+  assert.ok(actors.some(text => text === 'Fran Finance'), `${what}: ${JSON.stringify(actors)}`)
   assert.ok(actors.some(text => text.startsWith('MCP client for Fran Finance') && text.includes('Approved by Fran Finance')))
  }
  await screen('activity')
  await context.close()
  console.log('Built native Plan and MCP expense parity passed for both paths and policies, all four form kinds, every create, edit and removal; Plan, Activity and named-person approval screens at 1440 and 390')
-} catch (error) { await page?.screenshot({ path: join(evidence, 'failed.png'), fullPage: true }).catch(() => {}); throw error }
+} catch (error) { await page?.screenshot({ path: join(evidence, 'failed.png') }).catch(() => {}); throw error }
 finally { await browser?.close(); await runtime.close() }
