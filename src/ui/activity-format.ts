@@ -1,5 +1,6 @@
 import { balanceTarget } from '../easel/balance-targets'
 import { fiscalMonths, monthLabel, type D } from './shared'
+export { activityAttribution } from '../easel/activity-attribution'
 
 const events: Record<string, string> = {
  'token-issued': 'Issued an API token', 'token-revoked': 'Revoked an API token', 'api-token-used': 'Used an API token',

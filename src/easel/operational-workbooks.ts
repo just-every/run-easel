@@ -2,6 +2,7 @@ import { balanceActualsSheets } from './balance-actuals-workbook'
 // Finance's reconciliation and activity reports share the workbook export door.
 import { workbook, type Cell } from './xlsx-write'
 import type { Data } from './types'
+import { activityAttribution } from './activity-attribution'
 
 export function actualsWorkbook(view: Data, currency: string): Uint8Array {
  const rows: Cell[][] = [[`Reconciliation · ${currency} minor units`], ['Month', 'Rows', 'Imported', 'Mapped', 'Excluded', 'Cash', 'Unmapped', 'Revenue', 'Costs', 'Difference', 'Mapping status', 'Other balance sheet']]
@@ -11,8 +12,8 @@ export function actualsWorkbook(view: Data, currency: string): Uint8Array {
  return workbook([{ name: 'Reconciliation', rows }, { name: 'Unmapped accounts', rows: [['Period', 'Account', 'Rows', 'Amount in minor units', 'Reason'], ...view.unmapped.map((m: Data) => [m.period, m.account, m.rows, m.amount, m.reason])] }, ...balanceActualsSheets(view.trialBalances, currency)])
 }
 export function activityWorkbook(events: Data[]): Uint8Array {
- const rows: Cell[][] = [['Complete filtered activity'], ['Sequence', 'At', 'Actor', 'Name', 'Action', 'Record', 'Scenario', 'Before revision', 'After revision', 'Detail', 'Events']]
- for (const e of events) rows.push([e.seq, e.at, e.actor, e.actorName ?? '', e.action, e.record, e.scenario ?? '', e.beforeRevision ?? null, e.afterRevision ?? null, JSON.stringify(e.detail), 1])
+ const rows: Cell[][] = [['Complete filtered activity'], ['Sequence', 'At', 'Actor', 'Attribution', 'Action', 'Record', 'Scenario', 'Before revision', 'After revision', 'Detail', 'Events']]
+ for (const e of events) rows.push([e.seq, e.at, e.actor, activityAttribution(e), e.action, e.record, e.scenario ?? '', e.beforeRevision ?? null, e.afterRevision ?? null, JSON.stringify(e.detail), 1])
  const last = rows.length
  rows.push(['Total events', '', '', '', '', '', '', '', '', '', { formula: last > 2 ? `SUM(K3:K${last})` : '0', value: events.length }])
  return workbook([{ name: 'Activity', rows }])
