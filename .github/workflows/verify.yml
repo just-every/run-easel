@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [types-site, domain-1, domain-2, domain-3, domain-4, runtime]
+        shard: [types-site, domain-1, domain-2, domain-3-1, domain-3-2, domain-3-3, domain-4, runtime]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -99,11 +99,17 @@ jobs:
         if: matrix.shard == 'types-site'
         run: pnpm typecheck && pnpm exec rer build --site
       - name: Domain flows
-        if: startsWith(matrix.shard, 'domain-')
+        if: startsWith(matrix.shard, 'domain-') && !startsWith(matrix.shard, 'domain-3-')
         env:
           TEST_SHARD: ${{ matrix.shard }}
         # Keep every flow while leaving room for the full-history provider journeys.
         run: node --test --test-concurrency=1 --test-shard="${TEST_SHARD#domain-}/4" tests/*.test.mjs
+      - name: Domain flows (part of domain 3)
+        if: startsWith(matrix.shard, 'domain-3-')
+        env:
+          TEST_SHARD: ${{ matrix.shard }}
+        # Shard 3 of 4 holds the slowest provider and import suites, so three jobs split its files by measured time.
+        run: node scripts/ci/test-shard.mjs 3/4 "${TEST_SHARD#domain-3-}/3"
       - name: Built runtime
         if: matrix.shard == 'runtime'
         run: pnpm exec rer build
