@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "8e3e1ec240c5940b2f060b20c9eae131dea56c2a8adb8fab1afb2c40aae3b747",
+      "sha256": "dd2a16dfd1d27698a08ead1d61758d37945b55e613d3e844b1bc4820f0a14fb9",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "3f7cdea565a041a40b54c7bd10862e9e480fc6f0bf68f38230727539324ac273",
+      "sha256": "3658e513d6b8663709cf467d462b1ca267f3a6eb5a210ed4da3d976e68742a34",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6091,15 +6091,15 @@
       "executable": false
     },
     "tests/agent-capacity-browser.mjs": {
-      "sha256": "533e1289dc4801eae64b5c3f52b0fcab6367bf3fd90f0c6cbbe0d5bfa69bfcdf",
+      "sha256": "a8bfd06550b9a9fcd38c948545d20a634c23c94f82929b5afe8865a8cd4b1e72",
       "executable": false
     },
     "tests/agent-capacity-journey.mjs": {
-      "sha256": "ae85f6c3d7b619162864c15b58ec34de732b82c4e17dfe052ce9f8adaf9d98b6",
+      "sha256": "0e0c7308066f80ef2e16fd89077296785b0e863e69177aff0c4cc826fa40c0b6",
       "executable": false
     },
     "tests/agent-capacity.test.mjs": {
-      "sha256": "2797678ddc0bcc64fc5c8a727b1695dc70e221519a31f58fe8be63ba8b758035",
+      "sha256": "a27429d95a0c91c69d06e28209b9511dcda2cfb498f9470daceb81ca4032b61a",
       "executable": false
     },
     "tests/agent-docs-browser.mjs": {

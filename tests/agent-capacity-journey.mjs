@@ -17,7 +17,7 @@ export async function capacitySigning() {
  }
 }
 
-export async function agentCapacityJourney({ origin, cookie, signing, approve, inspect = async () => {}, proof = () => {} }) {
+export async function agentCapacityJourney({ origin, cookie, signing, approve, pause, inspect = async () => {}, proof = () => {} }) {
  let id = 0
  const native = async (path, body, method = body === undefined ? 'GET' : 'POST') => {
   const response = await fetch(origin + path, { method, redirect: 'manual', signal: AbortSignal.timeout(15000),
@@ -52,9 +52,13 @@ export async function agentCapacityJourney({ origin, cookie, signing, approve, i
  await native('/api/rer/business-settings', { settings })
  const receipts = []
  for (const policy of ['autonomous', 'held']) {
-  const envelope = await policyEnvelope(context, policy === 'held' ? heldPolicy() : autonomousPolicy())
-  await native('/api/rer/agent-policy', { policy: envelope.policy })
-  context.revision = envelope.payload.revision; context.seq = envelope.payload.seq
+  const document = policy === 'held' ? heldPolicy() : autonomousPolicy()
+  const adopt = async paused => {
+   const envelope = await policyEnvelope(context, document, { paused })
+   await native('/api/rer/agent-policy', { policy: envelope.policy })
+   context.revision = envelope.payload.revision; context.seq = envelope.payload.seq
+  }
+  await adopt(false)
   const token = await accessToken({ ...context, agentId: `synthetic-easel-capacity-${policy}`, consent: randomUUID() })
   const independent = await accessToken({ ...context, agentId: `synthetic-easel-independent-${policy}`, consent: randomUUID() })
   const rpc = (path, credential, method, params) => rawAgentRequest(origin, path, credential, ++id, method, params)
@@ -145,6 +149,60 @@ export async function agentCapacityJourney({ origin, cookie, signing, approve, i
   const receipt = { policy, capacity, accepted, retryAfter, elapsedMs: Math.floor(elapsed), proposal: proposal.id }
   receipts.push(receipt)
   proof(`BASE-AGENT-011 recovery ${policy}: same credential and refused mutation key after ${receipt.elapsedMs}ms (advertised ${retryAfter}s) -> both endpoints usable and one proposal${policy === 'held' ? ' only after native person approval' : ''}; approved plan unchanged`)
+
+  // Capacity recovery must not bypass either independent Pause control. Use
+  // the issued credentials and the completed private result, not empty data.
+  receipt.pause = []
+  for (const control of ['local', 'business']) {
+   const toggle = async paused => {
+    if (control === 'business') await adopt(paused)
+    else if (pause) await pause({ paused, native, policy })
+    else await native('/agents/api/pause', { paused })
+   }
+   const started = performance.now()
+   await toggle(true)
+   assert.equal((await native('/agents/api/state')).paused[control], true)
+   const beforePause = await snapshot()
+   for (const credential of [token, independent]) {
+    for (const path of ['/mcp', '/api/easel/mcp']) {
+     for (const params of [
+      { name: 'easel.scenarios.list', arguments: {} },
+      { name: 'easel.proposals.create', arguments: { ...args, name: `Synthetic ${policy} ${control} paused proposal`, idempotency_key: `synthetic-easel-${policy}-${control}-paused` } },
+      ...(credential === token ? [{ name: 'easel.proposals.create', arguments: args }] : []),
+     ]) {
+      const refused = result(await rpc(path, credential, 'tools/call', params))
+      assert.equal(refused.isError, true)
+      assert.equal(refused._meta['com.runeditrun/error'].code, 'agents_paused')
+      assert.equal(refused.structuredContent, undefined, 'Pause also conceals completed private outcomes')
+     }
+    }
+   }
+   const stoppedMs = Math.ceil(performance.now() - started)
+   assert.ok(stoppedMs <= 60000, 'Both issued agents stop within sixty real seconds')
+   assert.deepEqual(await snapshot(), beforePause, 'Paused reads, fresh writes and completed-key retries create no native effect or approval')
+   const agentResume = await fetch(origin + '/agents/api/pause', { method: 'POST',
+    headers: { origin, authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ paused: false }), signal: AbortSignal.timeout(15000) })
+   assert.equal(agentResume.status, 403)
+   assert.equal((await agentResume.json()).code, 'person_session_required')
+   assert.equal((await native('/agents/api/state')).paused[control], true)
+   assert.deepEqual(await snapshot(), beforePause, 'An agent cannot resume or mutate the paused installation')
+   const personComment = await command('comment', { scenario: forecast.id, department: department.id, text: `Synthetic ${policy} person works during ${control} Pause` })
+   assert.ok((await native('/api/easel/activity')).some(row => row.action === 'comment' && row.record === personComment.id))
+   await inspect({ phase: 'paused', control, policy, args, native, forecast })
+   await toggle(false)
+   assert.deepEqual((await native('/agents/api/state')).paused, { local: false, business: false })
+   for (const credential of [token, independent]) {
+    for (const path of ['/mcp', '/api/easel/mcp']) {
+     const resumed = result(await rpc(path, credential, 'tools/call', { name: 'easel.scenarios.list', arguments: {} }))
+     assert.equal(resumed.isError, false, JSON.stringify(resumed))
+     assert.ok(JSON.stringify(resumed.structuredContent).includes(proposal.id), 'Resume restores access to populated native records')
+    }
+   }
+   assert.deepEqual(await native(`/api/easel/scenario/${budget.id}`), frozen)
+   await inspect({ phase: 'resumed', control, policy, args, native, forecast, proposal })
+   receipt.pause.push({ control, stoppedMs })
+   proof(`BASE-AGENT-011 pause ${policy} ${control}: two issued agents across both MCP paths refuse reads, new mutations and completed-key retries in ${stoppedMs}ms -> no private result, planning effect or pending approval; agent resume returns 403; native person saves; person resume restores both agents`)
+  }
  }
  return receipts
 }
