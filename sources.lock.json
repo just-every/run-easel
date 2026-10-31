@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "0d0a9b431a0f2539bd2d53b47084b32b55700727cee31840362d9f58555c35f4",
+      "sha256": "cddb4caa4c4e5eb031ac75bd8635b1ecf34bb5c97052239a9fe7e54758d79234",
       "executable": false
     },
     "DEMO.md": {
@@ -227,7 +227,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "7322699ef910539fe85acfef3f45b95d33130f0ecfaf9d9c5afafe34771c37be",
+      "sha256": "0b4c2ded7cc1a9354ee039e033361b99e8d284b250f8627755d5f638f79c72b0",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6582,6 +6582,18 @@
       "sha256": "c788f8f9e72e4dd30dfc40133f4262b472126ca94e40ea77e575ea13b8341da6",
       "executable": false
     },
+    "tests/mcp-client-browser.mjs": {
+      "sha256": "3567849b83a906bfd2277f599a81cdc605dcd9db827a2590cf3719f84bdedd85",
+      "executable": false
+    },
+    "tests/mcp-client-journey.mjs": {
+      "sha256": "c4f4ab906d60dc106501bcb253c10e2670a4502dfab3f1163fe2734a73b0e65a",
+      "executable": false
+    },
+    "tests/mcp-client.test.mjs": {
+      "sha256": "464d403cfe3bd731b2fc91f13620472230fe31b617cb14ad2cdda5827512aef8",
+      "executable": false
+    },
     "tests/mcp.test.mjs": {
       "sha256": "aa58aa3f3bb0c80474952c6c6d58ebc3f57e2cc6d8c7558bd0be75d05eedcf05",
       "executable": false
@@ -6963,7 +6975,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "56561a6939f06687796f03979fee10d44da68fb3c4c36618b3db3a1ccd763488",
+      "sha256": "6dab4aeb094c3e94bca7823d0c0ce11939a1ae114b19df6b22040d24d26a1e51",
       "executable": false
     },
     "vite.config.ts": {
