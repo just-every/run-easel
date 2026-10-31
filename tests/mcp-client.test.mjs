@@ -39,20 +39,32 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
  const department = state.departments[0], payroll = state.lines.find(row => row.payroll)
  const forecast = state.scenarios.find(row => row.kind === 'forecast')
  const email = ['synthetic-easel-replay', 'example.test'].join('@')
- const sponsor = await h.person(email, 'contributor', [department.id])
+ let sponsor = await h.person(email, 'contributor', [department.id])
+ const sponsorId = (await h.get('/auth/operators')).find(row => row.email === email).id
+ const signIn = async () => {
+  assert.equal((await h.send('/auth/magic-link', { email })).status, 202)
+  const message = h.messages.filter(row => row.to.includes(email)).at(-1)
+  const link = message.text.match(/http:\/\/\S+\/auth\/confirm\?token=\S+/)[0]
+  const confirmed = await h.send('/auth/confirm', { token: new URL(link).searchParams.get('token') })
+  assert.equal(confirmed.status, 303)
+  assert.ok(confirmed.cookie, 'Native sign-in issued a session')
+  sponsor = confirmed.cookie
+ }
  const other = await h.command('department', { name: 'Synthetic other department' })
  let requestId = 1000
  for (const policy of ['autonomous', 'held']) {
   await h.command('member', { email, name: 'Synthetic replay sponsor', role: 'contributor', departments: [department.id] })
+  await signIn()
   const configured = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', spend: { none: true }, reviewers: ['role:owner'],
    rules: policy === 'autonomous' ? [{ id: 'all', class: '*', do: 'autonomous' }] : [{ id: 'sensitive', class: '*', do: 'approval', approver: ['role:owner'], wait: 'P1D' }, { id: 'ordinary', class: 'standard', do: 'review' }],
   } }, h.owner, 'PUT')
   assert.equal(configured.status, 200)
-  const call = async (name, args, path = '/mcp') => {
+  const call = async (name, args, path = '/mcp', status = 200) => {
    const response = await fetch(h.origin + path, { method: 'POST', headers: { origin: h.origin, cookie: sponsor, 'content-type': 'application/json', 'mcp-protocol-version': '2026-07-28', 'mcp-method': 'tools/call', 'mcp-name': name },
     body: JSON.stringify({ jsonrpc: '2.0', id: ++requestId, method: 'tools/call', params: { name, arguments: args, _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } }) })
-   assert.equal(response.status, 200)
-   return (await response.json()).result
+   assert.equal(response.status, status)
+   const body = await response.json()
+   return status === 200 ? body.result : body
   }
   const complete = async (name, args) => {
    let answer = await call(name, args)
@@ -90,6 +102,8 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
   assert.deepEqual(await h.get('/api/easel/activity'), history)
   console.log(`PROBE BASE-AGENT-012 authority: ${policy} completed formula and submission keys after native Pay and department revocation -> forbidden, no cached content or native effect`)
   await h.command('member', { email, name: 'Synthetic replay sponsor', role: 'finance', departments: [] })
+  assert.equal((await h.send('/auth/operator/role', { operatorId: sponsorId, role: 'admin' }, h.owner)).status, 200)
+  await signIn()
   const financeDraft = await complete('easel.proposals.create', { from: forecast.id, name: `Synthetic ${policy} finance recovery`, request: 'Synthetic finance assumptions', idempotency_key: `synthetic-easel-${policy}-finance-create` })
   const allocationArgs = { scenario: financeDraft.id, name: 'Synthetic finance allocation', sourceDepartment: state.departments.find(row => row.shared).id,
    basis: 'fixed', targets: [{ department: department.id, percent: '100' }], idempotency_key: `synthetic-easel-${policy}-finance-allocation` }
@@ -101,15 +115,16 @@ test('Standalone MCP clients negotiate both versions and preserve native state a
    assert.deepEqual((await call(tool, args)).structuredContent, written, 'Finance recovers the exact recorded singleton input')
   }
   await h.command('member', { email, name: 'Synthetic replay sponsor', role: 'contributor', departments: [department.id] })
+  assert.equal((await h.send('/auth/operator/role', { operatorId: sponsorId, role: 'member' }, h.owner)).status, 200)
   const financeBefore = { view: await h.get(`/api/easel/scenario/${financeDraft.id}`), activity: await h.get('/api/easel/activity') }
   for (const path of ['/mcp', '/api/easel/mcp']) for (const [tool, args] of receipts) {
-   const refused = await call(tool, args, path)
-   assert.equal(refused.isError, true)
-   assert.equal(refused._meta['com.runeditrun/error'].code, 'forbidden')
-   assert.equal(refused.structuredContent, undefined, 'A retained singleton outcome cannot bypass current finance authority')
+   const refused = await call(tool, args, path, 401)
+   assert.equal(refused.result, undefined)
+   assert.equal(refused.structuredContent, undefined, 'A revoked native session cannot return its retained singleton outcome')
+   assert.ok(!JSON.stringify(refused).includes(financeDraft.id))
   }
   assert.deepEqual({ view: await h.get(`/api/easel/scenario/${financeDraft.id}`), activity: await h.get('/api/easel/activity') }, financeBefore)
-  console.log(`PROBE BASE-AGENT-012 finance authority: ${policy} allocation and tax keys after native finance downgrade at both endpoints -> forbidden, no cached content or effect`)
+  console.log(`PROBE BASE-AGENT-012 finance authority: ${policy} allocation and tax keys after native finance downgrade at both endpoints -> 401 for the revoked session, no cached content or effect`)
 
  }
  // Retained outcomes cannot restore a different person's erased identity.

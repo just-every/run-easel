@@ -6619,11 +6619,11 @@
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
-      "sha256": "6eadc050c75fdaccbf2d554701bf64ebf950c02496e10567e3a600d9eb35476b",
+      "sha256": "925db3aeb754b284dc0a03580e86d67ae4ef6f9f20ac9369dc33516e0357d74e",
       "executable": false
     },
     "tests/mcp-client.test.mjs": {
-      "sha256": "1f33cd766b45ad63e85ce1eb5b277384e8f953c877fda6c71c20fcc83434ac1e",
+      "sha256": "546644002d488332172b00ffbb4287555a27840ed7fbd5aad0914a15a16ad67a",
       "executable": false
     },
     "tests/mcp.test.mjs": {

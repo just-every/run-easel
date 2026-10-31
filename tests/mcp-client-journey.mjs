@@ -289,7 +289,7 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
      resume = { ...params, ...(pending.requestState ? { requestState: pending.requestState } : {}) }
     }
     edge.arm(dropMode)
-    await assert.rejects(rpc('tools/call', resume, { throughEdge: true }), error => error instanceof TypeError && ['fetch failed', 'terminated'].includes(error.message))
+    await assert.rejects(rpc('tools/call', resume, { throughEdge: true }), error => error instanceof TypeError && (dropMode === 'body' ? ['fetch failed', 'terminated'].includes(error.message) : error.message === 'fetch failed'))
     const lost = edge.dropped
     assert.equal(lost.status, 200)
     assert.ok(!lost.body.error, JSON.stringify(lost.body))
