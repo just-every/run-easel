@@ -63,8 +63,9 @@
       "commands": [
         "pnpm exec rer build",
         "pnpm typecheck",
-        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs",
-        "node tests/agent-attribution-browser.mjs"
+        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs tests/agent-policy.test.mjs",
+        "node tests/agent-attribution-browser.mjs",
+        "node tests/agent-policy-browser.mjs"
       ]
     }
   ],
@@ -225,6 +226,8 @@
     "tests/workbook-undo.test.mjs": [],
     "tests/working-capital-browser.mjs": [],
     "tests/working-capital.test.mjs": [],
-    "tests/xero.test.mjs": []
+    "tests/xero.test.mjs": [],
+    "tests/agent-policy.test.mjs": [],
+    "tests/agent-policy-browser.mjs": []
   }
 }
