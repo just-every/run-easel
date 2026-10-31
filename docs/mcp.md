@@ -146,6 +146,34 @@ The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.
 
+## Request capacity and recovery
+
+The production capacity is 600 authenticated requests per fixed minute per
+agent. Both `POST /mcp` and `POST /api/easel/mcp` consume the same agent bucket;
+switching endpoint paths does not reset it. This installation protection is
+separate from company policy and any daily business-volume or provider-spend
+rules. Discovery advertises the current capacity and body-size limits.
+
+An exhausted agent receives HTTP 429 with JSON-RPC error data
+`code: "rate_limited"` and an integer `Retry-After` of 1 to 60 seconds. Wait that
+real interval before retrying. Admission refuses the call before planning effects
+or pending approvals are created. Other agents have independent capacity, and
+native person sessions continue to read and save planning work. Recovery retains
+the current company policy: a sensitive proposal under held policy still needs
+the named person's approval. Keep the original mutation key when retrying;
+a refused call does not reserve an outcome or create a proposal.
+
+`tests/agent-capacity.test.mjs` and `tests/agent-capacity-browser.mjs` run the
+same raw HTTP journey against workerd and the built application under autonomous
+and held policies. The client observes 429 directly, exhausts the unchanged
+production allowance across both paths, checks native state and approvals,
+measures recovery after the advertised interval and verifies one effect from the
+original refused key. The browser inspects native proposals and approvals at
+1440, with screen captures at 1440 and 390. These journeys do not change clocks,
+counters or capacity limits. Provider spend, mail edges, resource-refresh budgets,
+business-volume policy thresholds and usage qualification remain outside this
+bounded capacity proof; spend remains none.
+
 ## Standalone client compatibility
 
 Both endpoint paths accept native sessions with the installation's matching
@@ -182,6 +210,36 @@ wait for a named person's native approval; completed caller-key retries return
 the same record without another native effect. This standalone qualification
 does not establish dual-host deployment, real Business transport or pairing,
 or the undeclared resource and prompt families.
+
+### Recovering a lost synchronous response
+
+Keep the original arguments and `idempotency_key` when a completed write's
+response is lost. Send the retry with a new JSON-RPC id. A new key would request
+a new operation. Native authority and current policy still apply on recovery;
+a retained result is not a way around a current refusal.
+
+The existing standalone client journeys also put a real HTTP proxy between
+the client and each endpoint. The proxy consumes the complete successful
+upstream response, then closes the downstream connection before sending any
+response bytes. The client observes a transport failure after the real native
+proposal creation has completed. Its retry sends unchanged arguments and the
+original key, receives the complete recorded proposal, and adds no native
+record, Activity entry or approval. Both autonomous and held policies run.
+For held work, the named native owner first approves the saved request; the
+proxy then drops the completed MCP response, and recovery retains that human
+decision and its attribution. It does not simulate cancelling an approval.
+
+`tests/mcp-client.test.mjs` checks the native proposal, Activity and unchanged
+approved snapshot, including stored snapshot bytes and hashes.
+`tests/mcp-client-browser.mjs` repeats the wire journey against the production
+build, checks the resulting proposals and Activity, and records those screens
+at 1440 and 390. Both run in the existing agent-door verification shard.
+This bounds BASE-AGENT-012 acceptance point 2 to completed synchronous proposal
+creation through `/mcp` and `/api/easel/mcp`. Queued work, uncertain provider
+delivery, cross-person background-job handles, 24-hour retention and the rest
+of the clause remain unqualified. Resource refresh, events, subscriptions,
+the broader administrative registry and stranger-finance-week qualification
+remain held; no Base or rer change is implied.
 
 The unmerged ct surface at `0fdce273b4c78b98414fdc780b8160950e4fbfb5`
 is a broader target. Administrative access/security changes, connectors, erasure,
