@@ -64,11 +64,12 @@
         "node scripts/agent-docs.mjs check",
         "pnpm exec rer build",
         "pnpm typecheck",
-        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs tests/mcp-client.test.mjs tests/agent-policy.test.mjs",
+        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs tests/mcp-client.test.mjs tests/agent-policy.test.mjs tests/agent-action-parity.test.mjs",
         "node tests/agent-attribution-browser.mjs",
         "node tests/agent-docs-browser.mjs",
         "perl -e 'alarm 1200; exec @ARGV' -- node tests/mcp-client-browser.mjs",
-        "node tests/agent-policy-browser.mjs"
+        "node tests/agent-policy-browser.mjs",
+        "perl -e 'alarm 1200; exec @ARGV' -- node tests/agent-action-parity-browser.mjs"
       ]
     }
   ],
@@ -234,6 +235,8 @@
     "tests/mcp-client.test.mjs": [],
     "tests/mcp-client-browser.mjs": [],
     "tests/agent-policy.test.mjs": [],
-    "tests/agent-policy-browser.mjs": []
+    "tests/agent-policy-browser.mjs": [],
+    "tests/agent-action-parity.test.mjs": [],
+    "tests/agent-action-parity-browser.mjs": []
   }
 }

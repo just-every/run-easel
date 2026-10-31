@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "04c6b5b87f4be7a98fddd657174c22e97970f997e8117836e908b963f0fa4a9f",
+      "sha256": "aa0b778a3a382b81011c17cfb25b7d618cff9fd6fc795787d19e6dc944d9ca68",
       "executable": false
     },
     "DEMO.md": {
@@ -179,7 +179,7 @@
       "executable": false
     },
     "docs/agents.md": {
-      "sha256": "1ca9183910d8e2fd4c8c52e5c6db9618da277777a0b1c1f5aece1e6f4ffd2422",
+      "sha256": "3cb6077aa1ade0e7caa0ccb3f0a6ad94c5c78fe7a7e14de47b3cb1570870e162",
       "executable": false
     },
     "docs/backup-and-restore.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "8bddbff1190a4298b111d861e0122e23eabe0ae8bff99b9f6eead9f04638484f",
+      "sha256": "187549321ff48eaf5e772044f2005dbb76e9927515963872ac1768557d006739",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -1951,7 +1951,7 @@
       "executable": false
     },
     "src/easel/agent-actions.ts": {
-      "sha256": "7d27df532cc43f976054e6b29890e5445dba52f4698227719bcbdf2c5e69bbad",
+      "sha256": "fa382ad827949853d9d1927bb341b83ec5e67aacbc904149a3911a8a1f7dbdd5",
       "executable": false
     },
     "src/easel/agents/agent-evaluate.ts": {
@@ -6086,6 +6086,18 @@
       "sha256": "2c2e15a7de42332cedef9bc39c476e2d30185450c5c830e0181081f024f688a7",
       "executable": false
     },
+    "tests/agent-action-parity-browser.mjs": {
+      "sha256": "1e62f009ae68b07003c7dcb9f3bee112a04c6d35c1a91191c20d3fe8b6f2cecd",
+      "executable": false
+    },
+    "tests/agent-action-parity-flow.mjs": {
+      "sha256": "61879af9bf00df97069418bd990654cf497c9d05fa8e39afd8be03d1a22eca9e",
+      "executable": false
+    },
+    "tests/agent-action-parity.test.mjs": {
+      "sha256": "a16443395929fe9f1babea14663e8b25b433cbe70fb5e289dd332fd49e90f0d9",
+      "executable": false
+    },
     "tests/agent-attribution-browser.mjs": {
       "sha256": "e7eb5d388dc3ebc02b4a8622bf4bddb072ea7349fa306dc24b0a68275eb1e065",
       "executable": false
@@ -7007,7 +7019,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "13dd9bef5ecd046db705a69a7bcc9018a211ba3555286d5ba746896678c4e31d",
+      "sha256": "348d6adce0bfed119fbea1037fb27d0e04d43468df6729dfac3f56bade089852",
       "executable": false
     },
     "vite.config.ts": {

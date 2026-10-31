@@ -188,3 +188,32 @@ production `/auth/bootstrap`, then uses the native planning and reviewed import
 lifecycle. Provisioned installations also retain their existing signed
 `/auth/owner-claim` handler; raw setup tokens never go to that signed endpoint. No declared planning tool reaches
 an outbound provider, so no test-only provider edge is declared.
+
+## Native expense action parity
+
+`tests/agent-action-parity.test.mjs` and
+`tests/agent-action-parity-browser.mjs` pair the native Plan expense controls
+with `easel.expenses.update` and `easel.inputs.delete` at both `/mcp` and
+`/api/easel/mcp`. One native finance sponsor owns both synchronous draft
+proposals. The same recurring, one-off, prepaid and quarterly bonus inputs
+produce identical records, complete calculations and native Activity event types
+after creation, editing and removal. Independent cent expectations include
+amortization and quarterly cent remainders. Generated identifiers and timestamps
+are normalized; native person attribution and agent-for-person attribution are
+asserted separately, including the named approver under held policy.
+
+One-off planned payment dates use `paymentMethod: "date"` and `paymentDate`
+within the expense accounting period, through the same native validation as Plan.
+Autonomous calls complete immediately; held calls leave planning records and
+Activity unchanged until native person approval. Completed-key retries add no
+effect. Approved budgets, kept forecasts, published captures and the official
+working forecast remain unchanged. The emitted-application journey inspects
+Plan and Activity and records those screens at 1440 and 390.
+
+This qualifies only the expense-form subset of BASE-AGENT-002 point 5. It does
+not establish the full Core-job catalogue, other tool and UI pairs, broader role
+parity, refusal-code equivalence, remaining schemas and annotations or embedded
+agent registry and audit acceptance. Resources and refresh, events, subscriptions,
+the broader administrative registry and stranger-finance-week qualification,
+native financial decisions and reversal, provider and outbound delivery, and
+existing account, policy, Base egress, device and prerequisite holds remain owed.

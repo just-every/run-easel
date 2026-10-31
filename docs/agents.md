@@ -100,7 +100,7 @@ Finance: plan an equity raise in your own draft proposal.
 
 ### easel.expenses.update
 
-Add or edit an expense in your working proposal: recurring or one-off requires amount; acquisition requires revenueOrigin and cac; inventory requires revenueOrigin, unitCost and inventoryDays. Linked revenue must be in the same department. Prepaid requires total amount, amortizationMonths and optional paymentMonth at or before service start; bonus requires quarterly amount and first payMonth. Optional paymentMethod dpo or terms uses dpoDays or paymentTermDays after invoice month end. Monetary values and whole days or month counts are strings.
+Add or edit an expense in your working proposal: recurring or one-off requires amount; acquisition requires revenueOrigin and cac; inventory requires revenueOrigin, unitCost and inventoryDays. Linked revenue must be in the same department. Prepaid requires total amount, amortizationMonths and optional paymentMonth at or before service start; bonus requires quarterly amount and first payMonth. Optional paymentMethod dpo or terms uses dpoDays or paymentTermDays after invoice month end; date uses paymentDate within the one-off expense accounting period. Monetary values and whole days or month counts are strings.
 
 - Scope: `planning:write`. Changes a planning draft or internal planning record; requires an idempotency key.
 - Possible classes: `standard`.
