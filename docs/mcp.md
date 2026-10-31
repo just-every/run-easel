@@ -204,6 +204,8 @@ asserted separately, including the named approver under held policy.
 
 One-off planned payment dates use `paymentMethod: "date"` and `paymentDate`
 within the expense accounting period, through the same native validation as Plan.
+The paired journey also checks the exact dated cash posting, retaining the entered
+cents on that date without a monthly-lag assumption.
 Autonomous calls complete immediately; held calls leave planning records and
 Activity unchanged until native person approval. Completed-key retries add no
 effect. Approved budgets, kept forecasts, published captures and the official
