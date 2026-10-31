@@ -6087,11 +6087,11 @@
       "executable": false
     },
     "tests/agent-action-parity-browser.mjs": {
-      "sha256": "1e62f009ae68b07003c7dcb9f3bee112a04c6d35c1a91191c20d3fe8b6f2cecd",
+      "sha256": "d928624b83fc573929bb16f5055e55742cce04783aa084f07214ef7bab4113f9",
       "executable": false
     },
     "tests/agent-action-parity-flow.mjs": {
-      "sha256": "61879af9bf00df97069418bd990654cf497c9d05fa8e39afd8be03d1a22eca9e",
+      "sha256": "fdc75e7f25240c696aac0e0c3111c724d0809de6067b252c2fc6f20d30198418",
       "executable": false
     },
     "tests/agent-action-parity.test.mjs": {

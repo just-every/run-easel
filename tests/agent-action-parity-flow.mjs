@@ -42,7 +42,7 @@ export async function expenseParityJourney({ origin, cookie, mutateNative, appro
  const pack = await command('pack-create', { month: '2026-01' })
  await command('pack-publish', { pack: pack.id })
  const state = await request('/api/easel/state'), sponsor = state.me
- const captures = async () => Promise.all(state.snapshots.map(row => request(`/api/easel/snapshot/${row.id}`)))
+ const captures = async () => Promise.all((await request('/api/easel/state')).snapshots.map(row => request(`/api/easel/snapshot/${row.id}`)))
  const frozen = await captures()
  assert.deepEqual(new Set(state.snapshots.map(row => row.kind)), new Set(['approval', 'forecast', 'pack']), 'Approved, kept and published captures all exist')
  const official = await view(forecast.id)
