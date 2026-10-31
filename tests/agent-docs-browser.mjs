@@ -69,8 +69,8 @@ try {
   const retrieved = await rpc('prompts/get', { name: prompt.name })
   assert.ok(guide.includes(text(retrieved.messages[0].content.text)), 'The published job is retrievable through MCP')
  }
- assert.deepEqual(resourceTemplates, [])
- assert.match(guide, /Resource template inventory: none declared/)
+ assert.deepEqual(resourceTemplates.map(item => item.uriTemplate).sort(), ['easel://proposals/{id}', 'easel://scenarios/{id}'])
+ for (const resource of resourceTemplates) assert.ok(guide.includes(resource.uriTemplate), 'The guide names every live resource template')
  for (const value of Object.values(discovery._meta['com.runeditrun/limits'])) assert.ok(guide.includes(value.toLocaleString('en-US')), 'The guide names the configured capacity')
  const sizes = await article.locator('p, li, h1, h2, h3, code').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)))
  assert.ok(sizes.every(size => size >= 13), 'Published guide text is readable')
@@ -79,7 +79,7 @@ try {
   await page.setViewportSize({ width, height: 1000 })
   await page.screenshot({ path: join(evidence, `agent-guide-${width}.png`), fullPage: true })
  }
- console.log(`PROBE BASE-AGENT-013 docs: GET /docs/agents -> ${tools.length} live tools, ${prompts.length} retrievable jobs, exact scopes and class proofs, empty resource inventory; 1440 and 390 screens captured`)
+ console.log(`PROBE BASE-AGENT-013 docs: GET /docs/agents -> ${tools.length} live tools, ${prompts.length} retrievable jobs, exact scopes and class proofs, ${resourceTemplates.length} resource templates; 1440 and 390 screens captured`)
 } finally {
  await context?.close(); await browser?.close(); await runtime?.close()
  await new Promise(resolve => site.close(resolve))

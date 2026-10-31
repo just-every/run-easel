@@ -1,4 +1,4 @@
-import { ToolRefusal, type ToolContext, type ResourceContext } from '../modules/agent-door/index.ts'
+import { ToolRefusal, type ToolContext, type ResourceContext, type ClassAndFacts } from '../modules/agent-door/index.ts'
 import { nativeActor } from './people.ts'
 import { credentialActor } from './credentials.ts'
 import { access, requireMember } from '../easel/access'
@@ -37,7 +37,7 @@ export async function nativeContext(ctx: ToolContext | ResourceContext): Promise
 export type NativeAdmission = { revision: number; person: string; version: number; role: Actor['baseRole'] }
 export const nativeAdmission = (c: Awaited<ReturnType<typeof nativeContext>>): NativeAdmission => ({ revision: c.revision, person: c.x.actor.id, version: c.x.actor.version, role: c.x.actor.baseRole })
 
-export async function nativeAction(name: string, args: Data, ctx: ToolContext, persist: boolean, expected?: NativeAdmission) {
+export async function nativeAction(name: string, args: Data, ctx: ToolContext | ResourceContext, persist: boolean, expected?: NativeAdmission) {
  const c = await nativeContext(ctx)
  try {
   if (expected && (c.revision !== expected.revision || c.x.actor.id !== expected.person || c.x.actor.version !== expected.version || c.x.actor.baseRole !== expected.role)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
@@ -66,4 +66,21 @@ export async function nativeAction(name: string, args: Data, ctx: ToolContext, p
   if (e instanceof Fault) throw new ToolRefusal(e.status === 403 ? 'forbidden' : e.status === 404 ? 'resource_unavailable' : e.status === 409 ? 'revision_conflict' : 'invalid_arguments')
   throw e
  }
+}
+
+/** Only native payroll and identity fields trigger sensitive; caller labels have no authority. */
+function sensitiveRecords(value: unknown): number {
+ if (!value || typeof value !== 'object') return 0
+ if (Array.isArray(value)) return value.reduce((n, item) => n + sensitiveRecords(item), 0)
+ const object = value as Data
+ if (Object.hasOwn(object, 'annualSalaryCents') || Object.hasOwn(object, 'annualSalary') || Object.hasOwn(object, 'holder') && !!object.holder) return 1
+ return Object.values(object).reduce<number>((n, item) => n + sensitiveRecords(item), 0)
+}
+export function recordClasses(value: unknown): ClassAndFacts[] {
+ const view = value && typeof value === 'object' && !Array.isArray(value) ? value as Data : null
+ const payrollLines = new Set<string>((view?.lines ?? []).filter((line: Data) => line.payroll).map((line: Data) => line.id))
+ const payrollInputs = Object.entries(view?.inputs ?? {}).filter(([kind]) => kind !== 'position')
+  .flatMap(([, inputs]) => inputs as Data[]).filter(input => payrollLines.has(input.line)).length
+ const n = sensitiveRecords(value) + payrollInputs
+ return [{ class: 'standard', facts: { measure: 1 } }, ...(n ? [{ class: 'sensitive' as const, facts: { measure: n, kind: 'payroll' } }] : [])]
 }

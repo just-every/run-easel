@@ -135,7 +135,7 @@
       "executable": false
     },
     "agent-surface.json": {
-      "sha256": "e982e93e250ace67fb9e284723e1f7d28730a153da7f6b3b82a4c22c0b4a06a3",
+      "sha256": "61c5345f431534e2fb95e185f2fb2d01061b29bf7a8de6eca9da8c226690c454",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "ad85c837597f5e13fb52d846c4d48d0458786be44ca3ad09fe273884e0567a2a",
+      "sha256": "c747e699d35e4293eb0f111a70bbdc544820b50fa5a104cbbc6e23abaa080cda",
       "executable": false
     },
     "DEMO.md": {
@@ -179,7 +179,7 @@
       "executable": false
     },
     "docs/agents.md": {
-      "sha256": "378ecfe2ed70c9c0326cc1320d57aed03fae9b72e026f44a97543a3d2bd7bc51",
+      "sha256": "1ca9183910d8e2fd4c8c52e5c6db9618da277777a0b1c1f5aece1e6f4ffd2422",
       "executable": false
     },
     "docs/backup-and-restore.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "f03fb6f0d60bd4784acd1527eef2beeae4e3c16b406603061f3b248c901bde49",
+      "sha256": "a5ae0fd8fd0a0b22aee08f2ddb123b9d61abc9374a6c6b73ce71255f443d2dc7",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -947,7 +947,7 @@
       "executable": false
     },
     "scripts/agent-docs.mjs": {
-      "sha256": "7407409f73640a13a610f2b67ecbb6178372ceb53b538b9b046caf15f58019b2",
+      "sha256": "fca2e1f526f0290cdebed152c64755f580fdc5e5da92b268c850189ce35b64f5",
       "executable": false
     },
     "scripts/build-delivery-artifact.mjs": {
@@ -1743,11 +1743,11 @@
       "executable": false
     },
     "src/agent-door/index.ts": {
-      "sha256": "be3143d947fc8cb378481caef3ce0acee6be422a08c70092ca0078996e594106",
+      "sha256": "205b0ed5598ab64260a9bfbfd37324d8316bfec59b56d2723c2e50a3221c2487",
       "executable": false
     },
     "src/agent-door/native.ts": {
-      "sha256": "58ede68b9f14319937decb0a5ae554f65da5d9b53b2b8e7462ec0c9630f626bc",
+      "sha256": "d53bd47cf3a7fe98e2f8f2dbf21f45b33da99e5717f11e8713a09abe6d395c29",
       "executable": false
     },
     "src/agent-door/people.ts": {
@@ -1756,6 +1756,10 @@
     },
     "src/agent-door/prompts.ts": {
       "sha256": "509b4818cc1fbe4a73996ef9a385f895182547688cb8ccdc079ed7a7c87859d7",
+      "executable": false
+    },
+    "src/agent-door/resources.ts": {
+      "sha256": "5eb00a127f31e5881ebf021b9702c689238ef8da84ab5506866a11308d47b140",
       "executable": false
     },
     "src/agent-door/schemas.ts": {
@@ -1767,7 +1771,7 @@
       "executable": false
     },
     "src/agent-door/tools.ts": {
-      "sha256": "49f3760ce3b68b17cc6772a96c4fd6da2ad81ead8cb01c1ba9177132473ee258",
+      "sha256": "d1a1a1b21759996933645e81e21a741e5fae307fc2c59b183e44bccb9505282a",
       "executable": false
     },
     "src/agent-door/trust.ts": {
@@ -6087,7 +6091,7 @@
       "executable": false
     },
     "tests/agent-docs-browser.mjs": {
-      "sha256": "4ec4f100538c6d94b33e1abb04212b4d11410533c87f4a50bbb2513d47921ee8",
+      "sha256": "c7ed5e4051d1209b4c58a59213e327fa3b0154985d4e2419b92f8043ec188b66",
       "executable": false
     },
     "tests/agent-governance-browser.mjs": {
@@ -6311,7 +6315,7 @@
       "executable": false
     },
     "tests/easel-worker.ts": {
-      "sha256": "2eb721852b31b990a64bca8e3c293068de7c2ef5abe471c543cfc0d1a02fa0b5",
+      "sha256": "b398703606c2efff3bd7b71d611c4ef86de1fcd343463d708e6584e46ced0359",
       "executable": false
     },
     "tests/easel.test.mjs": {
@@ -6491,7 +6495,7 @@
       "executable": false
     },
     "tests/harness.mjs": {
-      "sha256": "fbac8fad5105e4a37036e915ba175272f597c6af0ced2a6c91c942051fe1f978",
+      "sha256": "518eed0c2493c3742a4e64422470fb5a85cc4bcddac06c420f17976696a6dc86",
       "executable": false
     },
     "tests/headcount-browser.mjs": {
@@ -6599,7 +6603,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "65c1676daaa7f9184ac9bf89dbeb4498f7e4c34fde6818e3b43a992b8780e033",
+      "sha256": "8a80c2d6e0db111c293e591a70dd38ec6860863e1d9808a52be9ecc4d01ecee8",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {

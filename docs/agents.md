@@ -242,7 +242,8 @@ Read role-filtered variance and evidence for a closed month.
 
 ## Resources and events
 
-Resource template inventory: **none declared**. `resources / templates / list` returns an empty inventory. Resource reads are typed refusals; scenario content remains available through the classified read tools above.
+- `easel://scenarios/{id}`
+- `easel://proposals/{id}`
 
 Event type inventory: **none declared**. Events and subscriptions remain undeclared and typed-refused. No event delivery, resource refresh or subscription qualification is claimed.
 
@@ -287,4 +288,4 @@ Transport errors use JSON-RPC error data. Tool refusals carry `isError` and a st
 
 `./tests/mcp.test.mjs` — “API-003 a contributor uses MCP for filtered reads and proposals, never financial approvals” retrieves both prompts and follows the native planning lifecycle, checks documentation against discovery, and refuses human decision verbs. `./tests/agent-docs-browser.mjs` checks the built documentation against the live door at 1440 and captures it at 1440 and 390.
 
-This catalogue does not qualify the broader administrative registry, resources, events, subscriptions or a stranger’s complete finance week. Connector accounts, enterprise identity, provider boundaries, device qualification and existing contract holds remain unchanged. Finance alone approves budgets, promotes proposals, closes months and publishes packs; people confirm explanations. No prompt changes those gates.
+This catalogue does not qualify the broader administrative registry, full resource catalogue, resource refresh, events, subscriptions or a stranger’s complete finance week. Connector accounts, enterprise identity, provider boundaries, device qualification and existing contract holds remain unchanged. Finance alone approves budgets, promotes proposals, closes months and publishes packs; people confirm explanations. No prompt changes those gates.

@@ -70,17 +70,39 @@ with their installation and are excluded from portable planning archives. Restor
 retains the destination's own policy and identity bindings. Native planning
 activity remains in the planning archive; live shared-door audit is retained.
 
+## Scenario resources
+
+`resources/templates/list` offers `easel://scenarios/{id}` and
+`easel://proposals/{id}`. Both read the current native scenario view through
+`resources/read` with `planning:read`. The proposal template accepts proposals
+only. Scenario reads and proposal creation and submission return a
+`resource_link` that reads back the current state, including the submitted status.
+
+The native session or credential, current membership, department and dimension
+grants, separate Pay detail permission, consent and company policy apply on every
+read. Missing and inaccessible records return the same `resource_unavailable`
+response. Payroll sensitivity is computed from the filtered contents, so a
+reader of restricted totals does not acquire Pay detail by opening a URI.
+Narratives, including names and imported text, carry
+`_meta["com.runeditrun/untrusted"] = true` on the resource content. They are data,
+never instructions or authority. A changed projection during admission returns
+`resource_changed` with no content; reads do not save the planning model.
+
+This inventory covers scenarios and proposals only. Other primary record
+resources, file-byte grant budgets, resource refresh and the full catalogue
+qualification remain unproved; BASE-AGENT-003 stays partial.
+
 ## Declared subset and current limits
 
-This adoption declares tools, policy, pause, audit, idempotency and specialist
+This adoption declares tools, policy, pause, audit, idempotency scenario resources and specialist
 job prompts. The registry-generated [agent guide](/docs/agents) lists every tool,
 its scope and computed-class proof, the resource and event inventories, limits
 and errors. Regenerate it with `node scripts/agent-docs.mjs write` and check it
 with `node scripts/agent-docs.mjs check`. Discovery serves the same generated
 planning instructions. Retrieve `easel.proposal.prepare` or
 `easel.variance.explain` through `prompts / get`; both preserve native human gates. It retains current native principal authorization and owner-bound
-tokens. It does not declare resource catalogues and refresh, native event handoffs or
-subscriptions, multiple verification sponsors, or provider and mail edges. Events, resources and subscriptions are typed-refused as undeclared.
+tokens. It does not declare resource refresh, the full resource catalogue, native event handoffs or
+subscriptions, multiple verification sponsors, or provider and mail edges. Events and subscriptions are typed-refused as undeclared.
 The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.

@@ -8,7 +8,8 @@
     "pause",
     "audit",
     "idempotency",
-    "prompts"
+    "prompts",
+    "resources"
   ],
   "tools": [
     {
@@ -360,7 +361,10 @@
       "reason": "installation"
     }
   ],
-  "resources": [],
+  "resources": [
+    "easel://scenarios/{id}",
+    "easel://proposals/{id}"
+  ],
   "witness": {
     "tool": "easel.scenarios.list",
     "args": {}

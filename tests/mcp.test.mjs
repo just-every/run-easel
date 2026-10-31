@@ -1,4 +1,5 @@
 import test from 'node:test'
+import ExcelJS from 'exceljs'
 import assert from 'node:assert/strict'
 import { randomUUID, webcrypto } from 'node:crypto'
 import { signJws, accessToken, policyEnvelope, autonomousPolicy } from '../src/modules/agent-door/conformance/crypto.mjs'
@@ -59,18 +60,20 @@ async function pairedSignIn(t) {
  }
 }
 
-test('API-003 a contributor uses MCP for filtered reads and proposals, never financial approvals', async t => {
- const h = await harness()
+test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, policy and erasure fences', async t => {
+ let afterReadFence
+ const h = await harness({ afterReadFence: async () => { const action = afterReadFence; afterReadFence = undefined; await action?.() } })
  t.after(() => h.close())
  const cmd = h.command
+ const address = name => [name, 'example.test'].join('@')
  await cmd('workspace', { name: 'MCP fixture', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
  const sales = await cmd('department', { name: 'Sales' })
  const engineering = await cmd('department', { name: 'Engineering' })
  const revenue = await cmd('line', { name: 'Revenue', type: 'revenue' })
  const salary = await cmd('line', { name: 'Salary', type: 'operating-expense', payroll: true })
- const contributor = await h.person('planner@example.test', 'contributor', [sales.id])
- const other = await h.person('other@example.test', 'contributor', [engineering.id])
- const viewer = await h.person('viewer@example.test', 'viewer')
+ const contributor = await h.person(address('planner'), 'contributor', [sales.id])
+ const other = await h.person(address('other'), 'contributor', [engineering.id])
+ const viewer = await h.person(address('viewer'), 'viewer')
  const budget = (await h.get('/api/easel/state')).scenarios.find(s => s.kind === 'budget')
  await cmd('expense', { scenario: budget.id, department: sales.id, line: salary.id, name: 'Sales cost', kind: 'recurring', amount: '100', start: '2026-01' })
  await cmd('position', { scenario: budget.id, department: engineering.id, line: salary.id, title: 'Engineer', holder: 'Private Employee', annualSalary: '120000', start: '2026-01' })
@@ -86,7 +89,7 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  await h.agentPolicy()
  let nextId = 1
  const rpc = async (method, params, cookie = contributor, headers = {}, notification = false) => {
-  const r = await h.mf.dispatchFetch(`${h.origin}/api/easel/mcp`, { method: 'POST', headers: { origin: h.origin, cookie, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25', accept: 'application/json, text/event-stream', ...headers }, body: JSON.stringify(agentMessage({ jsonrpc: '2.0', ...(notification ? {} : { id: nextId++ }), method, params })) })
+  const r = await h.mf.dispatchFetch(`${h.origin}/mcp`, { method: 'POST', headers: { origin: h.origin, cookie, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25', accept: 'application/json, text/event-stream', ...headers }, body: JSON.stringify(agentMessage({ jsonrpc: '2.0', ...(notification ? {} : { id: nextId++ }), method, params })) })
   return { status: r.status, headers: r.headers, body: r.status === 202 ? null : await r.json() }
  }
  const call = async (name, args = {}, cookie = contributor) => {
@@ -94,10 +97,50 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
   assert.equal(r.status, 200, JSON.stringify(r.body))
   return r.body.result
  }
+ const read = async (uri, cookie = contributor, headers = {}) => rpc('resources/read', { uri }, cookie, headers)
+ const contents = response => {
+  assert.equal(response.status, 200)
+  assert.ok(!response.body.error, JSON.stringify(response.body))
+  const content = response.body.result.contents[0]
+  assert.equal(content._meta['com.runeditrun/untrusted'], true)
+  return JSON.parse(content.text)
+ }
+ const modelState = async () => ({
+  records: (await h.db.prepare('SELECT * FROM e_records ORDER BY kind,id').all()).results,
+  captures: (await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results,
+  revision: await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(),
+  activity: await h.db.prepare('SELECT count(*) AS n FROM e_activity').first(),
+ })
  const ok = result => { assert.ok(!result.isError, JSON.stringify(result)); return result.structuredContent }
  const init = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'public-door-client', version: '1' } })
  assert.equal(init.status, 200)
  assert.equal(init.body.result.protocolVersion, '2025-11-25')
+ assert.deepEqual(init.body.result.capabilities.resources, { subscribe: false, listChanged: false })
+ const templates = (await rpc('resources/templates/list')).body.result.resourceTemplates
+ assert.deepEqual(templates.map(item => item.uriTemplate).sort(), ['easel://proposals/{id}', 'easel://scenarios/{id}'])
+ const workbook = new ExcelJS.Workbook()
+ const sheet = workbook.addWorksheet('Synthetic plan')
+ sheet.addRow(['Line', 'Department', '2026-02'])
+ sheet.addRow(['Revenue', 'Sales', 123])
+ sheet.addRow(['Total', '', { formula: 'SUM(C2:C2)', result: 123 }])
+ const importedSource = { filename: 'Synthetic imported narrative.xlsx', base64: Buffer.from(await workbook.xlsx.writeBuffer()).toString('base64') }
+ const workbookPreview = await h.kit('workbook', 'preview', importedSource)
+ const workbookImport = await h.kit('workbook', 'commit', { ...importedSource, fingerprint: workbookPreview.fingerprint })
+ const beforeImportedRead = await modelState()
+ const importedView = contents(await read(`easel://scenarios/${workbookImport.import.scenario}`, h.owner))
+ assert.equal(importedView.scenario.imported.file, importedSource.filename)
+ assert.deepEqual(await modelState(), beforeImportedRead)
+ console.log('PROBE BASE-AGENT-003 untrusted: workbook import then /mcp resource read -> native and imported narratives marked untrusted; model unchanged')
+ const beforeReads = await modelState()
+ for (const cookie of [h.owner, contributor, viewer]) {
+  for (const id of [forecast.id, budget.id]) {
+   const resource = await read(`easel://scenarios/${id}`, cookie)
+   assert.deepEqual(contents(resource), await h.get(`/api/easel/scenario/${id}`, cookie))
+   assert.equal(resource.body.result._meta['com.runeditrun/decision'].classes.some(item => item.class === 'sensitive'), cookie !== viewer)
+  }
+ }
+ assert.deepEqual(await modelState(), beforeReads, 'Resource reads cannot change planning records, captures, revisions or native activity')
+ console.log('PROBE BASE-AGENT-003 parity: /mcp scenario resources for finance, contributor and viewer -> native fields match; model unchanged')
  assert.equal((await rpc('notifications/initialized', {}, contributor, {}, true)).status, 202)
  assert.equal((await rpc('server/discover')).body.result._meta['io.modelcontextprotocol/serverInfo'].name, 'Easel')
  assert.equal((await rpc('tools/list', {}, contributor, { 'MCP-Protocol-Version': 'unsupported' })).status, 400)
@@ -118,7 +161,7 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
   assert.ok(section.includes(`Scope: \`${tool._meta['com.runeditrun/scope']}\``))
   for (const cls of tool._meta['com.runeditrun/classes']) assert.ok(section.includes(`Computed class proof \`${cls}\``), `${tool.name} documents the computed ${cls} fixture`)
  }
- assert.deepEqual((await rpc('resources/templates/list')).body.result.resourceTemplates, [])
+ assert.deepEqual((await rpc('resources/templates/list')).body.result.resourceTemplates, templates)
  const beforePrompts = await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first()
  const prompts = (await rpc('prompts/list')).body.result
  assert.equal(prompts.cacheScope, 'private')
@@ -140,14 +183,33 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  const variance = ok(await call('variance', { month: '2026-01' }))
  assert.equal(variance.month, '2026-01')
  assert.ok(variance.rows.some(row => row.line === revenue.id && row.actual === 100000))
- const sc = ok(await call('scenario', { scenario: forecast.id }))
+ const scenarioRead = await call('scenario', { scenario: forecast.id })
+ const scenarioLink = scenarioRead.content.find(item => item.type === 'resource_link')
+ assert.equal(scenarioLink.uri, `easel://scenarios/${forecast.id}`)
+ const sc = ok(scenarioRead)
+ assert.deepEqual(contents(await read(scenarioLink.uri)), sc)
  assert.equal(sc.inputs.position.length, 0)
  assert.ok(!JSON.stringify(sc).includes('Private Employee'))
  const metrics = ok(await call('metrics', { scenario: forecast.id }))
  assert.deepEqual(metrics.profit, sc.calculation.profit)
  const scenarios = ok(await call('scenarios'))
  assert.ok(scenarios.scenarios.some(s => s.id === forecast.id))
- const proposal = ok(await call('proposal-create', { from: forecast.id, name: 'Lower sales costs', request: 'Reduce sales cost to fifty dollars' }))
+ const created = await call('proposal-create', { from: forecast.id, name: 'Lower sales costs', request: 'Reduce sales cost to fifty dollars' })
+ const proposal = ok(created)
+ const proposalLink = created.content.find(item => item.type === 'resource_link')
+ assert.equal(proposalLink.uri, `easel://proposals/${proposal.id}`)
+ const draft = contents(await read(proposalLink.uri))
+ assert.equal(draft.scenario.proposalStatus, 'draft')
+ assert.equal(draft.scenario.request, 'Reduce sales cost to fifty dollars')
+ for (const cookie of [other, viewer]) {
+  const absent = await read('easel://proposals/synthetic-easel-missing', cookie)
+  const hidden = await read(proposalLink.uri, cookie)
+  assert.deepEqual(hidden.body.error, absent.body.error)
+  assert.equal(hidden.body.result, undefined)
+  assert.equal(hidden.body.error.data.code, 'resource_unavailable')
+ }
+ assert.deepEqual((await read(`easel://proposals/${forecast.id}`)).body.error, (await read('easel://proposals/synthetic-easel-missing')).body.error)
+ console.log('PROBE BASE-AGENT-003 refusals: /mcp missing and private proposal URIs -> identical resource_unavailable; no content')
  const expense = ok(await call('expense', { scenario: proposal.id, department: sales.id, line: salary.id, name: 'New sales cost', kind: 'recurring', amount: '50', start: '2026-02' }))
  assert.equal((await call('expense', { scenario: proposal.id, department: engineering.id, line: salary.id, name: 'Other department', kind: 'recurring', amount: '1', start: '2026-02' })).isError, true)
  assert.equal((await call('scenario', { scenario: proposal.id }, other)).isError, true)
@@ -179,12 +241,12 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.deepEqual(await h.get(`/api/easel/scenario/${proposal.id}`), privateBefore)
  const heldPolicy = { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules: [{ id: 'all', class: '*', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }], spend: { none: true } }
  assert.equal((await h.send('/agents/api/policy', { document: heldPolicy }, h.owner, 'PUT')).status, 200)
- const held = await call('proposal-submit', { id: proposal.id, summary: 'Synthetic private decision' })
- assert.equal(held._meta['com.runeditrun/error'].code, 'approval_required')
- const approvalPath = `/agents/api/approvals/${held._meta['com.runeditrun/error'].approval.id}`
+ const heldSubmission = await call('proposal-submit', { id: proposal.id, summary: 'Synthetic private decision' })
+ assert.equal(heldSubmission._meta['com.runeditrun/error'].code, 'approval_required')
+ const approvalPath = `/agents/api/approvals/${heldSubmission._meta['com.runeditrun/error'].approval.id}`
  const pending = (await h.get(approvalPath, contributor)).approval
- const decision = { revision: pending.revision, summary_sha256: pending.summary_sha256 }
- for (const [path, body] of [[approvalPath], [`${approvalPath}/approve`, decision]]) {
+ const submissionDecision = { revision: pending.revision, summary_sha256: pending.summary_sha256 }
+ for (const [path, body] of [[approvalPath], [`${approvalPath}/approve`, submissionDecision]]) {
   const personAttempt = await h.send(path, body, other)
   assert.ok([403, 404].includes(personAttempt.status))
   const agentAttempt = await h.mf.dispatchFetch(h.origin + path, { method: body ? 'POST' : 'GET', headers: { origin: h.origin, authorization: `Bearer ${credential.value.token}`, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) })
@@ -195,7 +257,7 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal(stillPending.state, 'pending')
  assert.deepEqual(stillPending.approvals, [])
  assert.deepEqual(await h.get(`/api/easel/scenario/${proposal.id}`), privateBefore)
- assert.equal((await h.send(`${approvalPath}/reject`, decision, contributor)).status, 200)
+ assert.equal((await h.send(`${approvalPath}/reject`, submissionDecision, contributor)).status, 200)
  assert.equal((await h.send('/agents/api/policy', { document: { ...heldPolicy, rules: [{ id: 'all', class: '*', do: 'autonomous' }] } }, h.owner, 'PUT')).status, 200)
  ok(await call('proposal-submit', { id: own.id, summary: 'Synthetic engineering review' }, other))
  const comparison = ok(await call('compare', { a: forecast.id, b: proposal.id }))
@@ -208,7 +270,11 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal(explanation.status, 'draft')
  assert.deepEqual(explanation.citationIds, [citation])
  assert.equal((await call('explanation', { month: '2026-01', line: revenue.id, department: sales.id, text: 'Invented evidence', citationIds: ['synthetic-easel-missing'] })).isError, true)
- ok(await call('proposal-submit', { id: proposal.id, summary: 'Ready for finance review' }))
+ const submitted = await call('proposal-submit', { id: proposal.id, summary: 'Ready for finance review' })
+ ok(submitted)
+ assert.equal(submitted.content.find(item => item.type === 'resource_link').uri, proposalLink.uri)
+ assert.equal(contents(await read(proposalLink.uri)).scenario.proposalStatus, 'submitted')
+ console.log('PROBE BASE-AGENT-003 links: /mcp scenario read, proposal create and submit -> links read back native draft and submitted state')
  assert.equal((await call('expense', { scenario: proposal.id, department: sales.id, line: salary.id, name: 'Late edit', kind: 'recurring', amount: '1', start: '2026-02' })).isError, true)
  assert.equal((await call('proposal-create', { from: forecast.id, name: 'Viewer proposal', request: 'Change costs' }, viewer)).isError, true)
 
@@ -230,14 +296,130 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal(ownAudit.actor, own.createdBy)
  assert.notEqual(ownAudit.detail.authority.for.id, firstAudit.detail.authority.for.id)
  assert.notEqual(ownAudit.detail.authority.id, firstAudit.detail.authority.id)
- const adopt = async rules => { const response = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, reviewers: ['sponsor'], spend: { none: true } } }, h.owner, 'PUT'); assert.equal(response.status, 200, response.text) }
- await adopt([{ id: 'all', class: '*', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }, { id: 'standard', class: 'standard', do: 'review' }])
+ // Reclassify the current filtered projection after Pay detail changes.
+ await cmd('pay-detail', { email: address('other'), granted: false })
+ const payFree = await read(`easel://scenarios/${forecast.id}`, other)
+ assert.deepEqual(contents(payFree), await h.get(`/api/easel/scenario/${forecast.id}`, other))
+ assert.ok(!JSON.stringify(payFree.body.result).includes('Private Employee'))
+ assert.deepEqual(payFree.body.result._meta['com.runeditrun/decision'].classes.map(item => item.class), ['standard'])
+
+ // A scoped credential never grows with its issuer's later department grants.
+ await h.stepUp(contributor)
+ const issued = await h.send('/api/easel/tokens/issue', { label: 'Synthetic resource reader', kind: 'personal', scope: 'read', expiresInSeconds: 86400 }, contributor)
+ assert.equal(issued.status, 200)
+ const bearer = { authorization: `Bearer ${issued.value.token}` }
+ const tokenView = contents(await read(`easel://scenarios/${forecast.id}`, '', bearer))
+ await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id, engineering.id] })
+ assert.deepEqual(contents(await read(`easel://scenarios/${forecast.id}`, '', bearer)), tokenView)
+ assert.ok(contents(await read(`easel://scenarios/${forecast.id}`, contributor)).inputs.position.some(row => row.holder === 'Private Employee'))
+ await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id] })
+ await h.send('/api/easel/tokens/revoke', { id: issued.value.id }, contributor).then(r => assert.equal(r.status, 200))
+ assert.equal((await read(`easel://scenarios/${forecast.id}`, '', bearer)).status, 401)
+
+ // Interleave an ordinary native write between the two awaited resource reads.
+ afterReadFence = () => cmd('comment', { scenario: forecast.id, department: sales.id, text: 'Synthetic resource boundary note' })
+ // Comments are outside scenario contents; an unrelated write still serves only
+ // today's consistent native projection without saving the model again.
+ contents(await read(`easel://scenarios/${forecast.id}`))
+ const current = await h.get(`/api/easel/scenario/${forecast.id}`)
+ afterReadFence = () => cmd('forecast-window', { scenario: forecast.id, revision: current.scenario.revision, months: '18' })
+ const changed = await read(`easel://scenarios/${forecast.id}`)
+ assert.equal(changed.body.error.data.code, 'resource_changed', JSON.stringify(changed.body))
+ assert.equal(changed.body.result, undefined)
+ console.log('PROBE BASE-AGENT-003 changed-read: native forecast update between /mcp read stages -> resource_changed; no content')
+
+ const policy = rules => h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, spend: { none: true } } }, h.owner, 'PUT').then(r => assert.equal(r.status, 200, JSON.stringify(r.value)))
+ await policy([{ id: 'all', class: '*', do: 'autonomous' }, { id: 'payroll', class: 'sensitive', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }])
+ const held = await read(`easel://scenarios/${forecast.id}`, h.owner)
+ assert.equal(held.body.error.data.code, 'approval_required')
+ assert.equal(held.body.result, undefined)
+ const approval = held.body.error.data.approval
+ const details = (await h.get(`/agents/api/approvals/${approval.id}`)).approval
+ const decision = await h.send(`/agents/api/approvals/${approval.id}/approve`, { revision: details.revision, summary_sha256: details.summary_sha256 }, h.owner)
+ assert.equal(decision.status, 200)
+ const resumed = await rpc('resources/read', { uri: `easel://scenarios/${forecast.id}`, requestState: held.body.error.data.requestState }, h.owner)
+ assert.deepEqual(contents(resumed), await h.get(`/api/easel/scenario/${forecast.id}`))
+ contents(await read(`easel://scenarios/${forecast.id}`, viewer))
+ await policy([{ id: 'all', class: '*', do: 'autonomous' }])
+ await h.send('/agents/api/pause', { paused: true }, h.owner).then(r => assert.equal(r.status, 200))
+ assert.equal((await read(`easel://scenarios/${forecast.id}`)).body.error.data.code, 'agents_paused')
+ await h.send('/agents/api/pause', { paused: false }, h.owner)
+ console.log('PROBE BASE-AGENT-003 authority: /mcp current Pay grants, credential ceiling, revoke, policy approval and pause -> filtered or refused without leaked content')
+
+ // The awaited native fence also refuses authority lost during the read.
+ const beforeRevokedRead = await modelState()
+ const nativeSession = await h.db.prepare('SELECT id FROM oa_sessions WHERE operator_id=(SELECT id FROM oa_operators WHERE email=?) AND revoked_at IS NULL').bind(address('other')).first()
+ afterReadFence = () => h.send('/auth/signout', {}, other).then(r => assert.ok([200, 303].includes(r.status)))
+ const signedOut = await read(`easel://scenarios/${forecast.id}`, other)
+ assert.equal(signedOut.body.result, undefined)
+ assert.equal((await read(`easel://scenarios/${forecast.id}`, other)).status, 401)
+ assert.ok((await h.db.prepare('SELECT revoked_at FROM oa_sessions WHERE id=?').bind(nativeSession.id).first()).revoked_at)
+ assert.deepEqual(await modelState(), beforeRevokedRead)
+
+ const beforePromptPolicy = await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first()
+ const adoptPromptPolicy = async rules => { const response = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, reviewers: ['sponsor'], spend: { none: true } } }, h.owner, 'PUT'); assert.equal(response.status, 200, response.text) }
+ await adoptPromptPolicy([{ id: 'all', class: '*', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }, { id: 'standard', class: 'standard', do: 'review' }])
  for (const prompt of prompts.prompts) assert.ok((await rpc('prompts/get', { name: prompt.name })).body.result.messages.length > 0, 'Held policy still permits job preparation')
- await adopt([{ id: 'block', class: '*', do: 'blocked' }])
+ await adoptPromptPolicy([{ id: 'block', class: '*', do: 'blocked' }])
  assert.equal((await rpc('prompts/get', { name: prompts.prompts[0].name })).body.error.data.code, 'policy_blocked')
- assert.deepEqual(await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(), before, 'Held and refused prompt retrieval never makes a financial decision')
- await cmd('member', { email: 'planner@example.test', name: 'planner', role: 'contributor', departments: [sales.id], active: false })
+ assert.deepEqual(await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(), beforePromptPolicy, 'Held and refused prompt retrieval never makes a financial decision')
+ await adoptPromptPolicy([{ id: 'all', class: '*', do: 'autonomous' }])
+
+ // Frozen model bytes retain their capture; current erasure transforms all reads.
+ await cmd('member', { email: address('planner'), name: 'planner', role: 'contributor', departments: [sales.id], active: false })
+ const capturesBeforeErasure = (await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results
  assert.equal((await rpc('tools/list')).status, 401)
  assert.equal((await rpc('prompts/get', { name: prompts.prompts[0].name })).status, 401)
+ await cmd('person-erase', { email: address('planner') })
+ const erasedProposal = contents(await read(proposalLink.uri, h.owner))
+ assert.ok(!JSON.stringify(erasedProposal).includes(address('planner')))
+ assert.match(erasedProposal.scenario.createdBy, /Erased person/)
+ assert.deepEqual((await h.db.prepare('SELECT * FROM e_snapshots ORDER BY id').all()).results, capturesBeforeErasure)
+ console.log('PROBE BASE-AGENT-003 erasure: native person erasure then /mcp proposal read -> erased attribution; captures unchanged; former session refused')
+ assert.equal((await rpc('tools/list')).status, 401)
+ assert.equal((await read(proposalLink.uri)).status, 401)
+
+ const keys = await webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
+ const kid = 'synthetic-easel-1'
+ const publicKeys = { [kid]: await webcrypto.subtle.exportKey('jwk', keys.publicKey) }
+ const signer = { issuer: 'https://business.example', installationId: 'synthetic-easel-2', kid, privateKey: keys.privateKey }
+ let duringPairedRead
+ const paired = await harness({ bindings: origin => ({
+  RER_OWNER_CLAIM_ISSUER: signer.issuer, RER_OWNER_CLAIM_INSTALLATION_ID: signer.installationId,
+  RER_OWNER_CLAIM_PUBLIC_KEYS: JSON.stringify(publicKeys),
+  RER_BUSINESS_TRUST: JSON.stringify({ v: 1, issuer: signer.issuer, audience: origin, subject: signer.installationId, keys: publicKeys }),
+ }), afterReadFence: async () => { const action = duringPairedRead; duringPairedRead = undefined; await action?.() } })
+ t.after(() => paired.close())
+ await paired.command('workspace', { name: 'Synthetic consent fixture', currency: 'USD', fiscalYearStart: 1, planStart: '2026-01' })
+ const pairedBudget = (await paired.get('/api/easel/state')).scenarios[0]
+ const now = Math.floor(Date.now() / 1000), subject = 'synthetic-easel-3', business = 'synthetic-easel-4'
+ const settings = await signJws(signer.privateKey, kid, 'rer-business-settings+jwt', {
+  v: 1, iss: signer.issuer, aud: paired.origin, sub: signer.installationId, business,
+  email: address('owner'), owner_id: subject, jti: crypto.randomUUID(), iat: now, exp: now + 300,
+  rev: 1, values: {}, logo: null, team: [],
+ })
+ assert.equal((await paired.send('/api/rer/business-settings', { settings })).status, 200)
+ const context = { signer, origin: paired.origin, business, revision: 0, seq: 0, surface: { specialist: 'finance planner', tools: [{ scope: 'planning:read' }] }, person: { sub: subject, email: address('owner') }, agentId: 'synthetic-easel-5', consent: 'synthetic-easel-6' }
+ const adopt = async revoked => {
+  const envelope = await policyEnvelope(context, autonomousPolicy(), { revoked })
+  assert.equal((await paired.send('/api/rer/agent-policy', { policy: envelope.policy })).status, 200)
+  context.revision = envelope.payload.revision; context.seq = envelope.payload.seq
+ }
+ await adopt({ agents: [], consents: [] })
+ const token = await accessToken(context)
+ const pairedRead = async () => {
+  const response = await paired.mf.dispatchFetch(`${paired.origin}/mcp`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'mcp-protocol-version': '2025-11-25' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'resources/read', params: { uri: `easel://scenarios/${pairedBudget.id}` } }) })
+  return { status: response.status, body: await response.json() }
+ }
+ assert.deepEqual(contents(await pairedRead()), await paired.get(`/api/easel/scenario/${pairedBudget.id}`))
+ const beforeConsentRead = await paired.db.prepare('SELECT revision FROM e_meta WHERE id=1').first()
+ duringPairedRead = () => adopt({ agents: [], consents: [context.consent] })
+ const revokedDuringRead = await pairedRead()
+ assert.equal(revokedDuringRead.body.error.data.code, 'consent_revoked')
+ assert.equal(revokedDuringRead.body.result, undefined)
+ assert.equal((await pairedRead()).status, 401)
+ assert.deepEqual(await paired.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(), beforeConsentRead)
+ console.log('PROBE BASE-AGENT-003 consent: signed Business consent revoked during /mcp read -> consent_revoked without content; next read 401')
+
  await pairedSignIn(t)
 })
