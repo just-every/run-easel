@@ -126,3 +126,24 @@ production `/auth/bootstrap`, then uses the native planning and reviewed import
 lifecycle. Provisioned installations also retain their existing signed
 `/auth/owner-claim` handler; raw setup tokens never go to that signed endpoint. No declared planning tool reaches
 an outbound provider, so no test-only provider edge is declared.
+
+## Browse and export agent audit
+
+Open Settings → Agent governance → Browse agent audit to reach `/agents/audit`.
+The existing native owner or editor session is required. Agent credentials,
+including an agent credential accompanied by a person cookie, are refused.
+
+Filter by an exact Agent ID, an exact Class, or both. Leave a field blank for
+all values. Load more actions continues through the retained history, including
+pages with no matching rows. Each action shows its recorded attribution,
+classes, decision, outcome and time; All audit fields opens the complete row.
+Download JSON reads every matching page afresh and preserves every returned
+field, including nested class facts, policy rules, sponsor and agent identities,
+trace, idempotency key and named approval and review identifiers. The download
+covers the complete matching history, beyond the currently displayed page.
+
+If a request loses session or audit authority, the page clears displayed data
+and disables downloads. A failed export never downloads a partial result.
+Downloads already saved by the person remain their files. This screen covers
+the existing planning catalogue; it does not qualify optional delivery or
+subscription families, native reversal or cross-seed Business aggregation.
