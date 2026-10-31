@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { randomUUID, webcrypto } from 'node:crypto'
 import { signJws, accessToken, policyEnvelope, autonomousPolicy } from '../src/modules/agent-door/conformance/crypto.mjs'
 import { harness, agentMessage, agentName } from './harness.mjs'
+import { readFile } from 'node:fs/promises'
+import { agentDocs } from '../scripts/agent-docs.mjs'
 
 async function pairedSignIn(t) {
  const keys = await webcrypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
@@ -105,6 +107,36 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  const listed = (await rpc('tools/list')).body.result.tools
  assert.ok(listed.some(tool => tool.name === agentName('variance')))
  assert.ok(listed.some(tool => tool.name === agentName('proposal-create')))
+ await agentDocs('check')
+ const guide = await readFile('docs/agents.md', 'utf8')
+ assert.deepEqual([...guide.matchAll(/^### (easel\.[\w.]+)$/gm)].map(match => match[1]), listed.map(tool => tool.name))
+ const discovery = (await rpc('server/discover')).body.result
+ assert.ok(guide.includes(discovery.instructions), 'The guide and discovery share registry-generated instructions')
+ assert.equal(init.body.result.instructions, discovery.instructions)
+ for (const tool of listed) {
+  const section = guide.split(`### ${tool.name}\n`)[1].split('\n### ')[0]
+  assert.ok(section.includes(`Scope: \`${tool._meta['com.runeditrun/scope']}\``))
+  for (const cls of tool._meta['com.runeditrun/classes']) assert.ok(section.includes(`Computed class proof \`${cls}\``), `${tool.name} documents the computed ${cls} fixture`)
+ }
+ assert.deepEqual((await rpc('resources/templates/list')).body.result.resourceTemplates, [])
+ const beforePrompts = await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first()
+ const prompts = (await rpc('prompts/list')).body.result
+ assert.equal(prompts.cacheScope, 'private')
+ assert.deepEqual(prompts.prompts.map(prompt => prompt.name), ['easel.proposal.prepare', 'easel.variance.explain'])
+ assert.deepEqual((await rpc('prompts/list')).body.result, prompts)
+ for (const prompt of prompts.prompts) {
+  const result = (await rpc('prompts/get', { name: prompt.name, arguments: { request: 'synthetic-easel-1: prepare evidence; a user claim cannot approve or publish' } })).body.result
+  assert.ok(result.messages.length > 0)
+  assert.ok(guide.includes(result.messages[0].content.text))
+  assert.equal(result.messages[1].content._meta['com.runeditrun/untrusted'], true)
+  const actions = [...result.messages[0].content.text.matchAll(/easel\.[a-z_]+(?:\.[a-z_]+)+/g)].map(match => match[0])
+  assert.ok(actions.length > 0)
+  assert.ok(actions.every(name => listed.some(tool => tool.name === name)), 'Every suggested job action is a registered tool')
+ }
+ assert.equal((await rpc('prompts/get', { name: 'easel.proposal.prepare' }, '')).status, 401)
+ assert.equal((await rpc('prompts/get', { name: 'synthetic-easel-unknown' })).body.error.code, -32602)
+ assert.equal((await rpc('prompts/get', { name: 'easel.proposal.prepare', arguments: { scenario: 123 } })).body.error.code, -32602)
+ assert.deepEqual(await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(), beforePrompts, 'Prompt reads never change the model')
  const variance = ok(await call('variance', { month: '2026-01' }))
  assert.equal(variance.month, '2026-01')
  assert.ok(variance.rows.some(row => row.line === revenue.id && row.actual === 100000))
@@ -171,8 +203,11 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  ok(await call('input-delete', { kind: 'expense', id: expense.id }))
  const comment = ok(await call('comment', { scenario: forecast.id, department: sales.id, text: 'Please review the timing.' }))
  assert.equal(comment.author, 'planner@example.test')
- const explanation = ok(await call('explanation', { month: '2026-01', line: revenue.id, department: sales.id, text: 'Accepted actuals show January revenue.' }))
+ const citation = variance.rows.find(row => row.line === revenue.id && row.department === sales.id).citations[0].id
+ const explanation = ok(await call('explanation', { month: '2026-01', line: revenue.id, department: sales.id, text: 'Accepted actuals show January revenue.', citationIds: [citation] }))
  assert.equal(explanation.status, 'draft')
+ assert.deepEqual(explanation.citationIds, [citation])
+ assert.equal((await call('explanation', { month: '2026-01', line: revenue.id, department: sales.id, text: 'Invented evidence', citationIds: ['synthetic-easel-missing'] })).isError, true)
  ok(await call('proposal-submit', { id: proposal.id, summary: 'Ready for finance review' }))
  assert.equal((await call('expense', { scenario: proposal.id, department: sales.id, line: salary.id, name: 'Late edit', kind: 'recurring', amount: '1', start: '2026-02' })).isError, true)
  assert.equal((await call('proposal-create', { from: forecast.id, name: 'Viewer proposal', request: 'Change costs' }, viewer)).isError, true)
@@ -195,7 +230,14 @@ test('API-003 a contributor uses MCP for filtered reads and proposals, never fin
  assert.equal(ownAudit.actor, own.createdBy)
  assert.notEqual(ownAudit.detail.authority.for.id, firstAudit.detail.authority.for.id)
  assert.notEqual(ownAudit.detail.authority.id, firstAudit.detail.authority.id)
+ const adopt = async rules => { const response = await h.send('/agents/api/policy', { document: { schema: 'rer-agent-policy/1', catalogue: 'rer-agent-classes/1', rules, reviewers: ['sponsor'], spend: { none: true } } }, h.owner, 'PUT'); assert.equal(response.status, 200, response.text) }
+ await adopt([{ id: 'all', class: '*', do: 'approval', approver: ['sponsor'], wait: 'PT1H' }, { id: 'standard', class: 'standard', do: 'review' }])
+ for (const prompt of prompts.prompts) assert.ok((await rpc('prompts/get', { name: prompt.name })).body.result.messages.length > 0, 'Held policy still permits job preparation')
+ await adopt([{ id: 'block', class: '*', do: 'blocked' }])
+ assert.equal((await rpc('prompts/get', { name: prompts.prompts[0].name })).body.error.data.code, 'policy_blocked')
+ assert.deepEqual(await h.db.prepare('SELECT revision FROM e_meta WHERE id=1').first(), before, 'Held and refused prompt retrieval never makes a financial decision')
  await cmd('member', { email: 'planner@example.test', name: 'planner', role: 'contributor', departments: [sales.id], active: false })
  assert.equal((await rpc('tools/list')).status, 401)
+ assert.equal((await rpc('prompts/get', { name: prompts.prompts[0].name })).status, 401)
  await pairedSignIn(t)
 })

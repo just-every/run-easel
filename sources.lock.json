@@ -135,7 +135,7 @@
       "executable": false
     },
     "agent-surface.json": {
-      "sha256": "7d298664d1805eaecc04b8f2de4381f498e828656c6f9678ecdf917ba4aa1bd6",
+      "sha256": "e982e93e250ace67fb9e284723e1f7d28730a153da7f6b3b82a4c22c0b4a06a3",
       "executable": false
     },
     "AGENTS.consumer.md": {
@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "0d0a9b431a0f2539bd2d53b47084b32b55700727cee31840362d9f58555c35f4",
+      "sha256": "ad85c837597f5e13fb52d846c4d48d0458786be44ca3ad09fe273884e0567a2a",
       "executable": false
     },
     "DEMO.md": {
@@ -176,6 +176,10 @@
     },
     "deploy.json": {
       "sha256": "35f9350884cb64d3276b8e8377ff424cfde1a55b93bd93198fd8d0ec22675c4c",
+      "executable": false
+    },
+    "docs/agents.md": {
+      "sha256": "378ecfe2ed70c9c0326cc1320d57aed03fae9b72e026f44a97543a3d2bd7bc51",
       "executable": false
     },
     "docs/backup-and-restore.md": {
@@ -227,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "7322699ef910539fe85acfef3f45b95d33130f0ecfaf9d9c5afafe34771c37be",
+      "sha256": "f03fb6f0d60bd4784acd1527eef2beeae4e3c16b406603061f3b248c901bde49",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -267,7 +271,7 @@
       "executable": false
     },
     "docs/site.json": {
-      "sha256": "0c4b164a62ab73e35da831b889ac307b979f22c27dc1a978775024cb0cd34f08",
+      "sha256": "a222d31841b8c03467053d531fe10210ec2fcebc1dec485d3970b963ad67f672",
       "executable": false
     },
     "edition.json": {
@@ -940,6 +944,10 @@
     },
     "RUN-LOCALLY.md": {
       "sha256": "7c731446bf91960960cdab7d9de98055c3ade433ba9b9e08fa6b2664b06452ee",
+      "executable": false
+    },
+    "scripts/agent-docs.mjs": {
+      "sha256": "7407409f73640a13a610f2b67ecbb6178372ceb53b538b9b046caf15f58019b2",
       "executable": false
     },
     "scripts/build-delivery-artifact.mjs": {
@@ -1723,7 +1731,7 @@
       "executable": false
     },
     "src/agent-door/catalogue.ts": {
-      "sha256": "6d6e333b1f9695a7aae8c0d6efa40a310c8fcf94990f8dab744b52c5d948cbff",
+      "sha256": "5ef3f1baf7ff2e5703b06f889a011afbb49ff2c7a8780c1ae6bf9fe3ce194f89",
       "executable": false
     },
     "src/agent-door/credentials.ts": {
@@ -1735,7 +1743,7 @@
       "executable": false
     },
     "src/agent-door/index.ts": {
-      "sha256": "cabab5af17bf7d1107b0b17b396c24a4a19204fa5f8101fc8e368d5b2c8c840c",
+      "sha256": "be3143d947fc8cb378481caef3ce0acee6be422a08c70092ca0078996e594106",
       "executable": false
     },
     "src/agent-door/native.ts": {
@@ -1744,6 +1752,10 @@
     },
     "src/agent-door/people.ts": {
       "sha256": "90b2c54306620a1a76d0f6a981244ac6f9c3165b77b56bf293ae59778019fee1",
+      "executable": false
+    },
+    "src/agent-door/prompts.ts": {
+      "sha256": "509b4818cc1fbe4a73996ef9a385f895182547688cb8ccdc079ed7a7c87859d7",
       "executable": false
     },
     "src/agent-door/schemas.ts": {
@@ -5423,7 +5435,7 @@
       "executable": false
     },
     "src/site/docs/docs.css": {
-      "sha256": "c0ea32ef45fe8ab6c6e241227b38e9d977f7e96abd07f66e22b42c8b48ae30cb",
+      "sha256": "58e6817de52b3627c4a90facbb6aa31cd1496f46f308abc470695a08c8fbf1ea",
       "executable": false
     },
     "src/site/docs/DocsArticle.tsx": {
@@ -6074,6 +6086,10 @@
       "sha256": "e7eb5d388dc3ebc02b4a8622bf4bddb072ea7349fa306dc24b0a68275eb1e065",
       "executable": false
     },
+    "tests/agent-docs-browser.mjs": {
+      "sha256": "4ec4f100538c6d94b33e1abb04212b4d11410533c87f4a50bbb2513d47921ee8",
+      "executable": false
+    },
     "tests/agent-governance-browser.mjs": {
       "sha256": "21f556517ff359fd1ca76970a72e71a0399892bd56f28453dabedd855a501f37",
       "executable": false
@@ -6583,7 +6599,7 @@
       "executable": false
     },
     "tests/mcp.test.mjs": {
-      "sha256": "aa58aa3f3bb0c80474952c6c6d58ebc3f57e2cc6d8c7558bd0be75d05eedcf05",
+      "sha256": "65c1676daaa7f9184ac9bf89dbeb4498f7e4c34fde6818e3b43a992b8780e033",
       "executable": false
     },
     "tests/metric-tasks-browser.mjs": {
@@ -6963,7 +6979,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "56561a6939f06687796f03979fee10d44da68fb3c4c36618b3db3a1ccd763488",
+      "sha256": "9fe56b8c7bfdbd686cd19f8b4d32fc82b79ad0d148f8c5ca4f87cd0937565536",
       "executable": false
     },
     "vite.config.ts": {

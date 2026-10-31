@@ -96,3 +96,7 @@
 /* The one-line getting-started recipe stays readable in its article column. */
 .docs-article[data-doc=getting-started] .docs-code pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; }
 .docs-shell:has(.docs-article[data-doc=getting-started]) .eyebrow { font-size: 13px; }
+
+/* Registry identifiers and proof paths remain readable inside the agent guide. */
+.docs-shell:has(.docs-article[data-doc=agents]) { overflow-wrap: anywhere; }
+.docs-article[data-doc=agents] .docs-prose span[style="white-space:nowrap"] { white-space: normal !important; }

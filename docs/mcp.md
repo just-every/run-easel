@@ -72,10 +72,15 @@ activity remains in the planning archive; live shared-door audit is retained.
 
 ## Declared subset and current limits
 
-This adoption declares the core families: tools, policy, pause, audit and
-idempotency. It retains current native principal authorization and owner-bound
-tokens. It does not declare resource catalogues/refresh, native event handoffs or
-subscriptions, multiple verification sponsors, or provider/mail edges. Events, resources, prompts and subscriptions are typed-refused as undeclared.
+This adoption declares tools, policy, pause, audit, idempotency and specialist
+job prompts. The registry-generated [agent guide](/docs/agents) lists every tool,
+its scope and computed-class proof, the resource and event inventories, limits
+and errors. Regenerate it with `node scripts/agent-docs.mjs write` and check it
+with `node scripts/agent-docs.mjs check`. Discovery serves the same generated
+planning instructions. Retrieve `easel.proposal.prepare` or
+`easel.variance.explain` through `prompts / get`; both preserve native human gates. It retains current native principal authorization and owner-bound
+tokens. It does not declare resource catalogues and refresh, native event handoffs or
+subscriptions, multiple verification sponsors, or provider and mail edges. Events, resources and subscriptions are typed-refused as undeclared.
 The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.
