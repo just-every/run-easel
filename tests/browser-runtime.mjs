@@ -27,6 +27,20 @@ export async function fresh() {
 
 export async function freePort() { const s = createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r)); const p = s.address().port; await new Promise(r => s.close(r)); return p }
 
+/** One wire request, including a 429: capacity journeys must observe refusals. */
+export async function rawAgentRequest(origin, path, token, id, method, params = {}) {
+ const version = '2026-07-28'
+ const response = await fetch(origin + path, {
+  method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(15000),
+  headers: { origin, authorization: `Bearer ${token}`, 'content-type': 'application/json',
+   accept: 'application/json, text/event-stream', 'mcp-protocol-version': version,
+   'mcp-method': method, ...(method === 'tools/call' ? { 'mcp-name': params.name } : {}) },
+  body: JSON.stringify({ jsonrpc: '2.0', id, method,
+   params: { ...params, _meta: { 'io.modelcontextprotocol/protocolVersion': version } } }),
+ })
+ return { status: response.status, headers: response.headers, body: await response.json() }
+}
+
 const clean = s => s.replace(/^RER_OPEN .*$/gm, 'RER_OPEN [private sign-in URL omitted]').replace(/([?&#]token=)[^\s&]+/g, '$1[redacted]').replace(/rer-dev=[^\s&]+/g, 'rer-dev=[redacted]')
 const env = () => ({ ...process.env, WRANGLER_SEND_METRICS: 'false', RER_SERVER_JOURNEY: '1' })
 
