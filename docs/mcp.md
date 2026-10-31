@@ -95,7 +95,7 @@ qualification remain unproved; BASE-AGENT-003 stays partial.
 ## Declared subset and current limits
 
 This adoption declares tools, policy, pause, audit, idempotency and scenario resources. It retains current native principal authorization and owner-bound
-tokens. Resource refresh remains unscoped. Native event handoffs, subscriptions, multiple verification sponsors and provider edges are not declared. Events, prompts and subscriptions are typed-refused as undeclared.
+tokens. Resource refresh remains unscoped. Native event handoffs, subscriptions and provider edges are not declared. Independent native sponsors retain separate private proposals, approvals and revocation; Business detachment refuses their Business tokens while native sign-in remains available. Events, prompts and subscriptions are typed-refused as undeclared.
 The built-in events tool is absent from this core catalogue.
 The corresponding BASE-AGENT clause gaps remain partial; copying the runtime
 is not evidence for those optional families.
