@@ -35,7 +35,7 @@ function tool(name: string, description: string, required: string[], optional: s
  return { name, description, inputSchema: { type: 'object', properties: Object.fromEntries([...required, ...optional].map(k => [k, ['formula','forecast-window'].includes(name) && k === 'revision' ? { type: ['string', 'integer'] } : fields[k] ?? str])), required, additionalProperties: false }, annotations: { readOnlyHint: readOnly, openWorldHint: false } }
 }
 export const nativeTools = [
- tool('calculation_status', 'Read a known calculation job or list currently visible native job statuses; never resubmit a pending mutation.', [], ['id'], true),
+ tool('calculation_status', 'Read a calculation job you started, or list your jobs; a change to a plan above 2,000 inputs returns its job handle. Never resubmit a pending mutation.', [], ['id'], true),
  tool('scenarios', 'List scenarios visible to you, plus planning lines and departments.', [], [], true),
  tool('scenario', 'Read a scenario and its role-filtered inputs, cells and traces.', ['scenario'], [], true),
  tool('compare', 'Compare two visible scenarios, including changed inputs and cells.', ['a', 'b'], [], true),
@@ -65,14 +65,15 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
  requireThat(nativeTools.some(t => t.name === name), 'This tool is not available to agents', 403)
  if (name === 'scenarios') { const s = await stateView(c); requireThat('scenarios' in s, 'Plan access required', 403); return { scenarios: s.scenarios, lines: s.lines, departments: s.departments, workspace: s.workspace, references: { departments: Object.fromEntries(s.departments.map((d: Data) => [d.name, d.id])), lines: Object.fromEntries(s.lines.map((l: Data) => [l.name, l.id])), forecast: s.scenarios.find((sc: Data) => sc.kind === 'forecast' && sc.status === 'working')?.id } } }
  if (name === 'calculation_status') {
-  // Status is a metadata read. Planning contents use the separately classified
-  // scenario/variance tools, including their live department and Pay filters.
+  // A job handle belongs to the person who started the work: another person's
+  // token reads it as not found. Status is a metadata read; planning contents use
+  // the separately classified scenario and variance tools with live department and Pay filters.
   const status = async (id: string) => {
-   const value = await readCalculationJob(c, id)
+   const value = await readCalculationJob(c, id, true)
    return { calculationJob: value.calculationJob, ...(value.responseStatus === undefined ? {} : { responseStatus: value.responseStatus }) }
   }
   if (b.id) return status(b.id)
-  const rows = (await c.db.prepare('SELECT id FROM e_calculation_jobs ORDER BY started_at,id').all<{id:string}>()).results
+  const rows = (await c.db.prepare('SELECT id FROM e_calculation_jobs WHERE actor_id=? ORDER BY started_at,id').bind(c.x.actor.id).all<{id:string}>()).results
   const jobs = []
   for (const row of rows) { try { jobs.push(await status(row.id)) } catch (e) { if (!(e instanceof Fault) || ![403,404].includes(e.status)) throw e } }
   return { jobs }
@@ -97,7 +98,9 @@ export async function invokeNative(c: Context, name: string, b: Data): Promise<D
   const proposal = get(c.s, 'scenario', id)
   requireAgentDraft(c, proposal.id)
  }
- requireThat(!backgroundScenario(c.s, name, b), 'This change requires a native background calculation; this door does not declare queued continuation', 409)
+ // An unfinished reviewed workbook import refuses. A larger change runs as the
+ // native background calculation the agent door queues (src/agent-door/jobs.ts).
+ backgroundScenario(c.s, name, b)
  const result = ['comment','forecast-window'].includes(name) ? await cycle(c, name, b) : name === 'explanation' ? await review(c, name, b) : await plan(c, name, b)
  requireThat(result !== undefined, 'Tool unavailable', 403)
  return result

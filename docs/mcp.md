@@ -56,7 +56,7 @@ membership, department/dimension grants and separate Pay detail where applicable
 | --- | --- | --- | --- |
 | `easel.scenarios.list`, `.read`, `.compare` | Visible scenarios, inputs and comparisons | standard; sensitive for payroll detail | EASEL-005, EASEL-011 |
 | `easel.metrics.read`, `easel.variance.read` | Cash/profit/headcount and closed-month evidence | standard; variance adds sensitive for payroll | FIN-005, EASEL-013, AGENT-007 |
-| `easel.calculations.status` | Visible native calculation metadata, or a known job; contents use the separately classified planning reads | standard | MODEL-007 |
+| `easel.calculations.status` | Calculation jobs the sponsoring person started; another person's handle reads as not found; contents use the separately classified planning reads | standard | MODEL-007, BASE-AGENT-012 |
 | `easel.proposals.create`, `.submit` | Prepare and submit the sponsor's own draft proposal | standard; copying payroll adds sensitive | EASEL-012 |
 | `easel.revenue.update` | Revenue and contract schedules | standard; linked compensation adds sensitive | EASEL-006, REV-003, REV-004 |
 | `easel.positions.update` | Planned salary, merit, bonus and commission | standard, sensitive | EASEL-007, PEOPLE-004 |
@@ -224,8 +224,9 @@ a retained result is not a way around a current refusal.
 
 The existing standalone client journeys also put a real HTTP proxy between
 the client and each endpoint. The proxy consumes the complete successful
-upstream response, then closes the downstream connection before sending any
-response bytes. The client observes a transport failure after the real native
+upstream response, then closes the downstream connection either before any
+response bytes or after sending an incomplete JSON body with its full length
+advertised. The client observes a transport failure after the real native
 proposal creation has completed. Its retry sends unchanged arguments and the
 original key, receives the complete recorded proposal, and adds no native
 record, Activity entry or approval. Both autonomous and held policies run.
@@ -238,12 +239,90 @@ approved snapshot, including stored snapshot bytes and hashes.
 `tests/mcp-client-browser.mjs` repeats the wire journey against the production
 build, checks the resulting proposals and Activity, and records those screens
 at 1440 and 390. Both run in the existing agent-door verification shard.
-This bounds BASE-AGENT-012 acceptance point 2 to completed synchronous proposal
-creation through `/mcp` and `/api/easel/mcp`. Queued work, uncertain provider
-delivery, cross-person background-job handles, 24-hour retention and the rest
-of the clause remain unqualified. Resource refresh, events, subscriptions,
-the broader administrative registry and stranger-finance-week qualification
-remain held; no Base or rer change is implied.
+The same journey continues through every currently registered synchronous
+planning mutation: revenue, salary, expense creation and editing, entered
+schedules, formulas, asset categories and assets, allocations, borrowing,
+equity, tax assumptions, forecast windows, comments, variance explanation
+drafts and proposal submission, with formula and expense removal. Each completed
+response is lost at the HTTP edge, then recovered with the original key and
+arguments and a new JSON-RPC id through both endpoints under both policies.
+The alternate endpoint also recovers each completed key without another effect.
+It checks the native input values and exact cents, removed inputs, comment,
+draft explanation, forecast window, submitted proposal and Activity, with unchanged approved snapshot bytes and hashes. Changed
+arguments conflict without another effect, stale new work names the current
+revision, and a new key cannot submit an already submitted proposal.
+
+Completed formula, allocation and tax-policy creation recoveries locate their
+original native input by agent, sponsor and caller key. They recheck that record
+as an edit with current native authority, including Pay, department, dimension,
+source and finance grants. This preserves native uniqueness constraints without
+trying to create another allocation or tax policy. A fresh key cannot consume
+the original completed receipt. A native finance downgrade refuses allocation
+and tax retries on both endpoint paths without cached content or effects. Completed submission rechecks
+current proposal ownership and every changed input's native scope. Only the
+shared door's completed, argument-matched receipt may consume the original
+revision or draft precondition; first execution retains those checks. Native
+Pay revocation refuses a completed formula key, and department revocation
+refuses a completed submission key, without returning private content or
+changing the proposal or Activity.
+
+Retained results also follow the current native erasure map. The seed projects
+structured planning data, serialized result text and resource names when
+returning them, including a cached receipt. Erasing a different person cannot
+restore their old identity through a proposal, formula or submission retry.
+Computed class facts retain their shared-door values, and stored approved
+snapshot bytes and hashes remain unchanged. Both policies and endpoint paths
+exercise this boundary through native person erasure and MCP recovery.
+
+### Long work returns a job handle
+
+A change to a plan above MODEL-007's 2,000 inline inputs runs as Easel's native
+background calculation, exactly as the same change does in the app. This covers
+revenue, salary, expense, schedule, formula, asset, allocation, borrowing,
+equity and tax changes and input removal. The admitted call returns
+`{"calculationJob": {"id", "scenarios", "status": "running", "startedAt"}}` as
+its recorded outcome. The job then makes the one native change with the
+sponsor's current authority, the caller's key and the admitted plan revision; a
+plan that changed in between fails the job without an effect.
+
+Poll `easel.calculations.status` with the handle's `id` until `status` is
+`completed` or `failed` (each with `responseStatus`) or `interrupted`, then read
+the plan with `easel.scenarios.read`. An interrupted job's outcome is unknown:
+inspect the plan before preparing new work, and never resend it with a new key.
+A retry with the original key and arguments returns the same handle and starts no
+second calculation. This uses only ordinary tool calls; the MCP Tasks extension
+is not involved.
+
+A handle belongs to the person who started the work. Another person's agent
+token or session reads it as `resource_unavailable` at both endpoints, and the
+status list shows only the caller's own jobs. People who can see the affected
+scenario still see that it is recalculating, as MODEL-007 requires.
+
+### Retention and outward delivery
+
+Recorded outcomes have no expiry: a key with its original arguments returns its
+first outcome for as long as the installation keeps the call record, including
+after an approval's wait has lapsed. The door reads the same installation clock
+as native commands. No registered planning tool delivers anything outside the
+installation (every tool declares `openWorldHint: false`), so this door has no
+uncertain-delivery state. Any tool registered later passes through the same
+shared door and its recorded-outcome rule.
+
+`tests/mcp-client.test.mjs` imports a reviewed 2,201-row workbook through the
+native kit. A contributor's agent copies it into a draft proposal and changes a
+schedule under autonomous and held policies. The proxy drops the response that
+carries the job handle. Retries with new JSON-RPC ids through both endpoints
+return that handle, the job completes, and the plan holds one changed input and
+one calculation. Under the held policy a salary change waits for the named
+owner's native approval, then runs as a job. Finance can see the proposal, but
+its own agent session reads the contributor's handle as not found. Proposal,
+schedule and approved salary keys then replay unchanged 25 hours later by the
+installation clock, adding no change, calculation or approval.
+
+Resource refresh (BASE-AGENT-003), events and subscriptions (BASE-AGENT-010),
+the broader administrative registry (BASE-AGENT-002) and stranger-finance-week
+qualification (BASE-AGENT-013) remain held in those clauses. No Base or rer
+change is implied.
 
 The unmerged ct surface at `0fdce273b4c78b98414fdc780b8160950e4fbfb5`
 is a broader target. Administrative access/security changes, connectors, erasure,

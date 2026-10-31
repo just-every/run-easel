@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { builtBrowserRuntime } from './built-browser-runtime.mjs'
 import { droppedResponseProxy, standaloneClientJourney } from './mcp-client-journey.mjs'
-const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
+const { chromium, expect } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-mcp-client')
 await mkdir(evidence, { recursive: true })
 const runtime = await builtBrowserRuntime()
@@ -50,6 +50,7 @@ try {
    const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/easel/activity' && new URL(response.url()).searchParams.get('record') === proposal.id)
    await page.getByRole('button', { name: 'Filter activity', exact: true }).click()
    await filtered
+   await expect(page.getByRole('link', { name: 'Export filtered activity as CSV', exact: true })).toHaveAttribute('href', `/api/easel/activity.csv?${new URLSearchParams({ record: proposal.id })}`)
    const creation = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Created a proposal', { exact: true }) })
    await creation.waitFor()
    assert.equal(await creation.count(), 1, 'Native Activity shows one creation after recovery')
@@ -59,6 +60,60 @@ try {
    if (path === '/mcp') for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 })
     await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Activity', exact: true }) }).screenshot({ path: join(evidence, `recovered-activity-${policy}-${width}.png`) })
+   }
+   await page.setViewportSize({ width: 1440, height: 1000 })
+  },
+  inspectLifecycle: async ({ native, proposal, edited, formula, note, policy, path, revenue, expense, schedule, asset, equity }) => {
+   const view = await native(`/api/easel/scenario/${proposal.id}`)
+   assert.equal(view.inputs.position.find(row => row.id === edited.id).annualSalaryCents, 7200000)
+   assert.ok(!view.inputs.formula.some(row => row.id === formula.id))
+   await page.setViewportSize({ width: 1440, height: 1000 })
+   await page.goto(runtime.origin + '/app?tab=plan')
+   await page.getByLabel('Scenario', { exact: true }).selectOption(proposal.id)
+   const expenseTable = page.getByRole('region', { name: 'Expenses', exact: true })
+   const expenseRow = expenseTable.getByRole('row').filter({ has: page.getByRole('cell', { name: expense.name, exact: true }) })
+   await expenseRow.waitFor()
+   assert.equal(await expenseRow.count(), 1)
+   assert.ok((await expenseRow.textContent()).includes('$234.56'))
+   assert.equal(await expenseTable.getByRole('cell', { name: 'Synthetic removed expense', exact: true }).count(), 0)
+   for (const [table, record] of [['Revenue models', revenue], ['Schedules', schedule], ['Planned and existing assets', asset], ['Planned equity raises', equity]]) {
+    const row = page.getByRole('region', { name: table, exact: true }).getByRole('row').filter({ has: page.getByRole('cell', { name: record.name, exact: true }) })
+    assert.equal(await row.count(), 1, `Recovered ${table} appears once in native Plan`)
+   }
+   if (path === '/mcp') for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await expenseTable.locator('xpath=ancestor::section[1]').screenshot({ path: join(evidence, `recovered-plan-expenses-${policy}-${width}.png`) })
+   }
+   await page.setViewportSize({ width: 1440, height: 1000 })
+   await page.goto(runtime.origin + '/app?tab=scenarios')
+   const proposals = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Proposals', exact: true }) })
+   const row = proposals.getByRole('row').filter({ has: page.getByRole('cell', { name: proposal.name, exact: true }) })
+   await row.waitFor()
+   assert.equal(await row.count(), 1)
+   assert.ok((await row.textContent()).includes('submitted'))
+   if (path === '/mcp') for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await proposals.screenshot({ path: join(evidence, `recovered-lifecycle-proposals-${policy}-${width}.png`) })
+   }
+   await page.setViewportSize({ width: 1440, height: 1000 })
+   await page.goto(runtime.origin + '/app?tab=activity')
+   await page.locator('.activity-log').waitFor()
+   await page.getByLabel('Scenario', { exact: true }).selectOption(proposal.id)
+   const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/easel/activity' && new URL(response.url()).searchParams.get('scenario') === proposal.id)
+   await page.getByRole('button', { name: 'Filter activity', exact: true }).click()
+   await filtered
+   await expect(page.getByRole('link', { name: 'Export filtered activity as CSV', exact: true })).toHaveAttribute('href', `/api/easel/activity.csv?${new URLSearchParams({ scenario: proposal.id })}`)
+   const submission = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Submitted a proposal', { exact: true }) })
+   await submission.waitFor()
+   assert.equal(await submission.count(), 1)
+   const comments = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Added a comment', { exact: true }) })
+   assert.equal(await comments.count(), 1)
+   const storedComments = (await native('/api/easel/state')).comments.filter(row => row.scenario === proposal.id && row.text === note)
+   assert.equal(storedComments.length, 1, 'The recovered native comment retains its complete text')
+   assert.equal(storedComments[0].authorName, 'Synthetic Owner')
+   if (path === '/mcp') for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Activity', exact: true }) }).screenshot({ path: join(evidence, `recovered-lifecycle-activity-${policy}-${width}.png`) })
    }
    await page.setViewportSize({ width: 1440, height: 1000 })
   },

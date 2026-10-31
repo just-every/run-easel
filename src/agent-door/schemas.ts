@@ -10,10 +10,14 @@ const job = { type: 'object', required: ['id','scenarios','status','startedAt'],
  startedAt: string, completedAt: string, error: string,
 }, additionalProperties: false }
 const inputs = new Set(['revenue','position','expense','schedule','formula','asset-category','asset','allocation','debt','tax-policy','equity'])
+// Changes MODEL-007 runs in the background return the native job handle instead.
+const queued = { type: 'object', required: ['calculationJob'], properties: { calculationJob: job }, additionalProperties: false }
+const background = new Set(['revenue','position','expense','schedule','formula','asset','allocation','debt','tax-policy','equity','input-delete'])
+const orQueued = (name: string, schema: JsonSchema): JsonSchema => background.has(name) ? { oneOf: [schema, queued] } : schema
 
 /** Public native response shapes, independent of tool input or imported narratives. */
 export function outputSchema(name: string): JsonSchema {
- if (inputs.has(name)) return input
+ if (inputs.has(name)) return orQueued(name, input)
  if (['proposal-create','proposal-submit','forecast-window'].includes(name)) return scenario
  if (name === 'scenarios') return { type: 'object', required: ['scenarios','lines','departments','workspace','references'], properties: {
   scenarios: { type: 'array', items: scenario }, lines: records, departments: records, workspace: object,
@@ -29,7 +33,7 @@ export function outputSchema(name: string): JsonSchema {
   { type: 'object', required: ['jobs'], properties: { jobs: { type: 'array', items: { type: 'object', required: ['calculationJob'], properties: { calculationJob: job, responseStatus: { type: 'integer' } }, additionalProperties: false } } }, additionalProperties: false },
   { type: 'object', required: ['calculationJob'], properties: { calculationJob: job, responseStatus: { type: 'integer' } }, additionalProperties: false },
  ] }
- if (name === 'input-delete') return { type: 'object', required: ['removed'], properties: { removed: string }, additionalProperties: false }
+ if (name === 'input-delete') return orQueued(name, { type: 'object', required: ['removed'], properties: { removed: string }, additionalProperties: false })
  if (name === 'comment') return { type: 'object', required: ['id','scenario','author','text'], properties: { id: string, scenario: string, author: string, text: string } }
  if (name === 'explanation') return { type: 'object', required: ['id','month','line','text','status'], properties: { id: string, month: string, line: string, text: string, status: string, citationIds: { type: 'array', items: string } } }
  throw new Error(`Native response schema missing for ${name}`)

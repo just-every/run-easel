@@ -4,10 +4,11 @@ import { planningTarget } from './targets.ts'
 import { outputSchema } from './schemas.ts'
 import { catalogue } from './catalogue.ts'
 import { nativeAction, nativeContext, nativeAdmission, type NativeAdmission, recordClasses } from './native.ts'
+import { queuedAction, type Defer } from './jobs.ts'
 import { scenarioLink } from './resources.ts'
 import { find, type Data } from '../easel/types'
 
-export function planningTools(): ToolDefinition[] {
+export function planningTools(defer: Defer): ToolDefinition[] {
  // A door is built per request. These read-only admission snapshots never
  // become persistent effects or outlive a pending HTTP request.
  const admissions = new Map<string, NativeAdmission>()
@@ -21,11 +22,11 @@ export function planningTools(): ToolDefinition[] {
  name: tool.name, title: tool.name, description: tool.description, scope: tool.scope, readOnly: tool.readOnly,
  inputSchema: { ...tool.inputSchema, type: 'object' }, outputSchema: outputSchema(tool.nativeName), classes: tool.classes, clauses: tool.clauses, untrusted: true,
  target: (args, ctx) => planningTarget(tool.nativeName, args, ctx),
- async classify(args, ctx) {
+ async classify(args, ctx, completed) {
   if (tool.nativeName === 'input-delete') { const retained = await deletionReplay(args, ctx); if (retained) { admissions.set(key(ctx, tool.name), nativeAdmission(retained.c)); return recordClasses(retained.input) } }
   // Native status reads expire interrupted jobs. Classification must never do that.
   if (tool.nativeName === 'calculation_status') { const c = await nativeContext(ctx); admissions.set(key(ctx, tool.name), nativeAdmission(c)); return recordClasses(null) }
-  const { c, result } = await nativeAction(tool.nativeName, args, ctx, false)
+  const { c, result } = await nativeAction(tool.nativeName, args, ctx, false, undefined, !!completed)
   admissions.set(key(ctx, tool.name), nativeAdmission(c))
   if (!tool.classes.includes('sensitive')) return recordClasses(null)
   const changed = [...c.s.values()].filter(row => c.before.get(`${row.kind}:${row.id}`)?.revision !== row.revision)
@@ -51,6 +52,8 @@ export function planningTools(): ToolDefinition[] {
    // Approved reads run again on later requests; re-read native authority and
    // fence that current view instead of depending on an earlier request's map.
    const admission = tool.readOnly ? nativeAdmission(await nativeContext(ctx)) : admitted(ctx, tool.name)
+   const job = tool.readOnly ? null : await queuedAction(tool.nativeName, args, ctx, admission, defer)
+   if (job) return { result: job }
    const { result } = await nativeAction(tool.nativeName, args, ctx, true, admission)
    const record = tool.nativeName === 'scenario' ? result.scenario : ['proposal-create', 'proposal-submit'].includes(tool.nativeName) ? result : null
    return { result, ...(record?.id ? { resources: [scenarioLink(record)] } : {}) }

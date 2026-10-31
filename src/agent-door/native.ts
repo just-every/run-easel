@@ -6,7 +6,7 @@ import { agentEnabled } from '../easel/agents/governance'
 import { load, readFence, save } from '../easel/store'
 import { versionStructure } from '../easel/structure-versions'
 import { erasedView } from '../easel/erasure'
-import { Fault, find, type Actor, type Data } from '../easel/types'
+import { Fault, find, get, put, type Actor, type Data } from '../easel/types'
 import type { Context } from '../easel/context'
 import { invokeNative } from '../easel/agent-actions'
 
@@ -36,13 +36,17 @@ export async function nativeContext(ctx: ToolContext | ResourceContext): Promise
 }
 export type NativeAdmission = { revision: number; person: string; version: number; role: Actor['baseRole'] }
 export const nativeAdmission = (c: Awaited<ReturnType<typeof nativeContext>>): NativeAdmission => ({ revision: c.revision, person: c.x.actor.id, version: c.x.actor.version, role: c.x.actor.baseRole })
+export const admits = (c: Awaited<ReturnType<typeof nativeContext>>, expected: NativeAdmission) =>
+ c.revision === expected.revision && c.x.actor.id === expected.person && c.x.actor.version === expected.version && c.x.actor.baseRole === expected.role
 
-export async function nativeAction(name: string, args: Data, ctx: ToolContext | ResourceContext, persist: boolean, expected?: NativeAdmission) {
+/** `job` runs the action as its own background calculation, as MODEL-007's native commands do. */
+export async function nativeAction(name: string, args: Data, ctx: ToolContext | ResourceContext, persist: boolean, expected?: NativeAdmission, completed = false, job?: string) {
  const c = await nativeContext(ctx)
+ if (job) c.calculationJob = job
  try {
-  if (expected && (c.revision !== expected.revision || c.x.actor.id !== expected.person || c.x.actor.version !== expected.version || c.x.actor.baseRole !== expected.role)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
+  if (expected && !admits(c, expected)) throw new ToolRefusal('revision_conflict', 'The native plan or authority changed', { current_revision: c.revision })
   let proposed = args
-  if (!persist && args.revision !== undefined && ctx.idempotencyKey) {
+  if (!persist && completed && args.revision !== undefined && ctx.idempotencyKey) {
    // A completed effect advances its own native revision. Re-admit its receipt
    // under today's native grants, without treating that advancement as a stale
    // first execution. The actual write always keeps the original precondition.
@@ -52,6 +56,26 @@ export async function nativeAction(name: string, args: Data, ctx: ToolContext | 
     .bind(ctx.agent.id, ctx.person.id, ctx.idempotencyKey).first()
    const scenario = written && typeof args.scenario === 'string' ? find(c.s, 'scenario', args.scenario) : null
    if (scenario) proposed = { ...args, revision: typeof args.revision === 'string' ? String(scenario.revision) : scenario.revision }
+  }
+  if (!persist && completed && ['formula', 'allocation', 'tax-policy'].includes(name) && !args.id) {
+   // Formula names, shared-department allocations and scenario tax policies
+   // consume a native uniqueness constraint. Re-admit the recorded input as
+   // an edit so current native grants run without creating it a second time.
+   const row = await ctx.db.prepare(`SELECT record FROM e_activity WHERE action='record-changed'
+    AND json_extract(detail,'$.kind')=? AND json_extract(detail,'$.after') IS NOT NULL
+    AND json_extract(detail,'$.authority.id')=? AND json_extract(detail,'$.authority.for.id')=?
+    AND json_extract(detail,'$.authority.idempotencyKey')=? LIMIT 1`)
+    .bind(name, ctx.agent.id, ctx.person.id, ctx.idempotencyKey).first<{record:string}>()
+   if (!row || !find(c.s, name, row.record)) throw new ToolRefusal('resource_unavailable')
+   proposed = { ...proposed, id: row.record }
+  }
+  if (!persist && completed && name === 'proposal-submit') {
+   // Only the shared door's completed, argument-matched receipt reaches here.
+   // Re-run native submission authority against today's proposal and inputs;
+   // the consumed draft precondition applies only to a new effect.
+   const proposal = get(c.s, 'scenario', args.id)
+   if (proposal.proposalStatus !== 'submitted') throw new ToolRefusal('resource_unavailable')
+   put(c.s, 'scenario', proposal.id, { ...proposal, proposalStatus: 'draft' })
   }
   // Match the native HTTP boundary: optional undefined fields are not JSON values.
   const result = JSON.parse(JSON.stringify(await erasedView(c.db, await invokeNative(c, name, proposed)))) as Data

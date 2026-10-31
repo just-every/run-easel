@@ -22,7 +22,7 @@ import { runCashAlertSchedule } from './easel/cash-alert-schedule'
 
 export default withDemo({
   async fetch(request, env, execution) {
-    const agent = await agentResponse(request, env)
+    const agent = await agentResponse(request, env, execution)
     if (agent) return agent
     const asset = await staticAssetResponse(request, env)
     if (asset) return asset
