@@ -89,7 +89,9 @@ try {
    assert.equal(await submission.count(), 1)
    const comments = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Added a comment', { exact: true }) })
    assert.equal(await comments.count(), 1)
-   assert.ok((await comments.textContent()).includes(note))
+   const storedComments = (await native('/api/easel/state')).comments.filter(row => row.scenario === proposal.id && row.text === note)
+   assert.equal(storedComments.length, 1, 'The recovered native comment retains its complete text')
+   assert.equal(storedComments[0].authorName, 'Synthetic Owner')
    if (path === '/mcp') for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 })
     await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Activity', exact: true }) }).screenshot({ path: join(evidence, `recovered-lifecycle-activity-${policy}-${width}.png`) })
