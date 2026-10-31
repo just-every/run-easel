@@ -111,7 +111,7 @@
       "executable": false
     },
     ".github/workflows/verify.yml": {
-      "sha256": "b5062a2a9c88c2a89d5470233a5d8a73c1ab1b8181fb03708173674184f56a39",
+      "sha256": "f85101ea2a922b0ed73da60cd31b8c5486667d4bd9abec9db8e1849ffeade5eb",
       "executable": false
     },
     ".gitignore": {
@@ -964,6 +964,10 @@
     },
     "scripts/ci/playwright-register.mjs": {
       "sha256": "8ec336d8a0063df4068d6fed65c307ab9c6424ec33d1d57cb32f0ec00db937a2",
+      "executable": false
+    },
+    "scripts/ci/test-shard.mjs": {
+      "sha256": "f1d3e9f4fa0a1da7141642e336a25c8449cec889ce5a028f491d2e4db2cdd2b1",
       "executable": false
     },
     "scripts/contract-docs.mjs": {
