@@ -68,19 +68,19 @@ export async function nativeAction(name: string, args: Data, ctx: ToolContext | 
  }
 }
 
-/** Only native payroll and identity fields trigger sensitive; caller labels have no authority. */
-function sensitiveRecords(value: unknown): number {
+/** Only native payroll and identity fields trigger sensitive; narrative has no authority.
+ * Carry a native view's line definitions into nested inputs, including array wrappers.
+ * Mutation callers supply the same native definitions for changed and removed inputs. */
+function sensitiveRecords(value: unknown, payrollLines: ReadonlySet<string>): number {
  if (!value || typeof value !== 'object') return 0
- if (Array.isArray(value)) return value.reduce((n, item) => n + sensitiveRecords(item), 0)
+ if (Array.isArray(value)) return value.reduce((n, item) => n + sensitiveRecords(item, payrollLines), 0)
  const object = value as Data
- if (Object.hasOwn(object, 'annualSalaryCents') || Object.hasOwn(object, 'annualSalary') || Object.hasOwn(object, 'holder') && !!object.holder) return 1
- return Object.values(object).reduce<number>((n, item) => n + sensitiveRecords(item), 0)
+ const lines = Array.isArray(object.lines) ? new Set<string>(object.lines.filter((line: Data) => line.payroll).map((line: Data) => line.id)) : payrollLines
+ if (Object.hasOwn(object, 'annualSalaryCents') || Object.hasOwn(object, 'annualSalary') || Object.hasOwn(object, 'holder') && !!object.holder
+  || object.originId && object.scenario && lines.has(object.line)) return 1
+ return Object.values(object).reduce<number>((n, item) => n + sensitiveRecords(item, lines), 0)
 }
-export function recordClasses(value: unknown): ClassAndFacts[] {
- const view = value && typeof value === 'object' && !Array.isArray(value) ? value as Data : null
- const payrollLines = new Set<string>((view?.lines ?? []).filter((line: Data) => line.payroll).map((line: Data) => line.id))
- const payrollInputs = Object.entries(view?.inputs ?? {}).filter(([kind]) => kind !== 'position')
-  .flatMap(([, inputs]) => inputs as Data[]).filter(input => payrollLines.has(input.line)).length
- const n = sensitiveRecords(value) + payrollInputs
+export function recordClasses(value: unknown, payrollLines: ReadonlySet<string> = new Set()): ClassAndFacts[] {
+ const n = sensitiveRecords(value, payrollLines)
  return [{ class: 'standard', facts: { measure: 1 } }, ...(n ? [{ class: 'sensitive' as const, facts: { measure: n, kind: 'payroll' } }] : [])]
 }
