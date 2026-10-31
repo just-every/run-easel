@@ -62,6 +62,40 @@ try {
    }
    await page.setViewportSize({ width: 1440, height: 1000 })
   },
+  inspectLifecycle: async ({ native, proposal, edited, formula, note, policy, path }) => {
+   const view = await native(`/api/easel/scenario/${proposal.id}`)
+   assert.equal(view.inputs.position.find(row => row.id === edited.id).annualSalaryCents, 7200000)
+   assert.ok(!view.inputs.formula.some(row => row.id === formula.id))
+   await page.setViewportSize({ width: 1440, height: 1000 })
+   await page.goto(runtime.origin + '/app?tab=scenarios')
+   const proposals = page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Proposals', exact: true }) })
+   const row = proposals.getByRole('row').filter({ has: page.getByRole('cell', { name: proposal.name, exact: true }) })
+   await row.waitFor()
+   assert.equal(await row.count(), 1)
+   assert.ok((await row.textContent()).includes('submitted'))
+   if (path === '/mcp') for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await proposals.screenshot({ path: join(evidence, `recovered-lifecycle-proposals-${policy}-${width}.png`) })
+   }
+   await page.setViewportSize({ width: 1440, height: 1000 })
+   await page.goto(runtime.origin + '/app?tab=activity')
+   await page.locator('.activity-log').waitFor()
+   await page.getByLabel('Scenario', { exact: true }).selectOption(proposal.id)
+   const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/easel/activity' && new URL(response.url()).searchParams.get('scenario') === proposal.id)
+   await page.getByRole('button', { name: 'Filter activity', exact: true }).click()
+   await filtered
+   const submission = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Submitted a proposal', { exact: true }) })
+   await submission.waitFor()
+   assert.equal(await submission.count(), 1)
+   const comments = page.locator('.activity-log tbody tr').filter({ has: page.getByText('Added a comment', { exact: true }) })
+   assert.equal(await comments.count(), 1)
+   assert.ok((await comments.textContent()).includes(note))
+   if (path === '/mcp') for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Activity', exact: true }) }).screenshot({ path: join(evidence, `recovered-lifecycle-activity-${policy}-${width}.png`) })
+   }
+   await page.setViewportSize({ width: 1440, height: 1000 })
+  },
   approve: async ({ approval, native }) => {
    await page.goto(approval.url)
    await page.getByRole('button', { name: 'Approve', exact: true }).waitFor()

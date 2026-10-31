@@ -21,11 +21,11 @@ export function planningTools(): ToolDefinition[] {
  name: tool.name, title: tool.name, description: tool.description, scope: tool.scope, readOnly: tool.readOnly,
  inputSchema: { ...tool.inputSchema, type: 'object' }, outputSchema: outputSchema(tool.nativeName), classes: tool.classes, clauses: tool.clauses, untrusted: true,
  target: (args, ctx) => planningTarget(tool.nativeName, args, ctx),
- async classify(args, ctx) {
+ async classify(args, ctx, completed) {
   if (tool.nativeName === 'input-delete') { const retained = await deletionReplay(args, ctx); if (retained) { admissions.set(key(ctx, tool.name), nativeAdmission(retained.c)); return recordClasses(retained.input) } }
   // Native status reads expire interrupted jobs. Classification must never do that.
   if (tool.nativeName === 'calculation_status') { const c = await nativeContext(ctx); admissions.set(key(ctx, tool.name), nativeAdmission(c)); return recordClasses(null) }
-  const { c, result } = await nativeAction(tool.nativeName, args, ctx, false)
+  const { c, result } = await nativeAction(tool.nativeName, args, ctx, false, undefined, !!completed)
   admissions.set(key(ctx, tool.name), nativeAdmission(c))
   if (!tool.classes.includes('sensitive')) return recordClasses(null)
   const changed = [...c.s.values()].filter(row => c.before.get(`${row.kind}:${row.id}`)?.revision !== row.revision)

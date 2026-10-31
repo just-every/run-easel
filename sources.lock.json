@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "de452a142a0ab93f512f8ea26375e96fb196bcc4c0cd87889847ba4474bbcacf",
+      "sha256": "ba5537fdac9b335eeeec9d9163d4c9c450014a208501f0c010939e26d3cd9e21",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "203c8c16da77e1aa7679485fb55ee539a8bcc0e2a1de9d3299d97b2166afd002",
+      "sha256": "c040e4a3094933d88063e9587c5df795c5f6290cff4c9482424f179f15ae2a74",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -1747,7 +1747,7 @@
       "executable": false
     },
     "src/agent-door/native.ts": {
-      "sha256": "d53bd47cf3a7fe98e2f8f2dbf21f45b33da99e5717f11e8713a09abe6d395c29",
+      "sha256": "9edc153062b98c421cc1358f346040410f6b90eff9762ae16de6e955bfbbbe68",
       "executable": false
     },
     "src/agent-door/people.ts": {
@@ -1771,7 +1771,7 @@
       "executable": false
     },
     "src/agent-door/tools.ts": {
-      "sha256": "d1a1a1b21759996933645e81e21a741e5fae307fc2c59b183e44bccb9505282a",
+      "sha256": "6a8a1953e306bf6863e190eeb6fcf2921b5b719d43f5def0b489023b69b8eba6",
       "executable": false
     },
     "src/agent-door/trust.ts": {
@@ -6603,15 +6603,15 @@
       "executable": false
     },
     "tests/mcp-client-browser.mjs": {
-      "sha256": "080ba79d2cc8d6f8daa8ec2f0a32778202940a591389e9fd59c745f645f709c7",
+      "sha256": "75d60df7bb57cb013c070f6ca23779629c296e6862ae600249863e990eef28dd",
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
-      "sha256": "b0adea52517603d3947fbc6b5ec8d9a39c4b99e9b1f35601cd4de9362703f1b3",
+      "sha256": "844c36d712d09c2cf5d63ed34980136ed73a598d728f18e3fa29514e7e79e073",
       "executable": false
     },
     "tests/mcp-client.test.mjs": {
-      "sha256": "9e232e41e42722a2a117743ee1b9a8f0caefad669e933fb86eb05b3fd913e5b3",
+      "sha256": "e1317f4855cc16fd47ae68934a35fdb235abd91efaac5495f1237350c7b611e3",
       "executable": false
     },
     "tests/mcp.test.mjs": {

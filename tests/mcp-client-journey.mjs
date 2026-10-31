@@ -1,6 +1,6 @@
 // Independent wire client: no shared-door protocol or name-rewriting helpers.
 import assert from 'node:assert/strict'
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 
 const modern = '2026-07-28', legacy = '2025-11-25'
 
@@ -37,7 +37,7 @@ export async function droppedResponseProxy(origin) {
  }
 }
 
-export async function standaloneClientJourney({ origin, cookie, edge, approve, inspect = async () => {}, proof = () => {} }) {
+export async function standaloneClientJourney({ origin, cookie, edge, approve, inspect = async () => {}, inspectLifecycle = async () => {}, proof = () => {} }) {
  let id = 0
  const native = async (path, body, method = body === undefined ? 'GET' : 'POST') => {
   const response = await fetch(origin + path, { method, redirect: 'manual', headers: { origin, cookie, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
@@ -68,15 +68,35 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    ],
   } }, 'PUT')
   for (const path of ['/mcp', '/api/easel/mcp']) {
-   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, throughEdge = false } = {}) => {
+   const rpc = async (method, params = {}, { version = modern, headers = {}, notification = false, handshake = false, stream = false, raw = false, throughEdge = false } = {}) => {
     const payload = JSON.stringify({ jsonrpc: '2.0', ...(notification ? {} : { id: ++id }), method,
      params: { ...params, ...(version === legacy ? {} : { _meta: { 'io.modelcontextprotocol/protocolVersion': version } }) } })
-    const response = await fetch((throughEdge ? edge.origin : origin) + path, { method: 'POST', redirect: 'manual', headers: {
+    const url = (throughEdge ? edge.origin : origin) + path
+    const requestHeaders = {
      // Refused oversized uploads may close early: keep their sockets out of the native-read pool.
      origin, cookie, connection: 'close', accept: 'application/json, text/event-stream', 'content-type': 'application/json',
      ...(!handshake ? { 'mcp-protocol-version': version } : {}),
      ...(version === legacy ? {} : { 'mcp-method': method, ...(method === 'tools/call' ? { 'mcp-name': params.name } : {}) }), ...headers,
-    }, body: stream ? new ReadableStream({ start(controller) { const bytes = new TextEncoder().encode(payload); for (let offset = 0; offset < bytes.length; offset += 65536) controller.enqueue(bytes.slice(offset, offset + 65536)); controller.close() } }) : payload,
+    }
+    // An early 413 can close the upload side while its refusal is still being
+    // received. Keep those independent halves with Node's raw HTTP client.
+    if (raw) return new Promise((resolve, reject) => {
+     let received = false
+     const upload = httpRequest(url, { method: 'POST', headers: { ...requestHeaders, ...(!stream ? { 'content-length': Buffer.byteLength(payload) } : {}) } }, response => {
+      received = true
+      const chunks = []
+      response.on('data', chunk => chunks.push(chunk))
+      response.once('error', reject)
+      response.once('end', () => { try { resolve({ status: response.statusCode, headers: new Headers(response.headers), body: JSON.parse(Buffer.concat(chunks).toString()) }) } catch (error) { reject(error) } })
+     })
+     upload.once('error', error => { if (!received) reject(error) })
+     const bytes = Buffer.from(payload)
+     if (stream) for (let offset = 0; offset < bytes.length; offset += 65536) upload.write(bytes.subarray(offset, offset + 65536))
+     else upload.write(bytes)
+     upload.end()
+    })
+    const response = await fetch(url, { method: 'POST', redirect: 'manual', headers: requestHeaders,
+     body: stream ? new ReadableStream({ start(controller) { const bytes = new TextEncoder().encode(payload); for (let offset = 0; offset < bytes.length; offset += 65536) controller.enqueue(bytes.slice(offset, offset + 65536)); controller.close() } }) : payload,
     ...(stream ? { duplex: 'half' } : {}) })
     const text = await response.text()
     return { status: response.status, headers: response.headers, body: text ? JSON.parse(text) : null }
@@ -134,8 +154,8 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
     [{ headers: { origin: 'https://foreign.invalid' } }, args, 403, -32600, 'Origin refused'],
     [{ headers: { 'mcp-method': 'tools/list' } }, args, 400, -32020, 'HeaderMismatch'],
     [{ headers: { 'mcp-name': 'easel.scenarios.list' } }, args, 400, -32020, 'HeaderMismatch'],
-    [{}, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
-    [{ stream: true }, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
+    [{ raw: true }, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
+    [{ stream: true, raw: true }, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
    ]
    for (const [options, arguments_, status, code, message] of refusals) {
     const refused = await rpc('tools/call', { name: 'easel.proposals.create', arguments: arguments_ }, options)
@@ -220,6 +240,89 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    await unchangedCapture()
    await inspect({ native, proposal: recorded, activity: effects[0], policy, path })
    proof(`BASE-AGENT-012 point2: ${path} ${policy} real response dropped after completion; new JSON-RPC id with original arguments and key -> recorded outcome, one proposal and Activity effect, approved snapshot unchanged${policy === 'held' ? ', named-person approval retained' : ''}`)
+
+   // Recover an entire native draft lifecycle, including consumed preconditions.
+   const recover = async (name, values, check) => {
+    const arguments_ = { ...values, idempotency_key: `${key}-lost-${name}` }
+    const params = { name: `easel.${name}`, arguments: arguments_ }
+    const before = await snapshot()
+    let resume = params
+    if (policy === 'held' && name === 'positions.update') {
+     const pending = await result('tools/call', params, { throughEdge: true })
+     assert.equal(pending.resultType, 'input_required')
+     assert.deepEqual((await snapshot()).scenarios, before.scenarios, 'Held edits cannot change a draft before native approval')
+     await approve({ approval: pending._meta['com.runeditrun/approval'], native, policy, path, version: modern })
+     resume = { ...params, ...(pending.requestState ? { requestState: pending.requestState } : {}) }
+    }
+    edge.arm()
+    await assert.rejects(rpc('tools/call', resume, { throughEdge: true }), error => error instanceof TypeError && error.message === 'fetch failed')
+    const lost = edge.dropped
+    assert.equal(lost.status, 200)
+    assert.ok(!lost.body.error, JSON.stringify(lost.body))
+    assert.equal(lost.body.result.isError, false, JSON.stringify(lost.body))
+    const outcome = lost.body.result.structuredContent
+    const completed = await snapshot()
+    await check(outcome, before, completed)
+    const replay = await rpc('tools/call', params, { throughEdge: true })
+    assert.notEqual(replay.body.id, lost.request.id)
+    assert.deepEqual(lost.request.params.arguments, arguments_)
+    assert.equal(replay.body.result?.isError, false, `${name}: ${JSON.stringify(replay.body)}`)
+    assert.deepEqual(replay.body.result.structuredContent, outcome, `${name} returns its recorded outcome after consumed native preconditions`)
+    assert.deepEqual(await snapshot(), completed, `${name} recovery has no second effect, Activity entry or approval`)
+    const conflict = await result('tools/call', { ...params, arguments: { ...arguments_, expected_revision: -1 } }, { throughEdge: true })
+    assert.equal(conflict.isError, true)
+    assert.equal(conflict._meta['com.runeditrun/error'].code, 'idempotency_conflict')
+    assert.equal(conflict.structuredContent, undefined)
+    assert.deepEqual(await snapshot(), completed, 'Changed arguments cannot reuse a completed key or add an effect')
+    await unchangedCapture()
+    proof(`BASE-AGENT-012 point2 ${name}: ${path} ${policy} lost completed response -> equal recorded result, one native effect, unchanged approved snapshot`)
+    return outcome
+   }
+   const view = () => native(`/api/easel/scenario/${recorded.id}`)
+   const copied = (await view()).inputs.position[0]
+   const edited = await recover('positions.update', { scenario: recorded.id, id: copied.id, title: copied.title, holder: copied.holder,
+    department: department.id, line: payroll.id, start: '2026-01', annualSalary: '72000' }, async (outcome, before, after) => {
+     assert.equal(outcome.id, copied.id)
+     assert.equal(outcome.annualSalaryCents, 7200000)
+     const positions = (await view()).inputs.position
+     assert.equal(positions.length, 1)
+     assert.equal(positions[0].annualSalaryCents, 7200000)
+     assert.equal(after.activity.filter(row => row.action === 'record-changed' && row.record === copied.id).length,
+      before.activity.filter(row => row.action === 'record-changed' && row.record === copied.id).length + 1)
+    })
+   const formula = await recover('formulas.update', { scenario: recorded.id, revision: String((await view()).scenario.revision),
+    name: 'Synthetic recovery formula', department: department.id, unit: 'money', line: payroll.id, formula: '100', start: '2026-01' }, async outcome => {
+     assert.deepEqual((await view()).inputs.formula.map(row => ({ id: row.id, formula: row.formula })), [{ id: outcome.id, formula: '100' }])
+    })
+   await recover('inputs.delete', { kind: 'formula', id: formula.id, revision: String((await view()).scenario.revision) }, async () => {
+    assert.ok(!(await view()).inputs.formula.some(row => row.id === formula.id))
+   })
+   const note = `Synthetic ${policy} ${route} recovered comment`
+   const commented = await recover('comments.create', { scenario: recorded.id, department: department.id, text: note }, async (_outcome, before, after) => {
+    assert.equal(after.state.comments.filter(row => row.text === note).length, 1)
+    assert.equal(after.activity.filter(row => row.action === 'comment' && row.scenario === recorded.id).length,
+     before.activity.filter(row => row.action === 'comment' && row.scenario === recorded.id).length + 1)
+   })
+   const beforeStale = await snapshot()
+   const stale = await result('tools/call', { name: 'easel.comments.create', arguments: { scenario: recorded.id, department: department.id,
+    text: 'Synthetic stale request', idempotency_key: `${key}-stale`, expected_revision: -1 } })
+   assert.equal(stale.isError, true)
+   assert.equal(stale._meta['com.runeditrun/error'].code, 'revision_conflict')
+   assert.ok(Number.isSafeInteger(stale._meta['com.runeditrun/error'].current_revision))
+   assert.deepEqual(await snapshot(), beforeStale, 'Stale requests are refused before any native effect')
+   const submitted = await recover('proposals.submit', { id: recorded.id, summary: 'Synthetic recovered planning alternative' }, async (outcome, before, after) => {
+    assert.equal(outcome.proposalStatus, 'submitted')
+    assert.equal((await view()).scenario.proposalStatus, 'submitted')
+    assert.equal(after.activity.filter(row => row.action === 'proposal-submit' && row.record === recorded.id).length, 1)
+    assert.equal(after.state.scenarios.length, before.state.scenarios.length)
+   })
+   const afterSubmit = await snapshot()
+   const resubmit = await result('tools/call', { name: 'easel.proposals.submit', arguments: { id: recorded.id,
+    summary: 'Synthetic second submission', idempotency_key: `${key}-new-submit` } })
+   assert.equal(resubmit.isError, true, 'A new key cannot bypass the native submitted precondition')
+   assert.equal(resubmit.structuredContent, undefined)
+   assert.deepEqual(await snapshot(), afterSubmit)
+   await inspectLifecycle({ native, proposal: submitted, edited, formula, commented, note, policy, path })
   }
  }
  return { native, catalogue }

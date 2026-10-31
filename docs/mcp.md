@@ -167,8 +167,26 @@ approved snapshot, including stored snapshot bytes and hashes.
 `tests/mcp-client-browser.mjs` repeats the wire journey against the production
 build, checks the resulting proposals and Activity, and records those screens
 at 1440 and 390. Both run in the existing agent-door verification shard.
-This bounds BASE-AGENT-012 acceptance point 2 to completed synchronous proposal
-creation through `/mcp` and `/api/easel/mcp`. Queued work, uncertain provider
+The same journey now continues through a salary edit, revision-bound formula
+creation and deletion, a comment, and proposal submission. Each completed
+response is lost at the HTTP edge, then recovered with the original key and
+arguments and a new JSON-RPC id through both endpoints under both policies.
+It checks the native input values, removed formula, comment, submitted proposal
+and Activity, with unchanged approved snapshot bytes and hashes. Changed
+arguments conflict without another effect, stale new work names the current
+revision, and a new key cannot submit an already submitted proposal.
+
+Completed formula recovery rechecks the existing formula with current native
+Pay, department, dimension and source grants. Completed submission rechecks
+current proposal ownership and every changed input's native scope. Only the
+shared door's completed, argument-matched receipt may consume the original
+revision or draft precondition; first execution retains those checks. Native
+Pay revocation refuses a completed formula key, and department revocation
+refuses a completed submission key, without returning private content or
+changing the proposal or Activity.
+
+This bounds BASE-AGENT-012 acceptance point 2 to these synchronous planning
+mutations through `/mcp` and `/api/easel/mcp`. Queued work, uncertain provider
 delivery, cross-person background-job handles, 24-hour retention and the rest
 of the clause remain unqualified. Resource refresh, events, subscriptions,
 the broader administrative registry and stranger-finance-week qualification
