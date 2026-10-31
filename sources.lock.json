@@ -131,7 +131,7 @@
       "executable": false
     },
     "ACCEPTANCE.md": {
-      "sha256": "78f23f53426a4c5eb276a60b6cfe10c40ec94d97a10c17fe0e07cfa3bcb8201b",
+      "sha256": "5027d974206898e0bcbfb385fdd8be609f083d9672f91f7ff16bac27a82bd445",
       "executable": false
     },
     "agent-surface.json": {
@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "aa0b778a3a382b81011c17cfb25b7d618cff9fd6fc795787d19e6dc944d9ca68",
+      "sha256": "34ba58ed450817cd626b533ae5b8a5ccd46c2f0832239bb97d0b46bf99c7aad1",
       "executable": false
     },
     "DEMO.md": {
@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "5b655206ce57365af3bab0d1aa9e67c6b54875443e1419d0a2943f13546234b5",
+      "sha256": "3a3398f2b16702f62a4ff79c58a9ffc53b8c11e6ce60f9e96c146090d581d62a",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -6087,7 +6087,7 @@
       "executable": false
     },
     "tests/agent-action-parity-browser.mjs": {
-      "sha256": "d928624b83fc573929bb16f5055e55742cce04783aa084f07214ef7bab4113f9",
+      "sha256": "a13b213d2b68da659c4aecf461aedfe4cc3fd404487892ddf2e996b6aa0a49ec",
       "executable": false
     },
     "tests/agent-action-parity-flow.mjs": {
@@ -6627,15 +6627,15 @@
       "executable": false
     },
     "tests/mcp-client-browser.mjs": {
-      "sha256": "518896634724ea4f3aead66336c3327c156545388445f2c389e699fa9bf9d2ce",
+      "sha256": "080ba79d2cc8d6f8daa8ec2f0a32778202940a591389e9fd59c745f645f709c7",
       "executable": false
     },
     "tests/mcp-client-journey.mjs": {
-      "sha256": "bbcea7b9a06f523136ccfda20e4ccc608c2fa03fbb3cd38be097337d9f41be30",
+      "sha256": "b0adea52517603d3947fbc6b5ec8d9a39c4b99e9b1f35601cd4de9362703f1b3",
       "executable": false
     },
     "tests/mcp-client.test.mjs": {
-      "sha256": "464d403cfe3bd731b2fc91f13620472230fe31b617cb14ad2cdda5827512aef8",
+      "sha256": "9e232e41e42722a2a117743ee1b9a8f0caefad669e933fb86eb05b3fd913e5b3",
       "executable": false
     },
     "tests/mcp.test.mjs": {
