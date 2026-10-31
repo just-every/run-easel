@@ -36,6 +36,31 @@ native invitation, confirmation and named-owner approval. It does not establish
 full role-by-tool parity, folder or byte budgets, access and security tools,
 grant administration, injection acceptance or real Business transport.
 
+## Signed policy lifetime
+
+The existing owner binding receives signed revisions at
+`POST /api/rer/agent-policy`. A successfully adopted revision controls the next
+planning call and appears in that call's decision and the native person's audit
+at `/agents/api/audit`. Autonomous work runs immediately; held work leaves native
+planning records unchanged until the named person approves its saved summary at
+the supplied `/agents/approvals/` page. A later blocked revision also refuses
+completed-key retries without returning their private results.
+
+The adopted envelope has its own expiry, independent of the access token's
+validity and the approval's wait. Once it expires, fresh planning calls, private
+reads and completed-key retries return `policy_unavailable` without native effects
+or cached private content. Approving pending work cannot bypass that boundary.
+A newly signed, valid envelope restores policy admission while current native
+permissions and the original token's validity remain required.
+
+`tests/agent-policy.test.mjs` and `tests/agent-policy-browser.mjs` exercise signed
+updates, public audit revisions, native person approval and real elapsed expiry.
+The browser journey uses the emitted application and captures the pending,
+completed and refused pages at 1440 and 390. These synthetic Business envelopes
+qualify the existing planning catalogue and owner binding; they do not qualify
+real Business transport, wider administration, approval wait expiration, money
+thresholds, daily caps, upgrade questions or additional agent doors.
+
 ## Supported planning work
 
 Specialist tools use `planning:read` or `planning:write`. The native sponsor still needs
