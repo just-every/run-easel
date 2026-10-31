@@ -10,6 +10,7 @@ import { find, type Data } from '../easel/types'
 export function planningTools(): ToolDefinition[] {
  // A door is built per request. These read-only admission snapshots never
  // become persistent effects or outlive a pending HTTP request.
+ const payrollLines = (c: Awaited<ReturnType<typeof nativeContext>>) => new Set<string>([...c.s.values()].filter(row => row.kind === 'line' && row.value.payroll).map(row => row.id))
  const admissions = new Map<string, NativeAdmission>()
  const key = (ctx: Parameters<ToolDefinition['classify']>[1], tool: string) => `${ctx.operationId}\0${tool}`
  const admitted = (ctx: Parameters<ToolDefinition['classify']>[1], tool: string) => {
@@ -22,7 +23,7 @@ export function planningTools(): ToolDefinition[] {
  inputSchema: { ...tool.inputSchema, type: 'object' }, outputSchema: outputSchema(tool.nativeName), classes: tool.classes, clauses: tool.clauses, untrusted: true,
  target: (args, ctx) => planningTarget(tool.nativeName, args, ctx),
  async classify(args, ctx) {
-  if (tool.nativeName === 'input-delete') { const retained = await deletionReplay(args, ctx); if (retained) { admissions.set(key(ctx, tool.name), nativeAdmission(retained.c)); return recordClasses(retained.input) } }
+  if (tool.nativeName === 'input-delete') { const retained = await deletionReplay(args, ctx); if (retained) { admissions.set(key(ctx, tool.name), nativeAdmission(retained.c)); return recordClasses(retained.input, payrollLines(retained.c)) } }
   // Native status reads expire interrupted jobs. Classification must never do that.
   if (tool.nativeName === 'calculation_status') { const c = await nativeContext(ctx); admissions.set(key(ctx, tool.name), nativeAdmission(c)); return recordClasses(null) }
   const { c, result } = await nativeAction(tool.nativeName, args, ctx, false)
@@ -31,8 +32,14 @@ export function planningTools(): ToolDefinition[] {
   const changed = [...c.s.values()].filter(row => c.before.get(`${row.kind}:${row.id}`)?.revision !== row.revision)
   const removed = [...c.before.values()].filter(row => !c.s.has(`${row.kind}:${row.id}`))
   const records = tool.readOnly ? result : [...changed.map(row => row.value), ...removed.map(row => row.value)]
-  const linked = args.commissionPosition ? [...c.s.values()].find(row => row.kind === 'position' && row.value.originId === args.commissionPosition)?.value : null
-  const classes = recordClasses([records, linked])
+  // Commission links come from validated native records, in their own scenario.
+  // Retain both sides when an edit removes or replaces a payroll relationship.
+  const links = tool.nativeName === 'revenue' ? [...changed.flatMap(row => [row.value, c.before.get(`${row.kind}:${row.id}`)?.value]), ...removed.map(row => row.value)].filter((row): row is Data => !!row?.commissionPosition) : []
+  const linked = [...new Map(links.map(row => [`${row.scenario}:${row.commissionPosition}`, row])).values()].flatMap(row => {
+   const position = [...c.s.values(), ...c.before.values()].find(input => input.kind === 'position' && input.value.scenario === row.scenario && input.value.originId === row.commissionPosition)
+   return position ? [position.value] : []
+  })
+  const classes = recordClasses([records, linked], tool.readOnly ? undefined : payrollLines(c))
   if (tool.nativeName === 'variance' && [...c.s.values()].some(row => row.kind === 'line' && row.value.payroll)) return [{ class: 'standard', facts: { measure: 1 } }, { class: 'sensitive', facts: { measure: 1, kind: 'payroll' } }]
   return classes
  },

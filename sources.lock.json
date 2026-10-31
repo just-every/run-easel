@@ -159,7 +159,7 @@
       "executable": false
     },
     "CONTRACT.md": {
-      "sha256": "04c6b5b87f4be7a98fddd657174c22e97970f997e8117836e908b963f0fa4a9f",
+      "sha256": "ca50cb26beb683ebba31924d71bc71bb659ae3080643231ddcd1ef6608af2f71",
       "executable": false
     },
     "DEMO.md": {
@@ -1747,7 +1747,7 @@
       "executable": false
     },
     "src/agent-door/native.ts": {
-      "sha256": "d53bd47cf3a7fe98e2f8f2dbf21f45b33da99e5717f11e8713a09abe6d395c29",
+      "sha256": "6abc9da63895cbf41f51e6da9e7a6b7c1e4e86882204ffc5836c0d49e9b8c022",
       "executable": false
     },
     "src/agent-door/people.ts": {
@@ -1771,7 +1771,7 @@
       "executable": false
     },
     "src/agent-door/tools.ts": {
-      "sha256": "d1a1a1b21759996933645e81e21a741e5fae307fc2c59b183e44bccb9505282a",
+      "sha256": "bfd3c94552bd19e27b58d0a96257214255a49d9838ca06988e2b6e21f0e35076",
       "executable": false
     },
     "src/agent-door/trust.ts": {
@@ -6090,6 +6090,18 @@
       "sha256": "e7eb5d388dc3ebc02b4a8622bf4bddb072ea7349fa306dc24b0a68275eb1e065",
       "executable": false
     },
+    "tests/agent-classes-browser.mjs": {
+      "sha256": "4c6cd31b4aebf7a4ef47512795224482f40772cdcaf857fbff8b5f26a7c80331",
+      "executable": false
+    },
+    "tests/agent-classes-journey.mjs": {
+      "sha256": "db933ed04947224b8cb8c52227d4ae54cc127e3237018ad5283dd3d5e1ce464e",
+      "executable": false
+    },
+    "tests/agent-classes.test.mjs": {
+      "sha256": "82704bee2a7bd960a418ba2304649b7662d9b9f3c8eff6217fdce728ce62db58",
+      "executable": false
+    },
     "tests/agent-docs-browser.mjs": {
       "sha256": "c7ed5e4051d1209b4c58a59213e327fa3b0154985d4e2419b92f8043ec188b66",
       "executable": false
@@ -7007,7 +7019,7 @@
       "executable": false
     },
     "verification.json": {
-      "sha256": "13dd9bef5ecd046db705a69a7bcc9018a211ba3555286d5ba746896678c4e31d",
+      "sha256": "9d3212f6fb74cf0f0ff7384fc8b45c80eeef86fa43dbdf562c5e61b3b7fd9b16",
       "executable": false
     },
     "vite.config.ts": {
