@@ -1,23 +1,12 @@
-import { ToolRefusal, type ClassAndFacts, type ToolDefinition } from '../modules/agent-door/index.ts'
+import { ToolRefusal, type ToolDefinition } from '../modules/agent-door/index.ts'
 import { deletionReplay } from './deletion.ts'
 import { planningTarget } from './targets.ts'
 import { outputSchema } from './schemas.ts'
 import { catalogue } from './catalogue.ts'
-import { nativeAction, nativeContext, nativeAdmission, type NativeAdmission } from './native.ts'
+import { nativeAction, nativeContext, nativeAdmission, type NativeAdmission, recordClasses } from './native.ts'
+import { scenarioLink } from './resources.ts'
 import { find, type Data } from '../easel/types'
 
-/** Only native payroll/identity fields trigger sensitive; caller labels have no authority. */
-export function sensitiveRecords(value: unknown): number {
- if (!value || typeof value !== 'object') return 0
- if (Array.isArray(value)) return value.reduce((n, item) => n + sensitiveRecords(item), 0)
- const object = value as Data
- if (Object.hasOwn(object, 'annualSalaryCents') || Object.hasOwn(object, 'annualSalary') || Object.hasOwn(object, 'holder') && !!object.holder) return 1
- return Object.values(object).reduce<number>((n, item) => n + sensitiveRecords(item), 0)
-}
-export function recordClasses(value: unknown): ClassAndFacts[] {
- const n = sensitiveRecords(value)
- return [{ class: 'standard', facts: { measure: 1 } }, ...(n ? [{ class: 'sensitive' as const, facts: { measure: n, kind: 'payroll' } }] : [])]
-}
 export function planningTools(): ToolDefinition[] {
  // A door is built per request. These read-only admission snapshots never
  // become persistent effects or outlive a pending HTTP request.
@@ -63,7 +52,8 @@ export function planningTools(): ToolDefinition[] {
    // fence that current view instead of depending on an earlier request's map.
    const admission = tool.readOnly ? nativeAdmission(await nativeContext(ctx)) : admitted(ctx, tool.name)
    const { result } = await nativeAction(tool.nativeName, args, ctx, true, admission)
-   return { result }
+   const record = tool.nativeName === 'scenario' ? result.scenario : ['proposal-create', 'proposal-submit'].includes(tool.nativeName) ? result : null
+   return { result, ...(record?.id ? { resources: [scenarioLink(record)] } : {}) }
   } finally { admissions.delete(key(ctx, tool.name)) }
  },
 }))
