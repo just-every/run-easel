@@ -63,7 +63,8 @@
       "commands": [
         "pnpm exec rer build",
         "pnpm typecheck",
-        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs"
+        "node --test --test-concurrency=1 tests/mcp.test.mjs tests/audit.test.mjs",
+        "node tests/agent-attribution-browser.mjs"
       ]
     }
   ],
@@ -122,6 +123,7 @@
     }
   ],
   "readers": {
+    "tests/agent-attribution-browser.mjs": [],
     "tests/agent-governance.test.mjs": [],
     "tests/api-tokens.test.mjs": [],
     "tests/approval-chains-browser.mjs": [],
