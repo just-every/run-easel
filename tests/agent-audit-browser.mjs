@@ -10,7 +10,7 @@ const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playw
 const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-agent-audit')
 await mkdir(evidence, { recursive: true })
 const messages = [], runtime = await builtBrowserRuntime({ https: true,
- bindings: { MAIL_PROVIDER: 'resend', MAIL_API_KEY: 'synthetic-easel-1' },
+ bindings: { AUTH_LOCAL: 'false', MAIL_PROVIDER: 'resend', MAIL_API_KEY: 'synthetic-easel-1' },
  outbound: async request => { assert.equal(new URL(request.url).hostname, 'api.resend.com'); messages.push(await request.json()); return Response.json({ id: crypto.randomUUID() }) },
 })
 let browser, page
@@ -47,7 +47,7 @@ try {
  await page.goto(runtime.origin + '/setup')
  await page.getByLabel('I confirm this owner account is ready to use.', { exact: true }).check()
  await page.getByRole('button', { name: 'Finish setup', exact: true }).click()
- await page.goto(runtime.origin + '/app?tab=settings')
+ await page.goto(runtime.origin + '/app?tab=review')
  await page.getByRole('link', { name: 'Browse agent audit', exact: true }).click()
  await page.getByRole('heading', { name: 'Agent audit', exact: true }).waitFor()
  const status = page.getByRole('status'), items = page.locator('[data-audit-id]')
@@ -56,11 +56,15 @@ try {
  assert.equal(await items.count(), 200)
  await page.getByRole('button', { name: 'Load more actions', exact: true }).click()
  await page.waitForFunction(n => document.querySelectorAll('[data-audit-id]').length === n, fixture.rows.length)
- const filter = async (agent, cls, expected) => {
+ const filter = async (agent, cls, expected, complete = true) => {
   await page.getByLabel('Agent ID', { exact: true }).fill(agent)
   await page.getByLabel('Class', { exact: true }).fill(cls)
   await page.getByRole('button', { name: 'Apply filters', exact: true }).click()
   await page.waitForFunction(() => !document.getElementById('download').disabled)
+  while (complete && await page.getByRole('button', { name: 'Load more actions', exact: true }).isVisible()) {
+   await page.getByRole('button', { name: 'Load more actions', exact: true }).click()
+   await page.waitForFunction(() => !document.getElementById('download').disabled)
+  }
   assert.deepEqual(await items.evaluateAll(elements => elements.map(element => element.dataset.auditId)), expected.map(row => row.id))
  }
  const byAgent = fixture.rows.filter(row => row.agent.id === fixture.agent)
@@ -99,16 +103,28 @@ try {
  await filter('synthetic-easel-missing', '', [])
  assert.equal(await status.innerText(), 'No matching actions.')
  assert.deepEqual(await download('empty-audit.json'), [])
- await filter('', '', fixture.rows.slice(0, 200))
+ await filter('', '', fixture.rows.slice(0, 200), false)
  assert.deepEqual(await download('complete-audit.json'), fixture.rows, 'An unfiltered download includes rows beyond the displayed page')
  assert.deepEqual(await allAgentAudit(get), fixture.rows)
  assert.deepEqual((await runtime.db.prepare('SELECT id,body,sha256 FROM e_snapshots ORDER BY id').all()).results, snapshots)
+ const editor = await person(['synthetic-easel-editor', 'example.test'].join('@'), 'finance', [])
+ assert.equal((await editor.request.get(runtime.origin + '/agents/api/audit')).status(), 200)
+ const editorPage = await editor.newPage()
+ await editorPage.goto(runtime.origin + '/agents/audit')
+ await editorPage.waitForFunction(() => !document.getElementById('download').disabled)
+ const editorId = (await send('/auth/session', undefined, editor)).operator.id
+ await send('/auth/operator/role', { operatorId: editorId, role: 'member' })
+ await editorPage.getByRole('button', { name: 'Apply filters', exact: true }).click()
+ await editorPage.getByText('Your session or audit permission is unavailable.', { exact: false }).waitFor()
+ assert.equal(await editorPage.locator('[data-audit-id]').count(), 0)
+ assert.equal(await editorPage.getByRole('button', { name: 'Download JSON', exact: true }).isDisabled(), true)
+ await editorPage.close()
  // Losing authority during a multi-page export discards even its collected first page.
  let reads = 0, downloads = 0
  page.on('download', () => downloads++)
  await page.route('**/agents/api/audit?*', async route => {
   if (++reads === 2) {
-   await send('/auth/signout', {}, owner)
+   await send('/auth/signout', {}, owner, 'POST', 204)
   }
   await route.continue()
  })

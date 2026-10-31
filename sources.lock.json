@@ -231,7 +231,7 @@
       "executable": false
     },
     "docs/mcp.md": {
-      "sha256": "20cfb5e741c54b5cafa5d069469d54c17ceee1e8f30bae412c699ecf821530b6",
+      "sha256": "28fa93d2b54e73007a3abd9f6d1d6b67ddbc00fbc1a1594bdb02f72dccf17b9a",
       "executable": false
     },
     "docs/monthly-review.md": {
@@ -1731,7 +1731,7 @@
       "executable": false
     },
     "src/agent-door/audit-page.ts": {
-      "sha256": "0c9866f13b812b5c095e8cde858c461baf8959c03191cb83ff7f9983b2899fd7",
+      "sha256": "14a3c32b280590a4e978a06a083ccbc3b855e7bd7925fd38fcd54c7a72163596",
       "executable": false
     },
     "src/agent-door/catalogue.ts": {
@@ -6095,7 +6095,7 @@
       "executable": false
     },
     "tests/agent-audit-browser.mjs": {
-      "sha256": "c236b8771566441755156f7dcc825cccfb78ca2224ca31a823eaefd756129c57",
+      "sha256": "976d7cf555a30343a282d42bde1c116fb38600b32a454751f3393f6f815376a9",
       "executable": false
     },
     "tests/agent-audit-fixture.mjs": {
