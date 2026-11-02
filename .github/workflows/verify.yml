@@ -85,7 +85,6 @@ jobs:
         run: |
           {
             printf 'PLAYWRIGHT_BROWSERS_PATH=%s/ms-playwright\n' "$RUNNER_TEMP"
-            printf 'NODE_OPTIONS=--import file://%s/scripts/ci/playwright-register.mjs?playwright=file://%s/easel-browser/node_modules/@playwright/test/index.mjs\n' "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
           } >> "$GITHUB_ENV"
       - name: Install pinned dependencies
         run: |
@@ -131,6 +130,7 @@ jobs:
       - name: Hosted core agent-door conformance
         if: matrix.shard == 'runtime'
         env:
+          NODE_OPTIONS: --import file://${{ github.workspace }}/scripts/ci/playwright-register.mjs?playwright=file://${{ runner.temp }}/easel-browser/node_modules/@playwright/test/index.mjs
           SEED_VERIFY_SHARD: agent-door
         run: pnpm exec rer verify
       - name: Native approvals and connected actuals
@@ -149,6 +149,7 @@ jobs:
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/bi-feeds-browser.mjs --existing-build
           EASEL_PLAYWRIGHT_MODULE="$RUNNER_TEMP/easel-browser/node_modules/@playwright/test/index.mjs" node tests/pipeline-browser.mjs --existing-build
         env:
+          NODE_OPTIONS: --import file://${{ github.workspace }}/scripts/ci/playwright-register.mjs?playwright=file://${{ runner.temp }}/easel-browser/node_modules/@playwright/test/index.mjs
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-approval-chains
 
   verify:

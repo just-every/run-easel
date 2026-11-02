@@ -26,7 +26,6 @@ jobs:
         run: |
           {
             printf 'PLAYWRIGHT_BROWSERS_PATH=%s/ms-playwright\n' "$RUNNER_TEMP"
-            printf 'NODE_OPTIONS=--import file://%s/scripts/ci/playwright-register.mjs?playwright=file://%s/easel-browser/node_modules/@playwright/test/index.mjs\n' "$GITHUB_WORKSPACE" "$RUNNER_TEMP"
           } >> "$GITHUB_ENV"
       - name: Install pinned dependencies
         run: |
@@ -55,6 +54,7 @@ jobs:
         run: node tests/calculation-browser.mjs
         env:
           EASEL_PLAYWRIGHT_MODULE: ${{ runner.temp }}/easel-browser/node_modules/@playwright/test/index.mjs
+          NODE_OPTIONS: --import file://${{ github.workspace }}/scripts/ci/playwright-register.mjs?playwright=file://${{ runner.temp }}/easel-browser/node_modules/@playwright/test/index.mjs
           EASEL_EVIDENCE: ${{ runner.temp }}/easel-model-calculation
       - uses: actions/upload-artifact@v4
         if: always() && matrix.journey == 'browser'
