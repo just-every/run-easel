@@ -10,15 +10,17 @@ import { zonedInstant, zonedLabel } from './calendar-time'
 import type { Context } from './context'
 import { workspace } from './model'
 import { deliverNotifications } from './notify-dispatch'
-import { load, save } from './store'
+import { load, peek, save, type Reader } from './store'
 import { currentTime } from './time'
 import { all, find, put, requireThat, type Actor } from './types'
 
 export const CHECK_HOUR = 8
 type Saved = Context & { revision: number; before: Context['s'] }
 
-export async function runCashAlertSchedule(env: Bindings) {
- const db = env.DB, { state } = await load(db)
+export async function runCashAlertSchedule(env: Bindings, read: Reader = () => load(env.DB)) {
+ const db = env.DB
+ if (!all(await peek(db, ['cash-alert-rule']), 'cash-alert-rule').some(r => r.enabled)) return { checked: false }
+ const { state } = await read()
  const rules = all(state, 'cash-alert-rule').filter(r => r.enabled).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
  let operator: any = null
  for (const rule of rules) {
@@ -27,7 +29,7 @@ export async function runCashAlertSchedule(env: Bindings) {
  }
  if (!operator) return { checked: false }
  const actor: Actor = { id: operator.id, email: 'scheduler:cash-alerts', name: operator.display_name, session: '', version: operator.version, baseRole: operator.role, scheduler: { operator: operator.id, email: operator.email } }
- const open = async (): Promise<Saved> => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } }
+ const open = async (): Promise<Saved> => { const { state, revision } = await read(); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } }
  const commit = async (ctx: Saved) => {
   const changed = [...ctx.s].filter(([k, r]) => ctx.before.get(k)?.revision !== r.revision).map(([, r]) => r.kind)
   requireThat(changed.every(k => ['cash-alert-rule', 'cash-alert', 'cash-alert-check', 'notification', 'mobile-push-delivery', 'mobile-device'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records cash alert checks and their notifications', 500)

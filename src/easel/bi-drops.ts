@@ -14,7 +14,7 @@ import { storeCustody } from './pack-store'
 import { STORES, uploadFile, type Store } from './pack-store-provider'
 import { reportRecipientContext } from './saved-report-schedules'
 import { savedReport } from './saved-reports'
-import { load, save, sha256Bytes } from './store'
+import { load, peek, save, sha256Bytes, type Reader } from './store'
 import { currentTime } from './time'
 import { all, choice, find, get, integer, put, remove, requireThat, uid, type Actor, type Data } from './types'
 
@@ -57,13 +57,13 @@ async function files(c: Context, drop: Data) {
  return { rows: d.rows.length, files: { csv: { name: `easel-dataset-${slug(d.name)}-${date}.csv`, bytes: new TextEncoder().encode(datasetCsv(d)) }, parquet: { name: `easel-dataset-${slug(d.name)}-${date}.parquet`, bytes: datasetParquet(d) } } as Record<string, { name: string; bytes: Uint8Array }> }
 }
 
-export async function runBiDrops(env: Bindings) {
- const db = env.DB, { state } = await load(db)
- const drops = all(state, 'bi-drop').filter(d => d.enabled)
+export async function runBiDrops(env: Bindings, read: Reader = () => load(env.DB)) {
+ const db = env.DB
+ const drops = all(await peek(db, ['bi-drop']), 'bi-drop').filter(d => d.enabled)
  let ran = 0
  for (const drop of drops) {
   const native = await db.prepare("SELECT id,email,display_name,role,version FROM oa_operators WHERE email=? AND status='active' AND role IN ('owner','admin')").bind(drop.updatedBy).first<any>()
-  const { state: s, revision } = await load(db)
+  const { state: s, revision } = await read()
   const now = await currentTime(env)
   const zone = workspace(s).timeZone ?? 'America/New_York'
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now))

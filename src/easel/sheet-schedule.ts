@@ -8,7 +8,7 @@ import { workspace } from './model'
 import { sheetAuthority } from './sheet-connection'
 import { pullSheetLink, sheetLinkFailure } from './sheet-links'
 import { versionStructure } from './structure-versions'
-import { load, save } from './store'
+import { load, peek, save, type Reader } from './store'
 import { currentTime } from './time'
 import { all, Fault, find, type Actor, type Data, type State } from './types'
 
@@ -38,12 +38,12 @@ function schedulerActor(native: any): Actor {
  return { id: native.id, email: native.email, name: native.display_name, baseRole: native.role, version: native.version, session: '', scheduler: { operator: native.id, email: native.email } }
 }
 
-export async function runSheetSchedules(original: Bindings) {
- const env = runtimeBindings(original)
- const initial = await load(env.DB), ids = all(initial.state, 'sheet-link').filter(link => link.enabled).map(link => link.id)
+export async function runSheetSchedules(original: Bindings, shared?: Reader) {
+ const env = runtimeBindings(original), read: Reader = shared ?? (() => load(env.DB))
+ const ids = all(await peek(env.DB, ['sheet-link']), 'sheet-link').filter(link => link.enabled).map(link => link.id)
  let pulled = 0, blocked = 0
  for (const id of ids) {
-  const { state, revision } = await load(env.DB), link = find(state, 'sheet-link', id), now = await currentTime(env)
+  const { state, revision } = await read(), link = find(state, 'sheet-link', id), now = await currentTime(env)
   if (!link) continue
   const run = sheetScheduleDue(state, link, now)
   if (!run) continue

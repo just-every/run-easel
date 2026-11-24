@@ -5,7 +5,7 @@ import { access } from './access'
 import type { Context } from './context'
 import { savedReport } from './saved-reports'
 import { planSavedReportSchedules, reportRecipientContext } from './saved-report-schedules'
-import { load, save } from './store'
+import { load, peek, save, type Reader } from './store'
 import { currentTime } from './time'
 import { all, find, get, put, requireThat, type Actor, type Data } from './types'
 
@@ -64,8 +64,10 @@ export async function dispatchSavedReports(ids: string[], original: Bindings, op
  }
 }
 
-export async function runSavedReportSchedules(env: Bindings) {
- const db = env.DB, { state } = await load(db)
+export async function runSavedReportSchedules(env: Bindings, read: Reader = () => load(env.DB)) {
+ const db = env.DB
+ if (!all(await peek(db, ['report-schedule']), 'report-schedule').some(s => s.enabled)) return { queued: 0 }
+ const { state } = await read()
  const schedules = all(state, 'report-schedule').filter(s => s.enabled)
  let native: any = null
  for (const schedule of schedules) {
@@ -74,7 +76,7 @@ export async function runSavedReportSchedules(env: Bindings) {
  }
  if (!native) return { queued: 0 }
  const actor: Actor = { id: native.id, email: 'scheduler:reports', name: native.display_name, session: '', version: native.version, baseRole: native.role, scheduler: { operator: native.id, email: native.email } }
- const open = async (): Promise<Saved> => { const { state, revision } = await load(db); return { db, s: state, before: new Map(state), revision, x: access(state, actor), activity: [], snapshots: [], now: await currentTime(env) } }
+ const open = async (): Promise<Saved> => { const { state, revision } = await read(); return { db, s: state, before: new Map(state), revision, x: access(state, actor), activity: [], snapshots: [], now: await currentTime(env) } }
  const commit = async (c: Saved) => {
   const changed = [...c.s].filter(([key, r]) => c.before.get(key)?.revision !== r.revision)
   requireThat(changed.every(([, r]) => r.kind === 'report-delivery') && [...c.before.keys()].every(key => c.s.has(key)), 'The report scheduler only records report deliveries', 500)

@@ -6,7 +6,7 @@ import { hasFullScope } from './access-grants'
 import { AUTOMATION_EVENTS } from './automation-events'
 import { openConnection, sealConnection } from './connection-seal'
 import type { Context } from './context'
-import { authority, load, readFence, save } from './store'
+import { authority, load, readFence, save, type Reader } from './store'
 import { currentTime } from './time'
 import { choice, Fault, integer, requireThat, text, type Actor, type Data } from './types'
 
@@ -79,13 +79,13 @@ export async function webhookSignature(secret: string, timestamp: string, body: 
 
 /** One atomic claimant per delivery. Crashes/unknown responses are never retried;
  * explicit 429/5xx responses get bounded, same-ID retries for receiver dedup. */
-export async function runWebhooks(original: Bindings) {
+export async function runWebhooks(original: Bindings, read: Reader = () => load(original.DB)) {
  const env = runtimeBindings(original), db = env.DB, now = await currentTime(env)
  await db.prepare("UPDATE e_webhook_deliveries SET status='uncertain',completed_at=? WHERE status='sending' AND started_at<?").bind(now, new Date(Date.parse(now) - 60000).toISOString()).run()
  const { results } = await db.prepare(`SELECT d.subscription,d.event,s.sealed,s.operator_id,s.operator_version FROM e_webhook_deliveries d JOIN e_webhook_subscriptions s ON s.id=d.subscription WHERE d.status='pending' AND d.next_at<=? ORDER BY d.next_at,d.event LIMIT 20`).bind(now).all<Data>()
  for (const row of results) {
   const operator = await db.prepare("SELECT id,email,display_name,version,role FROM oa_operators WHERE id=? AND version=? AND status='active' AND role IN ('owner','admin')").bind(row.operator_id, row.operator_version).first<Data>()
-  const { state, revision } = await load(db)
+  const { state, revision } = await read()
   const a: Actor | null = operator ? { id: operator.id, email: operator.email, name: operator.display_name, version: operator.version, baseRole: operator.role, session: '', scheduler: { operator: operator.id, email: operator.email } } : null
   let permitted = false
   if (a) { try { automationAccess({ s: state, x: access(state, a) } as Context); permitted = true } catch {} }

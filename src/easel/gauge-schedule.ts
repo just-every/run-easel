@@ -8,7 +8,7 @@ import { recordGaugeObservation } from './gauge-freshness'
 import { workspace } from './model'
 import { month } from './months'
 import { deliverNotifications } from './notify-dispatch'
-import { load, save, readFence } from './store'
+import { load, peek, save, readFence, type Reader } from './store'
 import { currentTime } from './time'
 import { all, choice, find, get, put, requireThat, type Actor, type Data, type State } from './types'
 
@@ -48,14 +48,17 @@ export function gaugeStale(connection: Data, now: string) {
 }
 
 /** Reserve each occurrence before reading. Lost or unknown attempts never retry automatically. */
-export async function runGaugeSchedule(original: Bindings) {
- const env = runtimeBindings(original), initial = await load(env.DB)
+export async function runGaugeSchedule(original: Bindings, shared?: Reader) {
+ const env = runtimeBindings(original), read: Reader = shared ?? (() => load(env.DB))
+ const gate = find(await peek(env.DB, ['connection', 'gauge']), 'connection', 'gauge')
+ if (!gate?.connected || !gate.refreshSchedule || gate.refreshSchedule.cadence === 'manual') return
+ const initial = await read()
  const connection = find(initial.state, 'connection', 'gauge'), schedule = connection?.refreshSchedule
  if (!connection?.connected || !schedule || schedule.cadence === 'manual') return
  const native = await env.DB.prepare("SELECT id,email,display_name,role,version FROM oa_operators WHERE id=? AND email=? AND status='active' AND role IN ('owner','admin')").bind(schedule.ownerId, schedule.owner).first<any>()
  if (!native) return
  const actor: Actor = { id: native.id, email: native.email, name: native.display_name, baseRole: native.role, version: native.version, session: '', scheduler: { operator: native.id, email: native.email } }
- const open = async () => { const { state, revision } = await load(env.DB); return { s: state, before: new Map(state), revision, x: access(state, actor), db: env.DB, activity: [], snapshots: [], now: await currentTime(env) } as Context & { before: State; revision: number } }
+ const open = async () => { const { state, revision } = await read(); return { s: state, before: new Map(state), revision, x: access(state, actor), db: env.DB, activity: [], snapshots: [], now: await currentTime(env) } as Context & { before: State; revision: number } }
  const commit = async (c: Awaited<ReturnType<typeof open>>) => {
   const guard = env.DB.prepare("INSERT INTO e_guard SELECT CASE WHEN EXISTS(SELECT 1 FROM oa_operators WHERE id=? AND email=? AND version=? AND role=? AND status='active') THEN 1 ELSE 0 END").bind(actor.id, actor.email, actor.version, actor.baseRole)
   await save(env.DB, actor, c.before, c.s, c.revision, c.activity, [], true, [guard, ...(c.extra ?? [])], c.now)

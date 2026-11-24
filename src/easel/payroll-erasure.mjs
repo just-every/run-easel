@@ -29,6 +29,7 @@ export function payrollOriginalScopes(maps, records, jobs = []) {
 /** Undo removes its current mapping but not the recorded finance association.
  * Only explicit before/after mapping images count as identity authority. */
 export async function payrollIdentityHistory(db, records) {
+ // Served by e_activity_record_kind (migration 0033): the expression must match the index exactly.
  const rows = (await db.prepare("SELECT detail FROM e_activity WHERE action='record-changed' AND json_extract(detail,'$.kind') IN ('payroll-file-mapping','move-personnel-mapping')").all()).results
  return [...records, ...rows.flatMap(row=>{
   const detail=JSON.parse(row.detail)

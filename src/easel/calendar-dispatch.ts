@@ -11,7 +11,7 @@ import { calendarTasks, eligibleOwner, financeEmails, type CalendarTask } from '
 import { escalationAt, reminderAt } from './calendar-time'
 import type { Context } from './context'
 import { departments, workspace } from './model'
-import { load, save } from './store'
+import { load, peek, save, type Reader } from './store'
 import { currentTime } from './time'
 import { deliverMobilePush } from './mobile-push'
 import { deliverDigests, planDigests } from './notify-dispatch'
@@ -91,14 +91,15 @@ export async function deliverCalendar(ids: string[], original: Bindings, open: O
 }
 
 /** The cron entry point. */
-export async function runCalendarSchedule(env: Bindings) {
- const db = env.DB, { state } = await load(db)
- const schedule = find(state, 'calendar-schedule', 'main')
+export async function runCalendarSchedule(env: Bindings, read: Reader = () => load(env.DB)) {
+ const db = env.DB
+ if (!find(await peek(db, ['calendar-schedule', 'main']), 'calendar-schedule', 'main')?.enabled) return { queued: 0 }
+ const schedule = find((await read()).state, 'calendar-schedule', 'main')
  if (!schedule?.enabled) return { queued: 0 }
  const operator = await db.prepare("SELECT id,email,display_name,role,version FROM oa_operators WHERE id=? AND status='active' AND role IN ('owner','admin')").bind(schedule.configuredBy.id).first<any>()
  if (!operator) return { queued: 0, paused: true }
  const actor: Actor = { id: operator.id, email: 'scheduler:calendar', name: operator.display_name, session: '', version: operator.version, baseRole: operator.role, scheduler: { operator: operator.id, email: operator.email } }
- const open: Open = async () => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } }
+ const open: Open = async () => { const { state, revision } = await read(); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } }
  const commit: Commit = async ctx => {
   const changed = [...ctx.s].filter(([k, r]) => ctx.before.get(k)?.revision !== r.revision).map(([, r]) => r.kind)
   requireThat(changed.every(k => ['calendar-delivery', 'notification', 'notification-digest', 'mobile-push-delivery', 'mobile-device'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records reminder and digest deliveries', 500)

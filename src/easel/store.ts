@@ -54,11 +54,43 @@ export function authority(a: Actor, finance = false) {
  return { sql: `(${original.sql}) AND (${gate.sql})`, params: [...original.params, ...gate.params] }
 }
 
+type RawModel = { revision: number; stamp: string; rows: any[] }
+/** The model's change stamp: record writes bump the revision and approval captures are append-only, so equal stamps mean an identical model. */
+const STAMP = 'SELECT revision,(SELECT max(rowid) FROM e_approval_captures) AS captured FROM e_meta WHERE id=1'
+const stampOf = (m: any) => `${m.revision}:${m.captured ?? 0}`
+const parseRows = (rows: any[]): State => new Map(rows.map((r: any) => [key(r.kind, r.id), { destination: r.destination, kind: r.kind, id: r.id, revision: r.revision, value: JSON.parse(r.value) }]))
+
+async function loadRaw(db: D1Database): Promise<RawModel> {
+ const [meta, rows, captures] = await db.batch([db.prepare(STAMP), db.prepare('SELECT * FROM e_records ORDER BY kind, id'), db.prepare("SELECT 'main' AS destination,kind,id,revision,value FROM e_approval_captures ORDER BY kind,id")])
+ const m = meta.results[0] as any
+ return { revision: Number(m.revision), stamp: stampOf(m), rows: [...rows.results, ...captures.results] }
+}
+
 export async function load(db: D1Database) {
- const [meta, rows, captures] = await db.batch([db.prepare('SELECT revision FROM e_meta WHERE id=1'), db.prepare('SELECT * FROM e_records ORDER BY kind, id'), db.prepare("SELECT 'main' AS destination,kind,id,revision,value FROM e_approval_captures ORDER BY kind,id")])
- const revision = Number((meta.results[0] as any).revision)
- const state: State = new Map([...rows.results, ...captures.results].map((r: any) => [key(r.kind, r.id), { destination: r.destination, kind: r.kind, id: r.id, revision: r.revision, value: JSON.parse(r.value) }]))
- return { revision, state }
+ const raw = await loadRaw(db)
+ return { revision: raw.revision, state: parseRows(raw.rows) }
+}
+
+export type Reader = () => Promise<{ revision: number; state: State }>
+
+/** One scheduled run's reader. Runners that find nothing due share a single read of the model: a later read costs
+ * one e_meta row while no save has changed the model stamp, and reads again as soon as one has. Each caller gets its own copy. */
+export function sharedReader(db: D1Database): Reader {
+ let raw: RawModel | undefined
+ return async () => {
+  if (raw) {
+   const m = await db.prepare(STAMP).first<any>()
+   if (m && stampOf(m) === raw.stamp) return { revision: raw.revision, state: parseRows(raw.rows) }
+  }
+  raw = await loadRaw(db)
+  return { revision: raw.revision, state: parseRows(raw.rows) }
+ }
+}
+
+/** Point reads of just the records a due-check needs: `[kind]` for every record of a kind, `[kind, id]` for one. */
+export async function peek(db: D1Database, ...wanted: ([string] | [string, string])[]): Promise<State> {
+ const results = await db.batch(wanted.map(w => w.length === 1 ? db.prepare('SELECT * FROM e_records WHERE kind=?').bind(w[0]) : db.prepare('SELECT * FROM e_records WHERE kind=? AND id=?').bind(w[0], w[1])))
+ return parseRows(results.flatMap(r => r.results))
 }
 
 export type Activity = { action: string; record: string; scenario?: string; before?: number; after?: number; detail?: Data }

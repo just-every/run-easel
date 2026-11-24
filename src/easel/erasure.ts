@@ -58,6 +58,8 @@ export async function erasure(c: Context, op: string, b: Data): Promise<Data | u
 
 export async function erasureMaps(db: D1Database): Promise<(Data & ErasureMap)[]> {
  const {results}=await db.prepare("SELECT value FROM e_records WHERE kind='erasure'").all<{value:string}>()
+ // Until someone is erased there is nothing to filter, and the identity history below is never needed.
+ if(!results.length) return []
  const records = (await db.prepare("SELECT kind,value FROM e_records WHERE kind IN ('payroll-file-mapping','payroll-import','move-personnel-mapping','move-import')").all<{kind:string;value:string}>()).results.map(r=>({...r,value:JSON.parse(r.value)}))
  return payrollOriginalScopes(results.map(row=>JSON.parse(row.value)), await payrollIdentityHistory(db,records), (await db.prepare("SELECT id,destination FROM ik_jobs").all<Data>()).results)
 }

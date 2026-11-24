@@ -49,7 +49,7 @@ export async function harness(options = {}) {
   build.onResolve({ filter: /^[a-z][a-z0-9_/-]*$/i }, args => names.has(args.path) ? { path: args.path, namespace: 'worker-builtin' } : undefined)
   build.onLoad({ filter: /.*/, namespace: 'worker-builtin' }, args => ({ contents: `import value from 'node:${args.path}'; module.exports = value;`, loader: 'js' }))
  } }
- const bundle = await build({ plugins: [mailProvider, nodeBuiltins], entryPoints: ['tests/easel-worker.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral', mainFields: ['module', 'main'], conditions: ['workerd', 'worker', 'browser'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' } })
+ const bundle = await build({ plugins: [mailProvider, nodeBuiltins], entryPoints: [options.entry ?? 'tests/easel-worker.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral', mainFields: ['module', 'main'], conditions: ['workerd', 'worker', 'browser'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' } })
  const mf = new Miniflare({
   ...convertV4MiniflareOptions({
    host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],

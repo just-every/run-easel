@@ -4,7 +4,7 @@ import { access, requireCapability, requireCapabilityGrant, requireFinance } fro
 import type { Context } from '../context'
 import { scenarioAccess } from '../scenario-access'
 import { workspace } from '../model'
-import { readFence, load, save } from '../store'
+import { readFence, load, peek, save, type Reader } from '../store'
 import { currentTime } from '../time'
 import { all, find, get, put, requireThat, text, uid, type Actor, type Data, type State } from '../types'
 import { authorizeAnalyst, beginAnalyst, analystPreview, finishAnalyst } from './analyst'
@@ -52,15 +52,15 @@ async function staleSources(c: Context) {
  return stale
 }
 
-export async function runMissions(env: Bindings) {
- const initial = await load(env.DB)
- if (!agentEnabled(initial.state, 'missions')) return { completed: 0 }
+export async function runMissions(env: Bindings, read: Reader = () => load(env.DB)) {
+ const initial = await peek(env.DB, ['agent-governance', 'main'], ['agent-mission'])
+ if (!agentEnabled(initial, 'missions')) return { completed: 0 }
  let completed = 0
- for (const m of all(initial.state, 'agent-mission').filter(m => m.enabled)) {
+ for (const m of all(initial, 'agent-mission').filter(m => m.enabled)) {
   const person = await env.DB.prepare("SELECT id,email,display_name,role,version FROM oa_operators WHERE id=? AND email=? AND status='active' AND role IN ('owner','admin')").bind(m.ownerId, m.owner).first<any>()
   if (!person) continue
   const actor: Actor = { id: person.id, email: person.email, name: person.display_name, session: '', version: person.version, baseRole: person.role, scheduler: { operator: person.id, email: person.email }, agent: { name: 'Recurring missions', via: 'mission' } }
-  const open = async () => { const { state, revision } = await load(env.DB); return { s: state, before: new Map(state), revision, x: access(state, actor), db: env.DB, activity: [], snapshots: [], now: await currentTime(env) } as Context & { before: State; revision: number } }
+  const open = async () => { const { state, revision } = await read(); return { s: state, before: new Map(state), revision, x: access(state, actor), db: env.DB, activity: [], snapshots: [], now: await currentTime(env) } as Context & { before: State; revision: number } }
   const commit = async (c: Awaited<ReturnType<typeof open>>) => save(env.DB, actor, c.before, c.s, c.revision, c.activity)
   let c = await open()
   try { requireFinance(c.x); requireCapabilityGrant(c.x, 'approvals', c.s); scenarioAccess(c.s, c.x, m.scenario); if (m.compare) scenarioAccess(c.s, c.x, m.compare) } catch { continue }

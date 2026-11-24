@@ -16,7 +16,7 @@ import { headcountView } from './headcount'
 import { model, workspace } from './model'
 import { canRead, notify } from './notify'
 import { deliverNotifications } from './notify-dispatch'
-import { load, save } from './store'
+import { load, peek, save, type Reader } from './store'
 import { currentTime } from './time'
 import { all, find, get, optionalText, put, requireThat, text, uid, type Actor, type Data, type State } from './types'
 import { mulDiv } from './units'
@@ -102,16 +102,27 @@ export async function followup(c: Context, op: string, b: Data): Promise<Data | 
  return keep({ ...record, due: b.due, history: [...record.history, { kind: 'revised', from: state.due, to: b.due, by: x.actor.email, at: c.now, reason }] }, { from: state.due, to: b.due })
 }
 
+/** Open actions inside their chase window that have not been chased for this due date (before the recipient's access is checked). */
+export function chaseCandidates(s: State, now: string) {
+ const published = all(s, 'pack').filter(p => p.status === 'published')
+ if (!published.length || !agentEnabled(s, 'chases')) return []
+ const zone = workspace(s).timeZone ?? 'America/New_York'
+ const today = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now))
+ const found: { pack: Data; decision: Data; f: ReturnType<typeof current>; owner: string }[] = []
+ for (const pack of published) for (const decision of pack.decisions as Data[]) {
+  const f = current(s, pack, decision), owner = String(f.owner).trim().toLowerCase()
+  if (f.status !== 'open' || !f.due || today < addDays(f.due, -CHASE_DAYS) || today >= f.due || f.chases.some((ch: Data) => ch.due === f.due) || !owner.includes('@')) continue
+  found.push({ pack, decision, f, owner })
+ }
+ return found
+}
+
 /** One chase per open action and due date, from CHASE_DAYS company-zone days before it until the day before. */
 export async function planChases(c: Context) {
- if (!agentEnabled(c.s, 'chases')) return []
  const zone = workspace(c.s).timeZone ?? 'America/New_York'
- const today = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(c.now))
  const ids: string[] = []
- for (const pack of all(c.s, 'pack').filter(p => p.status === 'published')) for (const decision of pack.decisions as Data[]) {
-  const f = current(c.s, pack, decision), owner = String(f.owner).trim().toLowerCase()
-  if (f.status !== 'open' || !f.due || today < addDays(f.due, -CHASE_DAYS) || today >= f.due || f.chases.some((ch: Data) => ch.due === f.due)) continue
-  if (!owner.includes('@') || !(await canRead(c, owner, f.department))) continue
+ for (const { pack, decision, f, owner } of chaseCandidates(c.s, c.now)) {
+  if (!(await canRead(c, owner, f.department))) continue
   const sent = notify(c, 'action-chase', [owner], { title: `${f.text.slice(0, 160)} (due ${f.due})`, tab: 'review', record: pack.id, department: f.department })
   const id = `${pack.id}|${decision.id}`, record = find(c.s, 'action-followup', id) ?? { pack: pack.id, decision: decision.id, chases: [], history: [], changes: [] }
   put(c.s, 'action-followup', id, { ...record, chases: [...record.chases, { due: f.due, at: c.now, recipient: owner, notification: sent[0], zone }] })
@@ -122,14 +133,17 @@ export async function planChases(c: Context) {
 }
 
 /** The cron entry point: acts for the first still-active owner/admin who published a pack. */
-export async function runActionChases(env: Bindings) {
- const db = env.DB, { state } = await load(db)
+export async function runActionChases(env: Bindings, read: Reader = () => load(env.DB)) {
+ const db = env.DB
+ // Only the packs, their follow-ups and the zone decide whether any chase is due; read the whole model only when one is.
+ if (!chaseCandidates(await peek(db, ['pack'], ['action-followup'], ['agent-governance', 'main'], ['workspace', 'main']), await currentTime(env)).length) return { queued: 0 }
+ const { state } = await read()
  const publishers = [...new Set(all(state, 'pack').filter(p => p.status === 'published').map(p => p.publishedBy))]
  let operator: any = null
  for (const email of publishers) if (!operator) operator = await db.prepare("SELECT id,email,display_name,role,version FROM oa_operators WHERE email=? AND status='active' AND role IN ('owner','admin')").bind(email).first<any>()
  if (!operator) return { queued: 0 }
  const actor: Actor = { id: operator.id, email: 'scheduler:actions', name: operator.display_name, session: '', version: operator.version, baseRole: operator.role, scheduler: { operator: operator.id, email: operator.email } }
- const open = async () => { const { state, revision } = await load(db); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } as Context & { revision: number; before: State } }
+ const open = async () => { const { state, revision } = await read(); return { s: state, before: new Map(state), revision, x: access(state, actor), db, activity: [], snapshots: [], now: await currentTime(env) } as Context & { revision: number; before: State } }
  const commit = async (ctx: Context & { revision: number; before: State }) => {
   const changed = [...ctx.s].filter(([k, r]) => ctx.before.get(k)?.revision !== r.revision).map(([, r]) => r.kind)
   requireThat(changed.every(k => ['action-followup', 'notification', 'mobile-push-delivery', 'mobile-device'].includes(k)) && [...ctx.before.keys()].every(k => ctx.s.has(k)), 'The scheduler only records action chases', 500)

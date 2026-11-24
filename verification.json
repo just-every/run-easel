@@ -157,6 +157,7 @@
     "tests/constraint-responses-browser.mjs": [],
     "tests/constraint-responses.test.mjs": [],
     "tests/contracts.test.mjs": [],
+    "tests/cron-d1-budget.test.mjs": [],
     "tests/dashboards-browser.mjs": [],
     "tests/dashboards.test.mjs": [],
     "tests/decision-followup.test.mjs": [],
