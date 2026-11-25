@@ -191,7 +191,7 @@ export async function restoreModelRecords(h, kinds) {
   } finally { await proxy.dispose() }
   const exported = await new Promise((resolve, reject) => {
    const env = { ...process.env, CI: 'true', WRANGLER_SEND_METRICS: 'false' }; delete env.RER_LOCAL_OPERATION
-   const child = spawn(process.execPath, [__rerTestEntry, 'export', '--output', 'exports/roundtrip.rer', '--non-interactive', '--json', '--no-queue'], { cwd: destination, env, stdio: ['ignore','pipe','pipe'] })
+   const child = spawn(join(destination, 'node_modules/.bin/rer'), ['export', '--output', 'exports/roundtrip.rer', '--non-interactive', '--json', '--no-queue'], { cwd: destination, env, stdio: ['ignore','pipe','pipe'] })
    let log = ''; child.stdout.on('data', b => { log += b }); child.stderr.on('data', b => { log += b }); child.once('error', reject); child.once('close', code => resolve({code,log}))
   })
   assert.equal(exported.code, 0, exported.log)

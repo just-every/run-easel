@@ -175,7 +175,7 @@
       "executable": false
     },
     "deploy.json": {
-      "sha256": "f4b5fead171c36a787fa9610c5fec340fb60b266b4721a25a48f9952fca98ad8",
+      "sha256": "6191413b4589beae4de0a79d1663b4cd6fbd0605101e751b860bd4b6cdaf1900",
       "executable": false
     },
     "docs/agents.md": {
@@ -6883,7 +6883,7 @@
       "executable": false
     },
     "tests/restore-flow.mjs": {
-      "sha256": "b967c4023e1bdd039d1c0072ed34c9ec698218ecf245f0f70c1341f60d33058a",
+      "sha256": "7d9f0af767926cd861bcf6d5cb04b214454d5c93808df501bd10b0a20efd2767",
       "executable": false
     },
     "tests/revenue-drivers-browser.mjs": {

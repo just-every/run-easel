@@ -41,7 +41,8 @@
     {
       "binding": "MAIL_API_KEY",
       "environment": "MAIL_API_KEY",
-      "optional": true
+      "optional": true,
+      "verifyStandIn": "synthetic-easel-verification-mail-only"
     },
     {
       "binding": "GAUGE_ORIGIN",
