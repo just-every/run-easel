@@ -10,7 +10,8 @@ permissions:
 jobs:
   journeys:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The single job covers more than 30 minutes of existing installation journeys.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
