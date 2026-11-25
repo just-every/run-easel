@@ -6335,7 +6335,7 @@
       "executable": false
     },
     "tests/dashboards-browser.mjs": {
-      "sha256": "cb240ff962d3da7a321a7656fd3388ac97bcf949b1b9a4c00cc52dd928819f79",
+      "sha256": "799ca610968c541bba3bd4bf07bbbefdd2031ecd0d7766a0da920a7e9f86bfe4",
       "executable": false
     },
     "tests/dashboards.test.mjs": {
