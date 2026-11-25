@@ -69,8 +69,12 @@ try {
  await server.close(); server = undefined
  // The credential-free journey cannot inspect a hosted target's secret bindings.
  // The dry run reports missing credentials rather than claiming deployment proof.
- const deployRefusal = await command(root, ['deploy', '--dry-run'], { expected: 3 })
- assert.match(deployRefusal, /without Cloudflare credentials/)
+ const deployPlan = await command(root, ['deploy', '--dry-run', '--json'], { environment: { MAIL_PROVIDER: 'none' } })
+ const planned = deployPlan.split('\n').flatMap(line => { try { return [JSON.parse(line)] } catch { return [] } }).findLast(event => event.event === 'result')
+ assert.equal(planned.dryRun, true)
+ assert.equal(planned.deployed, false)
+ assert.equal(planned.providerChecked, false)
+ assert.ok((planned.neededForRealDeploy ?? []).every(input => !/MAIL_FROM|MAIL_API_KEY/.test(input)))
 
  const archive = join(evidence, 'installation.rer')
  await rm(archive, { force: true }); await rm(join(root, 'exports/installation.rer'), { force: true })

@@ -19,7 +19,7 @@ published package using bare `rer` verbs. They are not byte-equal Base copies.
 Dependency linking is not enabled. Signed owner claims use the existing module when trusted claim bindings are provisioned.
 
 The CLI and onboarding implementation come from the published `@runeditrun/rer`
-package, pinned exactly to `0.2.91` in `package.json` and `pnpm-lock.yaml`. The Base
+package, pinned exactly to `0.2.134` in `package.json` and `pnpm-lock.yaml`. The Base
 `--to-package` converter removed the vendored CLI and onboarding implementation
 and rewrote their callers to package exports. `rer check` verifies the command
 contract and operator-auth copy. `scripts/installer` contains only Easel adapters,
@@ -29,7 +29,7 @@ The export adapter uses the published `policyModule` interface to retain its exe
 worker owned by the CLI's cancellation signal. The worker imports
 `validateEaselStaged` as executable code and supplies Base's replay of the applied
 migration ledger for older archives. Backup-only v1 recovery uses the package's
-`internal/modules/portability/legacy-files.mjs` export, retaining Base's explicit
+portability exports, retaining Base's explicit
 acknowledgement, empty-target checks, audit, migration refusal and v2 re-export.
 
 Applied migrations `0001` through `0007` retain their original bytes. New numbered

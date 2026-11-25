@@ -21,6 +21,7 @@ export const adapter = lifecycle;
 export const { install } = lifecycle;
 export const commandAdapter = createCommandAdapter(lifecycle, {
  dev: developmentTarget, preview: previewTarget, verify: ['pnpm', ['run', 'verify:app']], deploy: ownerDeploy('deploy.json', lifecycle),
+ mailOffSignIn: 'rer signin',
  portability: easelPortability,
  // The run site (run-easel.com): rer build --site writes dist/site from src/site/pages.tsx.
  site: { entry: 'src/site/pages.tsx', output: 'dist/site', declaration: 'deploy-site.json', config: 'vite.site.config.ts' },

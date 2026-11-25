@@ -2,27 +2,17 @@
 // signed in through the same browser session as the app, at desktop/phone widths.
 import assert from 'node:assert/strict'
 import { mkdir, rm } from 'node:fs/promises'
-import { spawn } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
 import { join, resolve } from 'node:path'
-import { command, fresh, freePort } from './browser-runtime.mjs'
+import { command, fresh, freePort, start } from './browser-runtime.mjs'
 import { api, noOverflow, session } from './browser-journey.mjs'
 const { chromium } = await import(process.env.EASEL_PLAYWRIGHT_MODULE ?? '@playwright/test')
 const root=await fresh(), evidence=resolve(process.env.EASEL_EVIDENCE ?? '.cache/easel-payroll-files')
 await mkdir(evidence,{recursive:true})
-let child,browser
+let server,browser
 try {
  const port=await freePort(),origin=`http://127.0.0.1:${port}`
  await command(root,['setup','--owner-email','owner@example.test','--port',String(port)])
- let output=''
- child=spawn(process.execPath,[fileURLToPath(import.meta.resolve('@runeditrun/rer/internal/global/rer.mjs')),'dev','--foreground','--port',String(port)],{cwd:root,env:{...process.env,WRANGLER_SEND_METRICS:'false'},detached:true,stdio:['ignore','pipe','pipe']})
- for(const stream of[child.stdout,child.stderr])stream.on('data',chunk=>{output+=chunk})
- const deadline=Date.now()+600000
- while(!output.includes('RER_READY') || !/^RER_OPEN /m.test(output)) {
-  if(child.exitCode!==null)throw new Error(`rer dev exited ${child.exitCode}; ${output.replace(/^.*(?:RER_OPEN|token=|rer-dev=).*$/gm,'[private runtime line omitted]').slice(-5000)}`)
-  assert.ok(Date.now()<deadline,'rer dev must become ready')
-  await new Promise(r=>setTimeout(r,250))
- }
+ server=await start(root,port)
  browser=await chromium.launch({headless:true,args:['--use-mock-keychain','--password-store=basic']})
  const setup=await session(browser,root,origin,'owner',1440),call=(path,body)=>api(setup.context,origin,path,body)
  await call('command/workspace',{name:'Harbour Analytics',currency:'USD',fiscalYearStart:1,planStart:'2026-01'})
@@ -79,14 +69,6 @@ try {
  }
 } finally {
  await browser?.close()
- if(child) {
-  const exited=child.exitCode===null?new Promise(r=>child.once('close',r)):Promise.resolve()
-  try {process.kill(-child.pid,'SIGTERM')} catch(e) {if(e.code!=='ESRCH')throw e}
-  await exited
-  const deadline=Date.now()+5000
-  const alive=()=>{try{process.kill(-child.pid,0);return true}catch(e){if(e.code==='ESRCH')return false;throw e}}
-  while(alive()&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50))
-  if(alive())process.kill(-child.pid,'SIGKILL')
- }
+ await server?.close()
  await rm(root,{recursive:true,force:true})
 }

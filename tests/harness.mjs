@@ -28,12 +28,13 @@ const fixtureAddress = name => [name, 'example.test'].join('@')
 const freePort = async () => { const s = createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r)); const p = s.address().port; await new Promise(r => s.close(r)); return p }
 
 export async function harness(options = {}) {
- const port = await freePort(), origin = `http://127.0.0.1:${port}`
+ const port = await freePort(), origin = `${options.mailOff ? 'https' : 'http'}://127.0.0.1:${port}`
  const dir = await mkdtemp(join(tmpdir(), 'easel-test-'))
  if (typeof options.bindings === 'function') options = { ...options, bindings: options.bindings(origin) }
  const messages = []
  const mailProvider = { name: 'test-mail-provider', setup(build) {
   build.onLoad({ filter: /easel\/time\.ts$/ }, () => ({ contents: `export async function currentTime(env) { return (await env.TEST_CLOCK.fetch('https://clock/')).text() }`, loader: 'js' }))
+  if (options.mailOff) return
   build.onLoad({ filter: /mail\.server\.mjs$/ }, () => ({
    contents: `import { createMailSender } from './modules/mail/index.mjs';
     export function operatorMail(env) {
@@ -52,10 +53,11 @@ export async function harness(options = {}) {
  const bundle = await build({ plugins: [mailProvider, nodeBuiltins], entryPoints: ['tests/easel-worker.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral', mainFields: ['module', 'main'], conditions: ['workerd', 'worker', 'browser'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' } })
  const mf = new Miniflare({
   ...convertV4MiniflareOptions({
-   host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],
+   host: '127.0.0.1', port, https: options.mailOff === true, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'],
    d1Databases: { DB: 'easel' }, ...(options.outbound ? { outboundService: options.outbound } : {}),
    serviceBindings: { ...options.serviceBindings, ...(options.afterReadFence ? { TEST_READ_FENCE: async () => { await options.afterReadFence(); return new Response(null) } } : {}), TEST_CLOCK: async () => new Response(options.now?.() ?? new Date().toISOString()), TEST_MAIL: async request => { const message = await request.json(); messages.push(message); return options.mailResponse ? options.mailResponse(message, request) : Response.json({ id: crypto.randomUUID() }) } },
-   bindings: { ...(typeof options.bindings === 'function' ? options.bindings(origin) : options.bindings), AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: fixtureAddress('owner'), SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'synthetic-local-test-bootstrap-token-0123456789', MAIL_PROVIDER: 'development', MAIL_FROM: `Easel <${fixtureAddress('easel')}>` },
+   bindings: { ...options.bindings, AUTH_ORIGIN: origin, OWNER_EMAIL: fixtureAddress('owner'), SESSION_SECRET: 'local-test-secret-not-production-0123456789', SETUP_TOKEN: 'synthetic-local-test-bootstrap-token-0123456789',
+    ...(options.mailOff ? { AUTH_LOCAL: 'false', MAIL_PROVIDER: 'none' } : { AUTH_LOCAL: 'true', MAIL_PROVIDER: 'development', MAIL_FROM: `Easel <${fixtureAddress('easel')}>` }) },
   }),
   resourcePersistencePath: dir,
  })
@@ -72,7 +74,8 @@ export async function harness(options = {}) {
   }
   const send = async (path, body, cookie = '', method) => {
    if (path === '/api/easel/mcp') { await agentPolicy(); body = agentMessage(body) }
-   const r = await mf.dispatchFetch(origin + path, { method: method ?? (body === undefined ? 'GET' : 'POST'), headers: { host: new URL(origin).host, origin, 'content-type': 'application/json', cookie, ...(path === '/api/easel/mcp' ? { 'mcp-protocol-version': '2025-11-25' } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual' })
+   const request = { method: method ?? (body === undefined ? 'GET' : 'POST'), headers: { host: new URL(origin).host, origin, 'content-type': 'application/json', cookie, ...(options.mailOff ? { 'CF-Connecting-IP': '192.0.2.10' } : {}), ...(path === '/api/easel/mcp' ? { 'mcp-protocol-version': '2025-11-25' } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual' }
+   const r = await mf.dispatchFetch(origin + path, request)
    const text = await r.text()
    let value; try { value = JSON.parse(text) } catch { value = text }
    return { status: r.status, value, text, cookie: r.headers.get('set-cookie')?.split(';')[0], headers: r.headers }

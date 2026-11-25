@@ -2,7 +2,9 @@ import { lstat } from 'node:fs/promises';
 import { PortabilityError } from '@runeditrun/rer/modules/portability';
 import { exportArchive, fileRecords } from '@runeditrun/rer/modules/portability/files';
 import { readLegacyArchive, ArchiveVerifier } from '@runeditrun/rer/modules/portability/format';
-import { legacyTargetState, requireLegacyEmpty } from '@runeditrun/rer/modules/portability/legacy-safety';
+import { ensureLegacyAudit, legacyTargetState, requireLegacyEmpty } from '@runeditrun/rer/modules/portability/legacy-safety';
+import { createImport, uploadPart, finalizeImport, abortImport } from '@runeditrun/rer/modules/portability/import';
+import { policy } from '@runeditrun/rer/modules/portability/catalogue';
 import { createEaselExportService } from './erasure-export.mjs';
 
 // The acknowledged v1 recovery still uses Base's verified staging, erasure
@@ -16,10 +18,6 @@ export async function recoverEaselLegacyArchive(options, path, output, transient
  for await (const record of fileRecords(path, readLegacyArchive)) {}
  const target = await legacyTargetState(options.db, options.migrations);
  await requireLegacyEmpty(options, target);
- // Base's audit-enabled creation is an internal primitive at the unchanged pin.
- const { createImport, uploadPart, finalizeImport, abortImport } = await import('@runeditrun/rer/internal/modules/portability/import.mjs');
- const { policy } = await import('@runeditrun/rer/internal/modules/portability/catalogue.mjs');
- const { ensureLegacyAudit } = await import('@runeditrun/rer/internal/modules/portability/legacy-safety.mjs');
  const context = { ...options, config: policy(options.policy) };
  let id, closing, integrity, status, complete = false;
  try {

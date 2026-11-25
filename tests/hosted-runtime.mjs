@@ -2,17 +2,14 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdir, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { createRequire } from 'node:module'
 
 export const environment = process.env.EASEL_HOST_ENV ?? 'sx-easel-c-i821'
 export const evidence = resolve(process.env.EASEL_EVIDENCE ?? '.cache/hosted')
 
 /** Capture one-time grants in memory; never send child output to a proof log. */
 export async function cli(root, args, extra = {}, expected = 0) {
- const require = createRequire(resolve(root, 'package.json'))
- const entry = require.resolve('@runeditrun/rer/internal/global/rer.mjs')
  const flags = ['--json', '--non-interactive', ...(args[0] === 'signin' ? [] : ['--no-queue'])]
- const child = spawn(process.execPath, [entry, ...args, ...flags], {
+ const child = spawn(resolve(root, 'node_modules/.bin/rer'), [...args, ...flags], {
   cwd: root, env: { ...process.env, ...extra, CI: 'true', WRANGLER_SEND_METRICS: 'false' }, stdio: ['ignore', 'pipe', 'pipe'],
  })
  let output = ''

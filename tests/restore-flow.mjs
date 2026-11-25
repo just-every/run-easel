@@ -1,6 +1,3 @@
-import { fileURLToPath as __rerTestEntryPath } from 'node:url';
-const __rerTestEntry = __rerTestEntryPath(import.meta.resolve('@runeditrun/rer/internal/global/rer.mjs'));
-const __rerTestEntryArgs = args => args[1] === 'dev' && !args.some(arg => ['--foreground', '--detach', '--stop', '--help'].includes(arg)) ? [...args, '--foreground'] : args;
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, cp, symlink, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -37,7 +34,7 @@ function cli(root, extra = [], confirmed = true) {
   const env = { ...process.env, CI: 'true', WRANGLER_SEND_METRICS: 'false' }
   // This independent checkout must acquire its own local operation lock.
   delete env.RER_LOCAL_OPERATION
-  const child = spawn(process.execPath, __rerTestEntryArgs([__rerTestEntry, 'import', '--input', 'exports/restore.rer', ...(confirmed ? ['--yes'] : []), '--non-interactive', '--json', '--no-queue', ...extra]), {
+  const child = spawn(join(root, 'node_modules/.bin/rer'), ['import', '--input', 'exports/restore.rer', ...(confirmed ? ['--yes'] : []), '--non-interactive', '--json', '--no-queue', ...extra], {
    cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'],
   })
   let log = ''; child.stdout.on('data', b => { log += b }); child.stderr.on('data', b => { log += b })

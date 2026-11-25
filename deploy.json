@@ -19,6 +19,7 @@
     "MAIL_FROM": "Easel <noreply@run-easel.com>",
     "MAIL_PROVIDER": "resend"
   },
+  "publicSettings": ["MAIL_PROVIDER"],
   "secrets": [
     {
       "binding": "OWNER_EMAIL",
@@ -33,8 +34,14 @@
       "environment": "SETUP_TOKEN"
     },
     {
+      "binding": "MAIL_PROVIDER",
+      "environment": "MAIL_PROVIDER",
+      "optional": true
+    },
+    {
       "binding": "MAIL_API_KEY",
-      "environment": "MAIL_API_KEY"
+      "environment": "MAIL_API_KEY",
+      "optional": true
     },
     {
       "binding": "GAUGE_ORIGIN",

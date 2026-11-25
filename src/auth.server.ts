@@ -61,7 +61,7 @@ export interface Bindings {
  OWNER_EMAIL: string
  SESSION_SECRET: string
  SETUP_TOKEN?: string
- MAIL_PROVIDER?: 'development' | 'resend' | 'sendgrid' | 'cloudflare'
+ MAIL_PROVIDER?: 'development' | 'resend' | 'sendgrid' | 'cloudflare' | 'none'
  MAIL_FROM?: string
  MAIL_API_KEY?: string
  MAIL_ACCOUNT_ID?: string
@@ -70,7 +70,7 @@ export interface Bindings {
 export const runtimeBindings = (env: Bindings): Bindings => env.RER_DEV_ORIGIN && env.AUTH_LOCAL === 'true' ? { ...env, AUTH_ORIGIN: env.RER_DEV_ORIGIN } : env
 export const authConfig = (env: Bindings): AuthConfig => ({ ...enterpriseAuthConfig(env), origin: env.AUTH_ORIGIN, local: env.AUTH_LOCAL === 'true', OWNER_EMAIL: env.OWNER_EMAIL, SESSION_SECRET: env.SESSION_SECRET, SETUP_TOKEN: env.SETUP_TOKEN, MAIL_FROM: env.MAIL_FROM, branding: { productName: branding.name, accentColor: branding.primaryColor, signInPath: '/signin', theme: theme.href } })
 export function operatorAuth(env: Bindings) {
- return createOperatorAuth({ hooks: enterpriseAuthHooks(env), db: env.DB, config: authConfig(env), mailSender: operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '' })
+ return createOperatorAuth({ hooks: enterpriseAuthHooks(env), db: env.DB, config: authConfig(env), mailSender: env.MAIL_PROVIDER === 'none' ? undefined : operatorMail(env), clientIp: request => request.headers.get('CF-Connecting-IP') ?? '' })
 }
 
 export async function authResponse(request: Request, original: Bindings): Promise<Response | null> {

@@ -540,6 +540,19 @@
     {
       "id": "create",
       "tool": "easel.proposals.create",
+      "resource": {
+        "uriTemplate": "easel://proposals/{id}",
+        "state": {
+          "scenario": {
+            "id": {
+              "$from": "create",
+              "pointer": "/id"
+            },
+            "kind": "proposal",
+            "name": "Synthetic timing proposal"
+          }
+        }
+      },
       "args": {
         "from": {
           "$from": "list",

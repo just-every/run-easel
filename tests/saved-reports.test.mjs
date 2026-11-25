@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { randomBytes } from 'node:crypto'
 import { harness } from './harness.mjs'
 import { readWorkbook, proveFormulas, evaluate } from './spreadsheet-proof.mjs'
 
@@ -169,6 +170,47 @@ test('Report authors stay within their department and scheduled copies follow cu
  assert.equal(h.messages.length, dailyCount + 2)
  const late = (await h.get('/api/easel/report-schedules')).deliveries.filter(d => d.scheduledAt === '2027-03-16T12:00:00.000Z')
  assert.ok(late.every(d => d.dispatchedAt === now))
+})
+
+test('The owner can sign in and use Easel with mail off, and scheduled report email is refused', async t => {
+ let now = '2026-11-02T12:30:00.000Z'
+ let outbound = 0
+ const h = await harness({ mailOff: true, now: () => now, outbound: async () => { outbound++; return new Response(null, { status: 503 }) } })
+ t.after(() => h.close())
+ assert.equal((await h.send('/health')).status, 200)
+ const signIn = await h.send('/signin')
+ assert.equal(signIn.status, 200)
+ assert.doesNotMatch(signIn.text, /action="\/auth\/magic-link"/)
+
+ // The Cloudflare D1 boundary of rer signin writes a short-lived, hashed grant.
+ const token = randomBytes(32).toString('base64url')
+ const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`owner-signin\0${token}`))
+ const minted = Date.now()
+ const grant = await h.db.prepare(`INSERT INTO oa_owner_signins (id,token_hash,operator_id,operator_version,created_at,expires_at)
+  SELECT ?,?,id,version,?,? FROM oa_operators WHERE role='owner' AND status='active'`)
+  .bind(crypto.randomUUID(), Buffer.from(digest).toString('hex'), minted, minted + 60_000).run()
+ assert.equal(grant.meta.changes, 1)
+ assert.equal((await h.send(`/auth/owner-signin?token=${token}`)).status, 200)
+ const confirmed = await h.send('/auth/owner-signin', { token })
+ assert.equal(confirmed.status, 303)
+ assert.equal((await h.send('/auth/owner-signin', { token })).status, 400)
+ const owner = confirmed.cookie
+ assert.equal((await h.get('/api/easel/state', owner)).me.email, 'owner@example.test')
+
+ const command = (op, body) => h.command(op, body, owner)
+ await command('workspace', { name: 'Harbour Analytics', planStart: '2026-10', fiscalYearStart: 10, timeZone: 'America/New_York' })
+ const sales = await command('department', { name: 'Sales' })
+ const line = await command('line', { name: 'Retainers', type: 'revenue' })
+ const scenario = (await h.get('/api/easel/state', owner)).scenarios[0]
+ await command('schedule', { scenario: scenario.id, name: 'Plan', line: line.id, department: sales.id, values: { '2026-10': '34250.00' } })
+ const dashboard = await command('report-save', { name: 'Board sales report', scenario: scenario.id, audience: 'board', department: sales.id,
+  report: { row: 'department', period: 'quarter', through: '2026-10', lines: [line.id], highlightBps: 1000 } })
+ await command('report-schedule-save', { dashboard: dashboard.id, cadence: 'weekly', weekday: 1, hour: 8, recipients: ['owner@example.test'] })
+ now = '2026-11-02T13:00:00.000Z'
+ await (await h.mf.getWorker()).scheduled({ cron: '*/15 * * * *' })
+ const { deliveries } = await h.get('/api/easel/report-schedules', owner)
+ assert.deepEqual(deliveries.map(({ providerStatus, reason }) => [providerStatus, reason]), [['rejected', 'mail_off']])
+ assert.equal(outbound, 0)
 })
 
 test('Saved report dimension and account hierarchies preserve source cuts, frozen versions and blocked-cell availability', async t => {
