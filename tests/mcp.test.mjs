@@ -145,7 +145,10 @@ test('API-003 BASE-AGENT-003 native MCP resources and proposals preserve role, p
  assert.equal((await rpc('server/discover')).body.result._meta['io.modelcontextprotocol/serverInfo'].name, 'Easel')
  assert.equal((await rpc('tools/list', {}, contributor, { 'MCP-Protocol-Version': 'unsupported' })).status, 400)
  assert.equal((await rpc('tools/list', {}, '')).status, 401)
- assert.equal((await rpc('tools/list', {}, contributor, { origin: 'https://other.example' })).status, 403)
+ // Auth-first: a foreign Origin's session cookie is no credential, so it gets the resource-metadata challenge.
+ const foreign = await rpc('tools/list', {}, contributor, { origin: 'https://other.example' })
+ assert.equal(foreign.status, 401)
+ assert.match(foreign.headers.get('www-authenticate') ?? '', /resource_metadata=/)
  assert.equal((await rpc('tools/call', { name: 'scenario', arguments: { scenario: 123 } })).body.result._meta['com.runeditrun/error'].code, 'invalid_arguments')
  const listed = (await rpc('tools/list')).body.result.tools
  assert.ok(listed.some(tool => tool.name === agentName('variance')))

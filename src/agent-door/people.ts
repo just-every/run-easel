@@ -28,6 +28,7 @@ export function easelPeople(env: Bindings, paired: boolean): PeopleAdapter {
   },
   session: async request => admitted(await native.session(request)),
   businessMember: native.businessMember,
+  businessStopped: native.businessStopped,
   businessRole: person => (person as MappedPerson).policyRole,
  }
 }

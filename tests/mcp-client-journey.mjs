@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 
-const modern = '2026-07-28', legacy = '2025-11-25'
+const modern = '2026-07-28', legacy = '2025-11-25', oldest = '2025-06-18'
 
 // Forward the real HTTP request completely, then lose its successful response.
 // The Worker and D1 never see a fake completion or a cancelled upstream request.
@@ -100,7 +100,7 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    catalogue = first
 
    const discovered = await result('server/discover')
-   assert.deepEqual(discovered.supportedVersions, [modern, legacy])
+   assert.deepEqual(discovered.supportedVersions, [modern, legacy, oldest])
    assert.equal(discovered._meta['io.modelcontextprotocol/serverInfo'].name, 'Easel')
    assert.ok(discovered._meta['io.modelcontextprotocol/serverInfo'].version)
    assert.equal(typeof discovered.instructions, 'string')
@@ -131,7 +131,8 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
    const before = await snapshot()
    const refusals = [
     [{ version: '2099-01-01' }, args, 400, -32022, 'UnsupportedProtocolVersion'],
-    [{ headers: { origin: 'https://foreign.invalid' } }, args, 403, -32600, 'Origin refused'],
+    // Auth-first: a session cookie sent from a foreign Origin is no credential, so it is challenged before transport checks.
+    [{ headers: { origin: 'https://foreign.invalid' } }, args, 401, -32001, 'Unauthorized'],
     [{ headers: { 'mcp-method': 'tools/list' } }, args, 400, -32020, 'HeaderMismatch'],
     [{ headers: { 'mcp-name': 'easel.scenarios.list' } }, args, 400, -32020, 'HeaderMismatch'],
     [{}, { ...args, request: 'x'.repeat(discovered._meta['com.runeditrun/limits'].maxBodyBytes + 1) }, 413, -32600, 'Body too large'],
@@ -143,7 +144,7 @@ export async function standaloneClientJourney({ origin, cookie, edge, approve, i
     assert.equal(refused.body.error.code, code)
     assert.equal(refused.body.error.message, message)
     assert.equal(refused.headers.get('cache-control'), 'no-store')
-    if (message === 'UnsupportedProtocolVersion') assert.deepEqual(refused.body.error.data, { supported: [modern, legacy], requested: '2099-01-01' })
+    if (message === 'UnsupportedProtocolVersion') assert.deepEqual(refused.body.error.data, { supported: [modern, legacy, oldest], requested: '2099-01-01', message: `This MCP protocol version is not supported. Supported versions: ${[modern, legacy, oldest].join(', ')}.` })
     assert.deepEqual(await snapshot(), before, `${message} changes no native model, activity or pending approval`)
    }
    proof(`BASE-AGENT-001 3,5,6: ${path} ${policy} unsupported version, foreign Origin, mismatched method and name, fixed and streamed oversized writes -> exact refusals; native state, activity and approvals unchanged`)
