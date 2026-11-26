@@ -2,7 +2,7 @@
 // It bundles current Gauge source and exercises its public auth/command doors.
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { mkdtemp, readdir, readFile, rm, symlink } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { promisify } from 'node:util'
@@ -12,6 +12,13 @@ import { Miniflare, convertV4MiniflareOptions } from 'miniflare'
 import { unstable_splitSqlQuery } from 'wrangler'
 import { freePort } from './browser-runtime.mjs'
 
+// Vite's `?inline` asset imports: the default export is the file as a base64 data URL.
+const inlineAssets = { name: 'inline-assets', setup(build) {
+ build.onResolve({ filter: /\?inline$/ }, args => ({ path: resolve(args.resolveDir, args.path.slice(0, -'?inline'.length)), namespace: 'inline-asset' }))
+ build.onLoad({ filter: /.*/, namespace: 'inline-asset' }, async args => ({
+  contents: `export default ${JSON.stringify(`data:${args.path.endsWith('.ttf') ? 'font/ttf' : 'application/octet-stream'};base64,${(await readFile(args.path)).toString('base64')}`)}`, loader: 'js' }))
+} }
+
 export async function gaugeProvider() {
  const scratch = await mkdtemp(join(tmpdir(), 'easel-gauge-source-')), supplied = process.env.EASEL_GAUGE_ROOT
  const root = supplied ? resolve(supplied) : join(scratch, 'gauge')
@@ -20,9 +27,10 @@ export async function gaugeProvider() {
  try {
   if (!supplied) {
    await promisify(execFile)('git', ['clone', '--quiet', '--filter=blob:none', '--depth', '1', 'https://github.com/just-every/run-gauge.git', root])
-   await symlink(resolve('node_modules'), join(root, 'node_modules'))
+   // Gauge's own locked dependencies: its source imports packages Easel does not carry.
+   await promisify(execFile)('pnpm', ['install', '--frozen-lockfile', '--ignore-scripts', '--silent'], { cwd: root })
   }
-  const bundle = await build({ stdin: { contents: `import {authResponse} from './src/auth.server'; import {gaugeResponse} from './src/gauge/http'; export default {async fetch(request,env){return await authResponse(request,env) ?? await gaugeResponse(request,env) ?? new Response('Not found',{status:404})}}`, resolveDir: root, loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'neutral', conditions: ['workerd', 'worker', 'browser'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' } })
+  const bundle = await build({ stdin: { contents: `import {authResponse} from './src/auth.server'; import {gaugeResponse} from './src/gauge/http'; export default {async fetch(request,env){return await authResponse(request,env) ?? await gaugeResponse(request,env) ?? new Response('Not found',{status:404})}}`, resolveDir: root, loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'neutral', conditions: ['workerd', 'worker', 'browser'], mainFields: ['browser', 'module', 'main'], external: ['node:*'], target: 'es2023', loader: { '.json': 'json' }, plugins: [inlineAssets] })
   const port = await freePort(), origin = `http://127.0.0.1:${port}`, bootstrap = randomUUID()
   process.chdir(root)
   mf = new Miniflare({ ...convertV4MiniflareOptions({ host: '127.0.0.1', port, modules: true, script: bundle.outputFiles[0].text, compatibilityDate: '2026-09-08', compatibilityFlags: ['nodejs_compat'], d1Databases: { DB: 'gauge' }, bindings: { AUTH_ORIGIN: origin, AUTH_LOCAL: 'true', OWNER_EMAIL: 'owner@example.test', SESSION_SECRET: randomUUID(), SETUP_TOKEN: bootstrap, MAIL_PROVIDER: 'development', MAIL_FROM: 'Gauge <gauge@example.test>' } }), resourcePersistencePath: join(scratch, 'db') })
