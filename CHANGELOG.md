@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — 2026-11-26
+
+- **Hosted demo deploys from the release.** Easel now pins rer 0.2.140. On 0.2.134 the hosted demo build refused Easel's switchable `MAIL_PROVIDER` setting ("Secret declared as an image variable"), so demo.run-easel.com could not be deployed from 0.2.0.
+
+### Upgrading
+
+No migrations are added since 0.2.0.
+
 ## 0.2.0 — 2026-11-26
 
 Easel is financial planning for one company: a twelve-month plan, a locked budget, a downside scenario and a monthly actual-versus-plan review. It runs in your own Cloudflare account.

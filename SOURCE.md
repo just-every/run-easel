@@ -19,7 +19,7 @@ published package using bare `rer` verbs. They are not byte-equal Base copies.
 Dependency linking is not enabled. Signed owner claims use the existing module when trusted claim bindings are provisioned.
 
 The CLI and onboarding implementation come from the published `@runeditrun/rer`
-package, pinned exactly to `0.2.134` in `package.json` and `pnpm-lock.yaml`. The Base
+package, pinned exactly to `0.2.140` in `package.json` and `pnpm-lock.yaml`. The Base
 `--to-package` converter removed the vendored CLI and onboarding implementation
 and rewrote their callers to package exports. `rer check` verifies the command
 contract and operator-auth copy. `scripts/installer` contains only Easel adapters,
